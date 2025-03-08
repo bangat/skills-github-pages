@@ -1,0 +1,135 @@
+ <!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>메모리 게임 최서아♡</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        #game-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            gap: 10px;
+            width: 90vw;
+            max-width: 600px;
+        }
+        .card {
+            width: 100%;
+            padding-top: 100%;
+            position: relative;
+            background-color: #6c757d;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+        }
+        .card.flip {
+            transform: rotateY(180deg);
+        }
+        .hidden {
+            visibility: hidden;
+        }
+        #header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            background: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        #timer {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+<div id="header">
+    <h2>메모리 게임 최서아♡</h2>
+    <div id="timer">남은시간: 200초</div>
+    <button onclick="location.reload()">다시하기</button>
+</div>
+<div id="game-container"></div>
+
+<script>
+const colors = ["red", "blue", "green", "purple", "yellow", "orange", "pink", "cyan", "lime", "brown", "teal", "magenta", "navy", "gray", "black"];
+let colorPairs = colors.concat(colors);
+let matched = 0;
+let timer = 200, timerInterval;
+let flippedCards = [];
+
+function shuffle(array) {
+    array.sort(() => Math.random() - 0.5);
+}
+
+function startGame() {
+    shuffle(colorPairs);
+    const container = document.getElementById('game-container');
+    colorPairs.forEach((color, index) => {
+        const card = document.createElement('div');
+        card.classList.add('card');
+        card.dataset.color = color;
+        card.onclick = () => flipCard(card);
+        container.appendChild(card);
+    });
+    timerInterval = setInterval(() => {
+        timer--;
+        document.getElementById('timer').textContent = `남은시간: ${timer}초`;
+        if (timer <= 0) {
+            clearInterval(timerInterval);
+            alert('서아야 다시해바');
+            location.reload();
+        }
+    }, 1000);
+}
+
+function flipCard(card) {
+    if (flippedCards.length < 2 && !card.classList.contains('flip') && !card.classList.contains('hidden')) {
+        card.style.backgroundColor = card.dataset.color;
+        card.classList.add('flip');
+        flippedCards.push(card);
+
+        if (flippedCards.length === 2) {
+            setTimeout(checkMatch, 600);
+        }
+    }
+}
+
+function checkMatch() {
+    const [card1, card2] = flippedCards;
+    if (card1.dataset.color === card2.dataset.color) {
+        card1.classList.add('hidden');
+        card2.classList.add('hidden');
+        matched += 2;
+        if (matched === colorPairs.length) {
+            clearInterval(timerInterval);
+            alert('축하합니다! 성공! 최서아!');
+        }
+    } else {
+        card1.style.backgroundColor = '#6c757d';
+        card2.style.backgroundColor = '#6c757d';
+        card1.classList.remove('flip');
+        card2.classList.remove('flip');
+    }
+    flippedCards = [];
+}
+
+startGame();
+</script>
+</body>
+</html>
