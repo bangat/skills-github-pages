@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffffff">
   <title>팡팡게임</title>
   <style>
     body {
@@ -47,16 +49,18 @@
       pointer-events: none;
       text-shadow: 0 0 2px #ddd;
     }
-    .board {
-      position: relative;
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      grid-template-rows: repeat(10, 1fr);
-      gap: 6px;
-      width: 90vw;
-      height: 70vh;
-      user-select: none;
-    }
+.board {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(10, 1fr);
+  gap: 6px;
+  /* width와 height는 JS로 동적으로 조절 */
+  max-width: 90vw;
+  max-height: 90vh;
+  margin: 0 auto;
+  user-select: none;
+}
     .tile {
       background-color: #ffffff;
       border: 2px solid #ccc;
@@ -392,12 +396,53 @@ function generateTiles() {
       }
     }
 
+function resizeBoard() {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const cols = COLS;
+  const rows = ROWS;
+  const gap = 6; // gap(px)
+
+  // 보드 가로/세로 비율 (cols:rows)
+  const boardRatio = cols / rows; // 5/10 = 0.5
+
+  // 뷰포트 가로/세로 비율
+  const viewportRatio = vw / vh;
+
+  let boardWidth, boardHeight;
+
+  if (viewportRatio > boardRatio) {
+    // 화면이 가로로 더 넓으면 세로 기준 맞춤
+    boardHeight = vh * 0.9; // 최대 90vh
+    boardWidth = boardHeight * boardRatio;
+  } else {
+    // 화면이 세로로 더 길면 가로 기준 맞춤
+    boardWidth = vw * 0.9; // 최대 90vw
+    boardHeight = boardWidth / boardRatio;
+  }
+
+  // gap을 제외한 실제 타일 영역 크기
+  const totalGapWidth = (cols - 1) * gap;
+  const totalGapHeight = (rows - 1) * gap;
+
+  // board 크기 적용
+  board.style.width = `${boardWidth}px`;
+  board.style.height = `${boardHeight}px`;
+
+  // 타일 크기 자동 조절 (grid 1fr이기 때문에 따로 조절할 필요는 없음)
+  // 단, gap이 px 단위이므로 보드 크기에 영향 줌
+}
+
+
     // 게임 초기화 및 시작
     function startGame() {
       generateTiles();
       renderBoard();
 
       deselectTile();
+
+
+
 
       gameoverElem.style.display = 'none';
       startScreen.style.display = 'none';
@@ -411,6 +456,7 @@ function generateTiles() {
     // 이벤트 등록
     function setupEventListeners() {
       board.addEventListener('click', (e) => {
+
         if (e.target.classList.contains('tile') || e.target.parentElement.classList.contains('tile')) {
           const tile = e.target.classList.contains('tile') ? e.target : e.target.parentElement;
           onTileClick({ currentTarget: tile });
@@ -422,6 +468,10 @@ function generateTiles() {
       });
 
       startButton.addEventListener('click', () => {
+
+// 초기 및 리사이즈 이벤트에 연결
+window.addEventListener('resize', resizeBoard);
+resizeBoard();
         startGame();
       });
     }
