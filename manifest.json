@@ -5,16 +5,17 @@
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
-  "icons": [
-    {
-      "src": "https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FetODmc%2FbtsOsQgJ7AL%2FL2jKH8Jpkjxw0HAuxWNiP0%2Fimg.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FcLg2Il%2FbtsOsdjtEm9%2FFlwkX9YieenYxgVNkeEgU1%2Fimg.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+"icons": [
+  {
+    "src": "icons/icon-192x192.png",
+    "sizes": "192x192",
+    "type": "image/png"
+  },
+  {
+    "src": "icons/icon-512x512.png",
+    "sizes": "512x512",
+    "type": "image/png"
+  }
+]
+
 }
