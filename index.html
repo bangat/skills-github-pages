@@ -141,9 +141,11 @@
   </style>
 </head>
 <body>
-  <div id="start-screen">
-    <button id="start-button">게임 시작</button>
-  </div>
+<div id="start-screen">
+  <button id="start-button">혼자하기</button>
+  <button id="multi-button" style="margin-top: 12px;">같이하기</button>
+</div>
+
 
   <div class="timer-bar" style="display:none">
     <div class="timer-fill" id="timer-fill"></div>
@@ -395,6 +397,14 @@ function generateTiles() {
         gameoverSound.play();
       }
     }
+
+    const multiButton = document.getElementById('multi-button');
+
+multiButton.addEventListener('click', () => {
+  alert('같이하기 기능 준비 중입니다!');
+  // 나중에 멀티플레이 진입 코드 추가 예정
+});
+
 
 function resizeBoard() {
   const vw = window.innerWidth;
