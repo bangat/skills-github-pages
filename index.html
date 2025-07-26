@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#ffffff">
-  <title>팡팡게임</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ffffff">
+  <title>팡팡게임 + 더하기게임</title>
   <style>
     body {
       margin: 0;
@@ -20,6 +20,36 @@
       user-select: none;
       position: relative;
     }
+    /* ====== 공통 시작화면 ====== */
+    #start-screen {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      user-select: none;
+    }
+    #start-screen button {
+      padding: 16px 48px;
+      font-size: 24px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      background: #3399ff;
+      color: #fff;
+      box-shadow: 0 0 20px #3399ff;
+    }
+    #start-screen button + button {
+      margin-top: 12px;
+    }
+    #start-screen button:hover {
+      background: #2288ee;
+    }
+
+    /* ====== 팡팡게임 영역 ====== */
     .timer-bar {
       width: 90vw;
       height: 30px;
@@ -28,6 +58,7 @@
       margin: 12px 0;
       position: relative;
       box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
+      display: none;
     }
     .timer-fill {
       position: absolute;
@@ -49,18 +80,18 @@
       pointer-events: none;
       text-shadow: 0 0 2px #ddd;
     }
-.board {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  grid-template-rows: repeat(10, 1fr);
-  gap: 6px;
-  /* width와 height는 JS로 동적으로 조절 */
-  max-width: 90vw;
-  max-height: 90vh;
-  margin: 0 auto;
-  user-select: none;
-}
+    .board {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      grid-template-rows: repeat(10, 1fr);
+      gap: 6px;
+      max-width: 90vw;
+      max-height: 90vh;
+      margin: 0 auto;
+      user-select: none;
+      display: none;
+    }
     .tile {
       background-color: #ffffff;
       border: 2px solid #ccc;
@@ -103,6 +134,7 @@
       color: #333;
       z-index: 100;
       user-select: none;
+      display: none;
     }
     .gameover button {
       margin-top: 12px;
@@ -114,56 +146,115 @@
       border-radius: 8px;
       cursor: pointer;
     }
-    #start-screen {
+
+    /* ====== 더하기 게임(같이하기) 영역 ====== */
+    #math-mode {
       position: absolute;
       inset: 0;
-      background: rgba(255,255,255,0.9);
-      display: flex;
+      background: #fafafa;
+      display: none;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      z-index: 9999;
-      user-select: none;
+      padding: 20px;
+      overflow-y: auto;
     }
-    #start-screen button {
-      padding: 16px 48px;
-      font-size: 24px;
+    #math-problem {
+      font-size: 2.5rem;
+      margin: 20px 0;
+      background: #fff;
+      padding: 20px;
       border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    #math-status {
+      margin: 12px 0;
+      min-height: 1.5em;
+      font-size: 1.2rem;
+      text-align: center;
+    }
+    #math-scoreBox {
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+      color: #444;
+      text-align: center;
+    }
+    #math-startBtn, #math-backBtn {
+      width: 100%;
+      background: #4CAF50;
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin-bottom: 15px;
+      padding: 12px;
+      border-radius: 8px;
       border: none;
       cursor: pointer;
-      background: #3399ff;
-      color: #fff;
-      box-shadow: 0 0 20px #3399ff;
     }
-    #start-screen button:hover {
-      background: #2288ee;
+    #math-backBtn {
+      background: #777;
+      margin-top: 5px;
     }
+    #math-startBtn:hover {
+      background: #45a049;
+    }
+    .number-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .num-btn {
+      background: #f0f0f0;
+      font-size: 1.3rem;
+      border: 2px solid #ddd;
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .num-btn:hover {
+      background: #ddd;
+    }
+    .correct { color: #4CAF50; font-weight: bold; }
+    .wrong { color: #f44336; font-weight: bold; }
   </style>
 </head>
 <body>
-<div id="start-screen">
-  <button id="start-button">혼자하기</button>
-  <button id="multi-button" style="margin-top: 12px;">같이하기</button>
-</div>
+  <!-- 시작 화면 -->
+  <div id="start-screen">
+    <button id="start-button">혼자하기</button>
+    <button id="multi-button">같이하기</button>
+  </div>
 
-
-  <div class="timer-bar" style="display:none">
+  <!-- 팡팡게임 (혼자하기) UI -->
+  <div class="timer-bar">
     <div class="timer-fill" id="timer-fill"></div>
     <div class="timer-text" id="timer-text">90초</div>
   </div>
-
-  <div class="board" id="board" style="display:none;"></div>
-
-  <div id="gameover" class="gameover" style="display:none;">
+  <div class="board" id="board"></div>
+  <div id="gameover" class="gameover">
     <div id="gameover-text">게임오버</div>
     <button id="restart-button">다시 시작</button>
+  </div>
+
+  <!-- 같이하기: 더하기 게임 (음성인식 + 버튼 선택) -->
+  <div id="math-mode">
+    <div id="math-problem">시작 버튼을 눌러보세요.</div>
+    <div id="math-status"></div>
+    <div id="math-scoreBox">점수: <span id="math-score">0</span></div>
+    <button id="math-startBtn">게임 시작</button>
+    <button id="math-backBtn">← 메인으로</button>
+    <div class="number-grid" id="math-numberGrid"></div>
   </div>
 
   <!-- 효과음 -->
   <audio id="match-sound" src="https://blog.kakaocdn.net/dn/sfC9c/btsOsytKxVK/NssSFFb6HyZMrSALw78pS0/%EC%A1%B0%ED%95%A9%EC%84%B1%EA%B3%B5.mp3?attach=1&knm=tfile.mp3" preload="auto"></audio>
   <audio id="gameover-sound" src="https://blog.kakaocdn.net/dn/buAhnr/btsOsP26Zg7/mh0rQhx79hXkMjbm9haFdk/gameover.mp3?attach=1&knm=tfile.mp3" preload="auto"></audio>
 
-  <script>
+<script>
+/* =========================================================
+   팡팡게임 (혼자하기)
+   ========================================================= */
 const images = [
   'https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbB2Nbp%2FbtsOtII3ACz%2FIJDpkiIGzyQgSkt32877f0%2Fimg.png',
   'https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FrWL76%2FbtsOslIhSXm%2F3jbQlb7JoeDTLCgWnn4ooK%2Fimg.png',
@@ -187,77 +278,65 @@ const images = [
   'https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FphiZr%2FbtsOslIifmg%2FTeQSjpm4k6GY17k6QgM4e1%2Fimg.png'
 ];
 
+const board = document.getElementById('board');
+const timerBar = document.querySelector('.timer-bar');
+const timerFill = document.getElementById('timer-fill');
+const timerText = document.getElementById('timer-text');
+const gameoverElem = document.getElementById('gameover');
+const gameoverText = document.getElementById('gameover-text');
+const restartButton = document.getElementById('restart-button');
+const startScreen = document.getElementById('start-screen');
+const startButton = document.getElementById('start-button');
+const multiButton = document.getElementById('multi-button');
+const matchSound = document.getElementById('match-sound');
+const gameoverSound = document.getElementById('gameover-sound');
 
-    const board = document.getElementById('board');
-    const timerFill = document.getElementById('timer-fill');
-    const timerText = document.getElementById('timer-text');
-    const gameoverElem = document.getElementById('gameover');
-    const gameoverText = document.getElementById('gameover-text');
-    const restartButton = document.getElementById('restart-button');
-    const startScreen = document.getElementById('start-screen');
-    const startButton = document.getElementById('start-button');
-    const matchSound = document.getElementById('match-sound');
-    const gameoverSound = document.getElementById('gameover-sound');
+const ROWS = 10;
+const COLS = 5;
+const TOTAL_CELLS = ROWS * COLS; // 50
+const EMPTY_CELLS = 0;
+const TILE_COUNT = TOTAL_CELLS - EMPTY_CELLS;
 
-    const ROWS = 10;
-    const COLS = 5;
-    const TOTAL_CELLS = ROWS * COLS; // 50
-
-const EMPTY_CELLS = 0; // 빈칸 없음
-const TILE_COUNT = TOTAL_CELLS - EMPTY_CELLS; // 50 타일
-
-
-    let tiles = [];
-    let selectedTile = null;
-    let timer = 90;
-    let timerId = null;
-    let gameStarted = false;
+let tiles = [];
+let selectedTile = null;
+let timer = 90;
+let timerId = null;
+let gameStarted = false;
 
 function generateTiles() {
   tiles = new Array(TOTAL_CELLS).fill(-1);
 
-  // 3~6쌍 사이로 인접 쌍 개수 결정
   const pairsCount = Math.floor(Math.random() * 4) + 3; // 3~6쌍
+  const totalPairs = TILE_COUNT / 2; // 25쌍
 
-  const totalPairs = TILE_COUNT / 2; // 총 25쌍
-
-  // 1) 인접 쌍을 위한 이미지 인덱스 (중복 허용)
   const adjacentPairs = [];
   for (let i = 0; i < pairsCount; i++) {
     adjacentPairs.push(Math.floor(Math.random() * images.length));
   }
 
-  // 2) 나머지 쌍 이미지 인덱스 (중복 허용)
   const otherPairs = [];
   for (let i = 0; i < totalPairs - pairsCount; i++) {
     otherPairs.push(Math.floor(Math.random() * images.length));
   }
 
-  // 3) 가능한 인접 위치 찾기 (가로+세로 인접 모두 포함)
   const possiblePositions = [];
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       const idx = r * COLS + c;
-      // 가로 오른쪽 인접
-      if (c < COLS - 1) possiblePositions.push([idx, idx + 1]);
-      // 세로 아래 인접
-      if (r < ROWS - 1) possiblePositions.push([idx, idx + COLS]);
+      if (c < COLS - 1) possiblePositions.push([idx, idx + 1]);     // 가로
+      if (r < ROWS - 1) possiblePositions.push([idx, idx + COLS]);  // 세로
     }
   }
 
-  // 위치를 랜덤하게 섞기
   for (let i = possiblePositions.length -1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [possiblePositions[i], possiblePositions[j]] = [possiblePositions[j], possiblePositions[i]];
   }
 
-  // 4) 붙어있는 쌍 배치
   const usedPositions = new Set();
   let adjacentPlaced = 0;
-
   for (let i = 0; i < possiblePositions.length && adjacentPlaced < pairsCount; i++) {
     const [pos1, pos2] = possiblePositions[i];
-    // 두 칸 모두 빈칸이어야 함
     if (!usedPositions.has(pos1) && !usedPositions.has(pos2)) {
       tiles[pos1] = adjacentPairs[adjacentPlaced];
       tiles[pos2] = adjacentPairs[adjacentPlaced];
@@ -267,7 +346,6 @@ function generateTiles() {
     }
   }
 
-  // 5) 나머지 위치에 다른 쌍 배치
   const emptyPositions = [];
   for (let i = 0; i < TOTAL_CELLS; i++) {
     if (tiles[i] === -1) emptyPositions.push(i);
@@ -281,212 +359,302 @@ function generateTiles() {
     pairIdx++;
   }
 
-  // 6) 전체 타일 랜덤 셔플 (붙어있는 쌍 유지 안 함 - 난이도 상승)
+  // 전체 셔플 (인접쌍 유지 x, 난이도↑)
   for (let i = tiles.length -1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
   }
 }
 
-
-
-    // 보드 렌더링
-    function renderBoard() {
-      board.innerHTML = '';
-      for (let i = 0; i < TOTAL_CELLS; i++) {
-        const tileDiv = document.createElement('div');
-        tileDiv.classList.add('tile');
-        tileDiv.dataset.index = i;
-        if (tiles[i] === -1) {
-          tileDiv.style.visibility = 'hidden'; // 빈칸은 숨김 처리
-        } else {
-          const img = document.createElement('img');
-          img.src = images[tiles[i]];
-          tileDiv.appendChild(img);
-        }
-        board.appendChild(tileDiv);
-      }
+function renderBoard() {
+  board.innerHTML = '';
+  for (let i = 0; i < TOTAL_CELLS; i++) {
+    const tileDiv = document.createElement('div');
+    tileDiv.classList.add('tile');
+    tileDiv.dataset.index = i;
+    if (tiles[i] === -1) {
+      tileDiv.style.visibility = 'hidden';
+    } else {
+      const img = document.createElement('img');
+      img.src = images[tiles[i]];
+      tileDiv.appendChild(img);
     }
+    board.appendChild(tileDiv);
+  }
+}
 
-    // 선택 해제
-    function deselectTile() {
-      if (selectedTile !== null) {
-        selectedTile.classList.remove('selected');
-        selectedTile = null;
-      }
+function deselectTile() {
+  if (selectedTile !== null) {
+    selectedTile.classList.remove('selected');
+    selectedTile = null;
+  }
+}
+
+function checkClear() {
+  for (let i = 0; i < tiles.length; i++) {
+    if (tiles[i] !== -1) return false;
+  }
+  return true;
+}
+
+function onTileClick(e) {
+  if (!gameStarted) return;
+  const target = e.currentTarget;
+  const idx = Number(target.dataset.index);
+  if (tiles[idx] === -1) return;
+
+  if (selectedTile === null) {
+    selectedTile = target;
+    selectedTile.classList.add('selected');
+  } else if (selectedTile === target) {
+    deselectTile();
+  } else {
+    const idx1 = Number(selectedTile.dataset.index);
+    const idx2 = idx;
+    if (tiles[idx1] === tiles[idx2]) {
+      tiles[idx1] = -1;
+      tiles[idx2] = -1;
+      selectedTile.style.visibility = 'hidden';
+      target.style.visibility = 'hidden';
+      matchSound.currentTime = 0;
+      matchSound.play();
+      deselectTile();
+      if (checkClear()) endGame(true);
+    } else {
+      deselectTile();
     }
+  }
+}
 
-    // 게임 클리어 검사
-    function checkClear() {
-      // 빈칸과 이미 제거된 칸(-1) 외에 모든 칸이 -1이면 클리어
-      for (let i = 0; i < tiles.length; i++) {
-        if (tiles[i] !== -1) return false;
-      }
-      return true;
-    }
+function startTimer() {
+  timer = 90;
+  timerFill.style.width = '100%';
+  timerText.textContent = `${timer}초`;
 
-    // 타일 클릭 핸들러
-    function onTileClick(e) {
-      if (!gameStarted) return;
-      const target = e.currentTarget;
-      const idx = Number(target.dataset.index);
-
-      // 빈칸은 무시
-      if (tiles[idx] === -1) return;
-
-      if (selectedTile === null) {
-        selectedTile = target;
-        selectedTile.classList.add('selected');
-      } else if (selectedTile === target) {
-        deselectTile();
-      } else {
-        // 두 타일 비교 (이미지 인덱스 동일하면 매칭)
-        const idx1 = Number(selectedTile.dataset.index);
-        const idx2 = idx;
-        if (tiles[idx1] === tiles[idx2]) {
-          // 매칭 성공 - 타일 제거
-          tiles[idx1] = -1;
-          tiles[idx2] = -1;
-          // UI에서 제거
-          selectedTile.style.visibility = 'hidden';
-          target.style.visibility = 'hidden';
-          matchSound.currentTime = 0;
-          matchSound.play();
-
-          deselectTile();
-
-          // 클리어 검사
-          if (checkClear()) {
-            endGame(true);
-          }
-        } else {
-          // 매칭 실패 - 선택 해제
-          deselectTile();
-        }
-      }
-    }
-
-    // 타이머 시작
-    function startTimer() {
-      timer = 90;
-      timerFill.style.width = '100%';
-      timerText.textContent = `${timer}초`;
-
-      timerId = setInterval(() => {
-        timer--;
-        timerFill.style.width = `${(timer / 90) * 100}%`;
-        timerText.textContent = `${timer}초`;
-        if (timer <= 0) {
-          clearInterval(timerId);
-          endGame(false);
-        }
-      }, 1000);
-    }
-
-    // 게임 종료
-    function endGame(isClear) {
-      gameStarted = false;
+  timerId = setInterval(() => {
+    timer--;
+    timerFill.style.width = `${(timer / 90) * 100}%`;
+    timerText.textContent = `${timer}초`;
+    if (timer <= 0) {
       clearInterval(timerId);
-
-      gameoverElem.style.display = 'block';
-      if (isClear) {
-        gameoverText.textContent = '🎉 클리어! 🎉';
-      } else {
-        gameoverText.textContent = '⏰ 시간 종료! 게임오버';
-        gameoverSound.currentTime = 0;
-        gameoverSound.play();
-      }
+      endGame(false);
     }
+  }, 1000);
+}
 
-    const multiButton = document.getElementById('multi-button');
-
-multiButton.addEventListener('click', () => {
-  alert('같이하기 기능 준비 중입니다!');
-  // 나중에 멀티플레이 진입 코드 추가 예정
-});
-
+function endGame(isClear) {
+  gameStarted = false;
+  clearInterval(timerId);
+  gameoverElem.style.display = 'block';
+  if (isClear) {
+    gameoverText.textContent = '🎉 클리어! 🎉';
+  } else {
+    gameoverText.textContent = '⏰ 시간 종료! 게임오버';
+    gameoverSound.currentTime = 0;
+    gameoverSound.play();
+  }
+}
 
 function resizeBoard() {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   const cols = COLS;
   const rows = ROWS;
-  const gap = 6; // gap(px)
+  const gap = 6;
 
-  // 보드 가로/세로 비율 (cols:rows)
-  const boardRatio = cols / rows; // 5/10 = 0.5
-
-  // 뷰포트 가로/세로 비율
+  const boardRatio = cols / rows;
   const viewportRatio = vw / vh;
 
   let boardWidth, boardHeight;
-
   if (viewportRatio > boardRatio) {
-    // 화면이 가로로 더 넓으면 세로 기준 맞춤
-    boardHeight = vh * 0.9; // 최대 90vh
+    boardHeight = vh * 0.9;
     boardWidth = boardHeight * boardRatio;
   } else {
-    // 화면이 세로로 더 길면 가로 기준 맞춤
-    boardWidth = vw * 0.9; // 최대 90vw
+    boardWidth = vw * 0.9;
     boardHeight = boardWidth / boardRatio;
   }
 
-  // gap을 제외한 실제 타일 영역 크기
-  const totalGapWidth = (cols - 1) * gap;
-  const totalGapHeight = (rows - 1) * gap;
-
-  // board 크기 적용
   board.style.width = `${boardWidth}px`;
   board.style.height = `${boardHeight}px`;
-
-  // 타일 크기 자동 조절 (grid 1fr이기 때문에 따로 조절할 필요는 없음)
-  // 단, gap이 px 단위이므로 보드 크기에 영향 줌
 }
 
+function startPangPangGame() {
+  // 팡팡 보이기, 수학 게임 숨기기
+  document.getElementById('math-mode').style.display = 'none';
+  startScreen.style.display = 'none';
+  board.style.display = 'grid';
+  timerBar.style.display = 'block';
+  gameoverElem.style.display = 'none';
 
-    // 게임 초기화 및 시작
-    function startGame() {
-      generateTiles();
-      renderBoard();
+  generateTiles();
+  renderBoard();
+  deselectTile();
 
-      deselectTile();
+  gameStarted = true;
+  startTimer();
 
+  window.addEventListener('resize', resizeBoard);
+  resizeBoard();
+}
 
+/* 이벤트 등록 (팡팡) */
+board.addEventListener('click', (e) => {
+  if (e.target.classList.contains('tile') || e.target.parentElement.classList.contains('tile')) {
+    const tile = e.target.classList.contains('tile') ? e.target : e.target.parentElement;
+    onTileClick({ currentTarget: tile });
+  }
+});
+restartButton.addEventListener('click', startPangPangGame);
+startButton.addEventListener('click', startPangPangGame);
 
+/* =========================================================
+   더하기 게임 (같이하기)
+   ========================================================= */
+const mathMode = document.getElementById('math-mode');
+const mathProblemEl = document.getElementById('math-problem');
+const mathStatusEl = document.getElementById('math-status');
+const mathScoreEl = document.getElementById('math-score');
+const mathStartBtn = document.getElementById('math-startBtn');
+const mathBackBtn = document.getElementById('math-backBtn');
+const mathNumberGrid = document.getElementById('math-numberGrid');
 
-      gameoverElem.style.display = 'none';
-      startScreen.style.display = 'none';
-      board.style.display = 'grid';
-      document.querySelector('.timer-bar').style.display = 'block';
+let m_currentA = 0, m_currentB = 0, m_answer = 0;
+let m_score = 0;
+let m_q = 0;
+const m_total = 10; // 1~5: 합 4~10, 6~10: 합 10~20
 
-      gameStarted = true;
-      startTimer();
-    }
+let m_recognition = null;
+let m_useSTT = false;
+const SpeechRecognition2 = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (SpeechRecognition2) {
+  m_recognition = new SpeechRecognition2();
+  m_recognition.lang = 'ko-KR';
+  m_recognition.interimResults = false;
+  m_recognition.maxAlternatives = 1;
+  m_useSTT = true;
+}
 
-    // 이벤트 등록
-    function setupEventListeners() {
-      board.addEventListener('click', (e) => {
+function speak(text, onend) {
+  if (!('speechSynthesis' in window)) return;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'ko-KR';
+  utter.rate = 1.0;
+  utter.onend = onend || null;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+}
 
-        if (e.target.classList.contains('tile') || e.target.parentElement.classList.contains('tile')) {
-          const tile = e.target.classList.contains('tile') ? e.target : e.target.parentElement;
-          onTileClick({ currentTarget: tile });
-        }
-      });
+multiButton.addEventListener('click', () => {
+  // 수학 게임 보이기, 팡팡 UI 숨기기
+  startScreen.style.display = 'none';
+  timerBar.style.display = 'none';
+  board.style.display = 'none';
+  gameoverElem.style.display = 'none';
 
-      restartButton.addEventListener('click', () => {
-        startGame();
-      });
+  mathMode.style.display = 'flex';
+  // 초기화
+  m_score = 0;
+  m_q = 0;
+  mathProblemEl.textContent = "시작 버튼을 눌러보세요.";
+  mathStatusEl.textContent = "";
+  mathScoreEl.textContent = m_score;
+  mathNumberGrid.innerHTML = "";
+});
 
-      startButton.addEventListener('click', () => {
+mathBackBtn.addEventListener('click', () => {
+  // 메인으로
+  mathMode.style.display = 'none';
+  startScreen.style.display = 'flex';
+});
 
-// 초기 및 리사이즈 이벤트에 연결
-window.addEventListener('resize', resizeBoard);
-resizeBoard();
-        startGame();
-      });
-    }
+mathStartBtn.addEventListener('click', () => {
+  m_score = 0;
+  m_q = 0;
+  mathScoreEl.textContent = m_score;
+  createNumberButtons(20);
+  askMath();
+});
 
-    setupEventListeners();
-  </script>
+function createNumberButtons(maxVal) {
+  mathNumberGrid.innerHTML = '';
+  for (let i = 1; i <= maxVal; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i;
+    btn.className = 'num-btn';
+    btn.addEventListener('click', () => checkMathAnswer(i));
+    mathNumberGrid.appendChild(btn);
+  }
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function makeBalancedPair(sum, minOperand) {
+  let a = Math.floor(sum / 2);
+  let b = sum - a;
+  if (a < minOperand) { a = minOperand; b = sum - a; }
+  if (b < minOperand) { b = minOperand; a = sum - b; }
+  if (a === 1 || b === 1) {
+    a = Math.max(2, a);
+    b = sum - a;
+  }
+  return [a, b];
+}
+
+function makeMathProblem() {
+  let minSum, maxSum;
+  if (m_q < 5) {
+    minSum = 4; maxSum = 10; // 1~5번
+  } else {
+    minSum = 10; maxSum = 20; // 6~10번
+  }
+  m_answer = randInt(minSum, maxSum);
+  const [a, b] = makeBalancedPair(m_answer, 2);
+  m_currentA = a; m_currentB = b;
+  mathProblemEl.textContent = `${m_currentA} + ${m_currentB} = ?`;
+}
+
+function askMath() {
+  if (m_q >= m_total) {
+    mathProblemEl.textContent = "게임 클리어!";
+    mathStatusEl.innerHTML = `<span class="correct">최종 점수: ${m_score}점</span>`;
+    speak(`게임 클리어! 총 점수는 ${m_score}점 입니다.`);
+    return;
+  }
+  makeMathProblem();
+  m_q++;
+  mathStatusEl.textContent = "";
+  speak(`${m_currentA} 더하기 ${m_currentB}는 얼마일까?`);
+  if (m_useSTT) listenMathAnswer();
+}
+
+function checkMathAnswer(selected) {
+  if (selected === m_answer) {
+    mathStatusEl.innerHTML = `<span class="correct">정답!</span>`;
+    speak("정답!");
+    m_score++;
+  } else {
+    mathStatusEl.innerHTML = `<span class="wrong">틀렸어! 우하하하하하!</span>`;
+    speak("틀렸어! 우하하하하하!");
+  }
+  mathScoreEl.textContent = m_score;
+  setTimeout(askMath, 1000);
+}
+
+function listenMathAnswer() {
+  m_recognition.start();
+  m_recognition.onresult = (event) => {
+    m_recognition.stop();
+    const transcript = event.results[0][0].transcript;
+    const numberMatch = transcript.match(/\d+/);
+    const value = numberMatch ? parseInt(numberMatch[0], 10) : NaN;
+    checkMathAnswer(value);
+  };
+  m_recognition.onerror = () => {
+    m_recognition.stop();
+  };
+}
+</script>
 </body>
 </html>
