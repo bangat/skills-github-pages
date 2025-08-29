@@ -62,6 +62,15 @@
     .qtyCell input{height:34px;width:68px;font-size:15px}
     th,td{padding:10px}
   }
+  .flash-red {
+  animation: flashRed 0.2s linear;
+}
+@keyframes flashRed {
+  0%   { background-color: #f9fafb; }
+  50%  { background-color: #f87171; } /* 빨강 */
+  100% { background-color: #f9fafb; }
+}
+
 </style>
 </head>
 <body>
@@ -212,8 +221,17 @@ function isAppEnv(){
 
 /* 경고 진동: 짧게 3번 */
 function buzzWarn(){
-  try{ if(navigator.vibrate){ navigator.vibrate([150,80,150,80,150]); } }catch(e){}
+  try {
+    if(navigator.vibrate){
+      navigator.vibrate([150,80,150,80,150]); // 짧게 3번
+    }
+  } catch(e){}
+
+  // 화면 빨간색 점멸
+  document.body.classList.add("flash-red");
+  setTimeout(()=> document.body.classList.remove("flash-red"), 200);
 }
+
 
 /* 품목 */
 const ITEMS={
