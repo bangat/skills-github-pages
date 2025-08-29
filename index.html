@@ -10,6 +10,12 @@
   *{box-sizing:border-box}
   html, body { -webkit-text-size-adjust: 100%; }
   body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
+  /* 상단 타이틀 */
+  .topTitle{
+    text-align:center; font-size:22px; font-weight:800; padding:14px 0;
+    border-bottom:1px solid var(--border); background:#fff; cursor:pointer;
+    user-select:none;
+  }
   header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
   .left{display:flex;gap:12px;align-items:center;flex-wrap:nowrap}
   .right{display:flex;gap:8px}
@@ -40,19 +46,15 @@
   /* ===== 푸터 ===== */
   .footerBar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);padding:12px;display:flex;justify-content:center;z-index:50}
   .footerCol{display:flex;flex-direction:column;gap:8px;align-items:stretch;justify-content:center;width:100%;max-width:980px}
-  /* 제출 버튼: 가로로 길게(풀폭) */
   #saveAll{width:100%; font-size:18px; padding:12px 16px; border-radius:14px}
-  /* 앱 버튼: 풀폭 보조 버튼 */
   #appDownloadBtn{width:100%; font-size:16px; padding:12px 16px; border-radius:12px; background:#6b7280}
-
-  /* 기본 상태(메인): 제출/앱 보임, 엑셀 숨김 */
   #saveAll, #appDownloadBtn{ display:block; }
   #exportXLSXBtn{ display:none; }
 
   /* ===== 통계 화면 전용 ===== */
-  body.mode-stats header{display:none;}             /* 통계 모드에서 헤더 숨김 */
-  body.mode-stats #saveAll{ display:none; }         /* 통계 모드에서 제출 숨김 */
-  body.mode-stats #appDownloadBtn{ display:none; }  /* 통계 모드에서 앱버튼 숨김 */
+  body.mode-stats header{display:none;}
+  body.mode-stats #saveAll{ display:none; }
+  body.mode-stats #appDownloadBtn{ display:none; }
   body.mode-stats #exportXLSXBtn{ display:block; width:100%; font-size:16px; padding:12px 16px; border-radius:12px }
 
   #sec-stats .row-wrap{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
@@ -86,26 +88,26 @@
 </style>
 </head>
 <body>
-  <!-- 상단 타이틀 -->
-  <div style="text-align:center; font-size:22px; font-weight:800; padding:14px 0; border-bottom:1px solid var(--border); background:#fff;">
-    병동 출고관리
-  </div>
 
-  <header>
-    <div class="left">
-      <label class="head" for="wardSelect">병동명</label>
-      <select id="wardSelect">
-        <option value="">선택…</option>
-        <option>93</option><option>83</option><option>73</option><option>71</option>
-        <option>63</option><option>62</option><option>61</option>
-        <option>52</option><option>51</option><option>42</option><option>41</option>
-        <option>기타</option>
-      </select>
-    </div>
-    <div class="right">
-      <button class="btn" id="gotoStats">통계</button>
-    </div>
-  </header>
+<!-- ✅ 클릭 시 메인 탭으로 이동하는 상단 타이틀 -->
+<div id="gotoMain" class="topTitle">병동 출고관리</div>
+
+<header>
+  <div class="left">
+    <label class="head" for="wardSelect">병동명</label>
+    <select id="wardSelect">
+      <option value="">선택…</option>
+      <option>93</option><option>83</option><option>73</option><option>71</option>
+      <option>63</option><option>62</option><option>61</option>
+      <option>52</option><option>51</option><option>42</option><option>41</option>
+      <option>기타</option>
+    </select>
+  </div>
+  <div class="right">
+    <button class="btn" id="gotoStats">통계</button>
+  </div>
+</header>
+
 <main>
   <!-- 입력 -->
   <section id="sec-input">
@@ -177,7 +179,7 @@
 <!-- Firebase (인증 없음 / 누구나 읽기/쓰기 규칙 가정) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, push, get, query, orderByChild, startAt, endAt, onValue, off } 
+  import { getDatabase, ref, push, query, orderByChild, startAt, endAt, onValue, off } 
     from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
   const firebaseConfig = {
@@ -207,7 +209,6 @@
   /* === 기간 구독 (실시간) === */
   let _liveRef = null, _liveCb = null;
   function startStatsLiveWatcher(startDate, endDateInclusive, onData){
-    // 기존 구독 해제
     if (_liveRef && _liveCb){
       off(_liveRef, "value", _liveCb);
       _liveRef = null; _liveCb = null;
@@ -222,7 +223,7 @@
       onData(arr);
     };
     onValue(qy, cb);
-    _liveRef = qy; _liveCb = cb; // 해제를 위해 저장
+    _liveRef = qy; _liveCb = cb;
   }
 
   // 노출(저장/실시간)
@@ -414,7 +415,7 @@ function colorStyle(item, value){
   const v = Number(value)||0;
   if(v>=20) return ' style="color:#dc2626;font-weight:700"';
   if(v>=15) return ' style="color:#2563eb;font-weight:700"';
-  if(v===10) return ' style="color:#f59e0b;font-weight:700"'; /* 10개는 노란색 */
+  if(v===10) return ' style="color:#f59e0b;font-weight:700"';
   return "";
 }
 
@@ -441,7 +442,6 @@ async function renderStats(){
   if(!s || !e){ return; }
 
   if (window.__fb && typeof window.__fb.startStatsLiveWatcher === "function") {
-    // 실시간 구독: 범위 바뀔 때마다 새로 시작
     window.__fb.startStatsLiveWatcher(new Date(s+"T00:00:00"), new Date(e+"T00:00:00"), (logsRT)=>{
       const [sMs, eMs] = rangeMsByDates(s, e);
 
@@ -527,7 +527,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   el("#saveAll").onclick = saveAll;
   el("#exportXLSXBtn").onclick = exportXLSX;
 
-  // 앱 다운로드 (메인에서만 보임; 통계모드에서는 CSS로 숨김)
+  // 앱 다운로드
   el("#appDownloadBtn").onclick = ()=> {
     if(APP_DOWNLOAD_URL && APP_DOWNLOAD_URL.startsWith("http")){
       window.location.href = APP_DOWNLOAD_URL;
@@ -541,11 +541,18 @@ window.addEventListener("DOMContentLoaded",()=>{
     document.body.classList.add("mode-stats");
     el("#sec-input").style.display="none";
     el("#sec-stats").style.display="block";
-    // 🔁 출고일을 통계 기간으로 자동 설정
+    // 출고일을 통계 기간으로 자동 설정
     const chosen = el("#issueDate").value || new Date().toISOString().slice(0,10);
     el("#dateStart").value = chosen;
     el("#dateEnd").value   = chosen;
     renderStats();
+  };
+
+  // ✅ 상단 타이틀 클릭 → 메인 화면으로 전환
+  el("#gotoMain").onclick = ()=>{
+    document.body.classList.remove("mode-stats");
+    el("#sec-input").style.display="block";
+    el("#sec-stats").style.display="none";
   };
 
   // 탭
