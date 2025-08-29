@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta http-equiv="Cache-Control" content="no-store" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- 노치/안전영역 정확 처리 -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>린넨실 출고관리</title>
 <style>
   :root{ --bg:#f9fafb; --card:#ffffff; --accent:#2563eb; --muted:#6b7280; --text:#111827; --border:#e5e7eb; }
@@ -32,7 +33,7 @@
   .col-item{width:42%} .col-qty{width:58%}
   th.item-name, td.item-name{white-space:nowrap;word-break:keep-all;overflow:hidden;text-overflow:ellipsis}
 
-  /* 가로 고정 배치: -5 -1 [입력] +1 +5 */
+  /* -5 -1 [입력] +1 +5: 가로 고정 배치 */
   .qtyCell{
     display:grid;
     grid-auto-flow: column;
@@ -63,7 +64,7 @@
   body.mode-stats #appDownloadBtn{ display:none; }
   body.mode-stats #exportXLSXBtn{ display:block; width:100%; font-size:16px; padding:12px 16px; border-radius:12px }
 
-  /* 앱 모드에서 다운로드 버튼 숨김 */
+  /* 앱이면 다운로드 버튼 숨김 */
   body.app #appDownloadBtn{ display:none !important; }
 
   #sec-stats .row-wrap{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
@@ -98,20 +99,11 @@
     100%{opacity:0}
   }
 
-  /* 앱(WebView/PWA)일 때만 화면을 아주 살짝 아래로 */
-html, body { overflow-x: hidden; }             /* 가로 스크롤 방지 */
-
-body.app {
-  /* 노치 안전영역 + 12px 정도만 내려줌 */
-  padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
-}
-
-/* 혹시 env() 미지원 기기 fallback */
-@supports not (padding: max(0px)) {
-  body.app { padding-top: 12px; }
-}
-
-
+  /* === App(WebView)에서도 웹과 '완전히 동일'하게 보이도록 리셋 === */
+  html, body { overflow-x: hidden; }/* 가로 스크롤 방지 */
+  body.app { margin:0 !important; padding:0 !important; } /* 여분 여백/쏠림 제거 */
+  body.app .topTitle { margin:0 auto; }
+  body.app main { margin:0 auto; max-width:980px; }
 </style>
 </head>
 <body>
@@ -193,7 +185,7 @@ body.app {
   src="https://blog.kakaocdn.net/dna/nDY4i/dJMb9MW0NzU/AAAAAAAAAAAAAAAAAAAAAPx9B-3G2pvytNqx-vR3eYmHXaIga9OYo8N_ydqJ4RH2/%EC%A0%84%EC%86%A1.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1756652399&allow_ip=&allow_referer=&signature=NKOSow0S2fb7Q%2FBB560terQ0zko%3D&attach=1&knm=tfile.mp3">
 </audio>
 
-<!-- xlsx-js-style (스타일 가능한 SheetJS 포크) -->
+<!-- xlsx-js-style -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
 <!-- Firebase (RTDB) -->
@@ -244,7 +236,7 @@ body.app {
 
 <!-- App Script -->
 <script>
-const APP_DOWNLOAD_URL = "https://github.com/bangat/linenward/releases/download/v.1.3/hallymWard.apk";
+const APP_DOWNLOAD_URL = "https://github.com/bangat/linenward/releases/download/v1.0.1/WardLinen.apk";
 
 /* ==== 전역 상수/유틸 ==== */
 const ITEMS={
@@ -253,7 +245,7 @@ const ITEMS={
   "기타":["억제대","얼음포","기타"]
 };
 const COLORED_ITEMS = new Set(["대시트","반시트","베갯잇","수건"]);
-const DEFAULT_TEN_ITEMS = new Set(["대시트","반시트","베갯잇"]);  // 항상 10으로 시작
+const DEFAULT_TEN_ITEMS = new Set(["대시트","반시트","베갯잇"]);
 const ALL_ITEMS = Object.values(ITEMS).flat();
 const WARDS=["93","83","73","71","63","62","61","52","51","42","41","기타"];
 
@@ -274,7 +266,7 @@ function isAppEnv(){
   return isStandalonePWA || isAndroidWebView || isCustomUA || forced;
 }
 
-/* 화면 경고: 진동 3회 + 전체 점멸 2회 */
+/* 경고: 진동 3회 + 전체 점멸 2회 */
 function buzzWarn(){
   try{ if(navigator.vibrate){ navigator.vibrate([150,80,150,80,150]); } }catch(e){}
   const ov = document.createElement('div');
@@ -310,11 +302,9 @@ function resetDefaultTenForThisWard(){
 /* 20 이상 넘어갈 때 경고 */
 function maybeBuzz(prev, next){ if(prev < 20 && next >= 20){ buzzWarn(); } }
 
-/* === 입력 테이블 === */
+/* 입력 테이블 */
 function buildTable(){
-  const tb = el("#inputTable tbody");
-  tb.innerHTML = "";
-
+  const tb = el("#inputTable tbody"); tb.innerHTML = "";
   ITEMS[state.cat].forEach(name=>{
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -326,35 +316,27 @@ function buildTable(){
         <button type="button" class="chip" data-delta="+1">＋1</button>
         <button type="button" class="chip" data-delta="+5">＋5</button>
       </td>`;
-
     const inp = tr.querySelector("input");
-
-    // 저장된 값 우선. 없으면(미정의) 기본 10 세트는 10, 그 외 0
     const draftObj = getDraft();
     const hasSaved = Object.prototype.hasOwnProperty.call(draftObj, name);
-    let initVal;
-    if (hasSaved) initVal = parseInt(draftObj[name]) || 0;
-    else initVal = DEFAULT_TEN_ITEMS.has(name) ? 10 : 0;
-
+    const initVal = hasSaved ? (parseInt(draftObj[name])||0) : (DEFAULT_TEN_ITEMS.has(name)?10:0);
     inp.value = String(initVal);
     inp.dataset.prev = String(initVal);
 
-    // 직접 입력
     inp.addEventListener("input", ()=>{
-      const prev = parseInt(inp.dataset.prev || "0") || 0;
-      const cur  = parseInt(inp.value || "0") || 0;
+      const prev = parseInt(inp.dataset.prev||"0")||0;
+      const cur  = parseInt(inp.value||"0")||0;
       inp.value = String(cur);
       setDraftQty(name, cur);
       maybeBuzz(prev, cur);
       inp.dataset.prev = String(cur);
     });
 
-    // 버튼 증감
     tr.querySelectorAll("[data-delta]").forEach(btn=>{
       btn.onclick = ()=>{
-        const prev = parseInt(inp.dataset.prev || "0") || 0;
+        const prev = parseInt(inp.dataset.prev||"0")||0;
         const delta = parseInt(btn.dataset.delta,10);
-        const v = (parseInt(inp.value || "0") || 0) + delta;
+        const v = (parseInt(inp.value||"0")||0) + delta;
         inp.value = v;
         setDraftQty(name, v);
         maybeBuzz(prev, v);
@@ -367,15 +349,12 @@ function buildTable(){
 
   if (state.cat === "기타") {
     const noteRow = document.createElement("tr");
-    noteRow.innerHTML = `
-      <td colspan="2" style="text-align:left; padding:12px; font-size:14px; color:#6b7280;">
-        기타 : 중환의, 고관절, 양쪽끈, 양쪽고무줄
-      </td>`;
+    noteRow.innerHTML = `<td colspan="2" style="text-align:left; padding:12px; font-size:14px; color:#6b7280;">기타 : 중환의, 고관절, 양쪽끈, 양쪽고무줄</td>`;
     tb.appendChild(noteRow);
   }
 }
 
-/* === 저장 === */
+/* 저장 */
 async function saveAll(){
   if(!state.ward){ alert("병동을 먼저 선택하세요."); return; }
 
@@ -410,7 +389,6 @@ async function saveAll(){
     setLogs(cleaned);
   }
 
-  // 입력값 초기화 후, 기본 10 다시 세팅
   const cleared = {}; ALL_ITEMS.forEach(i=> cleared[i]=0); setDraft(cleared);
   resetDefaultTenForThisWard();
   els("#inputTable tbody input").forEach(inp=> { 
@@ -419,8 +397,7 @@ async function saveAll(){
     inp.value=String(v); inp.dataset.prev=String(v);
   });
 
-  const snd = el("#submitSound");
-  snd && snd.play().catch(()=>{});
+  const snd = el("#submitSound"); snd && snd.play().catch(()=>{});
   alert("저장되었습니다.");
 
   if (document.body.classList.contains("mode-stats")) {
@@ -431,8 +408,7 @@ async function saveAll(){
   }
 }
 
-/* === 통계 === */
-/* 색상: 음수 회색 / 0~9 검정 / 10~14 노랑 / 15~19 파랑 / 20+ 빨강 */
+/* 통계 */
 function colorStyle(item, value){
   if(!COLORED_ITEMS.has(item)) return "";
   const v = Number(value)||0;
@@ -503,7 +479,7 @@ async function renderStats(){
   }
 }
 
-/* === 엑셀 내보내기 (제목 Bold+Center) === */
+/* 엑셀 내보내기 (제목 Bold+Center) */
 function exportXLSX(){
   const table = document.querySelector("#statsWrap table");
   if(!table){ alert("통계 표가 없습니다. 통계 화면에서 날짜/병동을 선택해 주세요."); return; }
@@ -528,7 +504,7 @@ function exportXLSX(){
   XLSX.writeFile(wb, `stats_${s}_to_${e}.xlsx`);
 }
 
-/* === 초기화 === */
+/* 초기화 */
 function debounce(fn, delay=200){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,args), delay); }; }
 
 window.addEventListener("DOMContentLoaded",()=>{
@@ -544,7 +520,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   el("#wardSelect").onchange = e=>{
     state.ward = e.target.value || "";
     localStorage.setItem(LS.ward, state.ward);
-    resetDefaultTenForThisWard();   // 병동 바꿀 때도 기본 10
+    resetDefaultTenForThisWard();
     buildTable();
   };
 
@@ -553,7 +529,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   el("#dateStart").value = `${yyyy}-${mm}-${dd}`;
   el("#dateEnd").value   = `${yyyy}-${mm}-${dd}`;
 
-  resetDefaultTenForThisWard();     // 페이지 재오픈 시 기본 10 보장
+  resetDefaultTenForThisWard();
   buildTable();
 
   el("#saveAll").onclick = saveAll;
