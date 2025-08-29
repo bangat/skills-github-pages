@@ -39,15 +39,21 @@
 
   /* ===== 푸터 ===== */
   .footerBar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);padding:12px;display:flex;justify-content:center;z-index:50}
-  .footerCol{display:flex;gap:8px;align-items:center;justify-content:center;width:100%}
-  /* 버튼 폭 자동(fit-content) + 과하게 크지 않게 */
-  .footerCol .btn{width:auto; font-size:16px; padding:10px 16px; border-radius:12px}
+  .footerCol{display:flex;flex-direction:column;gap:8px;align-items:stretch;justify-content:center;width:100%;max-width:980px}
+  /* 제출 버튼: 가로로 길게(풀폭) */
+  #saveAll{width:100%; font-size:18px; padding:12px 16px; border-radius:14px}
+  /* 앱 버튼: 풀폭 보조 버튼 */
+  #appDownloadBtn{width:100%; font-size:16px; padding:12px 16px; border-radius:12px; background:#6b7280}
+
+  /* 기본 상태(메인): 제출/앱 보임, 엑셀 숨김 */
+  #saveAll, #appDownloadBtn{ display:block; }
+  #exportXLSXBtn{ display:none; }
 
   /* ===== 통계 화면 전용 ===== */
-  body.mode-stats header{display:none;}                /* 통계 모드에서 헤더 숨김 */
-  body.mode-stats #saveAll{ display:none; }            /* 통계 모드에선 제출 숨김 */
-  #exportXLSXBtn{ display:none; }                      /* 기본(메인)에서는 엑셀 숨김 */
-  body.mode-stats #exportXLSXBtn{ display:inline-flex;}/* 통계 모드에서만 엑셀 표시 */
+  body.mode-stats header{display:none;}             /* 통계 모드에서 헤더 숨김 */
+  body.mode-stats #saveAll{ display:none; }         /* 통계 모드에서 제출 숨김 */
+  body.mode-stats #appDownloadBtn{ display:none; }  /* 통계 모드에서 앱버튼 숨김 */
+  body.mode-stats #exportXLSXBtn{ display:block; width:100%; font-size:16px; padding:12px 16px; border-radius:12px }
 
   #sec-stats .row-wrap{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
   #sec-stats .row-wrap>*{flex:0 0 auto}
@@ -92,7 +98,6 @@
     </select>
   </div>
   <div class="right">
-    <!-- 입력 버튼 없음 -->
     <button class="btn" id="gotoStats">통계</button>
   </div>
 </header>
@@ -148,10 +153,11 @@
   </section>
 </main>
 
-<!-- 푸터: 메인에서는 제출만, 통계에서는 엑셀만 보임 -->
+<!-- 푸터: 메인=제출·앱 / 통계=엑셀 -->
 <div class="footerBar">
   <div class="footerCol">
     <button class="btn acc" id="saveAll">제출하기</button>
+    <button class="btn" id="appDownloadBtn">어플리케이션 다운로드</button>
     <button class="btn" id="exportXLSXBtn">엑셀로 내려받기</button>
   </div>
 </div>
@@ -210,6 +216,8 @@
 
 <!-- App Script -->
 <script>
+const APP_DOWNLOAD_URL = "https://example.com/app-download"; // 필요 시 실제 URL로 교체
+
 /* 품목 */
 const ITEMS={
   "시트":["대시트","반시트","베갯잇","수건"],
@@ -290,7 +298,7 @@ function buildTable(){
   });
 }
 
-/* 저장 */
+/* 저장 (3번 방법: RTDB 업로드 성공 시 로컬 자동 정리) */
 async function saveAll(){
   if(!state.ward){ alert("병동을 먼저 선택하세요."); return; }
 
@@ -299,7 +307,7 @@ async function saveAll(){
   let ts;
   if(issue){
     const [y,m,d] = issue.split("-").map(Number);
-    ts = new Date(y, m-1, d, 12, 0, 0, 0).getTime();
+    ts = new Date(y, m-1, d, 12, 0, 0, 0).getTime(); // 선택일 12:00
   }else{
     ts = Date.now();
   }
@@ -312,16 +320,34 @@ async function saveAll(){
   });
   if(batch.length===0){ alert("저장할 항목이 없습니다. (모두 0)"); return; }
 
+  // 로컬에 선기록(오프라인 대비)
   const logs = getLogs(); batch.forEach(b=> logs.unshift(b)); setLogs(logs.slice(0, 10000));
 
-  try { if(window.__fb) await window.__fb.saveLogsToRTDB(batch); }
-  catch(e){ console.warn("RTDB 업로드 실패 -> 로컬만 저장", e); }
+  // RTDB 업로드
+  let rtdbOK = false;
+  try {
+    if(window.__fb){
+      await window.__fb.saveLogsToRTDB(batch);
+      rtdbOK = true;
+    }
+  } catch(e){
+    console.warn("RTDB 업로드 실패 -> 로컬만 저장", e);
+  }
+
+  // ★ 업로드 성공 시: 이번 배치를 로컬에서 제거하여 중복/잔존 방지
+  if (rtdbOK) {
+    const cur = getLogs();
+    const keyOf = L => [L.ts, L.ward, L.item, L.qty].join("|");
+    const removeSet = new Set(batch.map(keyOf));
+    const cleaned = cur.filter(L => !removeSet.has(keyOf(L)));
+    setLogs(cleaned);
+  }
 
   // 입력값 초기화
   const cleared = {}; ALL_ITEMS.forEach(i=> cleared[i]=0); setDraft(cleared);
   els("#inputTable tbody input").forEach(inp=> { inp.value="0"; inp.dataset.prev="0"; });
 
-  // 🔊 효과음
+  // 효과음
   const snd = el("#submitSound");
   snd && snd.play().catch(err=>console.warn("사운드 재생 실패:", err));
 
@@ -455,7 +481,16 @@ window.addEventListener("DOMContentLoaded",()=>{
   el("#saveAll").onclick = saveAll;
   el("#exportXLSXBtn").onclick = exportXLSX;
 
-  // 통계로 이동(통계 모드에서만 엑셀 버튼 노출)
+  // 앱 다운로드 (메인에서만 보임; 통계모드에서는 CSS로 숨김)
+  el("#appDownloadBtn").onclick = ()=> {
+    if(APP_DOWNLOAD_URL && APP_DOWNLOAD_URL.startsWith("http")){
+      window.location.href = APP_DOWNLOAD_URL;
+    }else{
+      alert("다운로드 링크가 설정되지 않았습니다. APP_DOWNLOAD_URL 값을 수정하세요.");
+    }
+  };
+
+  // 통계로 이동
   el("#gotoStats").onclick = ()=> {
     document.body.classList.add("mode-stats");
     el("#sec-input").style.display="none";
