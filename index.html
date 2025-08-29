@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>린넨실 출고관리</title>
+<title>린넨실 출고관리 (RTDB · 기간 통계 · 병동 필터)</title>
 <style>
   :root{ --bg:#f9fafb; --card:#ffffff; --accent:#2563eb; --muted:#6b7280; --text:#111827; --border:#e5e7eb; }
   *{box-sizing:border-box}
@@ -172,13 +172,17 @@
 const ITEMS={
   "시트":["대시트","반시트","베갯잇","수건"],
   "환자복":["일반상의","일반하의","정형상의","정형하의"],
-  "기타":["억제대","얼음주머니","기타(고관절,중환의)"]
+  "기타":["억제대","얼음포","기타"]
 };
+const COLORED_ITEMS = new Set(["대시트","반시트","베갯잇","수건"]); // 색상 적용 대상
 const ALL_ITEMS = Object.values(ITEMS).flat();
 const WARDS=["93","83","73","71","63","62","61","52","51","42","41","기타"];
 const LS={ ward:"linen/ward", logs:"linen/logs", draft:(ward)=>`linen/draft/${ward||'_none_'}` };
 let state={ ward:localStorage.getItem(LS.ward)||"", section:"input", cat:"시트" };
 const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorAll(s));
+
+/* 진동(지원 기기에서만) */
+function vibrateOnce(ms=1000){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(_){ } }
 
 /* 날짜 범위 → ms 상하한 */
 function rangeMsByDates(startStr, endStr){
@@ -203,30 +207,79 @@ function buildTable(){
   const tb=el("#inputTable tbody"); tb.innerHTML="";
   ITEMS[state.cat].forEach(name=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`
-      <td class="item-name">${name}</td>
-      <td class="qtyCell">
-        <button type="button" class="chip reset" data-reset>리셋</button>
-        <button type="button" class="chip" data-delta="-1">−1</button>
-        <input type="number" inputmode="numeric" min="0" value="0" aria-label="${name} 수량"/>
-        <button type="button" class="chip" data-delta="+1">＋1</button>
-        <button type="button" class="chip" data-delta="+5">＋5</button>
-      </td>`;
+   tr.innerHTML=`
+  <td class="item-name">
+    ${name.startsWith("기타(")
+      ? `기타<br><span style="display:block;background:#fff9c4;color:#111;padding:2px 6px;border-radius:6px;font-size:13px">${name.replace(/^기타/,'')}</span>`
+      : name}
+  </td>
+  <td class="qtyCell">
+    <button type="button" class="chip reset" data-reset>리셋</button>
+    <button type="button" class="chip" data-delta="-1">−1</button>
+    <input type="number" inputmode="numeric" min="0" value="0" aria-label="${name} 수량"/>
+    <button type="button" class="chip" data-delta="+1">＋1</button>
+    <button type="button" class="chip" data-delta="+5">＋5</button>
+  </td>`;
+
     const inp=tr.querySelector("input");
+    // 초기 값(시트 탭 기본 10)
     const draftVal = getDraftQty(name);
     if(draftVal>0){ inp.value = String(draftVal); }
     else if(["대시트","반시트","베갯잇","수건"].includes(name)){ inp.value = "10"; setDraftQty(name, 10); }
     else { inp.value = "0"; }
-    inp.addEventListener("input", ()=> setDraftQty(name, parseInt(inp.value||"0")||0));
+
+    // 이전 값 저장(20 초과로 "넘어가는" 순간만 진동)
+    inp.dataset.prev = String(parseInt(inp.value||"0")||0);
+
+    // 입력 변경
+    inp.addEventListener("input", ()=>{
+      const prev = parseInt(inp.dataset.prev||"0")||0;
+      const cur = Math.max(0, parseInt(inp.value||"0")||0);
+      inp.value = String(cur);
+      setDraftQty(name, cur);
+      if(state.cat==="시트" && COLORED_ITEMS.has(name) && prev<=20 && cur>20){
+        vibrateOnce(1000);
+      }
+      inp.dataset.prev = String(cur);
+    });
+
+    // 증감 버튼
     tr.querySelectorAll("[data-delta]").forEach(btn=>{
       btn.onclick=()=>{
+        const prev = parseInt(inp.dataset.prev||"0")||0;
         const delta = btn.dataset.delta==="-1" ? -1 : (btn.dataset.delta==="+1" ? 1 : 5);
         const v = Math.max(0,(parseInt(inp.value||"0")||0)+delta);
         inp.value=v; setDraftQty(name,v);
+        if(state.cat==="시트" && COLORED_ITEMS.has(name) && prev<=20 && v>20){
+          vibrateOnce(1000);
+        }
+        inp.dataset.prev = String(v);
       };
     });
-    tr.querySelector("[data-reset]").onclick=()=>{ inp.value="0"; setDraftQty(name,0); };
+
+    // 리셋
+    tr.querySelector("[data-reset]").onclick=()=>{
+      inp.value="0"; setDraftQty(name,0); inp.dataset.prev="0";
+    };
+
     tb.appendChild(tr);
+// 기타 탭의 '기타' 품목이면 안내 행 추가
+if (state.cat === "기타" && name === "기타") {
+  const noteTr = document.createElement("tr");
+  noteTr.innerHTML = `
+    <td colspan="2" style="padding-top:0">
+      <span style="
+        display:inline-block;
+        background:#fff9c4;
+        color:#111;
+        padding:6px 8px;
+        border-radius:6px;
+        font-size:13px;
+      ">(고관절, 중환의)</span>
+    </td>`;
+  tb.appendChild(noteTr);
+}
+
   });
   el("#needWard").style.display = state.ward ? "none" : "block";
 }
@@ -252,8 +305,17 @@ async function saveAll(){
 
   // 입력 리셋
   const cleared = {}; ALL_ITEMS.forEach(i=> cleared[i]=0); setDraft(cleared);
-  els("#inputTable tbody input").forEach(inp=> inp.value="0");
+  els("#inputTable tbody input").forEach(inp=> { inp.value="0"; inp.dataset.prev="0"; });
   alert("저장되었습니다.");
+}
+
+/* 색상 결정: 기본 검정, 15+ 파랑, 20+ 빨강 (대/반/베/수건만) */
+function colorStyle(item, value){
+  if(!COLORED_ITEMS.has(item)) return "";
+  const v = Number(value)||0;
+  if(v>=20) return ' style="color:#dc2626;font-weight:700"'; // red
+  if(v>=15) return ' style="color:#2563eb;font-weight:700"'; // blue
+  return ""; // black(default)
 }
 
 /* 피벗(기간 + 병동 필터) */
@@ -270,7 +332,7 @@ function pivotFromLogsRange(logs, startStr, endStr, wardFilter){
   return {pivot:p, wards: wardList};
 }
 
-/* 통계 렌더 (기간 + 병동 필터) */
+/* 통계 렌더 (기간 + 병동 필터 + 색상) */
 async function renderStats(){
   const s = el("#dateStart").value;
   const e = el("#dateEnd").value;
@@ -296,11 +358,17 @@ async function renderStats(){
   let html=`<table><thead><tr><th>병동</th>${items.map(i=>`<th>${i}</th>`).join("")}<th>합계</th></tr></thead><tbody>`;
   let grand=0;
   wards.forEach(w=>{
-    let sum=0; const cells=items.map(i=>{const v=(pivot[w]?.[i])||0; sum+=v; return `<td>${v}</td>`}).join("");
-    grand+=sum; html+=`<tr><td>${w}</td>${cells}<td><b>${sum}</b></td></tr>`;
+    let sum=0; 
+    const cells=items.map(i=>{
+      const v=(pivot[w]?.[i])||0; 
+      sum+=v; 
+      return `<td${colorStyle(i, v)}>${v}</td>`;
+    }).join("");
+    grand+=sum; 
+    html+=`<tr><td>${w}</td>${cells}<td><b>${sum}</b></td></tr>`;
   });
   const itemTotals = items.map(i=>wards.reduce((a,w)=>a+(pivot[w]?.[i]||0),0));
-  html+=`<tr><th>품목합계</th>${itemTotals.map(sv=>`<th>${sv}</th>`).join("")}<th>${grand}</th></tr>`;
+  html+=`<tr><th>품목합계</th>${itemTotals.map((sv,idx)=>`<th${colorStyle(items[idx], sv)}>${sv}</th>`).join("")}<th>${grand}</th></tr>`;
   html+="</tbody></table>";
   el("#statsWrap").innerHTML=html;
   el("#statsEmpty").style.display = grand ? "none" : "block";
