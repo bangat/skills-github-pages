@@ -293,23 +293,37 @@ tr.innerHTML = `
     <button type="button" class="chip" data-delta="+5">＋5</button>
   </td>`;
 
+const DEFAULT_TEN_ITEMS = new Set(["대시트","반시트","베갯잇"]);
 
-    const inp = tr.querySelector("input");
-    const draftVal = getDraftQty(name);
-    if (!isNaN(draftVal)) { inp.value = String(draftVal); }
-    else if (COLORED_ITEMS.has(name)) { inp.value = "10"; setDraftQty(name, 10); }
-    else { inp.value = "0"; }
-    inp.dataset.prev = String(parseInt(inp.value || "0") || 0);
+   const inp = tr.querySelector("input");
 
-    // 직접 입력
-    inp.addEventListener("input", ()=>{
-      const prev = parseInt(inp.dataset.prev || "0") || 0;
-      const cur  = parseInt(inp.value || "0") || 0;
-      inp.value = String(cur);
-      setDraftQty(name, cur);
-      maybeBuzz(prev, cur);
-      inp.dataset.prev = String(cur);
-    });
+// ✅ 저장된 값이 있는지 '존재 여부'로 판단 (0도 유효값으로 인정)
+const draftObj = getDraft();
+const hasSaved = Object.prototype.hasOwnProperty.call(draftObj, name);
+let initVal;
+
+if (hasSaved) {
+  initVal = parseInt(draftObj[name]) || 0;     // 저장된 값 사용(0 포함)
+} else if (DEFAULT_TEN_ITEMS.has(name)) {
+  initVal = 10;                                 // 대/반/베는 기본 10
+  setDraftQty(name, 10);                        // 로컬 드래프트에도 기록
+} else {
+  initVal = 0;                                  // 나머지는 0 시작
+}
+
+inp.value = String(initVal);
+inp.dataset.prev = String(initVal);
+
+// 직접 입력
+inp.addEventListener("input", ()=>{
+  const prev = parseInt(inp.dataset.prev || "0") || 0;
+  const cur  = parseInt(inp.value || "0") || 0;
+  inp.value = String(cur);
+  setDraftQty(name, cur);
+  maybeBuzz(prev, cur);              // 20 이상 넘어갈 때 진동+점멸
+  inp.dataset.prev = String(cur);
+});
+
 
     // 버튼 증감
     tr.querySelectorAll("[data-delta]").forEach(btn=>{
