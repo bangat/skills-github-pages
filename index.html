@@ -170,11 +170,10 @@
 <!-- SheetJS -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-<!-- Firebase -->
+<!-- Firebase (인증 없음 / 누구나 읽기/쓰기 규칙 가정) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getDatabase, ref, push, get, query, orderByChild, startAt, endAt } 
+  import { getDatabase, ref, push, get, query, orderByChild, startAt, endAt, onValue, off } 
     from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
   const firebaseConfig = {
@@ -189,29 +188,41 @@
   };
 
   const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
   const rtdb = getDatabase(app);
 
-  onAuthStateChanged(auth, (user)=>{ if(!user) signInAnonymously(auth); });
+  /* === 공용 유틸 === */
+  function dayStart(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
+  function dayEndInclusiveMs(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59,999).getTime(); }
 
+  /* === 저장 === */
   async function saveLogsToRTDB(batchArray){
     const baseRef = ref(rtdb, "logs");
     await Promise.all(batchArray.map(d => push(baseRef, d)));
   }
 
-  function dayStart(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
-  function dayEndInclusiveMs(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59,999).getTime(); }
-  async function fetchRangeFromRTDB(startDate, endDateInclusive){
+  /* === 기간 구독 (실시간) === */
+  let _liveRef = null, _liveCb = null;
+  function startStatsLiveWatcher(startDate, endDateInclusive, onData){
+    // 기존 구독 해제
+    if (_liveRef && _liveCb){
+      off(_liveRef, "value", _liveCb);
+      _liveRef = null; _liveCb = null;
+    }
     const sMs = dayStart(startDate);
     const eMs = dayEndInclusiveMs(endDateInclusive);
     const qy = query(ref(rtdb, "logs"), orderByChild("ts"), startAt(sMs), endAt(eMs));
-    const snap = await get(qy);
-    const val = snap.val() || {};
-    return Object.keys(val).map(k => ({ id:k, ...val[k] }));
+
+    const cb = (snap)=>{
+      const val = snap.val() || {};
+      const arr = Object.keys(val).map(k => ({ id:k, ...val[k] }));
+      onData(arr);
+    };
+    onValue(qy, cb);
+    _liveRef = qy; _liveCb = cb; // 해제를 위해 저장
   }
 
-  // 노출
-  window.__fb = { saveLogsToRTDB, fetchRangeFromRTDB };
+  // 노출(저장/실시간)
+  window.__fb = { saveLogsToRTDB, startStatsLiveWatcher };
 </script>
 
 <!-- App Script -->
@@ -384,12 +395,12 @@ async function saveAll(){
 
   alert("저장되었습니다.");
 
-  /* 🔄 제출 직후 통계 즉시 반영 */
+  /* 🔄 제출 직후 통계 즉시 반영: 저장한 출고일로 강제 동기화 */
   if (document.body.classList.contains("mode-stats")) {
     const savedDate = new Date(ts).toISOString().slice(0,10);
-    if(!el("#dateStart").value) el("#dateStart").value = savedDate;
-    if(!el("#dateEnd").value)   el("#dateEnd").value   = savedDate;
-    renderStats();
+    el("#dateStart").value = savedDate;
+    el("#dateEnd").value   = savedDate;
+    await renderStats(); // 구독도 해당 범위로 재시작
   }
 }
 
@@ -417,71 +428,62 @@ function pivotFromLogsRange(logs, startStr, endStr, wardFilter){
   return {pivot:p, wards: wardList};
 }
 
-/* 통계 렌더: RTDB + 로컬 병합 */
+/* 통계 렌더: RTDB 실시간 + 로컬 병합 */
 async function renderStats(){
   const todayStr = new Date().toISOString().slice(0,10);
-  const s = el("#dateStart").value || todayStr;   // ← 비어있어도 안전
-  const e = el("#dateEnd").value   || todayStr;   // ← 비어있어도 안전
+  const s = el("#dateStart").value || todayStr;
+  const e = el("#dateEnd").value   || todayStr;
   const wardFilter = el("#wardFilter").value || "전체";
   if(!s || !e){ return; }
 
-  const [sMs, eMs] = rangeMsByDates(s, e);
+  if (window.__fb && typeof window.__fb.startStatsLiveWatcher === "function") {
+    // 실시간 구독: 범위 바뀔 때마다 새로 시작
+    window.__fb.startStatsLiveWatcher(new Date(s+"T00:00:00"), new Date(e+"T00:00:00"), (logsRT)=>{
+      const [sMs, eMs] = rangeMsByDates(s, e);
 
-  // 1) RTDB
-  let logsRT = [];
-  try {
-    if(window.__fb){
-      const sDate = new Date(s+"T00:00:00");
-      const eDate = new Date(e+"T00:00:00");
-      logsRT = await window.__fb.fetchRangeFromRTDB(sDate, eDate);
-    }
-  } catch (err) {
-    console.warn("RTDB 조회 실패", err);
+      // 로컬 로그(같은 기간)
+      let logsLS = [];
+      try {
+        logsLS = getLogs().filter(L => L.ts>=sMs && L.ts<eMs);
+      } catch {}
+
+      // 병합(중복 키 제거)
+      const uniq = new Map();
+      [...logsRT, ...logsLS].forEach(L=>{
+        const key = [L.ts, L.ward, L.item, L.qty].join("|");
+        if(!uniq.has(key)) uniq.set(key, L);
+      });
+      const mergedLogs = Array.from(uniq.values());
+
+      // 피벗 & 렌더
+      const {pivot, wards} = pivotFromLogsRange(mergedLogs, s, e, wardFilter);
+      const items=ALL_ITEMS;
+
+      let html=`<table class="statsTable"><thead><tr>
+        <th class="firstCol">병동</th>
+        ${items.map(i=>`<th class="rot">${i}</th>`).join("")}
+        <th class="sumCol">합계</th>
+      </tr></thead><tbody>`;
+
+      let grand=0;
+      wards.forEach(w=>{
+        let sum=0; 
+        const cells=items.map(i=>{
+          const v=(pivot[w]?.[i])||0; 
+          sum+=v; 
+          return `<td${colorStyle(i, v)}>${v}</td>`;
+        }).join("");
+        grand+=sum; 
+        html+=`<tr><td>${w}</td>${cells}<td><b>${sum}</b></td></tr>`;
+      });
+
+      const itemTotals = items.map(i=>wards.reduce((a,w)=>a+(pivot[w]?.[i]||0),0));
+      html+=`<tr><th>합계</th>${itemTotals.map((sv,idx)=>`<th${colorStyle(items[idx], sv)}>${sv}</th>`).join("")}<th>${grand}</th></tr>`;
+      html+="</tbody></table>";
+      el("#statsWrap").innerHTML=html;
+      el("#statsEmpty").style.display = grand ? "none" : "block";
+    });
   }
-
-  // 2) 로컬
-  let logsLS = [];
-  try {
-    logsLS = getLogs().filter(L => L.ts>=sMs && L.ts<eMs);
-  } catch (err) {
-    console.warn("로컬 로그 파싱 실패", err);
-  }
-
-  // 3) 병합(중복 제거)
-  const uniq = new Map();
-  [...logsRT, ...logsLS].forEach(L=>{
-    const key = [L.ts, L.ward, L.item, L.qty].join("|");
-    if(!uniq.has(key)) uniq.set(key, L);
-  });
-  const mergedLogs = Array.from(uniq.values());
-
-  // 4) 렌더
-  const {pivot, wards} = pivotFromLogsRange(mergedLogs, s, e, wardFilter);
-  const items=ALL_ITEMS;
-
-  let html=`<table class="statsTable"><thead><tr>
-    <th class="firstCol">병동</th>
-    ${items.map(i=>`<th class="rot">${i}</th>`).join("")}
-    <th class="sumCol">합계</th>
-  </tr></thead><tbody>`;
-
-  let grand=0;
-  wards.forEach(w=>{
-    let sum=0; 
-    const cells=items.map(i=>{
-      const v=(pivot[w]?.[i])||0; 
-      sum+=v; 
-      return `<td${colorStyle(i, v)}>${v}</td>`;
-    }).join("");
-    grand+=sum; 
-    html+=`<tr><td>${w}</td>${cells}<td><b>${sum}</b></td></tr>`;
-  });
-
-  const itemTotals = items.map(i=>wards.reduce((a,w)=>a+(pivot[w]?.[i]||0),0));
-  html+=`<tr><th>합계</th>${itemTotals.map((sv,idx)=>`<th${colorStyle(items[idx], sv)}>${sv}</th>`).join("")}<th>${grand}</th></tr>`;
-  html+="</tbody></table>";
-  el("#statsWrap").innerHTML=html;
-  el("#statsEmpty").style.display = grand ? "none" : "block";
 }
 
 /* .xlsx 내보내기 */
@@ -535,7 +537,7 @@ window.addEventListener("DOMContentLoaded",()=>{
     document.body.classList.add("mode-stats");
     el("#sec-input").style.display="none";
     el("#sec-stats").style.display="block";
-    // 🔁 출고일을 통계 기간으로 자동 설정(범위 불일치 방지)
+    // 🔁 출고일을 통계 기간으로 자동 설정
     const chosen = el("#issueDate").value || new Date().toISOString().slice(0,10);
     el("#dateStart").value = chosen;
     el("#dateEnd").value   = chosen;
