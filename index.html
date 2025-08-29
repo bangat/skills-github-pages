@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
+<meta http-equiv="Cache-Control" content="no-store" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>린넨실 출고관리</title>
 <style>
@@ -11,7 +12,6 @@
   body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
   header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
   .left{display:flex;gap:12px;align-items:center;flex-wrap:nowrap}
-  .appTitle{font-weight:900;font-size:16px;letter-spacing:.2px}
   .right{display:flex;gap:8px}
   label.head{font-weight:800;white-space:nowrap;margin-right:6px}
   select{padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:12px;background:#fff}
@@ -21,13 +21,11 @@
   .btn.acc{background:var(--accent);color:#fff}
   main{max-width:980px;margin:0 auto;padding:16px}
   h1{font-size:20px;margin:18px 0 8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-  .subControls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .tabs{display:flex;gap:8px;margin:12px 0}
   .tab{flex:1;text-align:center;padding:10px;background:#e5e7eb;color:#374151;font-weight:700;border-radius:12px;cursor:pointer}
   .tab.active{background:#2563eb;color:#fff}
-  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;table-layout:fixed}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden}
   th,td{border-bottom:1px solid var(--border);padding:12px;font-size:16px;text-align:center}
-  th{background:#f3f4f6;font-weight:700}
   td:first-child, th:first-child{text-align:left}
   .col-item{width:42%} .col-qty{width:58%}
   th.item-name, td.item-name{white-space:nowrap;word-break:keep-all;overflow:hidden;text-overflow:ellipsis}
@@ -35,16 +33,30 @@
   .chip{height:40px;min-width:40px;padding:0 10px;border:1px solid var(--border);background:#eef2f7;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:15px}
   .chip.reset{background:#ffe8ea;border-color:#ffd5da}
   .qtyCell input{width:76px;height:40px;text-align:center;font-size:16px;padding:0 6px;border:1px solid var(--border);border-radius:12px;background:#fff}
-  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inear-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield}
   .empty{margin-top:20px;padding:20px;border:2px dashed var(--border);border-radius:16px;text-align:center;color:#6b7280}
   .footerBar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);padding:12px;display:flex;justify-content:center;z-index:50}
   .footerCol{display:flex;flex-direction:column;gap:8px;width:80%}
   .footerCol .btn{width:100%;font-size:18px;border-radius:14px}
-  .stack{display:flex;flex-direction:column;gap:12px}
   .panel{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--border);box-shadow:0 -6px 20px rgba(0,0,0,.08);padding:14px;display:none;z-index:60}
   .panel .row{display:flex;gap:8px;flex-wrap:wrap}
   .panel a{color:#2563eb;font-weight:700}
+
+  /* === 통계표: 세로 헤더로 열/행 정렬 고정 === */
+  .statsTable{ table-layout:fixed; border-collapse:collapse; width:100%; }
+  .statsTable th, .statsTable td{ padding:10px; text-align:center; border:1px solid var(--border); }
+  .statsTable th.firstCol{ width:72px; }  /* 병동 */
+  .statsTable th.sumCol{ width:64px; }   /* 합계 */
+  .statsTable th.rot{
+    writing-mode: vertical-rl;
+    text-orientation: upright; /* 한글/숫자 세로 */
+    line-height:1;
+    white-space:nowrap;
+    width:44px;               /* 모든 품목 동일폭 */
+    padding:8px 6px;
+  }
+
   @media (max-width:480px){
     .chip{min-width:34px;height:34px;font-size:14px;padding:0 8px}
     .qtyCell input{height:34px;width:68px;font-size:15px}
@@ -74,7 +86,7 @@
   <!-- 입력 -->
   <section id="sec-input">
     <h1>
-      <span class="subControls">
+      <span style="display:flex;gap:10px;align-items:center">
         <label for="issueDate">출고일</label>
         <input type="date" id="issueDate" style="font-size:16px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#fff" />
       </span>
@@ -93,12 +105,11 @@
     </table>
   </section>
 
-   <!-- 통계 -->
+  <!-- 통계 -->
   <section id="sec-stats" style="display:none">
     <h1>기간 통계</h1>
     <div class="stack">
-
-      <!-- 1) 날짜 구간: 라벨 제거, 한 줄에 ~ 로 연결 -->
+      <!-- 날짜 줄: 라벨 제거, ~ 로 연결 -->
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <input type="date" id="dateStart"
                style="font-size:16px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#fff" />
@@ -106,8 +117,7 @@
         <input type="date" id="dateEnd"
                style="font-size:16px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#fff" />
       </div>
-
-      <!-- 2) 아래 줄: 병동 선택 + 조회 버튼 -->
+      <!-- 병동 + 조회 -->
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <label for="wardFilter">병동</label>
         <select id="wardFilter" style="padding:10px 12px;border:1px solid var(--border);border-radius:12px;">
@@ -120,27 +130,27 @@
         <button class="btn acc" id="calcStats">조회</button>
       </div>
 
-      <!-- 표 영역 -->
-      <div><h3 style="margin:8px 0">상세내역</h3><div id="statsWrap"></div></div>
+      <div>
+        <h3 style="margin:8px 0">상세내역</h3>
+        <div id="statsWrap"></div>
+      </div>
       <div id="statsEmpty" class="empty" style="display:none">해당 기간 데이터가 없습니다.</div>
 
-      <!-- 3) 맨 아래: 엑셀 다운로드 버튼 -->
       <div style="margin-top:8px">
         <button class="btn" id="exportXLSXBtn">엑셀로 내려받기</button>
       </div>
     </div>
   </section>
-
 </main>
 
 <div class="footerBar">
   <div class="footerCol">
-    <button class="btn acc" id="saveAll">저장하기</button>
+    <button class="btn acc" id="saveAll">제출하기</button>
     <button class="btn" id="appDownloadBtn">어플리케이션 다운로드</button>
   </div>
 </div>
 
-<!-- 내보내기 폴백 패널 -->
+<!-- 폴백 패널 -->
 <div id="fallbackPanel" class="panel">
   <h4>다운로드가 차단되었어요. 아래 방법 중 하나로 저장하세요.</h4>
   <div class="row">
@@ -150,10 +160,15 @@
   <div class="small">* 인앱 미리보기에서는 자동 다운로드가 막힐 수 있어요. 링크를 직접 누르거나 “새 탭으로 열기”를 사용해 주세요.</div>
 </div>
 
-<!-- SheetJS for real .xlsx export -->
+<!-- 저장 성공 효과음 -->
+<audio id="submitSound" preload="auto"
+  src="https://blog.kakaocdn.net/dna/nDY4i/dJMb9MW0NzU/AAAAAAAAAAAAAAAAAAAAAPx9B-3G2pvytNqx-vR3eYmHXaIga9OYo8N_ydqJ4RH2/%EC%A0%84%EC%86%A1.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1756652399&allow_ip=&allow_referer=&signature=NKOSow0S2fb7Q%2FBB560terQ0zko%3D&attach=1&knm=tfile.mp3">
+</audio>
+
+<!-- SheetJS -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-<!-- ===== Firebase (RTDB) ===== -->
+<!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -193,10 +208,11 @@
     return Object.keys(val).map(k => ({ id:k, ...val[k] }));
   }
 
+  // 노출
   window.__fb = { saveLogsToRTDB, fetchRangeFromRTDB };
 </script>
 
-<!-- ===== App Script ===== -->
+<!-- App Script -->
 <script>
 /* 앱 다운로드 링크 (필요시 수정) */
 const APP_DOWNLOAD_URL = "https://example.com/app-download";
@@ -205,16 +221,17 @@ const APP_DOWNLOAD_URL = "https://example.com/app-download";
 const ITEMS={
   "시트":["대시트","반시트","베갯잇","수건"],
   "환자복":["일반상의","일반하의","정형상의","정형하의"],
-  "기타":["억제대","얼음포","기타"] /* '기타' 행 아래에 안내줄 추가됨 */
+  "기타":["억제대","얼음포","기타"]
 };
-const COLORED_ITEMS = new Set(["대시트","반시트","베갯잇","수건"]); // 색상 적용 대상
+const COLORED_ITEMS = new Set(["대시트","반시트","베갯잇","수건"]);
 const ALL_ITEMS = Object.values(ITEMS).flat();
 const WARDS=["93","83","73","71","63","62","61","52","51","42","41","기타"];
+
 const LS={ ward:"linen/ward", logs:"linen/logs", draft:(ward)=>`linen/draft/${ward||'_none_'}` };
 let state={ ward:localStorage.getItem(LS.ward)||"", section:"input", cat:"시트" };
 const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorAll(s));
 
-function vibrateOnce(ms=1000){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(_){ } }
+function vibrateOnce(ms=1000){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(_){} }
 
 function rangeMsByDates(startStr, endStr){
   const sParts = startStr.split("-").map(Number);
@@ -238,11 +255,7 @@ function buildTable(){
   ITEMS[state.cat].forEach(name=>{
     const tr=document.createElement("tr");
     tr.innerHTML=`
-      <td class="item-name">
-        ${name.startsWith("기타(")
-          ? `기타<br><span style="display:block;background:#fff9c4;color:#000;padding:2px 6px;border-radius:6px;font-size:13px">${name.replace(/^기타/,'')}</span>`
-          : name}
-      </td>
+      <td class="item-name">${name}</td>
       <td class="qtyCell">
         <button type="button" class="chip reset" data-reset>리셋</button>
         <button type="button" class="chip" data-delta="-1">−1</button>
@@ -254,9 +267,8 @@ function buildTable(){
     const inp=tr.querySelector("input");
     const draftVal = getDraftQty(name);
     if(draftVal>0){ inp.value = String(draftVal); }
-    else if(["대시트","반시트","베갯잇","수건"].includes(name)){ inp.value = "10"; setDraftQty(name, 10); }
+    else if(COLORED_ITEMS.has(name)){ inp.value = "10"; setDraftQty(name, 10); }
     else { inp.value = "0"; }
-
     inp.dataset.prev = String(parseInt(inp.value||"0")||0);
 
     inp.addEventListener("input", ()=>{
@@ -264,9 +276,7 @@ function buildTable(){
       const cur = Math.max(0, parseInt(inp.value||"0")||0);
       inp.value = String(cur);
       setDraftQty(name, cur);
-      if(state.cat==="시트" && COLORED_ITEMS.has(name) && prev<=20 && cur>20){
-        vibrateOnce(1000);
-      }
+      if(state.cat==="시트" && COLORED_ITEMS.has(name) && prev<=20 && cur>20) vibrateOnce(1000);
       inp.dataset.prev = String(cur);
     });
 
@@ -276,9 +286,7 @@ function buildTable(){
         const delta = btn.dataset.delta==="-1" ? -1 : (btn.dataset.delta==="+1" ? 1 : 5);
         const v = Math.max(0,(parseInt(inp.value||"0")||0)+delta);
         inp.value=v; setDraftQty(name,v);
-        if(state.cat==="시트" && COLORED_ITEMS.has(name) && prev<=20 && v>20){
-          vibrateOnce(1000);
-        }
+        if(state.cat==="시트" && COLORED_ITEMS.has(name) && prev<=20 && v>20) vibrateOnce(1000);
         inp.dataset.prev = String(v);
       };
     });
@@ -286,23 +294,6 @@ function buildTable(){
     tr.querySelector("[data-reset]").onclick=()=>{ inp.value="0"; setDraftQty(name,0); inp.dataset.prev="0"; };
 
     tb.appendChild(tr);
-
-    // 기타 탭의 '기타' 품목이면 안내 행 추가
-    if (state.cat === "기타" && name === "기타") {
-      const noteTr = document.createElement("tr");
-      noteTr.innerHTML = `
-        <td colspan="2" style="padding-top:0">
-          <span style="
-            display:inline-block;
-            background:#fff9c4;
-            color:#000;
-            padding:6px 8px;
-            border-radius:6px;
-            font-size:13px;
-          ">기타 품목 : 고관절, 중환의</span>
-        </td>`;
-      tb.appendChild(noteTr);
-    }
   });
 }
 
@@ -310,7 +301,7 @@ function buildTable(){
 async function saveAll(){
   if(!state.ward){ alert("병동을 먼저 선택하세요."); return; }
 
-  // 출고일 선택값(누락 대비 기본 오늘)
+  // 출고일(없으면 오늘)
   const issue = el("#issueDate").value;
   let ts;
   if(issue){
@@ -333,20 +324,25 @@ async function saveAll(){
   try { if(window.__fb) await window.__fb.saveLogsToRTDB(batch); }
   catch(e){ console.warn("RTDB 업로드 실패 -> 로컬만 저장", e); }
 
+  // 입력값 초기화
   const cleared = {}; ALL_ITEMS.forEach(i=> cleared[i]=0); setDraft(cleared);
   els("#inputTable tbody input").forEach(inp=> { inp.value="0"; inp.dataset.prev="0"; });
+
+  // 🔊 효과음 (사용자 클릭 이벤트 체인 내 재생)
+  const snd = el("#submitSound");
+  snd && snd.play().catch(err=>console.warn("사운드 재생 실패:", err));
+
   alert("저장되었습니다.");
 }
 
-/* 통계 색상: (대/반/베/수건만 적용)
-   20 이상 빨강, 15 이상 파랑, 정확히 10 노랑, 그 외 검정 */
+/* 통계 색상: (대/반/베/수건만 적용) */
 function colorStyle(item, value){
   if(!COLORED_ITEMS.has(item)) return "";
   const v = Number(value)||0;
   if(v>=20) return ' style="color:#dc2626;font-weight:700"'; // red
   if(v>=15) return ' style="color:#2563eb;font-weight:700"'; // blue
   if(v===10) return ' style="color:#f59e0b;font-weight:700"'; // yellow
-  return ""; // black
+  return "";
 }
 
 /* 피벗(기간 + 병동 필터) */
@@ -363,7 +359,7 @@ function pivotFromLogsRange(logs, startStr, endStr, wardFilter){
   return {pivot:p, wards: wardList};
 }
 
-/* 통계 렌더 */
+/* 통계 렌더: RTDB 실시간만 사용 (로컬 캐시 미사용) */
 async function renderStats(){
   const s = el("#dateStart").value;
   const e = el("#dateEnd").value;
@@ -378,14 +374,19 @@ async function renderStats(){
       logs = await window.__fb.fetchRangeFromRTDB(sDate, eDate);
     }
   } catch (err) {
-    console.warn("RTDB 조회 실패, 로컬로 대체", err);
+    console.warn("RTDB 조회 실패", err);
   }
-  if(!logs.length) logs = getLogs();
+  // ❗ 로컬 fallback 제거: 최신만 반영(실패 시 빈 배열)
 
   const {pivot, wards} = pivotFromLogsRange(logs, s, e, wardFilter);
   const items=ALL_ITEMS;
 
-  let html=`<table><thead><tr><th>병동</th>${items.map(i=>`<th>${i}</th>`).join("")}<th>합계</th></tr></thead><tbody>`;
+  let html=`<table class="statsTable"><thead><tr>
+    <th class="firstCol">병동</th>
+    ${items.map(i=>`<th class="rot">${i}</th>`).join("")}
+    <th class="sumCol">합계</th>
+  </tr></thead><tbody>`;
+
   let grand=0;
   wards.forEach(w=>{
     let sum=0; 
@@ -397,14 +398,15 @@ async function renderStats(){
     grand+=sum; 
     html+=`<tr><td>${w}</td>${cells}<td><b>${sum}</b></td></tr>`;
   });
+
   const itemTotals = items.map(i=>wards.reduce((a,w)=>a+(pivot[w]?.[i]||0),0));
-  html+=`<tr><th>품목합계</th>${itemTotals.map((sv,idx)=>`<th${colorStyle(items[idx], sv)}>${sv}</th>`).join("")}<th>${grand}</th></tr>`;
+  html+=`<tr><th>합계</th>${itemTotals.map((sv,idx)=>`<th${colorStyle(items[idx], sv)}>${sv}</th>`).join("")}<th>${grand}</th></tr>`;
   html+="</tbody></table>";
   el("#statsWrap").innerHTML=html;
   el("#statsEmpty").style.display = grand ? "none" : "block";
 }
 
-/* 진짜 .xlsx 내보내기 (SheetJS) */
+/* .xlsx 내보내기 (SheetJS) */
 function exportXLSX(){
   const table = document.querySelector("#statsWrap table");
   if(!table){ alert("표가 없습니다."); return; }
@@ -412,7 +414,7 @@ function exportXLSX(){
   XLSX.writeFile(wb, `stats_${el("#dateStart").value}_to_${el("#dateEnd").value}.xlsx`);
 }
 
-/* XLSX가 막힌 인앱 대비 폴백 (객체 URL) */
+/* 인앱 폴백용 링크 표시 (남겨둠: 필요 시 사용) */
 function autoDownloadOrShowURL(url){
   const a=document.createElement("a"); a.href=url; a.target="_blank"; document.body.appendChild(a); a.click(); document.body.removeChild(a);
   const panel=el("#fallbackPanel");
@@ -429,7 +431,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   el("#wardSelect").value = state.ward;
   el("#wardSelect").onchange = e=>{ state.ward = e.target.value || ""; localStorage.setItem(LS.ward, state.ward); buildTable(); };
 
-  // 출고일/통계 디폴트 오늘
+  // 오늘 디폴트
   const d=new Date();
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth()+1).padStart(2,"0");
