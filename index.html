@@ -317,7 +317,7 @@ function buildTable(){
     tb.appendChild(tr);
   });
 
-  // 🔻 기타 탭일 때 안내 문구 행 추가 (텍스트만, 입력/저장과 무관)
+  // 🔻 기타 탭 안내 문구(텍스트만)
   if (state.cat === "기타") {
     const noteRow = document.createElement("tr");
     noteRow.innerHTML = `
@@ -329,7 +329,7 @@ function buildTable(){
 }
 
 
-/* 저장 (3번 방법: RTDB 업로드 성공 시 로컬 자동 정리) */
+/* 저장 (RTDB 업로드 성공 시 로컬 자동 정리) */
 async function saveAll(){
   if(!state.ward){ alert("병동을 먼저 선택하세요."); return; }
 
@@ -351,7 +351,7 @@ async function saveAll(){
   });
   if(batch.length===0){ alert("저장할 항목이 없습니다. (모두 0)"); return; }
 
-  // 로컬에 선기록(오프라인 대비)
+  // 로컬 선기록
   const logs = getLogs(); batch.forEach(b=> logs.unshift(b)); setLogs(logs.slice(0, 10000));
 
   // RTDB 업로드
@@ -365,7 +365,7 @@ async function saveAll(){
     console.warn("RTDB 업로드 실패 -> 로컬만 저장", e);
   }
 
-  // ★ 업로드 성공 시: 이번 배치를 로컬에서 제거하여 중복/잔존 방지
+  // 업로드 성공 시: 이번 배치를 로컬에서 제거(중복 방지)
   if (rtdbOK) {
     const cur = getLogs();
     const keyOf = L => [L.ts, L.ward, L.item, L.qty].join("|");
@@ -383,6 +383,14 @@ async function saveAll(){
   snd && snd.play().catch(err=>console.warn("사운드 재생 실패:", err));
 
   alert("저장되었습니다.");
+
+  /* 🔄 제출 직후 통계 즉시 반영 */
+  if (document.body.classList.contains("mode-stats")) {
+    const savedDate = new Date(ts).toISOString().slice(0,10);
+    if(!el("#dateStart").value) el("#dateStart").value = savedDate;
+    if(!el("#dateEnd").value)   el("#dateEnd").value   = savedDate;
+    renderStats();
+  }
 }
 
 /* 통계 색상 */
@@ -391,7 +399,7 @@ function colorStyle(item, value){
   const v = Number(value)||0;
   if(v>=20) return ' style="color:#dc2626;font-weight:700"';
   if(v>=15) return ' style="color:#2563eb;font-weight:700"';
-  if(v===10) return ' style="color:#f59e0b;font-weight:700"';
+  if(v===10) return ' style="color:#f59e0b;font-weight:700"'; /* 10개는 노란색 */
   return "";
 }
 
@@ -411,8 +419,9 @@ function pivotFromLogsRange(logs, startStr, endStr, wardFilter){
 
 /* 통계 렌더: RTDB + 로컬 병합 */
 async function renderStats(){
-  const s = el("#dateStart").value;
-  const e = el("#dateEnd").value;
+  const todayStr = new Date().toISOString().slice(0,10);
+  const s = el("#dateStart").value || todayStr;   // ← 비어있어도 안전
+  const e = el("#dateEnd").value   || todayStr;   // ← 비어있어도 안전
   const wardFilter = el("#wardFilter").value || "전체";
   if(!s || !e){ return; }
 
@@ -526,6 +535,10 @@ window.addEventListener("DOMContentLoaded",()=>{
     document.body.classList.add("mode-stats");
     el("#sec-input").style.display="none";
     el("#sec-stats").style.display="block";
+    // 🔁 출고일을 통계 기간으로 자동 설정(범위 불일치 방지)
+    const chosen = el("#issueDate").value || new Date().toISOString().slice(0,10);
+    el("#dateStart").value = chosen;
+    el("#dateEnd").value   = chosen;
     renderStats();
   };
 
