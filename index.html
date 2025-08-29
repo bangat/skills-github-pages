@@ -224,7 +224,21 @@
     <div id="statsEmpty" class="empty" style="display:none">해당 기간 데이터가 없습니다.</div>
   </section>
 </main>
+  
+<!-- 제출 완료 모달 -->
+<div id="submitModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="smTitle">
+  <div class="modalCard" role="document">
+    <div class="modalHead" id="smTitle">제출 완료</div>
+    <div class="modalBody">
+      ✅ <b>저장되었습니다.</b>
+    </div>
+    <div class="modalActions">
+      <button type="button" class="btn primary" id="smOk">확인</button>
+    </div>
+  </div>
+</div>
 
+  
 <!-- 다운로드 안내 모달 -->
 <div id="downloadModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="dlTitle">
   <div class="modalCard" role="document">
@@ -451,7 +465,8 @@ async function saveAll(){
   // 제출하기 효과음
   playSnd("#submitSound");
 
-  alert("저장되었습니다.");
+  openModal('#submitModal', '#smOk');
+
 
   if(document.body.classList.contains("mode-stats")){
     const d=new Date(ts).toISOString().slice(0,10);
@@ -583,6 +598,32 @@ document.addEventListener('keydown', (e)=>{
   }
 });
 
+  /* 공용 모달 헬퍼 */
+function openModal(overlaySel, primaryFocusSel){
+  document.body.classList.add('modal-open');
+  const ov = el(overlaySel);
+  ov.style.display = 'block';
+  setTimeout(()=>{ primaryFocusSel && el(primaryFocusSel)?.focus(); }, 0);
+}
+function closeModal(overlaySel){
+  document.body.classList.remove('modal-open');
+  const ov = el(overlaySel);
+  ov.style.display = 'none';
+}
+
+  /* 제출 모달 이벤트 */
+el('#submitModal').addEventListener('click', (e)=>{
+  if(e.target === e.currentTarget) closeModal('#submitModal');
+});
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape' && el('#submitModal').style.display === 'block'){
+    closeModal('#submitModal');
+  }
+});
+el('#smOk').onclick = ()=> closeModal('#submitModal');
+
+  
+  
 
 
   el("#gotoStats").onclick=()=>{ 
