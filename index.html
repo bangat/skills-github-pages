@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>린넨실 출고관리</title>
 <style>
-  /* ===== Light Premium (fixed) ===== */
   :root{
     --bg:#f4f7fb; --card:#ffffff; --accent:#2563eb; --muted:#5b677a; --text:#0f172a; --border:#e6eaf2;
     --r-lg:16px; --r-md:12px;
@@ -17,72 +16,52 @@
   html,body{height:100%;-webkit-text-size-adjust:100%}
   body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
 
-  /* 상단 */
   .topTitle{
-    position:sticky;top:0;z-index:60;
-    text-align:center;font-size:22px;font-weight:800;padding:12px 0;background:var(--card);border-bottom:1px solid var(--border);
-    user-select:none;cursor:pointer;
+    position:sticky;top:0;z-index:60;text-align:center;font-size:22px;font-weight:800;
+    padding:12px 0;background:var(--card);border-bottom:1px solid var(--border);user-select:none;cursor:pointer;
   }
   header{
-    position:sticky;top:48px;z-index:50;
-    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    position:sticky;top:48px;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:10px;
     padding:10px 16px;background:var(--card);border-bottom:1px solid var(--border);
   }
   .left{display:flex;gap:10px;align-items:center}
   .right{display:flex;gap:8px}
   label.head{font-weight:800;color:#334155;margin-right:6px;white-space:nowrap}
-  select,input[type=date]{
-    padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:var(--r-md);background:#fff;color:#0f172a;
-    transition:border-color .12s,box-shadow .12s;
-  }
+  select,input[type=date]{padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:var(--r-md);background:#fff;color:var(--text);transition:border-color .12s,box-shadow .12s}
   select:focus,input[type=date]:focus{outline:none;border-color:var(--accent);box-shadow:var(--focus)}
   #wardSelect{width:170px}
 
-  /* 버튼 */
   button{border:0;border-radius:12px;padding:10px 14px;font-size:15px;font-weight:700;cursor:pointer;transition:transform .12s,filter .12s}
   .btn{background:#eef2f7;color:#1f2a44;border:1px solid var(--border);box-shadow:var(--shadow-1)}
   .btn:hover{filter:brightness(1.02);transform:translateY(-1px)}
   .btn:active{transform:translateY(0)}
   .btn.acc{background:linear-gradient(180deg,#4f83ff,#2563eb);color:#fff;border:1px solid #2856c7;box-shadow:0 6px 22px rgba(37,99,235,.25)}
 
-  /* 본문 컨테이너 */
   main{max-width:980px;margin:0 auto;padding:12px 16px}
   h1{font-size:20px;margin:10px 0 6px;display:flex;align-items:center;gap:10px;color:#0f172a}
   h1 label{color:#475569;font-weight:700}
 
-  /* 탭 - 표와 폭 정확히 동일 */
   .tabs{
-    width:100%;display:flex;gap:8px;margin:10px 0;
-    background:#f2f5fb;border:1px solid var(--border);border-radius:var(--r-lg);padding:6px;box-shadow:var(--shadow-1)
+    width:100%;display:flex;gap:8px;margin:10px 0;background:#f2f5fb;border:1px solid var(--border);
+    border-radius:var(--r-lg);padding:6px;box-shadow:var(--shadow-1)
   }
   .tab{flex:1;text-align:center;padding:10px;border-radius:10px;font-weight:800;color:#334155;cursor:pointer}
   .tab.active{background:#e6efff;color:#0b3fb8;box-shadow:inset 0 0 0 1px rgba(37,99,235,.25)}
 
-  /* 입력 테이블 */
-  table{
-    width:100%;border-collapse:separate;border-spacing:0;background:var(--card);
-    border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-2)
-  }
+  table{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-2)}
   thead th{background:#f6f8fc;color:#1e293b;font-weight:800}
   th,td{border-bottom:1px solid var(--border);padding:12px;font-size:16px;text-align:center}
   td:first-child,th:first-child{text-align:left}
   .col-item{width:45%}.col-qty{width:55%}
 
-  /* 수량 셀 */
-  .qtyCell{ display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:nowrap; }
-  .chip{
-    height:36px;min-width:34px;padding:0 8px;border:1px solid #d8deea;background:#f3f6fb;border-radius:10px;
-    display:inline-flex;align-items:center;justify-content:center;font-size:14px;color:#0f172a
-  }
-  .qtyCell input{
-    width:56px;height:36px;text-align:center;font-size:15px;padding:0 6px;border:1px solid var(--border);border-radius:10px;background:#fff;color:#0f172a
-  }
+  .qtyCell{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:nowrap}
+  .chip{height:36px;min-width:34px;padding:0 8px;border:1px solid #d8deea;background:#f3f6fb;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;color:#0f172a}
+  .qtyCell input{width:56px;height:36px;text-align:center;font-size:15px;padding:0 6px;border:1px solid var(--border);border-radius:10px;background:#fff;color:#0f172a}
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield}
 
   .empty{margin-top:16px;padding:18px;border:1px dashed var(--border);border-radius:16px;text-align:center;color:var(--muted);background:#fff}
 
-  /* 하단바 */
   .footerBar{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--border);padding:10px;display:flex;justify-content:center;z-index:50}
   .footerCol{display:flex;flex-direction:column;gap:10px;align-items:stretch;max-width:980px;width:100%}
   #saveAll{width:100%;font-size:18px;padding:12px 16px;border-radius:14px}
@@ -90,59 +69,57 @@
   #saveAll,#appDownloadBtn{display:block}
   #exportXLSXBtn{display:none}
 
-  /* 통계 모드 */
   body.mode-stats header{display:none}
   body.mode-stats #saveAll, body.mode-stats #appDownloadBtn{display:none}
   body.mode-stats #exportXLSXBtn{display:block;width:100%;font-size:16px;padding:12px 16px;border-radius:12px}
 
-  /* 통계 컨트롤 */
   #sec-stats .row-wrap{display:flex;align-items:center;gap:8px}
   #sec-stats .row-wrap.dates input[type=date]{flex:1 1 0;min-width:0;font-size:15px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:#var(--text)}
   #sec-stats .row-wrap select{padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:#var(--text)}
 
   /* 통계표 */
   #statsWrap{overflow-x:hidden}
-  .statsTable{
-    width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;background:var(--card);
-    border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-2)
-  }
-  .statsTable th,.statsTable td{padding:6px;text-align:center;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:13px;line-height:1.05;font-variant-numeric:tabular-nums;color:#0f172a}
+  .statsTable{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-2)}
+  .statsTable th,.statsTable td{padding:6px;text-align:center;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:13px;line-height:1.05;font-variant-numeric:tabular-nums;color:#0f172a;white-space:nowrap}
   .statsTable thead th{background:#f6f8fc;color:#0f172a;font-weight:800}
-  .statsTable th:first-child,.statsTable td:first-child{width:44px}
+  .statsTable th:first-child,.statsTable td:first-child{width:52px}
   .statsTable th.rot{writing-mode:vertical-rl;text-orientation:upright;line-height:1;letter-spacing:0;width:22px;padding:4px 2px}
   .statsTable tr:last-child td,.statsTable tr:last-child th{border-bottom:none}
 
-  /* 요약표 */
-  .summaryWrap{margin-top:12px}
-  .summaryTable{
-    width:100%; border-collapse:separate; border-spacing:0; background:var(--card);
-    border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow-1)
+  /* 요약표(2번째 표) */
+  .summaryTable{width:100%;margin-top:12px;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-2)}
+  .summaryTable th,.summaryTable td{padding:10px 12px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:14px;line-height:1.2;color:#0f172a}
+  .summaryTable thead th{background:#f6f8fc;font-weight:800}
+  .summaryTable tr:last-child td,.summaryTable tr:last-child th{border-bottom:none}
+  .summaryTable td:first-child{white-space:nowrap}
+
+  /* 숫자 자리수에 따른 글자 크기 축소(칸 안에서) */
+  .num{display:inline-block}
+  .d3{font-size:12px}
+  .d4{font-size:11px}
+  .d5{font-size:10px}
+
+  /* 최다사용 병동 강조 + 왕관 밀림 수정 */
+  .maxWardRow td{background:#fff7d6 !important}
+  .maxWardRow td:first-child{font-weight:900; position:relative}
+  .maxWardRow td:first-child .wardName{display:inline-block; padding-left:20px; position:relative}
+  .maxWardRow td:first-child .wardName::before{
+    content:"👑"; position:absolute; left:2px; top:50%; transform:translateY(-50%);
   }
-  .summaryTable th,.summaryTable td{padding:8px 10px; border-bottom:1px solid var(--border); font-size:13px; text-align:center}
-  .summaryTable thead th{background:#f8fafc; font-weight:800; color:#0f172a}
-  .summaryTable tr:last-child td{border-bottom:none}
 
   @media (max-width:480px){
     .chip{min-width:32px;height:34px;font-size:13px}
     .qtyCell input{height:34px;width:54px;font-size:14px}
   }
 
-  /* === 글로벌 경고 플래시 (3회 점멸) === */
-  #flashOverlay{
-    position:fixed; inset:0;
-    background:#ef4444; opacity:0; pointer-events:none;
-    animation: flashOverlay3 0.24s ease-in-out 3; z-index:9999;
-  }
-  @keyframes flashOverlay3{ 0%{opacity:0} 50%{opacity:0.30} 100%{opacity:0} }
+  /* 플래시 */
+  #flashOverlay{position:fixed; inset:0; background:#ef4444; opacity:0; pointer-events:none; animation: flashOverlay3 .24s ease-in-out 3; z-index:9999}
+  @keyframes flashOverlay3{0%{opacity:0}50%{opacity:.30}100%{opacity:0}}
 
-  /* === 모달 === */
+  /* 모달 */
   .modal-open { overflow:hidden; }
   .modalOverlay{ position:fixed; inset:0; display:none; background:rgba(15,23,42,.5); z-index:10000; }
-  .modalCard{
-    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-    width:min(92vw,520px); background:#fff; color:#0f172a;
-    border-radius:16px; box-shadow:0 20px 60px rgba(15,23,42,.25); overflow:hidden;
-  }
+  .modalCard{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:min(92vw,520px); background:#fff; color:#0f172a; border-radius:16px; box-shadow:0 20px 60px rgba(15,23,42,.25); overflow:hidden; }
   .modalHead{ padding:16px 18px; font-weight:800; font-size:18px; border-bottom:1px solid var(--border); }
   .modalBody{ padding:16px 18px; font-size:14px; line-height:1.5; color:#475569; }
   .modalBody code{ background:#f1f5f9; padding:2px 6px; border-radius:6px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }
@@ -256,22 +233,17 @@
   </div>
 </div>
 
-<!-- 효과음: 제출/탭/버튼 -->
-<audio id="submitSound" preload="auto"
-  src="https://blog.kakaocdn.net/dna/MEv0X/dJMb9L4Selx/AAAAAAAAAAAAAAAAAAAAAKXPuVkeMAzxy7Bh1SCt30bi2C_1bwZptqCrwQ0ljMyS/%EC%A0%9C%EC%B6%9C%ED%95%98%EA%B8%B0.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1756652399&allow_ip=&allow_referer=&signature=bBTf6jPM0QoS4X1eHIz5E0OUbWs%3D&attach=1&knm=tfile.mp3"></audio>
-<audio id="tabSound" preload="auto"
-  src="https://blog.kakaocdn.net/dna/PzPow/dJMb8597iUU/AAAAAAAAAAAAAAAAAAAAAEfGdwd_aPGAiS8W_xjwE-wiO0YWzNYGwEiMupOPzPpT/%ED%83%AD%EC%9D%B4%EB%8F%99.wav?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1756652399&allow_ip=&allow_referer=&signature=LR3qy5CI%2BpIhqYLCUU6LCDsruAM%3D&attach=1&knm=tfile.wav"></audio>
-<audio id="btnClickSound" preload="auto"
-  src="https://blog.kakaocdn.net/dna/bwYLog/dJMb9aXTgeJ/AAAAAAAAAAAAAAAAAAAAADmduRzhpb3MzOEfQjYt4_cZMEVg0HqosiW-zgFGI0Ft/%EB%B2%84%ED%8A%BC%ED%81%B4%EB%A6%AD.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1756652399&allow_ip=&allow_referer=&signature=JRStjWXe5PrINCjwa%2BD8gG8hatU%3D&attach=1&knm=tfile.mp3"></audio>
+<!-- 효과음 -->
+<audio id="submitSound" preload="auto" src="https://blog.kakaocdn.net/dna/MEv0X/dJMb9L4Selx/AAAAAAAAAAAAAAAAAAAAAKXPuVkeMAzxy7Bh1SCt30bi2C_1bwZptqCrwQ0ljMyS/%EC%A0%9C%EC%B6%9C%ED%95%98%EA%B8%B0.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1756652399&allow_ip=&allow_referer=&signature=bBTf6jPM0QoS4X1eHIz5E0OUbWs%3D&attach=1&knm=tfile.mp3"></audio>
+<audio id="tabSound" preload="auto" src="https://blog.kakaocdn.net/dna/PzPow/dJMb8597iUU/AAAAAAAAAAAAAAAAAAAAAEfGdwd_aPGAiS8W_xjwE-wiO0YWzNYGwEiMupOPzPpT/%ED%83%AD%EC%9D%B4%EB%8F%99.wav?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1756652399&allow_ip=&allow_referer=&signature=LR3qy5CI%2BpIhqYLCUU6LCDsruAM%3D&attach=1&knm=tfile.wav"></audio>
+<audio id="btnClickSound" preload="auto" src="https://blog.kakaocdn.net/dna/bwYLog/dJMb9aXTgeJ/AAAAAAAAAAAAAAAAAAAAADmduRzhpb3MzOEfQjYt4_cZMEVg0HqosiW-zgFGI0Ft/%EB%B2%84%ED%8A%BC%ED%81%B4%EB%A6%AD.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1756652399&allow_ip=&allow_referer=&signature=JRStjWXe5PrINCjwa%2BD8gG8hatU%3D&attach=1&knm=tfile.mp3"></audio>
 
-<!-- xlsx-js-style -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
 <!-- Firebase (RTDB) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, push, query, orderByChild, startAt, endAt, onValue, off } 
-    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  import { getDatabase, ref, push, query, orderByChild, startAt, endAt, onValue, off } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
@@ -319,7 +291,6 @@ const REPO_SLUG = "bangat/linenward";
 const APK_NAME  = "WardLinen.apk";
 const LATEST_DIRECT = `https://github.com/${REPO_SLUG}/releases/latest/download/${APK_NAME}`;
 
-/* ==== 데이터/상수 ==== */
 const ITEMS={
   "시트":["대시트","반시트","베갯잇","수건"],
   "환자복":["일반상의","일반하의","정형상의","정형하의"],
@@ -333,55 +304,18 @@ const LS={ ward:"linen/ward", logs:"linen/logs", draft:(ward)=>`linen/draft/${wa
 let state={ ward:(localStorage.getItem(LS.ward)||"").toString().trim(), section:"input", cat:"시트" };
 const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorAll(s));
 
-function isAppEnv(){
-  const ua=(navigator.userAgent||"")+" "+(navigator.vendor||"");
-  const isStandalonePWA=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||(window.navigator&&window.navigator.standalone===true);
-  const isAndroidWebView=/\b; wv\b/i.test(ua)||/\bVersion\/\d+\.\d+ Chrome\/\d+.* Mobile Safari\/\d+/i.test(ua)||/\bCordova\b|\bCrosswalk\b|\bwv\b/i.test(ua);
-  const isCustomUA=/\bMyLinenApp\b/i.test(ua);
-  const forced=localStorage.getItem('appMode')==='1';
-  return isStandalonePWA||isAndroidWebView||isCustomUA||forced;
-}
+/* 모달 */
+function openModal(sel, focusSel){ document.body.classList.add('modal-open'); const ov=el(sel); ov.style.display='block'; setTimeout(()=>{ focusSel && el(focusSel)?.focus(); },0); }
+function closeModal(sel){ document.body.classList.remove('modal-open'); el(sel).style.display='none'; }
 
-/* ===== 전역 모달 헬퍼 (saveAll에서도 사용) ===== */
-function openModal(overlaySel, primaryFocusSel){
-  document.body.classList.add('modal-open');
-  const ov = el(overlaySel);
-  ov.style.display = 'block';
-  setTimeout(()=>{ primaryFocusSel && el(primaryFocusSel)?.focus(); }, 0);
-}
-function closeModal(overlaySel){
-  document.body.classList.remove('modal-open');
-  const ov = el(overlaySel);
-  ov.style.display = 'none';
-}
+/* 사운드 */
+function playSnd(id){ try{ const a=el(id); if(!a) return; a.currentTime=0; a.play().catch(()=>{});}catch(_){} }
 
-/* 간단 재생 헬퍼 */
-function playSnd(id){
-  try{
-    const a = el(id);
-    if(!a) return;
-    a.currentTime = 0;
-    a.play().catch(()=>{});
-  }catch(_){}
-}
+/* 경고 */
+function flashWarn(){ try{ if(navigator.vibrate){ navigator.vibrate([120,80,120,80,120]); } }catch(e){} const ov=document.createElement('div'); ov.id='flashOverlay'; document.body.appendChild(ov); ov.addEventListener('animationend', ()=>{ ov.parentNode && ov.parentNode.removeChild(ov); }); }
+function maybeBuzz(prev,next){ const p=Number(prev)||0, n=Number(next)||0; if(p<16 && n>=16){ flashWarn(); } }
 
-/* 전체 화면 플래시 + 짧은 진동 3회 */
-function flashWarn(){
-  try{ if(navigator.vibrate){ navigator.vibrate([120,80,120,80,120]); } }catch(e){}
-  const ov = document.createElement('div');
-  ov.id = 'flashOverlay';
-  document.body.appendChild(ov);
-  ov.addEventListener('animationend', ()=>{ ov.parentNode && ov.parentNode.removeChild(ov); });
-}
-
-/* 경고: 16 이상으로 넘어갈 때 발동 */
-function maybeBuzz(prev,next){
-  const p = Number(prev)||0;
-  const n = Number(next)||0;
-  if(p < 16 && n >= 16){ flashWarn(); }
-}
-
-/* 범위 유틸 */
+/* 범위 */
 function rangeMsByDates(startStr,endStr){
   const sParts=startStr.split("-").map(Number), eParts=endStr.split("-").map(Number);
   let s=new Date(sParts[0],sParts[1]-1,sParts[2],0,0,0,0),
@@ -390,14 +324,14 @@ function rangeMsByDates(startStr,endStr){
   return [s.getTime(), e.getTime()+1];
 }
 
-/* 로컬 저장 */
+/* 로컬 */
 function getLogs(){ return JSON.parse(localStorage.getItem(LS.logs)||"[]"); }
 function setLogs(a){ localStorage.setItem(LS.logs, JSON.stringify(a)); }
 function getDraft(){ try{ return JSON.parse(localStorage.getItem(LS.draft(state.ward))||"{}"); }catch(_){ return {}; } }
 function setDraft(o){ localStorage.setItem(LS.draft(state.ward), JSON.stringify(o||{})); }
 function setDraftQty(item,qty){ const d=getDraft(); d[item]=(parseInt(qty)||0); setDraft(d); }
 
-/* 입력 표 생성 */
+/* 입력 표 */
 function buildTable(){
   const tb=el("#inputTable tbody"); tb.innerHTML="";
   ITEMS[state.cat].forEach(name=>{
@@ -473,7 +407,7 @@ async function saveAll(){
   }
 }
 
-/* 색상 강조 */
+/* 강조색 */
 function colorStyle(item,val){
   if(!COLORED_ITEMS.has(item)) return "";
   const v=Number(val)||0;
@@ -502,6 +436,17 @@ function renderPivot(logs,s,e,wardFilter){
   return {p,wards,items};
 }
 
+/* 숫자 자리수에 따라 클래스 부여(3자리~5자리 폰트 축소) */
+function shrinkBigNumbers(tbody){
+  Array.from(tbody.querySelectorAll('td[data-num]')).forEach(td=>{
+    const txt=td.textContent.trim();
+    const len=txt.length;
+    if(len>=5) td.firstChild.classList.add('d5');
+    else if(len===4) td.firstChild.classList.add('d4');
+    else if(len===3) td.firstChild.classList.add('d3');
+  });
+}
+
 /* === 통계 렌더 === */
 async function renderStats(){
   const today=new Date().toISOString().slice(0,10);
@@ -519,39 +464,43 @@ async function renderStats(){
 
       const {p,wards,items}=renderPivot(merged,s,e,wardFilter);
 
-      /* 메인 표 (기간 범위 합계가 맨 아래 행) */
+      /* 병동별 총합으로 최다 병동 찾기 */
+      const wardTotals = wards.map(w => items.reduce((a,i)=>a+(p[w]?.[i]||0),0));
+      const maxTotal = Math.max(...wardTotals, 0);
+      const maxWardIdx = wardTotals.findIndex(v=>v===maxTotal && v>0);
+
+      /* 메인 표 */
       let html=`<table class="statsTable"><thead><tr><th>병동</th>${items.map(i=>`<th class="rot">${i}</th>`).join("")}</tr></thead><tbody>`;
-      wards.forEach(w=>{
-        const cells=items.map(i=>`<td${colorStyle(i,(p[w]?.[i]||0))}>${p[w]?.[i]||0}</td>`).join("");
-        html+=`<tr><td>${w}</td>${cells}</tr>`;
+      wards.forEach((w,rowIdx)=>{
+        const isMax = (wardFilter==="전체" && rowIdx===maxWardIdx);
+        html+=`<tr class="${isMax?'maxWardRow':''}"><td>${isMax?'<span class="wardName">'+w+'</span>':w}</td>${
+          items.map(i=>{
+            const v=(p[w]?.[i]||0);
+            return `<td data-num="1"><span class="num"${colorStyle(i,v)}>${v}</span></td>`;
+          }).join("")
+        }</tr>`;
       });
       const periodTotals=items.map(i=>wards.reduce((a,w)=>a+(p[w]?.[i]||0),0));
       html+=`<tr><th>합계</th>${periodTotals.map((v,idx)=>`<th${colorStyle(items[idx],v)}>${v}</th>`).join("")}</tr>`;
       html+=`</tbody></table>`;
       el("#statsWrap").innerHTML=html;
 
-      /* 요약표: 당일합계(시작일 1일치) vs 기간합계(설정범위) */
-      // 시작일 1일치 로그 산출
-      const sOnlyStart = rangeSelect(merged, s, s, wardFilter); // 아래서 재사용하기 위해 s~s 로직 필요
-      // rangeSelect 기대는 [s,e]; 그래서 시작일 1일치는 다음처럼 계산
-      const sOnly = merged.filter(L=>{
-        const d=new Date(L.ts);
-        const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0");
-        const ds=`${y}-${m}-${dd}`;
-        return ds===s && (wardFilter==="전체"||(L.ward||"").toString().trim()===wardFilter);
-      });
-      const dayMap=new Map(); items.forEach(i=>dayMap.set(i,0));
-      sOnly.forEach(L=>dayMap.set(L.item,(dayMap.get(L.item)||0)+(Number(L.qty)||0)));
-
+      /* === 요약표 (일평균 사용량 / 기간합계) === */
+      const daysCount = Math.max(1, Math.round((new Date(e) - new Date(s)) / (1000*60*60*24)) + 1);
       let sumHtml = `<table class="summaryTable">
-        <thead><tr><th>품목</th><th>당일합계(시작일)</th><th>기간합계</th></tr></thead><tbody>`;
+        <thead><tr><th>품목</th><th>일평균 사용량</th><th>기간합계</th></tr></thead><tbody>`;
       items.forEach((it,idx)=>{
-        const dsum=dayMap.get(it)||0;
         const psum=periodTotals[idx]||0;
-        sumHtml+=`<tr><td style="text-align:left;padding-left:12px">${it}</td><td${colorStyle(it,dsum)}>${dsum}</td><td${colorStyle(it,psum)}>${psum}</td></tr>`;
+        const avg=Math.round(psum/daysCount);
+        sumHtml+=`<tr><td style="text-align:left">${it}</td>
+          <td${colorStyle(it,avg)}>${avg}</td>
+          <td${colorStyle(it,psum)}>${psum}</td></tr>`;
       });
       sumHtml+=`</tbody></table>`;
       el("#statsSummary").innerHTML = sumHtml;
+
+      /* 숫자 자리수 축소 처리(메인표) */
+      shrinkBigNumbers(el("#statsWrap").querySelector("tbody"));
 
       const any=wards.some(w=>items.some(i=>(p[w]?.[i]||0)>0));
       el("#statsEmpty").style.display = any ? "none" : "block";
@@ -563,12 +512,28 @@ async function renderStats(){
 function exportXLSX(){
   const table=document.querySelector("#statsWrap table"); if(!table){ alert("통계 표가 없습니다."); return; }
   const s=el("#dateStart").value||"", e=el("#dateEnd").value||"", ward=el("#wardFilter").value||"전체";
-  const ws=XLSX.utils.table_to_sheet(table,{origin:"A2"}); const title=`${s} ~ ${e} ${ward}병동 출고량`;
+
+  // 메인 표를 시트로
+  const ws=XLSX.utils.table_to_sheet(table,{origin:"A2"});
+  const title=`${s} ~ ${e} ${ward}병동 출고량`;
   XLSX.utils.sheet_add_aoa(ws,[[title]],{origin:"A1"});
+
+  // 머지 & 제목 서식
   const lastCol=table.rows[0].cells.length-1;
   ws["!merges"]=ws["!merges"]||[]; ws["!merges"].push({s:{r:0,c:0},e:{r:0,c:lastCol}});
   ws["A1"].s={font:{bold:true,sz:14},alignment:{horizontal:"center",vertical:"center"}};
   ws["!rows"]=ws["!rows"]||[]; ws["!rows"][0]={hpt:22};
+
+  // 기간합계 행(마지막 행)에서 합계를 읽어 평균 계산
+  const daysCount = Math.max(1, Math.round((new Date(e) - new Date(s)) / (1000*60*60*24)) + 1);
+  const tBody = table.tBodies[0];
+  const lastRow = tBody.rows[tBody.rows.length-1]; // 합계행
+  const totals = Array.from(lastRow.cells).slice(1).map(c=>parseInt(c.innerText)||0);
+  const avgs = totals.map(v=>Math.round(v/daysCount));
+
+  // 합계 밑에 "일평균" 행 추가
+  XLSX.utils.sheet_add_aoa(ws,[["일평균", ...avgs]],{origin:-1});
+
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"통계");
   XLSX.writeFile(wb,`stats_${s}_to_${e}.xlsx`);
 }
@@ -577,7 +542,8 @@ function exportXLSX(){
 function debounce(fn,delay=200){ let t; return(...a)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,a),delay); }; }
 window.addEventListener("DOMContentLoaded",()=>{
   const urlApp=new URL(location.href).searchParams.get("app"); if(urlApp==="1"){localStorage.setItem("appMode","1");} if(urlApp==="0"){localStorage.removeItem("appMode");}
-  if(isAppEnv()){ document.body.classList.add("app"); const b=el("#appDownloadBtn"); if(b) b.style.display="none"; }
+  const ua=(navigator.userAgent||"")+" "+(navigator.vendor||"");
+  if((window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||/\b; wv\b/i.test(ua)||/\bMyLinenApp\b/i.test(ua)||localStorage.getItem('appMode')==='1'){ document.body.classList.add("app"); const b=el("#appDownloadBtn"); if(b) b.style.display="none"; }
 
   const urlWard=new URL(location.href).searchParams.get("ward");
   if(urlWard){ state.ward=(urlWard||"").toString().trim(); localStorage.setItem(LS.ward,state.ward); }
@@ -599,22 +565,15 @@ window.addEventListener("DOMContentLoaded",()=>{
   function closeDownloadModal(){ closeModal('#downloadModal'); }
   el("#appDownloadBtn").onclick = openDownloadModal;
   el("#dlCancel").onclick = closeDownloadModal;
-  el("#dlConfirm").onclick = () => {
-    closeDownloadModal();
-    const url = LATEST_DIRECT;
-    if(url && url.startsWith("http")) window.location.href = url;
-    else alert("다운로드 링크가 설정되지 않았습니다.");
-  };
+  el("#dlConfirm").onclick = () => { closeDownloadModal(); const url = LATEST_DIRECT; if(url && url.startsWith("http")) window.location.href = url; else alert("다운로드 링크가 설정되지 않았습니다."); };
   el("#downloadModal").addEventListener("click",(e)=>{ if(e.target === e.currentTarget) closeDownloadModal(); });
-  document.addEventListener('keydown',(e)=>{ if(e.key==='Escape' && el('#downloadModal').style.display==='block'){ closeDownloadModal(); } });
 
   /* 제출 모달 */
   el('#submitModal').addEventListener('click', (e)=>{ if(e.target===e.currentTarget) closeModal('#submitModal'); });
-  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && el('#submitModal').style.display==='block'){ closeModal('#submitModal'); } });
   el('#smOk').onclick = ()=> closeModal('#submitModal');
 
-  /* 탭 전환 + 효과음 */
-  Array.from(document.querySelectorAll(".tab")).forEach(t=> 
+  /* 탭 전환 */
+  Array.from(document.querySelectorAll(".tab")).forEach(t=>
     t.onclick=()=>{
       state.cat=t.dataset.cat;
       Array.from(document.querySelectorAll(".tab")).forEach(x=>x.classList.remove("active"));
@@ -624,13 +583,13 @@ window.addEventListener("DOMContentLoaded",()=>{
     }
   );
 
-  /* 통계 반응 */
+  /* 통계 렌더 바인딩 */
   const rerender=debounce(renderStats,200);
   ["#dateStart","#dateEnd","#wardFilter"].forEach(sel=>{
     const n=el(sel); n&&n.addEventListener("change",rerender); n&&n.addEventListener("input",rerender);
   });
 
-  /* 통계 첫 진입 버튼 */
+  /* 진입 */
   el("#gotoStats").onclick=()=>{ 
     document.body.classList.add("mode-stats"); 
     el("#sec-input").style.display="none"; 
