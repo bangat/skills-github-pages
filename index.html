@@ -10,11 +10,12 @@
     --border:#e5e7eb; --danger:#dc2626;
   }
   *{box-sizing:border-box}
+  html, body { -webkit-text-size-adjust: 100%; } /* 인앱 줄바꿈/확대 보정 */
   body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
   header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
-  .left{display:flex;gap:10px;align-items:center}
+  .left{display:flex;gap:10px;align-items:center;flex-wrap:nowrap}
   .right{display:flex;gap:8px}
-  label.head{font-weight:800}
+  label.head{font-weight:800;white-space:nowrap;margin-right:6px}
   select{padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:12px;width:220px;background:#fff}
   button{border:0;border-radius:12px;padding:10px 14px;font-size:15px;font-weight:700;cursor:pointer}
   .btn{background:#94a3b8;color:#fff}
@@ -24,12 +25,15 @@
   .tabs{display:flex;gap:8px;margin:12px 0}
   .tab{flex:1;text-align:center;padding:10px;background:#e5e7eb;color:#374151;font-weight:700;border-radius:12px;cursor:pointer}
   .tab.active{background:var(--accent);color:#fff}
-  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;table-layout:fixed}
   th,td{border-bottom:1px solid var(--border);padding:12px;font-size:16px;text-align:center}
   th{background:#f3f4f6;font-weight:700}
   td:first-child, th:first-child{text-align:left}
+  .col-item{width:42%} .col-qty{width:58%}
+  th.item-name, td.item-name{white-space:nowrap;word-break:keep-all;overflow:hidden;text-overflow:ellipsis}
+
   /* 한 줄 입력 레이아웃 */
-  .qtyCell{display:flex;align-items:center;gap:8px;justify-content:flex-end;flex-wrap:nowrap}
+  .qtyCell{display:flex;align-items:center;gap:6px;justify-content:flex-end;flex-wrap:nowrap}
   .chip{
     height:40px;min-width:40px;padding:0 10px;border:1px solid var(--border);background:#eef2f7;
     border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;color:#111827
@@ -39,22 +43,28 @@
     width:76px;height:40px;text-align:center;font-size:16px;
     padding:0 6px;border:1px solid var(--border);border-radius:12px;background:#fff
   }
+
+  /* 숫자 스핀버튼 제거 */
   input[type=number]::-webkit-outer-spin-button,
   input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield}
+
   .empty{margin-top:20px;padding:20px;border:2px dashed var(--border);border-radius:16px;text-align:center;color:#6b7280;font-size:16px}
   .footerBar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);padding:12px;display:flex;justify-content:center;z-index:50}
   .footerBar button{width:80%;font-size:18px;border-radius:14px}
   .stack{display:flex;flex-direction:column;gap:12px}
+
   /* 내보내기 폴백 패널 */
   .panel{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--border);box-shadow:0 -6px 20px rgba(0,0,0,.08);padding:14px;display:none;z-index:60}
   .panel h4{margin:0 0 10px}
   .panel .row{display:flex;gap:8px;flex-wrap:wrap}
   .panel a{color:#2563eb;font-weight:700}
   .panel .small{font-size:13px;color:#6b7280}
+
+  /* 모바일 더 좁을 때 살짝 축소 */
   @media (max-width:480px){
-    .chip{min-width:36px;height:36px;font-size:14px;padding:0 8px}
-    .qtyCell input{height:36px;width:70px;font-size:15px}
+    .chip{min-width:34px;height:34px;font-size:14px;padding:0 8px}
+    .qtyCell input{height:34px;width:68px;font-size:15px}
     th,td{padding:10px}
   }
 </style>
@@ -87,8 +97,12 @@
       <div class="tab" data-cat="기타">기타</div>
     </div>
     <table id="inputTable" aria-label="품목 입력 표">
+      <colgroup>
+        <col class="col-item" />
+        <col class="col-qty" />
+      </colgroup>
       <thead>
-        <tr><th style="width:50%">품목</th><th>수량</th></tr>
+        <tr><th class="item-name">품목</th><th>수량</th></tr>
       </thead>
       <tbody></tbody>
     </table>
@@ -124,7 +138,7 @@
     <button class="btn" id="openNewTab">② 새 탭으로 열기</button>
     <button class="btn" id="copyToClipboard">③ 내용 복사</button>
   </div>
-  <div class="small">* 구글드라이브/인앱 미리보기에서는 자동 다운로드가 막힐 수 있어요. 링크를 직접 누르거나 “새 탭으로 열기”를 사용해 주세요.</div>
+  <div class="small">* 카톡/인앱 미리보기에서는 자동 다운로드가 막힐 수 있어요. 링크를 직접 누르거나 “새 탭으로 열기”를 사용해 주세요.</div>
 </div>
 
 <script>
@@ -132,12 +146,12 @@
 const ITEMS={
   "시트":["대시트","반시트","베갯잇"],
   "환자복":["일반상의","일반하의","정형상의","정형하의"],
-  "기타":["억제대","얼음주머니","기타"]
+  "기타":["억제대","얼음포","기타"]
 };
 const ALL_ITEMS = Object.values(ITEMS).flat();
 
 /* ===== 병동 / 저장키 ===== */
-const WARDS=["93","83","73","71","63","62","61","52","51","42","41","기타"];
+const WARDS=["93","83","73","71","63","62","61","52","51","42","41","외래"];
 const LS={ ward:"linen/ward", logs:"linen/logs", draft:(ward)=>`linen/draft/${ward||'_none_'}` };
 
 /* ===== 상태 ===== */
@@ -159,7 +173,8 @@ function buildTable(){
   const list = ITEMS[state.cat];
   list.forEach(name=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${name}</td>
+    tr.innerHTML=`
+      <td class="item-name">${name}</td>
       <td class="qtyCell">
         <button type="button" class="chip reset" data-reset>리셋</button>
         <button type="button" class="chip" data-delta="-1">−1</button>
@@ -169,13 +184,14 @@ function buildTable(){
       </td>`;
     const inp=tr.querySelector("input");
     const draftVal = getDraftQty(name);
-    // 기본값 10: 대시트/반시트/베갯잇 이고 초안이 0일 때
     if(draftVal>0){ inp.value = String(draftVal); }
     else if(["대시트","반시트","베갯잇"].includes(name)){ inp.value = "10"; setDraftQty(name, 10); }
     else { inp.value = "0"; }
 
+    // 입력 즉시 저장
     inp.addEventListener("input", ()=> setDraftQty(name, parseInt(inp.value||"0")||0));
 
+    // 증감 버튼
     tr.querySelectorAll("[data-delta]").forEach(btn=>{
       btn.onclick=()=>{
         const delta = btn.dataset.delta==="-1" ? -1 :
@@ -185,6 +201,7 @@ function buildTable(){
       };
     });
 
+    // 리셋
     tr.querySelector("[data-reset]").onclick=()=>{
       inp.value="0"; setDraftQty(name,0);
     };
@@ -210,6 +227,7 @@ function saveAll(){
   setLogs(logs.slice(0, 10000));
   // 초안 리셋
   const cleared = {}; ALL_ITEMS.forEach(i=> cleared[i]=0); setDraft(cleared);
+  // 현재 탭 입력칸 0으로
   els("#inputTable tbody input").forEach(inp=> inp.value="0");
   alert("저장되었습니다.");
 }
@@ -254,7 +272,6 @@ function toCSVRows(pivot){
   rows.push(["품목합계",...itemTotals,itemTotals.reduce((a,b)=>a+b,0)]);
   return rows;
 }
-
 function makeCSVBlob(rows){
   const BOM="\uFEFF";
   const csv=rows.map(r=> r.map(v=> `"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");
@@ -269,7 +286,6 @@ function makeXLSBlobFromTable(){
     <body>${el("#statsWrap").innerHTML}</body></html>`;
   return new Blob([tableHTML], {type: "application/vnd.ms-excel;charset=utf-8"});
 }
-
 async function tryShare(blob, filename, title){
   try{
     if('canShare' in navigator && 'share' in navigator){
@@ -283,12 +299,10 @@ async function tryShare(blob, filename, title){
   return false;
 }
 function autoDownloadOrShow(blob, filename){
-  // 1) 자동 다운로드 시도
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
   a.href=url; a.download=filename; a.target="_blank";
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  // 2) 패널 노출 + 직접 링크 제공 (인앱/미리보기 차단 대비)
   const panel=el("#fallbackPanel");
   el("#directLink").href=url;
   el("#openNewTab").onclick=()=>window.open(url,"_blank","noopener");
@@ -300,18 +314,15 @@ function autoDownloadOrShow(blob, filename){
         await navigator.clipboard.writeText(asText);
         alert("복사되었습니다. 메모장/엑셀에 붙여넣기 해주세요.");
       }catch(_){
-        const w=window.open("about:blank","_blank"); w.document.write(`<pre>${asText.replaceAll("<","&lt;")}</pre>`);
+        const w=window.open("about:blank","_blank");
+        w.document.write(`<pre>${asText.replaceAll("<","&lt;")}</pre>`);
       }
     };
-    // csv는 text, xls는 바이너리-텍스트가 아닐 수 있어 csv일 때만 복사
     if(blob.type.includes("csv")) reader.readAsText(blob);
     else alert("XLS는 복사 대신 '직접 링크 열기'를 사용하세요.");
   };
   panel.style.display="block";
-  // 3) 일정 시간 뒤 URL 회수는 사용자가 링크 누른 뒤 처리(여기선 생략)
 }
-
-/* 이벤트 바인딩 */
 function exportCSV(){
   const ym=el("#monthPick").value; if(!ym){ alert("월을 선택하세요."); return; }
   const rows = toCSVRows(calcPivot(ym));
@@ -336,32 +347,30 @@ function showSection(sec){
 
 /* ===== 초기화 ===== */
 window.addEventListener("DOMContentLoaded",()=>{
-  // 병동
+  // URL ?ward=71 같은 값이 있으면 자동 선택
+  const urlWard=new URL(location.href).searchParams.get("ward");
+  if(urlWard){ state.ward=urlWard; localStorage.setItem(LS.ward,state.ward); }
   el("#wardSelect").value = state.ward;
+
   el("#wardSelect").onchange = e=>{
     state.ward = e.target.value || "";
     localStorage.setItem(LS.ward, state.ward);
     buildTable();
   };
 
-  // 입력 표
   buildTable();
 
-  // 저장
   el("#saveAll").onclick = saveAll;
 
-  // 통계
   const d=new Date();
   el("#monthPick").value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
   el("#calcStats").onclick = renderStats;
   el("#exportCSVBtn").onclick = exportCSV;
   el("#exportXLSBtn").onclick = exportXLS;
 
-  // 메뉴
   el("#gotoInput").onclick = ()=> showSection("input");
   el("#gotoStats").onclick = ()=> { showSection("stats"); renderStats(); };
 
-  // 탭
   els(".tab").forEach(t=> t.onclick=()=>{
     state.cat = t.dataset.cat;
     els(".tab").forEach(x=>x.classList.remove("active"));
