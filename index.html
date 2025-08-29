@@ -86,22 +86,26 @@
 </style>
 </head>
 <body>
-<header>
-  <div class="left">
-    <label class="head" for="wardSelect">병동명</label>
-    <select id="wardSelect">
-      <option value="">선택…</option>
-      <option>93</option><option>83</option><option>73</option><option>71</option>
-      <option>63</option><option>62</option><option>61</option>
-      <option>52</option><option>51</option><option>42</option><option>41</option>
-      <option>기타</option>
-    </select>
+  <!-- 상단 타이틀 -->
+  <div style="text-align:center; font-size:22px; font-weight:800; padding:14px 0; border-bottom:1px solid var(--border); background:#fff;">
+    병동 출고관리
   </div>
-  <div class="right">
-    <button class="btn" id="gotoStats">통계</button>
-  </div>
-</header>
 
+  <header>
+    <div class="left">
+      <label class="head" for="wardSelect">병동명</label>
+      <select id="wardSelect">
+        <option value="">선택…</option>
+        <option>93</option><option>83</option><option>73</option><option>71</option>
+        <option>63</option><option>62</option><option>61</option>
+        <option>52</option><option>51</option><option>42</option><option>41</option>
+        <option>기타</option>
+      </select>
+    </div>
+    <div class="right">
+      <button class="btn" id="gotoStats">통계</button>
+    </div>
+  </header>
 <main>
   <!-- 입력 -->
   <section id="sec-input">
