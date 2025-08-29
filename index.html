@@ -3,8 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta http-equiv="Cache-Control" content="no-store" />
-<!-- 노치/안전영역 정확 처리 -->
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>린넨실 출고관리</title>
 <style>
   :root{ --bg:#f9fafb; --card:#ffffff; --accent:#2563eb; --muted:#6b7280; --text:#111827; --border:#e5e7eb; }
@@ -33,7 +32,7 @@
   .col-item{width:42%} .col-qty{width:58%}
   th.item-name, td.item-name{white-space:nowrap;word-break:keep-all;overflow:hidden;text-overflow:ellipsis}
 
-  /* -5 -1 [입력] +1 +5: 가로 고정 배치 */
+  /* -5 -1 [입력] +1 +5 */
   .qtyCell{
     display:grid;
     grid-auto-flow: column;
@@ -64,7 +63,7 @@
   body.mode-stats #appDownloadBtn{ display:none; }
   body.mode-stats #exportXLSXBtn{ display:block; width:100%; font-size:16px; padding:12px 16px; border-radius:12px }
 
-  /* 앱이면 다운로드 버튼 숨김 */
+  /* 앱이면 다운로드 버튼만 숨김 */
   body.app #appDownloadBtn{ display:none !important; }
 
   #sec-stats .row-wrap{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
@@ -84,7 +83,7 @@
     .qtyCell{ column-gap:4px; }
   }
 
-  /* 화면 전체 빨간 점멸(2회) */
+  /* 전체 빨간 점멸(2회) */
   #flashOverlay{
     position:fixed; inset:0;
     background:#ef4444;
@@ -98,12 +97,6 @@
     50%{opacity:0.35}
     100%{opacity:0}
   }
-
-  /* === App(WebView)에서도 웹과 '완전히 동일'하게 보이도록 리셋 === */
-  html, body { overflow-x: hidden; }/* 가로 스크롤 방지 */
-  body.app { margin:0 !important; padding:0 !important; } /* 여분 여백/쏠림 제거 */
-  body.app .topTitle { margin:0 auto; }
-  body.app main { margin:0 auto; max-width:980px; }
 </style>
 </head>
 <body>
@@ -236,7 +229,7 @@
 
 <!-- App Script -->
 <script>
-const APP_DOWNLOAD_URL = "https://github.com/bangat/linenward/releases/download/v1.4/hallymWard.apk";
+const APP_DOWNLOAD_URL = "https://github.com/bangat/linenward/releases/download/v1.0.1/WardLinen.apk";
 
 /* ==== 전역 상수/유틸 ==== */
 const ITEMS={
@@ -245,12 +238,11 @@ const ITEMS={
   "기타":["억제대","얼음포","기타"]
 };
 const COLORED_ITEMS = new Set(["대시트","반시트","베갯잇","수건"]);
-const DEFAULT_TEN_ITEMS = new Set(["대시트","반시트","베갯잇"]);
 const ALL_ITEMS = Object.values(ITEMS).flat();
 const WARDS=["93","83","73","71","63","62","61","52","51","42","41","기타"];
 
 const LS={ ward:"linen/ward", logs:"linen/logs", draft:(ward)=>`linen/draft/${ward||'_none_'}` };
-let state={ ward:localStorage.getItem(LS.ward)||"", section:"input", cat:"시트" };
+let state={ ward:(localStorage.getItem(LS.ward)||"").toString().trim(), section:"input", cat:"시트" };
 const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorAll(s));
 
 function isAppEnv(){
@@ -266,7 +258,7 @@ function isAppEnv(){
   return isStandalonePWA || isAndroidWebView || isCustomUA || forced;
 }
 
-/* 경고: 진동 3회 + 전체 점멸 2회 */
+/* 진동+점멸 경고 */
 function buzzWarn(){
   try{ if(navigator.vibrate){ navigator.vibrate([150,80,150,80,150]); } }catch(e){}
   const ov = document.createElement('div');
@@ -275,7 +267,6 @@ function buzzWarn(){
   ov.addEventListener('animationend', ()=> { if(ov && ov.parentNode) ov.parentNode.removeChild(ov); });
 }
 
-/* 날짜 범위 */
 function rangeMsByDates(startStr, endStr){
   const sParts = startStr.split("-").map(Number);
   const eParts = endStr.split("-").map(Number);
@@ -292,14 +283,7 @@ function getDraft(){ try{ return JSON.parse(localStorage.getItem(LS.draft(state.
 function setDraft(obj){ localStorage.setItem(LS.draft(state.ward), JSON.stringify(obj||{})); }
 function setDraftQty(item, qty){ const d=getDraft(); d[item]= (parseInt(qty)||0); setDraft(d); }
 
-/* 재오픈/병동 변경 시: 대/반/베를 항상 10으로 초기화 */
-function resetDefaultTenForThisWard(){
-  const d = getDraft();
-  DEFAULT_TEN_ITEMS.forEach(n => { d[n] = 10; });
-  setDraft(d);
-}
-
-/* 20 이상 넘어갈 때 경고 */
+/* 20 이상 경고 */
 function maybeBuzz(prev, next){ if(prev < 20 && next >= 20){ buzzWarn(); } }
 
 /* 입력 테이블 */
@@ -317,9 +301,11 @@ function buildTable(){
         <button type="button" class="chip" data-delta="+5">＋5</button>
       </td>`;
     const inp = tr.querySelector("input");
+
+    // 저장값 있으면 사용, 없으면 0
     const draftObj = getDraft();
-    const hasSaved = Object.prototype.hasOwnProperty.call(draftObj, name);
-    const initVal = hasSaved ? (parseInt(draftObj[name])||0) : (DEFAULT_TEN_ITEMS.has(name)?10:0);
+    const initVal = Object.prototype.hasOwnProperty.call(draftObj, name)
+      ? (parseInt(draftObj[name])||0) : 0;
     inp.value = String(initVal);
     inp.dataset.prev = String(initVal);
 
@@ -356,7 +342,8 @@ function buildTable(){
 
 /* 저장 */
 async function saveAll(){
-  if(!state.ward){ alert("병동을 먼저 선택하세요."); return; }
+  const wardTrimmed = (state.ward||"").toString().trim();   // ← 병동명 안전보정
+  if(!wardTrimmed){ alert("병동을 먼저 선택하세요."); return; }
 
   const issue = el("#issueDate").value;
   let ts;
@@ -371,7 +358,7 @@ async function saveAll(){
   const batch = [];
   ALL_ITEMS.forEach(item=>{
     const qty = (parseInt(draft[item]||"0") || 0);
-    if(qty!==0) batch.push({ ts, yyyymm: new Date(ts).toISOString().slice(0,7), ward: state.ward, item, qty });
+    if(qty!==0) batch.push({ ts, yyyymm: new Date(ts).toISOString().slice(0,7), ward: wardTrimmed, item, qty });
   });
   if(batch.length===0){ alert("저장할 항목이 없습니다. (모두 0)"); return; }
 
@@ -389,13 +376,9 @@ async function saveAll(){
     setLogs(cleaned);
   }
 
+  // 모두 0으로 초기화
   const cleared = {}; ALL_ITEMS.forEach(i=> cleared[i]=0); setDraft(cleared);
-  resetDefaultTenForThisWard();
-  els("#inputTable tbody input").forEach(inp=> { 
-    const n = inp.getAttribute('aria-label').replace(' 수량','');
-    const v = DEFAULT_TEN_ITEMS.has(n) ? 10 : 0;
-    inp.value=String(v); inp.dataset.prev=String(v);
-  });
+  els("#inputTable tbody input").forEach(inp=> { inp.value="0"; inp.dataset.prev="0"; });
 
   const snd = el("#submitSound"); snd && snd.play().catch(()=>{});
   alert("저장되었습니다.");
@@ -420,7 +403,7 @@ function colorStyle(item, value){
 }
 function pivotFromLogsRange(logs, startStr, endStr, wardFilter){
   const [s,e] = rangeMsByDates(startStr, endStr);
-  const selected = logs.filter(L => L.ts>=s && L.ts<e && (wardFilter==="전체" || L.ward===wardFilter));
+  const selected = logs.filter(L => L.ts>=s && L.ts<e && (wardFilter==="전체" || (L.ward||"").toString().trim()===wardFilter));
   const p={}; const wardList = (wardFilter==="전체")? WARDS : WARDS.filter(w=>w===wardFilter);
   wardList.forEach(w=>p[w]={}); ALL_ITEMS.forEach(i=> wardList.forEach(w=> p[w][i]=0));
   selected.forEach(L=>{
@@ -479,7 +462,7 @@ async function renderStats(){
   }
 }
 
-/* 엑셀 내보내기 (제목 Bold+Center) */
+/* 엑셀 내보내기 */
 function exportXLSX(){
   const table = document.querySelector("#statsWrap table");
   if(!table){ alert("통계 표가 없습니다. 통계 화면에서 날짜/병동을 선택해 주세요."); return; }
@@ -514,13 +497,12 @@ window.addEventListener("DOMContentLoaded",()=>{
   if(isAppEnv()){ document.body.classList.add("app"); const btn = el("#appDownloadBtn"); if(btn) btn.style.display = "none"; }
 
   const urlWard=new URL(location.href).searchParams.get("ward");
-  if(urlWard){ state.ward=urlWard; localStorage.setItem(LS.ward,state.ward); }
+  if(urlWard){ state.ward=(urlWard||"").toString().trim(); localStorage.setItem(LS.ward,state.ward); }
   el("#wardSelect").value = state.ward;
 
   el("#wardSelect").onchange = e=>{
-    state.ward = e.target.value || "";
+    state.ward = (e.target.value || "").toString().trim();
     localStorage.setItem(LS.ward, state.ward);
-    resetDefaultTenForThisWard();
     buildTable();
   };
 
@@ -529,7 +511,6 @@ window.addEventListener("DOMContentLoaded",()=>{
   el("#dateStart").value = `${yyyy}-${mm}-${dd}`;
   el("#dateEnd").value   = `${yyyy}-${mm}-${dd}`;
 
-  resetDefaultTenForThisWard();
   buildTable();
 
   el("#saveAll").onclick = saveAll;
