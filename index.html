@@ -97,10 +97,21 @@
     50%{opacity:0.35}
     100%{opacity:0}
   }
-    /* 앱(WebView)에서만 상단 여백 */
-  body.app .topTitle { 
-    margin-top: 20px; 
-  }
+
+  /* 앱(WebView/PWA)일 때만 화면을 아주 살짝 아래로 */
+html, body { overflow-x: hidden; }             /* 가로 스크롤 방지 */
+
+body.app {
+  /* 노치 안전영역 + 12px 정도만 내려줌 */
+  padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+}
+
+/* 혹시 env() 미지원 기기 fallback */
+@supports not (padding: max(0px)) {
+  body.app { padding-top: 12px; }
+}
+
+
 </style>
 </head>
 <body>
