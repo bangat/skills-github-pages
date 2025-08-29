@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>린넨실 출고관리)</title>
+<title>린넨실 출고관리</title>
 <style>
   :root{ --bg:#f9fafb; --card:#ffffff; --accent:#2563eb; --muted:#6b7280; --text:#111827; --border:#e5e7eb; }
   *{box-sizing:border-box}
@@ -55,7 +55,6 @@
 <body>
 <header>
   <div class="left">
-    <div class="appTitle">린넨 출고관리</div>
     <label class="head" for="wardSelect">병동명</label>
     <select id="wardSelect">
       <option value="">선택…</option>
@@ -75,7 +74,6 @@
   <!-- 입력 -->
   <section id="sec-input">
     <h1>
-      출고 입력
       <span class="subControls">
         <label for="issueDate">출고일</label>
         <input type="date" id="issueDate" style="font-size:16px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#fff" />
@@ -95,16 +93,23 @@
     </table>
   </section>
 
-  <!-- 통계 -->
+   <!-- 통계 -->
   <section id="sec-stats" style="display:none">
     <h1>기간 통계</h1>
     <div class="stack">
+
+      <!-- 1) 날짜 구간: 라벨 제거, 한 줄에 ~ 로 연결 -->
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <label>시작</label>
-        <input type="date" id="dateStart" style="font-size:16px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#fff" />
-        <label>종료</label>
-        <input type="date" id="dateEnd" style="font-size:16px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#fff" />
-        <label>병동</label>
+        <input type="date" id="dateStart"
+               style="font-size:16px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#fff" />
+        <span aria-hidden="true">~</span>
+        <input type="date" id="dateEnd"
+               style="font-size:16px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#fff" />
+      </div>
+
+      <!-- 2) 아래 줄: 병동 선택 + 조회 버튼 -->
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <label for="wardFilter">병동</label>
         <select id="wardFilter" style="padding:10px 12px;border:1px solid var(--border);border-radius:12px;">
           <option value="전체">전체</option>
           <option>93</option><option>83</option><option>73</option><option>71</option>
@@ -112,13 +117,20 @@
           <option>52</option><option>51</option><option>42</option><option>41</option>
           <option>기타</option>
         </select>
-        <button class="btn acc" id="calcStats">계산</button>
-        <button class="btn" id="exportXLSXBtn">엑셀(.xlsx) 내보내기</button>
+        <button class="btn acc" id="calcStats">조회</button>
       </div>
-      <div><h3 style="margin:8px 0">상세(병동×품목)</h3><div id="statsWrap"></div></div>
+
+      <!-- 표 영역 -->
+      <div><h3 style="margin:8px 0">상세내역</h3><div id="statsWrap"></div></div>
       <div id="statsEmpty" class="empty" style="display:none">해당 기간 데이터가 없습니다.</div>
+
+      <!-- 3) 맨 아래: 엑셀 다운로드 버튼 -->
+      <div style="margin-top:8px">
+        <button class="btn" id="exportXLSXBtn">엑셀로 내려받기</button>
+      </div>
     </div>
   </section>
+
 </main>
 
 <div class="footerBar">
