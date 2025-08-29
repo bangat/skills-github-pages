@@ -40,19 +40,15 @@
   /* ===== 푸터 ===== */
   .footerBar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);padding:12px;display:flex;justify-content:center;z-index:50}
   .footerCol{display:flex;flex-direction:column;gap:8px;align-items:stretch;justify-content:center;width:100%;max-width:980px}
-  /* 제출 버튼: 가로로 길게(풀폭) */
   #saveAll{width:100%; font-size:18px; padding:12px 16px; border-radius:14px}
-  /* 앱 버튼: 풀폭 보조 버튼 */
   #appDownloadBtn{width:100%; font-size:16px; padding:12px 16px; border-radius:12px; background:#6b7280}
-
-  /* 기본 상태(메인): 제출/앱 보임, 엑셀 숨김 */
   #saveAll, #appDownloadBtn{ display:block; }
   #exportXLSXBtn{ display:none; }
 
   /* ===== 통계 화면 전용 ===== */
-  body.mode-stats header{display:none;}             /* 통계 모드에서 헤더 숨김 */
-  body.mode-stats #saveAll{ display:none; }         /* 통계 모드에서 제출 숨김 */
-  body.mode-stats #appDownloadBtn{ display:none; }  /* 통계 모드에서 앱버튼 숨김 */
+  body.mode-stats header{display:none;}
+  body.mode-stats #saveAll{ display:none; }
+  body.mode-stats #appDownloadBtn{ display:none; }
   body.mode-stats #exportXLSXBtn{ display:block; width:100%; font-size:16px; padding:12px 16px; border-radius:12px }
 
   #sec-stats .row-wrap{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
@@ -153,7 +149,7 @@
   </section>
 </main>
 
-<!-- 푸터: 메인=제출·앱 / 통계=엑셀 -->
+<!-- 푸터 -->
 <div class="footerBar">
   <div class="footerCol">
     <button class="btn acc" id="saveAll">제출하기</button>
@@ -162,7 +158,7 @@
   </div>
 </div>
 
-<!-- 저장 성공 효과음 -->
+<!-- 저장 효과음 -->
 <audio id="submitSound" preload="auto"
   src="https://blog.kakaocdn.net/dna/nDY4i/dJMb9MW0NzU/AAAAAAAAAAAAAAAAAAAAAPx9B-3G2pvytNqx-vR3eYmHXaIga9OYo8N_ydqJ4RH2/%EC%A0%84%EC%86%A1.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1756652399&allow_ip=&allow_referer=&signature=NKOSow0S2fb7Q%2FBB560terQ0zko%3D&attach=1&knm=tfile.mp3">
 </audio>
@@ -170,7 +166,7 @@
 <!-- SheetJS -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-<!-- Firebase -->
+<!-- Firebase (서버만 사용) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -192,15 +188,32 @@
   const auth = getAuth(app);
   const rtdb = getDatabase(app);
 
-  onAuthStateChanged(auth, (user)=>{ if(!user) signInAnonymously(auth); });
+  // --- 익명 로그인 완료 보장 ---
+  let authReadyResolve;
+  const authReady = new Promise(res => authReadyResolve = res);
+  onAuthStateChanged(auth, (user)=>{
+    if(!user){
+      signInAnonymously(auth).catch(console.warn);
+    }else{
+      authReadyResolve(true);
+    }
+  });
 
+  // === 날짜 헬퍼 (로컬 YYYY-MM-DD) ===
+  function ymdLocal(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const dd = String(d.getDate()).padStart(2,"0");
+    return `${y}-${m}-${dd}`;
+  }
+  function dayStart(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
+  function dayEndInclusiveMs(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59,999).getTime(); }
+
+  // === RTDB I/O ===
   async function saveLogsToRTDB(batchArray){
     const baseRef = ref(rtdb, "logs");
     await Promise.all(batchArray.map(d => push(baseRef, d)));
   }
-
-  function dayStart(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
-  function dayEndInclusiveMs(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59,999).getTime(); }
   async function fetchRangeFromRTDB(startDate, endDateInclusive){
     const sMs = dayStart(startDate);
     const eMs = dayEndInclusiveMs(endDateInclusive);
@@ -211,12 +224,12 @@
   }
 
   // 노출
-  window.__fb = { saveLogsToRTDB, fetchRangeFromRTDB };
+  window.__fb = { saveLogsToRTDB, fetchRangeFromRTDB, ymdLocal, authReady };
 </script>
 
 <!-- App Script -->
 <script>
-const APP_DOWNLOAD_URL = "https://example.com/app-download"; // 필요 시 실제 URL로 교체
+const APP_DOWNLOAD_URL = "https://example.com/app-download";
 
 /* 품목 */
 const ITEMS={
@@ -228,12 +241,15 @@ const COLORED_ITEMS = new Set(["대시트","반시트","베갯잇","수건"]);
 const ALL_ITEMS = Object.values(ITEMS).flat();
 const WARDS=["93","83","73","71","63","62","61","52","51","42","41","기타"];
 
-const LS={ ward:"linen/ward", logs:"linen/logs", draft:(ward)=>`linen/draft/${ward||'_none_'}` };
-let state={ ward:localStorage.getItem(LS.ward)||"", section:"input", cat:"시트" };
+/* 상태 */
+const LS={ ward:"linen/ward", draft:(ward)=>`linen/draft/${ward||'_none_'}` };
+let state={ ward:localStorage.getItem(LS.ward)||"", cat:"시트" };
 const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorAll(s));
 
+/* 진동 */
 function vibrateOnce(ms=1000){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(_){} }
 
+/* 날짜 범위(ms) */
 function rangeMsByDates(startStr, endStr){
   const sParts = startStr.split("-").map(Number);
   const eParts = endStr.split("-").map(Number);
@@ -243,8 +259,7 @@ function rangeMsByDates(startStr, endStr){
   return [s.getTime(), e.getTime()+1];
 }
 
-function getLogs(){ return JSON.parse(localStorage.getItem(LS.logs)||"[]"); }
-function setLogs(a){ localStorage.setItem(LS.logs, JSON.stringify(a)); }
+/* 임시 초안(입력값 유지만) */
 function getDraft(){ try{ return JSON.parse(localStorage.getItem(LS.draft(state.ward))||"{}"); }catch(_){ return {}; } }
 function setDraft(obj){ localStorage.setItem(LS.draft(state.ward), JSON.stringify(obj||{})); }
 function setDraftQty(item, qty){ const d=getDraft(); d[item]=Math.max(0, qty|0); setDraft(d); }
@@ -273,7 +288,7 @@ function buildTable(){
     if (draftVal > 0) {
       inp.value = String(draftVal);
     } else if (COLORED_ITEMS.has(name)) {
-      inp.value = "10";
+      inp.value = "10";        // 초기 권장치
       setDraftQty(name, 10);
     } else {
       inp.value = "0";
@@ -286,9 +301,7 @@ function buildTable(){
       const cur = Math.max(0, parseInt(inp.value || "0") || 0);
       inp.value = String(cur);
       setDraftQty(name, cur);
-      if (state.cat === "시트" && COLORED_ITEMS.has(name) && prev <= 20 && cur > 20) {
-        vibrateOnce(1000);
-      }
+      if (state.cat === "시트" && COLORED_ITEMS.has(name) && prev <= 20 && cur > 20) vibrateOnce(1000);
       inp.dataset.prev = String(cur);
     });
 
@@ -300,9 +313,7 @@ function buildTable(){
         const v = Math.max(0, (parseInt(inp.value || "0") || 0) + delta);
         inp.value = v;
         setDraftQty(name, v);
-        if (state.cat === "시트" && COLORED_ITEMS.has(name) && prev <= 20 && v > 20) {
-          vibrateOnce(1000);
-        }
+        if (state.cat === "시트" && COLORED_ITEMS.has(name) && prev <= 20 && v > 20) vibrateOnce(1000);
         inp.dataset.prev = String(v);
       };
     });
@@ -317,7 +328,7 @@ function buildTable(){
     tb.appendChild(tr);
   });
 
-  // 🔻 기타 탭 안내 문구(텍스트만)
+  // 기타 탭 안내 문구
   if (state.cat === "기타") {
     const noteRow = document.createElement("tr");
     noteRow.innerHTML = `
@@ -328,10 +339,14 @@ function buildTable(){
   }
 }
 
-
-/* 저장 (RTDB 업로드 성공 시 로컬 자동 정리) */
+/* 저장: 파이어베이스만 */
 async function saveAll(){
   if(!state.ward){ alert("병동을 먼저 선택하세요."); return; }
+
+  // 로그인 완료될 때까지 대기 (초기 진입 지연 대비)
+  if (window.__fb?.authReady) {
+    await window.__fb.authReady;
+  }
 
   // 출고일(없으면 오늘)
   const issue = el("#issueDate").value;
@@ -343,6 +358,7 @@ async function saveAll(){
     ts = Date.now();
   }
 
+  // 배치 구성
   const draft = getDraft();
   const batch = [];
   ALL_ITEMS.forEach(item=>{
@@ -351,42 +367,31 @@ async function saveAll(){
   });
   if(batch.length===0){ alert("저장할 항목이 없습니다. (모두 0)"); return; }
 
-  // 로컬 선기록
-  const logs = getLogs(); batch.forEach(b=> logs.unshift(b)); setLogs(logs.slice(0, 10000));
-
-  // RTDB 업로드
-  let rtdbOK = false;
+  // 업로드
   try {
-    if(window.__fb){
-      await window.__fb.saveLogsToRTDB(batch);
-      rtdbOK = true;
-    }
+    await window.__fb.saveLogsToRTDB(batch);
   } catch(e){
-    console.warn("RTDB 업로드 실패 -> 로컬만 저장", e);
+    console.warn("RTDB 업로드 실패", e);
+    alert("네트워크 오류로 저장에 실패했습니다. 다시 시도하세요.");
+    return;
   }
 
-  // 업로드 성공 시: 이번 배치를 로컬에서 제거(중복 방지)
-  if (rtdbOK) {
-    const cur = getLogs();
-    const keyOf = L => [L.ts, L.ward, L.item, L.qty].join("|");
-    const removeSet = new Set(batch.map(keyOf));
-    const cleaned = cur.filter(L => !removeSet.has(keyOf(L)));
-    setLogs(cleaned);
-  }
-
-  // 입력값 초기화
+  // 입력 초기화(초안 비움)
   const cleared = {}; ALL_ITEMS.forEach(i=> cleared[i]=0); setDraft(cleared);
   els("#inputTable tbody input").forEach(inp=> { inp.value="0"; inp.dataset.prev="0"; });
 
   // 효과음
   const snd = el("#submitSound");
-  snd && snd.play().catch(err=>console.warn("사운드 재생 실패:", err));
+  snd && snd.play().catch(()=>{});
 
   alert("저장되었습니다.");
 
-  /* 🔄 제출 직후 통계 즉시 반영 */
+  // 통계 화면이라면 즉시 반영
   if (document.body.classList.contains("mode-stats")) {
-    const savedDate = new Date(ts).toISOString().slice(0,10);
+    const savedDate = (function(){
+      const d = new Date(ts);
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    })();
     if(!el("#dateStart").value) el("#dateStart").value = savedDate;
     if(!el("#dateEnd").value)   el("#dateEnd").value   = savedDate;
     renderStats();
@@ -399,7 +404,7 @@ function colorStyle(item, value){
   const v = Number(value)||0;
   if(v>=20) return ' style="color:#dc2626;font-weight:700"';
   if(v>=15) return ' style="color:#2563eb;font-weight:700"';
-  if(v===10) return ' style="color:#f59e0b;font-weight:700"'; /* 10개는 노란색 */
+  if(v===10) return ' style="color:#f59e0b;font-weight:700"';
   return "";
 }
 
@@ -417,46 +422,27 @@ function pivotFromLogsRange(logs, startStr, endStr, wardFilter){
   return {pivot:p, wards: wardList};
 }
 
-/* 통계 렌더: RTDB + 로컬 병합 */
+/* 통계: RTDB만 조회 */
 async function renderStats(){
-  const todayStr = new Date().toISOString().slice(0,10);
-  const s = el("#dateStart").value || todayStr;   // ← 비어있어도 안전
-  const e = el("#dateEnd").value   || todayStr;   // ← 비어있어도 안전
+  const todayStr = (function(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })();
+  const s = el("#dateStart").value || todayStr;
+  const e = el("#dateEnd").value   || todayStr;
   const wardFilter = el("#wardFilter").value || "전체";
   if(!s || !e){ return; }
 
-  const [sMs, eMs] = rangeMsByDates(s, e);
+  // 로그인 완료 보장
+  if (window.__fb?.authReady) await window.__fb.authReady;
 
-  // 1) RTDB
   let logsRT = [];
   try {
-    if(window.__fb){
-      const sDate = new Date(s+"T00:00:00");
-      const eDate = new Date(e+"T00:00:00");
-      logsRT = await window.__fb.fetchRangeFromRTDB(sDate, eDate);
-    }
+    const sDate = new Date(s+"T00:00:00");
+    const eDate = new Date(e+"T00:00:00");
+    logsRT = await window.__fb.fetchRangeFromRTDB(sDate, eDate);
   } catch (err) {
     console.warn("RTDB 조회 실패", err);
   }
 
-  // 2) 로컬
-  let logsLS = [];
-  try {
-    logsLS = getLogs().filter(L => L.ts>=sMs && L.ts<eMs);
-  } catch (err) {
-    console.warn("로컬 로그 파싱 실패", err);
-  }
-
-  // 3) 병합(중복 제거)
-  const uniq = new Map();
-  [...logsRT, ...logsLS].forEach(L=>{
-    const key = [L.ts, L.ward, L.item, L.qty].join("|");
-    if(!uniq.has(key)) uniq.set(key, L);
-  });
-  const mergedLogs = Array.from(uniq.values());
-
-  // 4) 렌더
-  const {pivot, wards} = pivotFromLogsRange(mergedLogs, s, e, wardFilter);
+  const {pivot, wards} = pivotFromLogsRange(logsRT, s, e, wardFilter);
   const items=ALL_ITEMS;
 
   let html=`<table class="statsTable"><thead><tr>
@@ -494,7 +480,7 @@ function exportXLSX(){
   XLSX.writeFile(wb, `stats_${s}_to_${e}.xlsx`);
 }
 
-/* 유틸: 디바운스 */
+/* 디바운스 */
 function debounce(fn, delay=200){
   let t; return function(...args){ clearTimeout(t); t=setTimeout(()=>fn.apply(this,args), delay); };
 }
@@ -507,21 +493,19 @@ window.addEventListener("DOMContentLoaded",()=>{
   el("#wardSelect").value = state.ward;
   el("#wardSelect").onchange = e=>{ state.ward = e.target.value || ""; localStorage.setItem(LS.ward, state.ward); buildTable(); };
 
-  // 오늘 디폴트
-  const d=new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth()+1).padStart(2,"0");
-  const dd = String(d.getDate()).padStart(2,"0");
-  el("#issueDate").value = `${yyyy}-${mm}-${dd}`;
-  el("#dateStart").value = `${yyyy}-${mm}-${dd}`;
-  el("#dateEnd").value   = `${yyyy}-${mm}-${dd}`;
+  // 오늘 디폴트(로컬 기준)
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+  el("#issueDate").value = todayStr;
+  el("#dateStart").value = todayStr;
+  el("#dateEnd").value   = todayStr;
 
   // 표/버튼
   buildTable();
   el("#saveAll").onclick = saveAll;
   el("#exportXLSXBtn").onclick = exportXLSX;
 
-  // 앱 다운로드 (메인에서만 보임; 통계모드에서는 CSS로 숨김)
+  // 앱 다운로드 (메인에서만 보임)
   el("#appDownloadBtn").onclick = ()=> {
     if(APP_DOWNLOAD_URL && APP_DOWNLOAD_URL.startsWith("http")){
       window.location.href = APP_DOWNLOAD_URL;
@@ -535,8 +519,8 @@ window.addEventListener("DOMContentLoaded",()=>{
     document.body.classList.add("mode-stats");
     el("#sec-input").style.display="none";
     el("#sec-stats").style.display="block";
-    // 🔁 출고일을 통계 기간으로 자동 설정(범위 불일치 방지)
-    const chosen = el("#issueDate").value || new Date().toISOString().slice(0,10);
+    // 출고일을 통계 기간으로 자동 설정(범위 불일치 방지)
+    const chosen = el("#issueDate").value || todayStr;
     el("#dateStart").value = chosen;
     el("#dateEnd").value   = chosen;
     renderStats();
