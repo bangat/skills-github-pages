@@ -275,7 +275,7 @@ if (state.cat === "기타" && name === "기타") {
         padding:6px 8px;
         border-radius:6px;
         font-size:13px;
-      ">(고관절, 중환의)</span>
+      ">기타품목 : (한쪽끈, 고관절, 중환의)</span>
     </td>`;
   tb.appendChild(noteTr);
 }
@@ -368,7 +368,7 @@ async function renderStats(){
     html+=`<tr><td>${w}</td>${cells}<td><b>${sum}</b></td></tr>`;
   });
   const itemTotals = items.map(i=>wards.reduce((a,w)=>a+(pivot[w]?.[i]||0),0));
-  html+=`<tr><th>품목합계</th>${itemTotals.map((sv,idx)=>`<th${colorStyle(items[idx], sv)}>${sv}</th>`).join("")}<th>${grand}</th></tr>`;
+  html+=`<tr><th>합계</th>${itemTotals.map((sv,idx)=>`<th${colorStyle(items[idx], sv)}>${sv}</th>`).join("")}<th>${grand}</th></tr>`;
   html+="</tbody></table>";
   el("#statsWrap").innerHTML=html;
   el("#statsEmpty").style.display = grand ? "none" : "block";
