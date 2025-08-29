@@ -27,7 +27,7 @@
   .left{display:flex;gap:10px;align-items:center}
   .right{display:flex;gap:8px}
   label.head{font-weight:800;color:#334155;margin-right:6px;white-space:nowrap}
-  select,input[type=date]{padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:var(--r-md);background:#fff;color:#var(--text);transition:border-color .12s,box-shadow .12s}
+  select,input[type=date]{padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:var(--r-md);background:#fff;color:var(--text);transition:border-color .12s,box-shadow .12s}
   select:focus,input[type=date]:focus{outline:none;border-color:var(--accent);box-shadow:var(--focus)}
   #wardSelect{width:170px}
 
@@ -74,25 +74,34 @@
   body.mode-stats #exportXLSXBtn{display:block;width:100%;font-size:16px;padding:12px 16px;border-radius:12px}
 
   #sec-stats .row-wrap{display:flex;align-items:center;gap:8px}
-  #sec-stats .row-wrap.dates input[type=date]{flex:1 1 0;min-width:0;font-size:15px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:#var(--text)}
-  #sec-stats .row-wrap select{padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:#var(--text)}
+  #sec-stats .row-wrap.dates input[type=date]{flex:1 1 0;min-width:0;font-size:15px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--text)}
+  #sec-stats .row-wrap select{padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--text)}
 
   /* 통계표 */
   #statsWrap{overflow-x:hidden}
   .statsTable{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-2)}
   .statsTable th,.statsTable td{padding:6px;text-align:center;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:13px;line-height:1.05;font-variant-numeric:tabular-nums;color:#0f172a;white-space:nowrap}
   .statsTable thead th{background:#f6f8fc;color:#0f172a;font-weight:800}
-  .statsTable th:first-child,.statsTable td:first-child{width:60px} /* 고정폭 확보 */
-  .statsTable th.rot{writing-mode:vertical-rl;text-orientation:upright;line-height:1;letter-spacing:0;width:22px;padding:4px 2px}
+  /* === 정렬 교정: 첫 컬럼(병동/합계) 항상 좌측 === */
+  .statsTable th:first-child,
+  .statsTable td:first-child{ text-align:left !important; }
+  .statsTable thead th:first-child{ text-align:left !important; }
+  /* 숫자칸은 센터 고정 */
+  .statsTable td[data-num], .statsTable th[data-num]{ text-align:center; padding:6px 4px; overflow:hidden; }
+  /* 첫 컬럼 너비 고정 */
+  .statsTable th:first-child,.statsTable td:first-child{width:60px}
+  /* 합계행 스타일 & 좌측 들여쓰기 유지 */
+  .statsTable .total-row th:first-child{ text-align:left !important; }
   .statsTable tr:last-child td,.statsTable tr:last-child th{border-bottom:none}
-  .statsTable td[data-num], .statsTable th[data-num]{padding:6px 4px; overflow:hidden;} /* 숫자칸 더 타이트 */
+
+  .statsTable th.rot{writing-mode:vertical-rl;text-orientation:upright;line-height:1;letter-spacing:0;width:22px;padding:4px 2px}
 
   /* 요약표(2번째 표) */
   .summaryTable{width:100%;margin-top:12px;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-2)}
   .summaryTable th,.summaryTable td{padding:10px 12px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:14px;line-height:1.2;color:#0f172a}
   .summaryTable thead th{background:#f6f8fc;font-weight:800}
   .summaryTable tr:last-child td,.summaryTable tr:last-child th{border-bottom:none}
-  .summaryTable td:first-child{white-space:nowrap}
+  .summaryTable td:first-child{white-space:nowrap;text-align:left}
 
   /* 숫자 축소(글자 크기) */
   .num{display:inline-block; line-height:1; font-variant-numeric:tabular-nums;}
@@ -103,7 +112,8 @@
   /* 최다사용 병동 강조 + 왕관 밀림 방지 */
   .maxWardRow td{background:#fff7d6 !important}
   .statsTable td:first-child{position:relative}
-  .statsTable td:first-child .wardName{display:inline-block; padding-left:20px; position:relative}
+  .statsTable td:first-child .wardName,
+  .statsTable th:first-child .wardName{display:inline-block; padding-left:20px; position:relative}
   .maxWardRow td:first-child .wardName::before{
     content:"👑"; position:absolute; left:2px; top:50%; transform:translateY(-50%);
   }
@@ -234,7 +244,7 @@
   </div>
 </div>
 
-<!-- 효과음 -->
+<!-- 효과음 (원격 소스 유지: 실패 시 WebAudio 폴백이 자동 대체) -->
 <audio id="submitSound" preload="auto" src="https://blog.kakaocdn.net/dna/MEv0X/dJMb9L4Selx/AAAAAAAAAAAAAAAAAAAAAKXPuVkeMAzxy7Bh1SCt30bi2C_1bwZptqCrwQ0ljMyS/%EC%A0%9C%EC%B6%9C%ED%95%98%EA%B8%B0.mp3"></audio>
 <audio id="tabSound" preload="auto" src="https://blog.kakaocdn.net/dna/PzPow/dJMb8597iUU/AAAAAAAAAAAAAAAAAAAAAEfGdwd_aPGAiS8W_xjwE-wiO0YWzNYGwEiMupOPzPpT/%ED%83%AD%EC%9D%B4%EB%8F%99.wav"></audio>
 <audio id="btnClickSound" preload="auto" src="https://blog.kakaocdn.net/dna/bwYLog/dJMb9aXTgeJ/AAAAAAAAAAAAAAAAAAAAADmduRzhpb3MzOEfQjYt4_cZMEVg0HqosiW-zgFGI0Ft/%EB%B2%84%ED%8A%BC%ED%81%B4%EB%A6%AD.mp3"></audio>
@@ -305,12 +315,65 @@ const LS={ ward:"linen/ward", logs:"linen/logs", draft:(ward)=>`linen/draft/${wa
 let state={ ward:(localStorage.getItem(LS.ward)||"").toString().trim(), section:"input", cat:"시트" };
 const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorAll(s));
 
+/* ===== WebAudio Fallback + Unlock ===== */
+let __ac=null, __audioUnlocked=false;
+function getAC(){ if(!__ac){ __ac=new (window.AudioContext||window.webkitAudioContext)(); } return __ac; }
+function beep(ms=120,freq=660){
+  try{
+    const ac=getAC(); const o=ac.createOscillator(); const g=ac.createGain();
+    o.type="triangle"; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.2, ac.currentTime+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime+ms/1000);
+    o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime+ms/1000+0.02);
+  }catch(_){}
+}
+function unlockAudioOnce(){
+  if(__audioUnlocked) return;
+  __audioUnlocked=true;
+  try{ getAC().resume(); }catch(_){}
+  ["#submitSound","#tabSound","#btnClickSound"].forEach(sel=>{
+    const a=el(sel); if(!a) return;
+    try{
+      const p=a.play();
+      if(p?.then) p.then(()=>{ a.pause(); a.currentTime=0; }).catch(()=>{});
+      else { a.pause(); a.currentTime=0; }
+    }catch(_){}
+  });
+}
+["pointerdown","touchstart","click","keydown"].forEach(evt=>{
+  window.addEventListener(evt, unlockAudioOnce, { once:true, passive:true });
+});
+
 /* 모달 */
 function openModal(sel, focusSel){ document.body.classList.add('modal-open'); const ov=el(sel); ov.style.display='block'; setTimeout(()=>{ focusSel && el(focusSel)?.focus(); },0); }
 function closeModal(sel){ document.body.classList.remove('modal-open'); el(sel).style.display='none'; }
 
 /* 사운드 */
-function playSnd(id){ try{ const a=el(id); if(!a) return; a.currentTime=0; a.play().catch(()=>{});}catch(_){} }
+function playSnd(sel){
+  const freqMap = {
+    "#btnClickSound": 880,   // 클릭: A5
+    "#tabSound": 659,        // 탭:  E5
+    "#submitSound": 523      // 제출: C5
+  };
+  try{
+    const a = el(sel);
+    if(!a){ beep(100, freqMap[sel]||660); return; }
+    try{ a.pause(); }catch(_){}
+    a.currentTime = 0;
+    const p = a.play();
+    if (p && typeof p.then === "function") {
+      p.then(()=>{}).catch(err=>{
+        console.warn("[audio] play failed:", sel, err?.name||err, err);
+        // 어떤 이유든 실패 시 즉시 폴백 비프
+        beep(sel==="#submitSound"?180:100, freqMap[sel]||660);
+      });
+    }
+  }catch(e){
+    console.warn("[audio] exception:", e);
+    beep(sel==="#submitSound"?180:100, freqMap[sel]||660);
+  }
+}
 
 /* 경고 */
 function flashWarn(){ try{ if(navigator.vibrate){ navigator.vibrate([120,80,120,80,120]); } }catch(e){} const ov=document.createElement('div'); ov.id='flashOverlay'; document.body.appendChild(ov); ov.addEventListener('animationend', ()=>{ ov.parentNode && ov.parentNode.removeChild(ov); }); }
@@ -470,7 +533,7 @@ async function renderStats(){
       const maxWardIdx = wardTotals.findIndex(v=>v===maxTotal && v>0);
 
       /* 메인 표 */
-      let html=`<table class="statsTable"><thead><tr><th>병동</th>${items.map(i=>`<th class="rot">${i}</th>`).join("")}</tr></thead><tbody>`;
+      let html=`<table class="statsTable"><thead><tr><th><span class="wardName">병동</span></th>${items.map(i=>`<th class="rot">${i}</th>`).join("")}</tr></thead><tbody>`;
       wards.forEach((w,rowIdx)=>{
         const isMax = (wardFilter==="전체" && rowIdx===maxWardIdx);
         html+=`<tr class="${isMax?'maxWardRow':''}">
@@ -482,7 +545,7 @@ async function renderStats(){
         }</tr>`;
       });
       const periodTotals=items.map(i=>wards.reduce((a,w)=>a+(p[w]?.[i]||0),0));
-      html+=`<tr><th>합계</th>${
+      html+=`<tr class="total-row"><th><span class="wardName">합계</span></th>${
         periodTotals.map((v,idx)=>`<th data-num="1"><span class="num"${colorStyle(items[idx],v)}>${v}</span></th>`).join("")
       }</tr>`;
       html+=`</tbody></table>`;
@@ -495,7 +558,7 @@ async function renderStats(){
       items.forEach((it,idx)=>{
         const psum=periodTotals[idx]||0;
         const avg=Math.round(psum/daysCount);
-        sumHtml+=`<tr><td style="text-align:left">${it}</td>
+        sumHtml+=`<tr><td>${it}</td>
           <td${colorStyle(it,avg)}>${avg}</td>
           <td${colorStyle(it,psum)}>${psum}</td></tr>`;
       });
@@ -516,25 +579,21 @@ function exportXLSX(){
   const table=document.querySelector("#statsWrap table"); if(!table){ alert("통계 표가 없습니다."); return; }
   const s=el("#dateStart").value||"", e=el("#dateEnd").value||"", ward=el("#wardFilter").value||"전체";
 
-  // 메인 표 → 시트
   const ws=XLSX.utils.table_to_sheet(table,{origin:"A2"});
   const title=`${s} ~ ${e} ${ward}병동 출고량`;
   XLSX.utils.sheet_add_aoa(ws,[[title]],{origin:"A1"});
 
-  // 제목 머지 & 서식
   const lastCol=table.rows[0].cells.length-1;
   ws["!merges"]=ws["!merges"]||[]; ws["!merges"].push({s:{r:0,c:0},e:{r:0,c:lastCol}});
   ws["A1"].s={font:{bold:true,sz:14},alignment:{horizontal:"center",vertical:"center"}};
   ws["!rows"]=ws["!rows"]||[]; ws["!rows"][0]={hpt:22};
 
-  // 합계행에서 합계 읽고 일평균 계산
   const daysCount = Math.max(1, Math.round((new Date(e) - new Date(s)) / (1000*60*60*24)) + 1);
   const tBody = table.tBodies[0];
-  const lastRow = tBody.rows[tBody.rows.length-1]; // 합계
+  const lastRow = tBody.rows[tBody.rows.length-1];
   const totals = Array.from(lastRow.cells).slice(1).map(c=>parseInt(c.innerText)||0);
   const avgs = totals.map(v=>Math.round(v/daysCount));
 
-  // 합계 밑에 "일평균" 행 추가
   XLSX.utils.sheet_add_aoa(ws,[["일평균", ...avgs]],{origin:-1});
 
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"통계");
