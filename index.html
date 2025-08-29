@@ -10,12 +10,7 @@
   *{box-sizing:border-box}
   html, body { -webkit-text-size-adjust: 100%; }
   body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
-  /* 상단 타이틀 */
-  .topTitle{
-    text-align:center; font-size:22px; font-weight:800; padding:14px 0;
-    border-bottom:1px solid var(--border); background:#fff; cursor:pointer;
-    user-select:none;
-  }
+  .topTitle{ text-align:center; font-size:22px; font-weight:800; padding:14px 0; border-bottom:1px solid var(--border); background:#fff; cursor:pointer; user-select:none;}
   header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
   .left{display:flex;gap:12px;align-items:center;flex-wrap:nowrap}
   .right{display:flex;gap:8px}
@@ -37,52 +32,31 @@
   th.item-name, td.item-name{white-space:nowrap;word-break:keep-all;overflow:hidden;text-overflow:ellipsis}
   .qtyCell{display:flex;align-items:center;gap:6px;justify-content:flex-end;flex-wrap:nowrap}
   .chip{height:40px;min-width:40px;padding:0 10px;border:1px solid var(--border);background:#eef2f7;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:15px}
-  .chip.reset{background:#ffe8ea;border-color:#ffd5da}
   .qtyCell input{width:76px;height:40px;text-align:center;font-size:16px;padding:0 6px;border:1px solid var(--border);border-radius:12px;background:#fff}
   input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield}
   .empty{margin-top:20px;padding:20px;border:2px dashed var(--border);border-radius:16px;text-align:center;color:#6b7280}
-
-  /* ===== 푸터 ===== */
   .footerBar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);padding:12px;display:flex;justify-content:center;z-index:50}
   .footerCol{display:flex;flex-direction:column;gap:8px;align-items:stretch;justify-content:center;width:100%;max-width:980px}
   #saveAll{width:100%; font-size:18px; padding:12px 16px; border-radius:14px}
   #appDownloadBtn{width:100%; font-size:16px; padding:12px 16px; border-radius:12px; background:#6b7280}
   #saveAll, #appDownloadBtn{ display:block; }
   #exportXLSXBtn{ display:none; }
-
-  /* ===== 통계 화면 전용 ===== */
   body.mode-stats header{display:none;}
   body.mode-stats #saveAll{ display:none; }
   body.mode-stats #appDownloadBtn{ display:none; }
   body.mode-stats #exportXLSXBtn{ display:block; width:100%; font-size:16px; padding:12px 16px; border-radius:12px }
-
-  /* 앱(WebView/PWA) 환경에선 다운로드 버튼 숨김 */
   body.app #appDownloadBtn{ display:none !important; }
-
   #sec-stats .row-wrap{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
   #sec-stats .row-wrap>*{flex:0 0 auto}
   #sec-stats .row-wrap.dates input[type=date]{flex:1 1 0; min-width:0; font-size:15px; padding:6px; border:1px solid var(--border); border-radius:12px; background:#fff}
   #sec-stats .row-wrap select{padding:8px 10px;border:1px solid var(--border);border-radius:12px}
   #statsWrap{overflow-x:hidden}
-
   .statsTable{ table-layout:fixed; border-collapse:collapse; width:100%; max-width:100vw; }
-  .statsTable th, .statsTable td{
-    padding:6px; text-align:center; border:1px solid var(--border);
-    font-size:13px; line-height:1.05; font-variant-numeric:tabular-nums;
-  }
+  .statsTable th, .statsTable td{ padding:6px; text-align:center; border:1px solid var(--border); font-size:13px; line-height:1.05; font-variant-numeric:tabular-nums;}
   .statsTable th.firstCol{ width:50px; }
-  .statsTable th.sumCol{   width:44px; }
-  .statsTable th.rot{
-    writing-mode: vertical-rl;
-    text-orientation: upright;
-    line-height:1;
-    letter-spacing:0;
-    white-space:nowrap;
-    width:24px;
-    padding:4px 2px;
-  }
-
+  .statsTable th.sumCol{ width:44px; }
+  .statsTable th.rot{ writing-mode: vertical-rl; text-orientation: upright; line-height:1; letter-spacing:0; white-space:nowrap; width:24px; padding:4px 2px; }
   @media (max-width:480px){
     .chip{min-width:34px;height:34px;font-size:14px;padding:0 8px}
     .qtyCell input{height:34px;width:68px;font-size:15px}
@@ -92,7 +66,6 @@
 </head>
 <body>
 
-<!-- ✅ 클릭 시 메인 탭으로 이동하는 상단 타이틀 -->
 <div id="gotoMain" class="topTitle">병동 출고관리</div>
 
 <header>
@@ -112,7 +85,6 @@
 </header>
 
 <main>
-  <!-- 입력 -->
   <section id="sec-input">
     <h1>
       <span style="display:flex;gap:10px;align-items:center">
@@ -134,18 +106,15 @@
     </table>
   </section>
 
-  <!-- 통계 -->
   <section id="sec-stats" style="display:none">
     <h1>기간 통계</h1>
 
-    <!-- 날짜 -->
     <div class="row-wrap dates" style="margin-bottom:8px">
       <input type="date" id="dateStart" />
       <span aria-hidden="true">~</span>
       <input type="date" id="dateEnd" />
     </div>
 
-    <!-- 병동 -->
     <div class="row-wrap" style="margin-bottom:12px">
       <label for="wardFilter">병동</label>
       <select id="wardFilter">
@@ -162,7 +131,6 @@
   </section>
 </main>
 
-<!-- 푸터: 메인=제출·앱 / 통계=엑셀 -->
 <div class="footerBar">
   <div class="footerCol">
     <button class="btn acc" id="saveAll">제출하기</button>
@@ -171,15 +139,14 @@
   </div>
 </div>
 
-<!-- 저장 성공 효과음 -->
 <audio id="submitSound" preload="auto"
   src="https://blog.kakaocdn.net/dna/nDY4i/dJMb9MW0NzU/AAAAAAAAAAAAAAAAAAAAAPx9B-3G2pvytNqx-vR3eYmHXaIga9OYo8N_ydqJ4RH2/%EC%A0%84%EC%86%A1.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1756652399&allow_ip=&allow_referer=&signature=NKOSow0S2fb7Q%2FBB560terQ0zko%3D&attach=1&knm=tfile.mp3">
 </audio>
 
-<!-- SheetJS -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- 🔄 SheetJS → xlsx-js-style 로 교체 -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
-<!-- Firebase (인증 없음 / 누구나 읽기/쓰기 규칙 가정) -->
+<!-- Firebase (인증 없음 / RTDB) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getDatabase, ref, push, query, orderByChild, startAt, endAt, onValue, off } 
@@ -199,27 +166,20 @@
   const app = initializeApp(firebaseConfig);
   const rtdb = getDatabase(app);
 
-  /* === 공용 유틸 === */
   function dayStart(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
   function dayEndInclusiveMs(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59,999).getTime(); }
 
-  /* === 저장 === */
   async function saveLogsToRTDB(batchArray){
     const baseRef = ref(rtdb, "logs");
     await Promise.all(batchArray.map(d => push(baseRef, d)));
   }
 
-  /* === 기간 구독 (실시간) === */
   let _liveRef = null, _liveCb = null;
   function startStatsLiveWatcher(startDate, endDateInclusive, onData){
-    if (_liveRef && _liveCb){
-      off(_liveRef, "value", _liveCb);
-      _liveRef = null; _liveCb = null;
-    }
+    if (_liveRef && _liveCb){ off(_liveRef, "value", _liveCb); _liveRef = null; _liveCb = null; }
     const sMs = dayStart(startDate);
     const eMs = dayEndInclusiveMs(endDateInclusive);
     const qy = query(ref(rtdb, "logs"), orderByChild("ts"), startAt(sMs), endAt(eMs));
-
     const cb = (snap)=>{
       const val = snap.val() || {};
       const arr = Object.keys(val).map(k => ({ id:k, ...val[k] }));
@@ -229,7 +189,6 @@
     _liveRef = qy; _liveCb = cb;
   }
 
-  // 노출(저장/실시간)
   window.__fb = { saveLogsToRTDB, startStatsLiveWatcher };
 </script>
 
@@ -237,7 +196,7 @@
 <script>
 const APP_DOWNLOAD_URL = "https://github.com/bangat/linenward/releases/download/v1.0.0/ward.apk";
 
-/* 환경 감지: WebView/PWA 인지 판별 */
+/* 앱 환경 감지(WebView/PWA) */
 function isAppEnv(){
   const ua = (navigator.userAgent||"") + " " + (navigator.vendor||"");
   const isStandalonePWA =
@@ -249,6 +208,11 @@ function isAppEnv(){
   const isCustomUA = /\bMyLinenApp\b/i.test(ua);
   const forced = localStorage.getItem('appMode') === '1';
   return isStandalonePWA || isAndroidWebView || isCustomUA || forced;
+}
+
+/* 경고 진동: 짧게 3번 */
+function buzzWarn(){
+  try{ if(navigator.vibrate){ navigator.vibrate([150,80,150,80,150]); } }catch(e){}
 }
 
 /* 품목 */
@@ -265,8 +229,6 @@ const LS={ ward:"linen/ward", logs:"linen/logs", draft:(ward)=>`linen/draft/${wa
 let state={ ward:localStorage.getItem(LS.ward)||"", section:"input", cat:"시트" };
 const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorAll(s));
 
-function vibrateOnce(ms=1000){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(_){} }
-
 function rangeMsByDates(startStr, endStr){
   const sParts = startStr.split("-").map(Number);
   const eParts = endStr.split("-").map(Number);
@@ -281,7 +243,6 @@ function setLogs(a){ localStorage.setItem(LS.logs, JSON.stringify(a)); }
 function getDraft(){ try{ return JSON.parse(localStorage.getItem(LS.draft(state.ward))||"{}"); }catch(_){ return {}; } }
 function setDraft(obj){ localStorage.setItem(LS.draft(state.ward), JSON.stringify(obj||{})); }
 
-/* ★ 음수 허용 */
 function setDraftQty(item, qty){
   const d=getDraft();
   d[item]= (parseInt(qty)||0);   // 음수 포함 저장
@@ -289,7 +250,11 @@ function setDraftQty(item, qty){
 }
 function getDraftQty(item){
   const d=getDraft();
-  return (parseInt(d[item]||0) || 0); // 음수 포함 반환
+  return (parseInt(d[item]||0) || 0);
+}
+
+function maybeBuzz(prev, next){
+  if(prev < 20 && next >= 20){ buzzWarn(); }
 }
 
 /* 입력 테이블 */
@@ -299,66 +264,51 @@ function buildTable(){
 
   ITEMS[state.cat].forEach(name=>{
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td class="item-name">${name}</td>
-      <td class="qtyCell">
-        <button type="button" class="chip reset" data-reset>리셋</button>
-        <button type="button" class="chip" data-delta="-1">−1</button>
-        <input type="number" inputmode="numeric" value="0" aria-label="${name} 수량"/>
-        <button type="button" class="chip" data-delta="+1">＋1</button>
-        <button type="button" class="chip" data-delta="+5">＋5</button>
-      </td>`;
+    // buildTable() 안의 tr.innerHTML 부분만 교체
+tr.innerHTML = `
+  <td class="item-name">${name}</td>
+  <td class="qtyCell">
+    <button type="button" class="chip" data-delta="-5">−5</button>
+    <button type="button" class="chip" data-delta="-1">−1</button>
+    <input type="number" inputmode="numeric" value="0" aria-label="${name} 수량"/>
+    <button type="button" class="chip" data-delta="+1">＋1</button>
+    <button type="button" class="chip" data-delta="+5">＋5</button>
+  </td>`;
+
 
     const inp = tr.querySelector("input");
     const draftVal = getDraftQty(name);
-
-    if (!isNaN(draftVal)) {
-      inp.value = String(draftVal);
-    } else if (COLORED_ITEMS.has(name)) {
-      inp.value = "10"; setDraftQty(name, 10);
-    } else {
-      inp.value = "0";
-    }
+    if (!isNaN(draftVal)) { inp.value = String(draftVal); }
+    else if (COLORED_ITEMS.has(name)) { inp.value = "10"; setDraftQty(name, 10); }
+    else { inp.value = "0"; }
     inp.dataset.prev = String(parseInt(inp.value || "0") || 0);
 
-    // 수기 입력 (★ 음수 허용)
+    // 직접 입력
     inp.addEventListener("input", ()=>{
       const prev = parseInt(inp.dataset.prev || "0") || 0;
-      const cur = parseInt(inp.value || "0") || 0;   // 음수 허용
+      const cur  = parseInt(inp.value || "0") || 0;
       inp.value = String(cur);
       setDraftQty(name, cur);
-      if (state.cat === "시트" && COLORED_ITEMS.has(name) && prev <= 20 && cur > 20) {
-        vibrateOnce(1000);
-      }
+      maybeBuzz(prev, cur);
       inp.dataset.prev = String(cur);
     });
 
-    // +/− 버튼 (★ 음수 허용)
+    // 버튼 증감
     tr.querySelectorAll("[data-delta]").forEach(btn=>{
       btn.onclick = ()=>{
         const prev = parseInt(inp.dataset.prev || "0") || 0;
-        const delta = btn.dataset.delta === "-1" ? -1 : (btn.dataset.delta === "+1" ? 1 : 5);
-        const v = (parseInt(inp.value || "0") || 0) + delta;  // 음수 허용
+        const delta = parseInt(btn.dataset.delta,10);
+        const v = (parseInt(inp.value || "0") || 0) + delta;
         inp.value = v;
         setDraftQty(name, v);
-        if (state.cat === "시트" && COLORED_ITEMS.has(name) && prev <= 20 && v > 20) {
-          vibrateOnce(1000);
-        }
+        maybeBuzz(prev, v);
         inp.dataset.prev = String(v);
       };
     });
 
-    // 리셋
-    tr.querySelector("[data-reset]").onclick = ()=>{
-      inp.value = "0";
-      setDraftQty(name, 0);
-      inp.dataset.prev = "0";
-    };
-
     tb.appendChild(tr);
   });
 
-  // 🔻 기타 탭 안내 문구(텍스트만)
   if (state.cat === "기타") {
     const noteRow = document.createElement("tr");
     noteRow.innerHTML = `
@@ -369,17 +319,15 @@ function buildTable(){
   }
 }
 
-
-/* 저장 (RTDB 업로드 성공 시 로컬 자동 정리) */
+/* 저장 */
 async function saveAll(){
   if(!state.ward){ alert("병동을 먼저 선택하세요."); return; }
 
-  // 출고일(없으면 오늘)
   const issue = el("#issueDate").value;
   let ts;
   if(issue){
     const [y,m,d] = issue.split("-").map(Number);
-    ts = new Date(y, m-1, d, 12, 0, 0, 0).getTime(); // 선택일 12:00
+    ts = new Date(y, m-1, d, 12, 0, 0, 0).getTime();
   }else{
     ts = Date.now();
   }
@@ -387,26 +335,17 @@ async function saveAll(){
   const draft = getDraft();
   const batch = [];
   ALL_ITEMS.forEach(item=>{
-    const qty = (parseInt(draft[item]||"0") || 0); // ★ 음수 허용
+    const qty = (parseInt(draft[item]||"0") || 0);
     if(qty!==0) batch.push({ ts, yyyymm: new Date(ts).toISOString().slice(0,7), ward: state.ward, item, qty });
   });
   if(batch.length===0){ alert("저장할 항목이 없습니다. (모두 0)"); return; }
 
-  // 로컬 선기록
   const logs = getLogs(); batch.forEach(b=> logs.unshift(b)); setLogs(logs.slice(0, 10000));
 
-  // RTDB 업로드
   let rtdbOK = false;
-  try {
-    if(window.__fb){
-      await window.__fb.saveLogsToRTDB(batch);
-      rtdbOK = true;
-    }
-  } catch(e){
-    console.warn("RTDB 업로드 실패 -> 로컬만 저장", e);
-  }
+  try { if(window.__fb){ await window.__fb.saveLogsToRTDB(batch); rtdbOK = true; } }
+  catch(e){ console.warn("RTDB 업로드 실패 -> 로컬만 저장", e); }
 
-  // 업로드 성공 시: 이번 배치를 로컬에서 제거(중복 방지)
   if (rtdbOK) {
     const cur = getLogs();
     const keyOf = L => [L.ts, L.ward, L.item, L.qty].join("|");
@@ -415,17 +354,13 @@ async function saveAll(){
     setLogs(cleaned);
   }
 
-  // 입력값 초기화
   const cleared = {}; ALL_ITEMS.forEach(i=> cleared[i]=0); setDraft(cleared);
   els("#inputTable tbody input").forEach(inp=> { inp.value="0"; inp.dataset.prev="0"; });
 
-  // 효과음
   const snd = el("#submitSound");
-  snd && snd.play().catch(err=>console.warn("사운드 재생 실패:", err));
-
+  snd && snd.play().catch(()=>{});
   alert("저장되었습니다.");
 
-  /* 🔄 제출 직후 통계 즉시 반영 */
   if (document.body.classList.contains("mode-stats")) {
     const savedDate = new Date(ts).toISOString().slice(0,10);
     el("#dateStart").value = savedDate;
@@ -434,14 +369,14 @@ async function saveAll(){
   }
 }
 
-/* ★ 통계 색상: 음수/구간별 컬러 */
+/* 통계 색상: 음수 회색 / 0~9 검정 / 10~14 노랑 / 15~19 파랑 / 20+ 빨강 */
 function colorStyle(item, value){
   if(!COLORED_ITEMS.has(item)) return "";
   const v = Number(value)||0;
-  if (v < 0)  return ' style="color:#6b7280;font-weight:700"'; // 회색
-  if (v >= 20) return ' style="color:#dc2626;font-weight:700"'; // 빨강
-  if (v >= 15) return ' style="color:#2563eb;font-weight:700"'; // 파랑
-  if (v >= 0)  return ' style="color:#f59e0b;font-weight:700"'; // 노랑 (0~14)
+  if (v < 0)   return ' style="color:#6b7280;font-weight:700"';
+  if (v >= 20) return ' style="color:#dc2626;font-weight:700"';
+  if (v >= 15) return ' style="color:#2563eb;font-weight:700"';
+  if (v >= 10) return ' style="color:#f59e0b;font-weight:700"';
   return "";
 }
 
@@ -454,12 +389,12 @@ function pivotFromLogsRange(logs, startStr, endStr, wardFilter){
   selected.forEach(L=>{
     if(!(L.ward in p)) p[L.ward]={};
     if(typeof p[L.ward][L.item]!=="number") p[L.ward][L.item]=0;
-    p[L.ward][L.item]+=Number(L.qty)||0; // 음수 포함 합산
+    p[L.ward][L.item]+=Number(L.qty)||0;
   });
   return {pivot:p, wards: wardList};
 }
 
-/* 통계 렌더: RTDB 실시간 + 로컬 병합 */
+/* 통계 렌더 */
 async function renderStats(){
   const todayStr = new Date().toISOString().slice(0,10);
   const s = el("#dateStart").value || todayStr;
@@ -470,12 +405,8 @@ async function renderStats(){
   if (window.__fb && typeof window.__fb.startStatsLiveWatcher === "function") {
     window.__fb.startStatsLiveWatcher(new Date(s+"T00:00:00"), new Date(e+"T00:00:00"), (logsRT)=>{
       const [sMs, eMs] = rangeMsByDates(s, e);
-
-      // 로컬 로그(같은 기간)
       let logsLS = [];
       try { logsLS = getLogs().filter(L => L.ts>=sMs && L.ts<eMs); } catch {}
-
-      // 병합(중복 키 제거)
       const uniq = new Map();
       [...logsRT, ...logsLS].forEach(L=>{
         const key = [L.ts, L.ward, L.item, L.qty].join("|");
@@ -483,7 +414,6 @@ async function renderStats(){
       });
       const mergedLogs = Array.from(uniq.values());
 
-      // 피벗 & 렌더
       const {pivot, wards} = pivotFromLogsRange(mergedLogs, s, e, wardFilter);
       const items=ALL_ITEMS;
 
@@ -514,65 +444,70 @@ async function renderStats(){
   }
 }
 
-/* .xlsx 내보내기 */
+/* ✅ xlsx-js-style 사용: 제목 굵게+가운데 정렬로 내보내기 */
 function exportXLSX(){
   const table = document.querySelector("#statsWrap table");
   if(!table){ alert("통계 표가 없습니다. 통계 화면에서 날짜/병동을 선택해 주세요."); return; }
+
   const s = el("#dateStart").value || "";
   const e = el("#dateEnd").value || "";
-  const wb = XLSX.utils.table_to_book(table, {sheet:"통계"});
+  const ward = el("#wardFilter").value || "전체";
+
+  // 표를 A2부터 배치
+  const ws = XLSX.utils.table_to_sheet(table, {origin: "A2"});
+
+  // 제목 (A1)
+  const title = `${s} ~ ${e} ${ward}병동 출고량`;
+  XLSX.utils.sheet_add_aoa(ws, [[title]], {origin: "A1"});
+
+  // 제목 병합 (A1 ~ 마지막 열)
+  const lastCol = table.rows[0].cells.length - 1;
+  ws["!merges"] = ws["!merges"] || [];
+  ws["!merges"].push({ s: {r:0, c:0}, e: {r:0, c:lastCol} });
+
+  // 제목 스타일 (굵게 + 가운데)
+  ws["A1"].s = {
+    font: { bold: true, sz: 14 },
+    alignment: { horizontal: "center", vertical: "center" }
+  };
+  // 제목 높이(선택)
+  ws["!rows"] = ws["!rows"] || [];
+  ws["!rows"][0] = { hpt: 22 };
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "통계");
   XLSX.writeFile(wb, `stats_${s}_to_${e}.xlsx`);
 }
 
-/* 유틸: 디바운스 */
-function debounce(fn, delay=200){
-  let t; return function(...args){ clearTimeout(t); t=setTimeout(()=>fn.apply(this,args), delay); };
-}
+/* 유틸 */
+function debounce(fn, delay=200){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,args), delay); }; }
 
 /* 초기화 */
 window.addEventListener("DOMContentLoaded",()=>{
-  // 앱 모드 강제 토글 (?app=1 / ?app=0)
   const urlApp = new URL(location.href).searchParams.get("app");
   if(urlApp === "1"){ localStorage.setItem("appMode", "1"); }
   if(urlApp === "0"){ localStorage.removeItem("appMode"); }
+  if(isAppEnv()){ document.body.classList.add("app"); const btn = el("#appDownloadBtn"); if(btn) btn.style.display = "none"; }
 
-  // 앱 환경이면 버튼 숨김
-  if(isAppEnv()){
-    document.body.classList.add("app");
-    const btn = el("#appDownloadBtn");
-    if(btn) btn.style.display = "none";
-  }
-
-  // 병동 캐싱
   const urlWard=new URL(location.href).searchParams.get("ward");
   if(urlWard){ state.ward=urlWard; localStorage.setItem(LS.ward,state.ward); }
   el("#wardSelect").value = state.ward;
   el("#wardSelect").onchange = e=>{ state.ward = e.target.value || ""; localStorage.setItem(LS.ward, state.ward); buildTable(); };
 
-  // 오늘 디폴트
-  const d=new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth()+1).padStart(2,"0");
-  const dd = String(d.getDate()).padStart(2,"0");
+  const d=new Date(); const yyyy=d.getFullYear(); const mm=String(d.getMonth()+1).padStart(2,"0"); const dd=String(d.getDate()).padStart(2,"0");
   el("#issueDate").value = `${yyyy}-${mm}-${dd}`;
   el("#dateStart").value = `${yyyy}-${mm}-${dd}`;
   el("#dateEnd").value   = `${yyyy}-${mm}-${dd}`;
 
-  // 표/버튼
   buildTable();
   el("#saveAll").onclick = saveAll;
   el("#exportXLSXBtn").onclick = exportXLSX;
 
-  // 앱 다운로드
   el("#appDownloadBtn").onclick = ()=> {
-    if(APP_DOWNLOAD_URL && APP_DOWNLOAD_URL.startsWith("http")){
-      window.location.href = APP_DOWNLOAD_URL;
-    }else{
-      alert("다운로드 링크가 설정되지 않았습니다. APP_DOWNLOAD_URL 값을 수정하세요.");
-    }
+    if(APP_DOWNLOAD_URL && APP_DOWNLOAD_URL.startsWith("http")){ window.location.href = APP_DOWNLOAD_URL; }
+    else{ alert("다운로드 링크가 설정되지 않았습니다. APP_DOWNLOAD_URL 값을 수정하세요."); }
   };
 
-  // 통계로 이동
   el("#gotoStats").onclick = ()=> {
     document.body.classList.add("mode-stats");
     el("#sec-input").style.display="none";
@@ -583,14 +518,12 @@ window.addEventListener("DOMContentLoaded",()=>{
     renderStats();
   };
 
-  // 상단 타이틀 클릭 → 메인
   el("#gotoMain").onclick = ()=>{
     document.body.classList.remove("mode-stats");
     el("#sec-input").style.display="block";
     el("#sec-stats").style.display="none";
   };
 
-  // 탭
   els(".tab").forEach(t=> t.onclick=()=>{
     state.cat = t.dataset.cat;
     els(".tab").forEach(x=>x.classList.remove("active"));
@@ -598,7 +531,6 @@ window.addEventListener("DOMContentLoaded",()=>{
     buildTable();
   });
 
-  // 통계 자동 반영
   const rerender = debounce(renderStats, 200);
   ["#dateStart","#dateEnd","#wardFilter"].forEach(sel=>{
     const node = el(sel);
