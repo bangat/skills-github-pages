@@ -99,8 +99,8 @@
 
   /* 통계 컨트롤 */
   #sec-stats .row-wrap{display:flex;align-items:center;gap:8px}
-  #sec-stats .row-wrap.dates input[type=date]{flex:1 1 0;min-width:0;font-size:15px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--text)}
-  #sec-stats .row-wrap select{padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--text)}
+  #sec-stats .row-wrap.dates input[type=date]{flex:1 1 0;min-width:0;font-size:15px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:#var(--text)}
+  #sec-stats .row-wrap select{padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:#var(--text)}
 
   /* 통계표: 가로스크롤 금지 & ‘합계’ 열 제거 버전 */
   #statsWrap{overflow-x:hidden}
@@ -113,9 +113,25 @@
   .statsTable th:first-child,.statsTable td:first-child{width:44px}
   .statsTable th.rot{writing-mode:vertical-rl;text-orientation:upright;line-height:1;letter-spacing:0;width:22px;padding:4px 2px}
   .statsTable tr:last-child td,.statsTable tr:last-child th{border-bottom:none}
+
   @media (max-width:480px){
     .chip{min-width:32px;height:34px;font-size:13px}
     .qtyCell input{height:34px;width:54px;font-size:14px}
+  }
+
+  /* === 글로벌 경고 플래시 (3회 점멸) === */
+  #flashOverlay{
+    position:fixed; inset:0;
+    background:#ef4444; /* 빨강 */
+    opacity:0;
+    pointer-events:none;
+    animation: flashOverlay3 0.24s ease-in-out 3; /* 3번 점멸 */
+    z-index:9999;
+  }
+  @keyframes flashOverlay3{
+    0%{opacity:0}
+    50%{opacity:0.30}
+    100%{opacity:0}
   }
 </style>
 </head>
@@ -194,6 +210,14 @@
   </div>
 </div>
 
+<!-- 효과음: 제출/탭/버튼 -->
+<audio id="submitSound" preload="auto"
+  src="https://blog.kakaocdn.net/dna/MEv0X/dJMb9L4Selx/AAAAAAAAAAAAAAAAAAAAAKXPuVkeMAzxy7Bh1SCt30bi2C_1bwZptqCrwQ0ljMyS/%EC%A0%9C%EC%B6%9C%ED%95%98%EA%B8%B0.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1756652399&allow_ip=&allow_referer=&signature=bBTf6jPM0QoS4X1eHIz5E0OUbWs%3D&attach=1&knm=tfile.mp3"></audio>
+<audio id="tabSound" preload="auto"
+  src="https://blog.kakaocdn.net/dna/PzPow/dJMb8597iUU/AAAAAAAAAAAAAAAAAAAAAEfGdwd_aPGAiS8W_xjwE-wiO0YWzNYGwEiMupOPzPpT/%ED%83%AD%EC%9D%B4%EB%8F%99.wav?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1756652399&allow_ip=&allow_referer=&signature=LR3qy5CI%2BpIhqYLCUU6LCDsruAM%3D&attach=1&knm=tfile.wav"></audio>
+<audio id="btnClickSound" preload="auto"
+  src="https://blog.kakaocdn.net/dna/bwYLog/dJMb9aXTgeJ/AAAAAAAAAAAAAAAAAAAAADmduRzhpb3MzOEfQjYt4_cZMEVg0HqosiW-zgFGI0Ft/%EB%B2%84%ED%8A%BC%ED%81%B4%EB%A6%AD.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1756652399&allow_ip=&allow_referer=&signature=JRStjWXe5PrINCjwa%2BD8gG8hatU%3D&attach=1&knm=tfile.mp3"></audio>
+
 <!-- xlsx-js-style -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
@@ -245,10 +269,9 @@
 
 <!-- App Script -->
 <script>
-const REPO_SLUG = "bangat/linenward";       // 깃허브 owner/repo
-const APK_NAME  = "WardLinen.apk";          // 자산 파일명 (릴리스마다 같게 유지)
+const REPO_SLUG = "bangat/linenward";
+const APK_NAME  = "WardLinen.apk";
 const LATEST_DIRECT = `https://github.com/${REPO_SLUG}/releases/latest/download/${APK_NAME}`;
-
 
 /* ==== 데이터/상수 ==== */
 const ITEMS={
@@ -273,8 +296,40 @@ function isAppEnv(){
   return isStandalonePWA||isAndroidWebView||isCustomUA||forced;
 }
 
-/* 경고 */
-function maybeBuzz(prev,next){ if(prev<20&&next>=20){ try{navigator.vibrate&&navigator.vibrate([120,80,120]);}catch(e){} } }
+/* 간단 재생 헬퍼: 연타 시도 대비 currentTime=0 후 재생 */
+function playSnd(id){
+  try{
+    const a = el(id);
+    if(!a) return;
+    a.currentTime = 0;
+    a.play().catch(()=>{});
+  }catch(_){}
+}
+
+/* 전체 화면 플래시 + 짧은 진동 3회 */
+function flashWarn(){
+  try{
+    if(navigator.vibrate){
+      navigator.vibrate([120,80,120,80,120]); // 짧은 진동 3번
+    }
+  }catch(e){}
+
+  const ov = document.createElement('div');
+  ov.id = 'flashOverlay';
+  document.body.appendChild(ov);
+  ov.addEventListener('animationend', ()=>{
+    if(ov && ov.parentNode) ov.parentNode.removeChild(ov);
+  });
+}
+
+/* 경고: "15까지는 무반응" → 16 이상으로 넘어갈 때 발동 */
+function maybeBuzz(prev,next){
+  const p = Number(prev)||0;
+  const n = Number(next)||0;
+  if(p < 16 && n >= 16){
+    flashWarn();
+  }
+}
 
 /* 범위 */
 function rangeMsByDates(startStr,endStr){
@@ -319,6 +374,9 @@ function buildTable(){
         const prev=parseInt(inp.dataset.prev||"0")||0;
         const v=(parseInt(inp.value||"0")||0)+parseInt(btn.dataset.delta,10);
         inp.value=v; setDraftQty(name,v); maybeBuzz(prev,v); inp.dataset.prev=String(v);
+
+        // 버튼 클릭 효과음
+        playSnd("#btnClickSound");
       };
     });
     tb.appendChild(tr);
@@ -347,6 +405,10 @@ async function saveAll(){
 
   const cleared={}; ALL_ITEMS.forEach(i=>cleared[i]=0); setDraft(cleared);
   Array.from(document.querySelectorAll("#inputTable tbody input")).forEach(inp=>{ inp.value="0"; inp.dataset.prev="0"; });
+
+  // 제출하기 효과음
+  playSnd("#submitSound");
+
   alert("저장되었습니다.");
 
   if(document.body.classList.contains("mode-stats")){
@@ -402,7 +464,6 @@ async function renderStats(){
       html+=`</tbody></table>`;
       el("#statsWrap").innerHTML=html;
 
-      // 데이터 없을 때 안내
       const any=wards.some(w=>items.some(i=>(p[w]?.[i]||0)>0));
       el("#statsEmpty").style.display = any ? "none" : "block";
     });
@@ -441,19 +502,40 @@ window.addEventListener("DOMContentLoaded",()=>{
   el("#saveAll").onclick=saveAll;
   el("#exportXLSXBtn").onclick=exportXLSX;
 
-el("#appDownloadBtn").onclick = () => {
-  if (LATEST_DIRECT && LATEST_DIRECT.startsWith("http")) {
-    window.location.href = LATEST_DIRECT;
-  } else {
-    alert("다운로드 링크가 설정되지 않았습니다.");
-  }
-};
+  el("#appDownloadBtn").onclick = () => {
+    if (LATEST_DIRECT && LATEST_DIRECT.startsWith("http")) {
+      window.location.href = LATEST_DIRECT;
+    } else {
+      alert("다운로드 링크가 설정되지 않았습니다.");
+    }
+  };
 
+  el("#gotoStats").onclick=()=>{ 
+    document.body.classList.add("mode-stats"); 
+    el("#sec-input").style.display="none"; 
+    el("#sec-stats").style.display="block"; 
+    const chosen=el("#issueDate").value||new Date().toISOString().slice(0,10); 
+    el("#dateStart").value=chosen; el("#dateEnd").value=chosen; 
+    renderStats(); 
+  };
+  el("#gotoMain").onclick=()=>{ 
+    document.body.classList.remove("mode-stats"); 
+    el("#sec-input").style.display="block"; 
+    el("#sec-stats").style.display="none"; 
+  };
 
-  el("#gotoStats").onclick=()=>{ document.body.classList.add("mode-stats"); el("#sec-input").style.display="none"; el("#sec-stats").style.display="block"; const chosen=el("#issueDate").value||new Date().toISOString().slice(0,10); el("#dateStart").value=chosen; el("#dateEnd").value=chosen; renderStats(); };
-  el("#gotoMain").onclick=()=>{ document.body.classList.remove("mode-stats"); el("#sec-input").style.display="block"; el("#sec-stats").style.display="none"; };
+  /* 탭 전환 + 효과음 */
+  Array.from(document.querySelectorAll(".tab")).forEach(t=> 
+    t.onclick=()=>{
+      state.cat=t.dataset.cat;
+      Array.from(document.querySelectorAll(".tab")).forEach(x=>x.classList.remove("active"));
+      t.classList.add("active");
+      buildTable();
 
-  Array.from(document.querySelectorAll(".tab")).forEach(t=> t.onclick=()=>{ state.cat=t.dataset.cat; Array.from(document.querySelectorAll(".tab")).forEach(x=>x.classList.remove("active")); t.classList.add("active"); buildTable(); });
+      // 탭 이동 효과음
+      playSnd("#tabSound");
+    }
+  );
 
   const rerender=debounce(renderStats,200); ["#dateStart","#dateEnd","#wardFilter"].forEach(sel=>{ const n=el(sel); n&&n.addEventListener("change",rerender); n&&n.addEventListener("input",rerender); });
 });
