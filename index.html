@@ -6,96 +6,116 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>린넨실 출고관리</title>
 <style>
-  :root{ --bg:#f9fafb; --card:#ffffff; --accent:#2563eb; --muted:#6b7280; --text:#111827; --border:#e5e7eb; }
-  *{box-sizing:border-box}
-  html, body { -webkit-text-size-adjust: 100%; }
-  body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
-  .topTitle{ text-align:center; font-size:22px; font-weight:800; padding:14px 0; border-bottom:1px solid var(--border); background:#fff; cursor:pointer; user-select:none;}
-  header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
-  .left{display:flex;gap:12px;align-items:center;flex-wrap:nowrap}
-  .right{display:flex;gap:8px}
-  label.head{font-weight:800;white-space:nowrap;margin-right:6px}
-  select{padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:12px;background:#fff}
-  #wardSelect{width:170px}
-  button{border:0;border-radius:12px;padding:10px 14px;font-size:15px;font-weight:700;cursor:pointer}
-  .btn{background:#94a3b8;color:#fff}
-  .btn.acc{background:var(--accent);color:#fff}
-  main{max-width:980px;margin:0 auto;padding:16px}
-  h1{font-size:20px;margin:18px 0 8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-  .tabs{display:flex;gap:8px;margin:12px 0}
-  .tab{flex:1;text-align:center;padding:10px;background:#e5e7eb;color:#374151;font-weight:700;border-radius:12px;cursor:pointer}
-  .tab.active{background:#2563eb;color:#fff}
-
-  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden}
-  th,td{border-bottom:1px solid var(--border);padding:12px;font-size:16px;text-align:center}
-  td:first-child, th:first-child{text-align:left}
-  .col-item{width:42%} .col-qty{width:58%}
-  th.item-name, td.item-name{white-space:nowrap;word-break:keep-all;overflow:hidden;text-overflow:ellipsis}
-
-  /* -5 -1 [입력] +1 +5 */
-  .qtyCell{
-    display:grid;
-    grid-auto-flow: column;
-    grid-auto-columns: max-content;
-    align-items:center;
-    justify-content:end;
-    column-gap:6px;
-    white-space:nowrap;
-    overflow-x:clip;
+  /* ===== Light Premium (fixed) ===== */
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --accent:#2563eb; --muted:#5b677a; --text:#0f172a; --border:#e6eaf2;
+    --r-lg:16px; --r-md:12px;
+    --shadow-1:0 4px 16px rgba(15,23,42,.08); --shadow-2:0 10px 30px rgba(15,23,42,.10);
+    --focus:0 0 0 2px rgba(37,99,235,.22),0 0 0 6px rgba(37,99,235,.1);
   }
-  .chip{height:40px;min-width:40px;padding:0 10px;border:1px solid var(--border);background:#eef2f7;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:15px}
-  .qtyCell input{width:76px;height:40px;text-align:center;font-size:16px;padding:0 6px;border:1px solid var(--border);border-radius:12px;background:#fff}
-  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  *{box-sizing:border-box}
+  html,body{height:100%;-webkit-text-size-adjust:100%}
+  body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
+
+  /* 상단 */
+  .topTitle{
+    position:sticky;top:0;z-index:60;
+    text-align:center;font-size:22px;font-weight:800;padding:12px 0;background:var(--card);border-bottom:1px solid var(--border);
+    user-select:none;cursor:pointer;
+  }
+  header{
+    position:sticky;top:48px;z-index:50;
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:10px 16px;background:var(--card);border-bottom:1px solid var(--border);
+  }
+  .left{display:flex;gap:10px;align-items:center}
+  .right{display:flex;gap:8px}
+  label.head{font-weight:800;color:#334155;margin-right:6px;white-space:nowrap}
+  select,input[type=date]{
+    padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:var(--r-md);background:#fff;color:var(--text);
+    transition:border-color .12s,box-shadow .12s;
+  }
+  select:focus,input[type=date]:focus{outline:none;border-color:var(--accent);box-shadow:var(--focus)}
+  #wardSelect{width:170px}
+
+  /* 버튼 */
+  button{border:0;border-radius:12px;padding:10px 14px;font-size:15px;font-weight:700;cursor:pointer;transition:transform .12s,filter .12s}
+  .btn{background:#eef2f7;color:#1f2a44;border:1px solid var(--border);box-shadow:var(--shadow-1)}
+  .btn:hover{filter:brightness(1.02);transform:translateY(-1px)}
+  .btn:active{transform:translateY(0)}
+  .btn.acc{background:linear-gradient(180deg,#4f83ff,#2563eb);color:#fff;border:1px solid #2856c7;box-shadow:0 6px 22px rgba(37,99,235,.25)}
+
+  /* 본문 컨테이너 */
+  main{max-width:980px;margin:0 auto;padding:12px 16px}
+  h1{font-size:20px;margin:10px 0 6px;display:flex;align-items:center;gap:10px;color:#0f172a}
+  h1 label{color:#475569;font-weight:700}
+
+  /* 탭 - 표와 폭 정확히 동일 */
+  .tabs{
+    width:100%;display:flex;gap:8px;margin:10px 0;
+    background:#f2f5fb;border:1px solid var(--border);border-radius:var(--r-lg);padding:6px;box-shadow:var(--shadow-1)
+  }
+  .tab{flex:1;text-align:center;padding:10px;border-radius:10px;font-weight:800;color:#334155;cursor:pointer}
+  .tab.active{background:#e6efff;color:#0b3fb8;box-shadow:inset 0 0 0 1px rgba(37,99,235,.25)}
+
+  /* 입력 테이블 */
+  table{
+    width:100%;border-collapse:separate;border-spacing:0;background:var(--card);
+    border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-2)
+  }
+  thead th{background:#f6f8fc;color:#1e293b;font-weight:800}
+  th,td{border-bottom:1px solid var(--border);padding:12px;font-size:16px;text-align:center}
+  td:first-child,th:first-child{text-align:left}
+  .col-item{width:45%}.col-qty{width:55%}
+
+  /* 수량 셀: 중앙정렬 고정 + 오버플로우 금지 */
+  .qtyCell{
+    display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:nowrap;
+  }
+  .chip{
+    height:36px;min-width:34px;padding:0 8px;border:1px solid #d8deea;background:#f3f6fb;border-radius:10px;
+    display:inline-flex;align-items:center;justify-content:center;font-size:14px;color:#0f172a
+  }
+  .qtyCell input{
+    width:56px;height:36px;text-align:center;font-size:15px;padding:0 6px;border:1px solid var(--border);border-radius:10px;background:#fff;color:#0f172a
+  }
+  input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield}
 
-  .empty{margin-top:20px;padding:20px;border:2px dashed var(--border);border-radius:16px;text-align:center;color:#6b7280}
+  .empty{margin-top:16px;padding:18px;border:1px dashed var(--border);border-radius:16px;text-align:center;color:var(--muted);background:#fff}
 
-  .footerBar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);padding:12px;display:flex;justify-content:center;z-index:50}
-  .footerCol{display:flex;flex-direction:column;gap:8px;align-items:stretch;justify-content:center;width:100%;max-width:980px}
-  #saveAll{width:100%; font-size:18px; padding:12px 16px; border-radius:14px}
-  #appDownloadBtn{width:100%; font-size:16px; padding:12px 16px; border-radius:12px; background:#6b7280}
-  #saveAll, #appDownloadBtn{ display:block; }
-  #exportXLSXBtn{ display:none; }
+  /* 하단바 */
+  .footerBar{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--border);padding:10px;display:flex;justify-content:center;z-index:50}
+  .footerCol{display:flex;flex-direction:column;gap:10px;align-items:stretch;max-width:980px;width:100%}
+  #saveAll{width:100%;font-size:18px;padding:12px 16px;border-radius:14px}
+  #appDownloadBtn{width:100%;font-size:16px;padding:12px 16px;border-radius:12px;background:#eef2f7;color:#1f2a44;border:1px solid var(--border)}
+  #saveAll,#appDownloadBtn{display:block}
+  #exportXLSXBtn{display:none}
 
-  /* 통계 화면 */
-  body.mode-stats header{display:none;}
-  body.mode-stats #saveAll{ display:none; }
-  body.mode-stats #appDownloadBtn{ display:none; }
-  body.mode-stats #exportXLSXBtn{ display:block; width:100%; font-size:16px; padding:12px 16px; border-radius:12px }
+  /* 통계 모드 */
+  body.mode-stats header{display:none}
+  body.mode-stats #saveAll, body.mode-stats #appDownloadBtn{display:none}
+  body.mode-stats #exportXLSXBtn{display:block;width:100%;font-size:16px;padding:12px 16px;border-radius:12px}
 
-  /* 앱이면 다운로드 버튼만 숨김 */
-  body.app #appDownloadBtn{ display:none !important; }
+  /* 통계 컨트롤 */
+  #sec-stats .row-wrap{display:flex;align-items:center;gap:8px}
+  #sec-stats .row-wrap.dates input[type=date]{flex:1 1 0;min-width:0;font-size:15px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--text)}
+  #sec-stats .row-wrap select{padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--text)}
 
-  #sec-stats .row-wrap{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
-  #sec-stats .row-wrap>*{flex:0 0 auto}
-  #sec-stats .row-wrap.dates input[type=date]{flex:1 1 0; min-width:0; font-size:15px; padding:6px; border:1px solid var(--border); border-radius:12px; background:#fff}
-  #sec-stats .row-wrap select{padding:8px 10px;border:1px solid var(--border);border-radius:12px}
+  /* 통계표: 가로스크롤 금지 & ‘합계’ 열 제거 버전 */
   #statsWrap{overflow-x:hidden}
-  .statsTable{ table-layout:fixed; border-collapse:collapse; width:100%; max-width:100vw; }
-  .statsTable th, .statsTable td{ padding:6px; text-align:center; border:1px solid var(--border); font-size:13px; line-height:1.05; font-variant-numeric:tabular-nums;}
-  .statsTable th.firstCol{ width:50px; }
-  .statsTable th.sumCol{ width:44px; }
-  .statsTable th.rot{ writing-mode: vertical-rl; text-orientation: upright; line-height:1; letter-spacing:0; white-space:nowrap; width:24px; padding:4px 2px; }
-
+  .statsTable{
+    width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;background:var(--card);
+    border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-2)
+  }
+  .statsTable th,.statsTable td{padding:6px;text-align:center;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:13px;line-height:1.05;font-variant-numeric:tabular-nums;color:#0f172a}
+  .statsTable thead th{background:#f6f8fc;color:#0f172a;font-weight:800}
+  .statsTable th:first-child,.statsTable td:first-child{width:44px}
+  .statsTable th.rot{writing-mode:vertical-rl;text-orientation:upright;line-height:1;letter-spacing:0;width:22px;padding:4px 2px}
+  .statsTable tr:last-child td,.statsTable tr:last-child th{border-bottom:none}
   @media (max-width:480px){
-    .chip{min-width:32px;height:34px;font-size:14px;padding:0 6px}
-    .qtyCell input{height:34px;width:64px;font-size:15px}
-    .qtyCell{ column-gap:4px; }
-  }
-
-  /* 전체 빨간 점멸(2회) */
-  #flashOverlay{
-    position:fixed; inset:0;
-    background:#ef4444;
-    opacity:0;
-    pointer-events:none;
-    animation: flashOverlay 0.25s ease-in-out 2;
-    z-index:9999;
-  }
-  @keyframes flashOverlay{
-    0%{opacity:0}
-    50%{opacity:0.35}
-    100%{opacity:0}
+    .chip{min-width:32px;height:34px;font-size:13px}
+    .qtyCell input{height:34px;width:54px;font-size:14px}
   }
 </style>
 </head>
@@ -150,7 +170,7 @@
       <input type="date" id="dateEnd" />
     </div>
 
-    <div class="row-wrap" style="margin-bottom:12px">
+    <div class="row-wrap" style="margin-bottom:10px">
       <label for="wardFilter">병동</label>
       <select id="wardFilter">
         <option value="전체">전체</option>
@@ -173,10 +193,6 @@
     <button class="btn" id="exportXLSXBtn">엑셀로 내려받기</button>
   </div>
 </div>
-
-<audio id="submitSound" preload="auto"
-  src="https://blog.kakaocdn.net/dna/nDY4i/dJMb9MW0NzU/AAAAAAAAAAAAAAAAAAAAAPx9B-3G2pvytNqx-vR3eYmHXaIga9OYo8N_ydqJ4RH2/%EC%A0%84%EC%86%A1.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1756652399&allow_ip=&allow_referer=&signature=NKOSow0S2fb7Q%2FBB560terQ0zko%3D&attach=1&knm=tfile.mp3">
-</audio>
 
 <!-- xlsx-js-style -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -229,9 +245,12 @@
 
 <!-- App Script -->
 <script>
-const APP_DOWNLOAD_URL = "https://github.com/bangat/linenward/releases/download/v.1.5/hallymWard.apk";
+const REPO_SLUG = "bangat/linenward";       // 깃허브 owner/repo
+const APK_NAME  = "WardLinen.apk";          // 자산 파일명 (릴리스마다 같게 유지)
+const LATEST_DIRECT = `https://github.com/${REPO_SLUG}/releases/latest/download/${APK_NAME}`;
 
-/* ==== 전역 상수/유틸 ==== */
+
+/* ==== 데이터/상수 ==== */
 const ITEMS={
   "시트":["대시트","반시트","베갯잇","수건"],
   "환자복":["일반상의","일반하의","정형상의","정형하의"],
@@ -246,310 +265,197 @@ let state={ ward:(localStorage.getItem(LS.ward)||"").toString().trim(), section:
 const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorAll(s));
 
 function isAppEnv(){
-  const ua = (navigator.userAgent||"") + " " + (navigator.vendor||"");
-  const isStandalonePWA =
-    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
-    (window.navigator && window.navigator.standalone === true);
-  const isAndroidWebView =
-    /\b; wv\b/i.test(ua) || /\bVersion\/\d+\.\d+ Chrome\/\d+.* Mobile Safari\/\d+/i.test(ua) ||
-    /\bCordova\b|\bCrosswalk\b|\bwv\b/i.test(ua);
-  const isCustomUA = /\bMyLinenApp\b/i.test(ua);
-  const forced = localStorage.getItem('appMode') === '1';
-  return isStandalonePWA || isAndroidWebView || isCustomUA || forced;
+  const ua=(navigator.userAgent||"")+" "+(navigator.vendor||"");
+  const isStandalonePWA=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||(window.navigator&&window.navigator.standalone===true);
+  const isAndroidWebView=/\b; wv\b/i.test(ua)||/\bVersion\/\d+\.\d+ Chrome\/\d+.* Mobile Safari\/\d+/i.test(ua)||/\bCordova\b|\bCrosswalk\b|\bwv\b/i.test(ua);
+  const isCustomUA=/\bMyLinenApp\b/i.test(ua);
+  const forced=localStorage.getItem('appMode')==='1';
+  return isStandalonePWA||isAndroidWebView||isCustomUA||forced;
 }
 
-/* 진동+점멸 경고 */
-function buzzWarn(){
-  try{ if(navigator.vibrate){ navigator.vibrate([150,80,150,80,150]); } }catch(e){}
-  const ov = document.createElement('div');
-  ov.id = 'flashOverlay';
-  document.body.appendChild(ov);
-  ov.addEventListener('animationend', ()=> { if(ov && ov.parentNode) ov.parentNode.removeChild(ov); });
+/* 경고 */
+function maybeBuzz(prev,next){ if(prev<20&&next>=20){ try{navigator.vibrate&&navigator.vibrate([120,80,120]);}catch(e){} } }
+
+/* 범위 */
+function rangeMsByDates(startStr,endStr){
+  const sParts=startStr.split("-").map(Number), eParts=endStr.split("-").map(Number);
+  let s=new Date(sParts[0],sParts[1]-1,sParts[2],0,0,0,0), e=new Date(eParts[0],eParts[1]-1,eParts[2],23,59,59,999);
+  if(e.getTime()<s.getTime()){ const t=s; s=e; e=t; } return [s.getTime(),e.getTime()+1];
 }
 
-function rangeMsByDates(startStr, endStr){
-  const sParts = startStr.split("-").map(Number);
-  const eParts = endStr.split("-").map(Number);
-  let s = new Date(sParts[0], sParts[1]-1, sParts[2], 0,0,0,0);
-  let e = new Date(eParts[0], eParts[1]-1, eParts[2], 23,59,59,999);
-  if(e.getTime() < s.getTime()){ const tmp=s; s=e; e=tmp; }
-  return [s.getTime(), e.getTime()+1];
-}
-
-/* 로컬 저장 */
+/* 로컬 */
 function getLogs(){ return JSON.parse(localStorage.getItem(LS.logs)||"[]"); }
 function setLogs(a){ localStorage.setItem(LS.logs, JSON.stringify(a)); }
 function getDraft(){ try{ return JSON.parse(localStorage.getItem(LS.draft(state.ward))||"{}"); }catch(_){ return {}; } }
-function setDraft(obj){ localStorage.setItem(LS.draft(state.ward), JSON.stringify(obj||{})); }
-function setDraftQty(item, qty){ const d=getDraft(); d[item]= (parseInt(qty)||0); setDraft(d); }
+function setDraft(o){ localStorage.setItem(LS.draft(state.ward), JSON.stringify(o||{})); }
+function setDraftQty(item,qty){ const d=getDraft(); d[item]=(parseInt(qty)||0); setDraft(d); }
 
-/* 20 이상 경고 */
-function maybeBuzz(prev, next){ if(prev < 20 && next >= 20){ buzzWarn(); } }
-
-/* 입력 테이블 */
+/* 입력 표 생성 */
 function buildTable(){
-  const tb = el("#inputTable tbody"); tb.innerHTML = "";
+  const tb=el("#inputTable tbody"); tb.innerHTML="";
   ITEMS[state.cat].forEach(name=>{
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
       <td class="item-name">${name}</td>
       <td class="qtyCell">
         <button type="button" class="chip" data-delta="-5">−5</button>
         <button type="button" class="chip" data-delta="-1">−1</button>
-        <input type="number" inputmode="numeric" value="0" aria-label="${name} 수량"/>
+        <input type="number" inputmode="numeric" value="0" aria-label="${name} 수량" />
         <button type="button" class="chip" data-delta="+1">＋1</button>
         <button type="button" class="chip" data-delta="+5">＋5</button>
       </td>`;
-    const inp = tr.querySelector("input");
+    const inp=tr.querySelector("input");
+    const draft=getDraft();
+    const init=Object.prototype.hasOwnProperty.call(draft,name)?(parseInt(draft[name])||0):0;
+    inp.value=String(init); inp.dataset.prev=String(init);
 
-    // 저장값 있으면 사용, 없으면 0
-    const draftObj = getDraft();
-    const initVal = Object.prototype.hasOwnProperty.call(draftObj, name)
-      ? (parseInt(draftObj[name])||0) : 0;
-    inp.value = String(initVal);
-    inp.dataset.prev = String(initVal);
-
-    inp.addEventListener("input", ()=>{
-      const prev = parseInt(inp.dataset.prev||"0")||0;
-      const cur  = parseInt(inp.value||"0")||0;
-      inp.value = String(cur);
-      setDraftQty(name, cur);
-      maybeBuzz(prev, cur);
-      inp.dataset.prev = String(cur);
+    inp.addEventListener("input",()=>{
+      const prev=parseInt(inp.dataset.prev||"0")||0;
+      const cur=parseInt(inp.value||"0")||0;
+      inp.value=String(cur); setDraftQty(name,cur); maybeBuzz(prev,cur); inp.dataset.prev=String(cur);
     });
-
     tr.querySelectorAll("[data-delta]").forEach(btn=>{
-      btn.onclick = ()=>{
-        const prev = parseInt(inp.dataset.prev||"0")||0;
-        const delta = parseInt(btn.dataset.delta,10);
-        const v = (parseInt(inp.value||"0")||0) + delta;
-        inp.value = v;
-        setDraftQty(name, v);
-        maybeBuzz(prev, v);
-        inp.dataset.prev = String(v);
+      btn.onclick=()=>{
+        const prev=parseInt(inp.dataset.prev||"0")||0;
+        const v=(parseInt(inp.value||"0")||0)+parseInt(btn.dataset.delta,10);
+        inp.value=v; setDraftQty(name,v); maybeBuzz(prev,v); inp.dataset.prev=String(v);
       };
     });
-
     tb.appendChild(tr);
   });
 
-  if (state.cat === "기타") {
-    const noteRow = document.createElement("tr");
-    noteRow.innerHTML = `<td colspan="2" style="text-align:left; padding:12px; font-size:14px; color:#6b7280;">기타 : 중환의, 고관절, 양쪽끈, 양쪽고무줄</td>`;
+  if(state.cat==="기타"){
+    const noteRow=document.createElement("tr");
+    noteRow.innerHTML=`<td colspan="2" style="text-align:left;padding:12px;font-size:14px;color:#64748b;">기타 : 중환의, 고관절, 양쪽끈, 양쪽고무줄</td>`;
     tb.appendChild(noteRow);
   }
 }
 
 /* 저장 */
 async function saveAll(){
-  const wardTrimmed = (state.ward||"").toString().trim();   // ← 병동명 안전보정
-  if(!wardTrimmed){ alert("병동을 먼저 선택하세요."); return; }
+  const ward=(state.ward||"").toString().trim(); if(!ward){ alert("병동을 먼저 선택하세요."); return; }
+  const issue=el("#issueDate").value;
+  let ts=issue?(()=>{const [y,m,d]=issue.split("-").map(Number); return new Date(y,m-1,d,12,0,0,0).getTime();})():Date.now();
 
-  const issue = el("#issueDate").value;
-  let ts;
-  if(issue){
-    const [y,m,d] = issue.split("-").map(Number);
-    ts = new Date(y, m-1, d, 12, 0, 0, 0).getTime();
-  }else{
-    ts = Date.now();
-  }
+  const draft=getDraft(); const batch=[];
+  ALL_ITEMS.forEach(item=>{ const q=(parseInt(draft[item]||"0")||0); if(q!==0) batch.push({ts, yyyymm:new Date(ts).toISOString().slice(0,7), ward, item, qty:q}); });
+  if(!batch.length){ alert("저장할 항목이 없습니다. (모두 0)"); return; }
 
-  const draft = getDraft();
-  const batch = [];
-  ALL_ITEMS.forEach(item=>{
-    const qty = (parseInt(draft[item]||"0") || 0);
-    if(qty!==0) batch.push({ ts, yyyymm: new Date(ts).toISOString().slice(0,7), ward: wardTrimmed, item, qty });
-  });
-  if(batch.length===0){ alert("저장할 항목이 없습니다. (모두 0)"); return; }
+  const logs=getLogs(); batch.forEach(b=>logs.unshift(b)); setLogs(logs.slice(0,10000));
+  let ok=false; try{ if(window.__fb){ await window.__fb.saveLogsToRTDB(batch); ok=true; } }catch(e){ console.warn(e); }
+  if(ok){ const cur=getLogs(), keyOf=L=>[L.ts,L.ward,L.item,L.qty].join("|"); const rm=new Set(batch.map(keyOf)); setLogs(cur.filter(L=>!rm.has(keyOf(L)))); }
 
-  const logs = getLogs(); batch.forEach(b=> logs.unshift(b)); setLogs(logs.slice(0, 10000));
-
-  let rtdbOK = false;
-  try { if(window.__fb){ await window.__fb.saveLogsToRTDB(batch); rtdbOK = true; } }
-  catch(e){ console.warn("RTDB 업로드 실패 -> 로컬만 저장", e); }
-
-  if (rtdbOK) {
-    const cur = getLogs();
-    const keyOf = L => [L.ts, L.ward, L.item, L.qty].join("|");
-    const removeSet = new Set(batch.map(keyOf));
-    const cleaned = cur.filter(L => !removeSet.has(keyOf(L)));
-    setLogs(cleaned);
-  }
-
-  // 모두 0으로 초기화
-  const cleared = {}; ALL_ITEMS.forEach(i=> cleared[i]=0); setDraft(cleared);
-  els("#inputTable tbody input").forEach(inp=> { inp.value="0"; inp.dataset.prev="0"; });
-
-  const snd = el("#submitSound"); snd && snd.play().catch(()=>{});
+  const cleared={}; ALL_ITEMS.forEach(i=>cleared[i]=0); setDraft(cleared);
+  Array.from(document.querySelectorAll("#inputTable tbody input")).forEach(inp=>{ inp.value="0"; inp.dataset.prev="0"; });
   alert("저장되었습니다.");
 
-  if (document.body.classList.contains("mode-stats")) {
-    const savedDate = new Date(ts).toISOString().slice(0,10);
-    el("#dateStart").value = savedDate;
-    el("#dateEnd").value   = savedDate;
-    await renderStats();
+  if(document.body.classList.contains("mode-stats")){
+    const d=new Date(ts).toISOString().slice(0,10);
+    el("#dateStart").value=d; el("#dateEnd").value=d; await renderStats();
   }
 }
 
-/* 통계 */
-function colorStyle(item, value){
+/* 통계(오른쪽 ‘합계 열’ 제거) */
+function colorStyle(item,val){
   if(!COLORED_ITEMS.has(item)) return "";
-  const v = Number(value)||0;
-  if (v < 0)   return ' style="color:#6b7280;font-weight:700"';
-  if (v >= 20) return ' style="color:#dc2626;font-weight:700"';
-  if (v >= 15) return ' style="color:#2563eb;font-weight:700"';
-  if (v >= 10) return ' style="color:#f59e0b;font-weight:700"';
-  return "";
+  const v=Number(val)||0;
+  if(v>=20) return ' style="color:#dc2626;font-weight:800"';
+  if(v>=15) return ' style="color:#1d4ed8;font-weight:800"';
+  if(v>=10) return ' style="color:#b45309;font-weight:800"';
+  return '';
 }
-function pivotFromLogsRange(logs, startStr, endStr, wardFilter){
-  const [s,e] = rangeMsByDates(startStr, endStr);
-  const selected = logs.filter(L => L.ts>=s && L.ts<e && (wardFilter==="전체" || (L.ward||"").toString().trim()===wardFilter));
-  const p={}; const wardList = (wardFilter==="전체")? WARDS : WARDS.filter(w=>w===wardFilter);
-  wardList.forEach(w=>p[w]={}); ALL_ITEMS.forEach(i=> wardList.forEach(w=> p[w][i]=0));
-  selected.forEach(L=>{
-    if(!(L.ward in p)) p[L.ward]={};
-    if(typeof p[L.ward][L.item]!=="number") p[L.ward][L.item]=0;
-    p[L.ward][L.item]+=Number(L.qty)||0;
-  });
-  return {pivot:p, wards: wardList};
+function rangeSelect(logs,sStr,eStr,wardFilter){
+  const [s,e]=rangeMsByDates(sStr,eStr);
+  return logs.filter(L=>L.ts>=s&&L.ts<e&&(wardFilter==="전체"||(L.ward||"").toString().trim()===wardFilter));
+}
+function renderPivot(logs,s,e,wardFilter){
+  const selected=rangeSelect(logs,s,e,wardFilter);
+  const wards=(wardFilter==="전체")?WARDS:WARDS.filter(w=>w===wardFilter);
+  const items=ALL_ITEMS; const p={}; wards.forEach(w=>p[w]={}); items.forEach(i=>wards.forEach(w=>p[w][i]=0));
+  selected.forEach(L=>{ if(!(L.ward in p)) p[L.ward]={}; if(typeof p[L.ward][L.item]!=="number") p[L.ward][L.item]=0; p[L.ward][L.item]+=Number(L.qty)||0; });
+  return {p,wards,items};
 }
 async function renderStats(){
-  const todayStr = new Date().toISOString().slice(0,10);
-  const s = el("#dateStart").value || todayStr;
-  const e = el("#dateEnd").value   || todayStr;
-  const wardFilter = el("#wardFilter").value || "전체";
-  if(!s || !e){ return; }
+  const today=new Date().toISOString().slice(0,10);
+  const s=el("#dateStart").value||today, e=el("#dateEnd").value||today, wardFilter=el("#wardFilter").value||"전체";
+  if(!s||!e) return;
 
-  if (window.__fb && typeof window.__fb.startStatsLiveWatcher === "function") {
+  if(window.__fb && typeof window.__fb.startStatsLiveWatcher==="function"){
     window.__fb.startStatsLiveWatcher(new Date(s+"T00:00:00"), new Date(e+"T00:00:00"), (logsRT)=>{
-      const [sMs, eMs] = rangeMsByDates(s, e);
-      let logsLS = [];
-      try { logsLS = getLogs().filter(L => L.ts>=sMs && L.ts<eMs); } catch {}
-      const uniq = new Map();
-      [...logsRT, ...logsLS].forEach(L=>{
-        const key = [L.ts, L.ward, L.item, L.qty].join("|");
-        if(!uniq.has(key)) uniq.set(key, L);
-      });
-      const mergedLogs = Array.from(uniq.values());
+      const [sMs,eMs]=rangeMsByDates(s,e);
+      let logsLS=[]; try{ logsLS=getLogs().filter(L=>L.ts>=sMs&&L.ts<eMs);}catch(_){}
+      const uniq=new Map(); [...logsRT,...logsLS].forEach(L=>{ const k=[L.ts,L.ward,L.item,L.qty].join("|"); if(!uniq.has(k)) uniq.set(k,L); });
+      const merged=Array.from(uniq.values());
 
-      const {pivot, wards} = pivotFromLogsRange(mergedLogs, s, e, wardFilter);
-      const items=ALL_ITEMS;
+      const {p,wards,items}=renderPivot(merged,s,e,wardFilter);
 
-      let html=`<table class="statsTable"><thead><tr>
-        <th class="firstCol">병동</th>
-        ${items.map(i=>`<th class="rot">${i}</th>`).join("")}
-        <th class="sumCol">합계</th>
-      </tr></thead><tbody>`;
-
-      let grand=0;
+      // 표 생성 (‘합계’ 열 제거, ‘기타’까지)
+      let html=`<table class="statsTable"><thead><tr><th>병동</th>${items.map(i=>`<th class="rot">${i}</th>`).join("")}</tr></thead><tbody>`;
       wards.forEach(w=>{
-        let sum=0; 
-        const cells=items.map(i=>{
-          const v=(pivot[w]?.[i])||0; 
-          sum+=v; 
-          return `<td${colorStyle(i, v)}>${v}</td>`;
-        }).join("");
-        grand+=sum; 
-        html+=`<tr><td>${w}</td>${cells}<td><b>${sum}</b></td></tr>`;
+        const cells=items.map(i=>`<td${colorStyle(i,(p[w]?.[i]||0))}>${p[w]?.[i]||0}</td>`).join("");
+        html+=`<tr><td>${w}</td>${cells}</tr>`;
       });
 
-      const itemTotals = items.map(i=>wards.reduce((a,w)=>a+(pivot[w]?.[i]||0),0));
-      html+=`<tr><th>합계</th>${itemTotals.map((sv,idx)=>`<th${colorStyle(items[idx], sv)}>${sv}</th>`).join("")}<th>${grand}</th></tr>`;
-      html+="</tbody></table>";
+      // 바닥 ‘합계’ 행(열은 그대로 유지)
+      const itemTotals=items.map(i=>wards.reduce((a,w)=>a+(p[w]?.[i]||0),0));
+      html+=`<tr><th>합계</th>${itemTotals.map((v,idx)=>`<th${colorStyle(items[idx],v)}>${v}</th>`).join("")}</tr>`;
+      html+=`</tbody></table>`;
       el("#statsWrap").innerHTML=html;
-      el("#statsEmpty").style.display = grand ? "none" : "block";
+
+      // 데이터 없을 때 안내
+      const any=wards.some(w=>items.some(i=>(p[w]?.[i]||0)>0));
+      el("#statsEmpty").style.display = any ? "none" : "block";
     });
   }
 }
 
-/* 엑셀 내보내기 */
+/* 엑셀 */
 function exportXLSX(){
-  const table = document.querySelector("#statsWrap table");
-  if(!table){ alert("통계 표가 없습니다. 통계 화면에서 날짜/병동을 선택해 주세요."); return; }
-
-  const s = el("#dateStart").value || "";
-  const e = el("#dateEnd").value || "";
-  const ward = el("#wardFilter").value || "전체";
-
-  const ws = XLSX.utils.table_to_sheet(table, {origin: "A2"});
-  const title = `${s} ~ ${e} ${ward}병동 출고량`;
-  XLSX.utils.sheet_add_aoa(ws, [[title]], {origin: "A1"});
-
-  const lastCol = table.rows[0].cells.length - 1;
-  ws["!merges"] = ws["!merges"] || [];
-  ws["!merges"].push({ s: {r:0, c:0}, e: {r:0, c:lastCol} });
-
-  ws["A1"].s = { font:{bold:true, sz:14}, alignment:{horizontal:"center", vertical:"center"} };
-  ws["!rows"] = ws["!rows"] || []; ws["!rows"][0] = { hpt: 22 };
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "통계");
-  XLSX.writeFile(wb, `stats_${s}_to_${e}.xlsx`);
+  const table=document.querySelector("#statsWrap table"); if(!table){ alert("통계 표가 없습니다."); return; }
+  const s=el("#dateStart").value||"", e=el("#dateEnd").value||"", ward=el("#wardFilter").value||"전체";
+  const ws=XLSX.utils.table_to_sheet(table,{origin:"A2"}); const title=`${s} ~ ${e} ${ward}병동 출고량`;
+  XLSX.utils.sheet_add_aoa(ws,[[title]],{origin:"A1"}); const lastCol=table.rows[0].cells.length-1;
+  ws["!merges"]=ws["!merges"]||[]; ws["!merges"].push({s:{r:0,c:0},e:{r:0,c:lastCol}});
+  ws["A1"].s={font:{bold:true,sz:14},alignment:{horizontal:"center",vertical:"center"}}; ws["!rows"]=ws["!rows"]||[]; ws["!rows"][0]={hpt:22};
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"통계"); XLSX.writeFile(wb,`stats_${s}_to_${e}.xlsx`);
 }
 
 /* 초기화 */
-function debounce(fn, delay=200){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,args), delay); }; }
-
+function debounce(fn,delay=200){ let t; return(...a)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,a),delay); }; }
 window.addEventListener("DOMContentLoaded",()=>{
-  const urlApp = new URL(location.href).searchParams.get("app");
-  if(urlApp === "1"){ localStorage.setItem("appMode", "1"); }
-  if(urlApp === "0"){ localStorage.removeItem("appMode"); }
-  if(isAppEnv()){ document.body.classList.add("app"); const btn = el("#appDownloadBtn"); if(btn) btn.style.display = "none"; }
+  const urlApp=new URL(location.href).searchParams.get("app"); if(urlApp==="1"){localStorage.setItem("appMode","1");} if(urlApp==="0"){localStorage.removeItem("appMode");}
+  if(isAppEnv()){ document.body.classList.add("app"); const b=el("#appDownloadBtn"); if(b) b.style.display="none"; }
 
   const urlWard=new URL(location.href).searchParams.get("ward");
   if(urlWard){ state.ward=(urlWard||"").toString().trim(); localStorage.setItem(LS.ward,state.ward); }
-  el("#wardSelect").value = state.ward;
+  el("#wardSelect").value=state.ward;
+  el("#wardSelect").onchange=e=>{ state.ward=(e.target.value||"").toString().trim(); localStorage.setItem(LS.ward,state.ward); buildTable(); };
 
-  el("#wardSelect").onchange = e=>{
-    state.ward = (e.target.value || "").toString().trim();
-    localStorage.setItem(LS.ward, state.ward);
-    buildTable();
-  };
-
-  const d=new Date(); const yyyy=d.getFullYear(); const mm=String(d.getMonth()+1).padStart(2,"0"); const dd=String(d.getDate()).padStart(2,"0");
-  el("#issueDate").value = `${yyyy}-${mm}-${dd}`;
-  el("#dateStart").value = `${yyyy}-${mm}-${dd}`;
-  el("#dateEnd").value   = `${yyyy}-${mm}-${dd}`;
+  const d=new Date(), yyyy=d.getFullYear(), mm=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0");
+  el("#issueDate").value=`${yyyy}-${mm}-${dd}`;
+  el("#dateStart").value=`${yyyy}-${mm}-${dd}`;
+  el("#dateEnd").value=`${yyyy}-${mm}-${dd}`;
 
   buildTable();
 
-  el("#saveAll").onclick = saveAll;
-  el("#exportXLSXBtn").onclick = exportXLSX;
+  el("#saveAll").onclick=saveAll;
+  el("#exportXLSXBtn").onclick=exportXLSX;
 
-  el("#appDownloadBtn").onclick = ()=> {
-    if(APP_DOWNLOAD_URL && APP_DOWNLOAD_URL.startsWith("http")){ window.location.href = APP_DOWNLOAD_URL; }
-    else{ alert("다운로드 링크가 설정되지 않았습니다. APP_DOWNLOAD_URL 값을 수정하세요."); }
-  };
+el("#appDownloadBtn").onclick = () => {
+  if (LATEST_DIRECT && LATEST_DIRECT.startsWith("http")) {
+    window.location.href = LATEST_DIRECT;
+  } else {
+    alert("다운로드 링크가 설정되지 않았습니다.");
+  }
+};
 
-  el("#gotoStats").onclick = ()=> {
-    document.body.classList.add("mode-stats");
-    el("#sec-input").style.display="none";
-    el("#sec-stats").style.display="block";
-    const chosen = el("#issueDate").value || new Date().toISOString().slice(0,10);
-    el("#dateStart").value = chosen;
-    el("#dateEnd").value   = chosen;
-    renderStats();
-  };
 
-  el("#gotoMain").onclick = ()=>{
-    document.body.classList.remove("mode-stats");
-    el("#sec-input").style.display="block";
-    el("#sec-stats").style.display="none";
-  };
+  el("#gotoStats").onclick=()=>{ document.body.classList.add("mode-stats"); el("#sec-input").style.display="none"; el("#sec-stats").style.display="block"; const chosen=el("#issueDate").value||new Date().toISOString().slice(0,10); el("#dateStart").value=chosen; el("#dateEnd").value=chosen; renderStats(); };
+  el("#gotoMain").onclick=()=>{ document.body.classList.remove("mode-stats"); el("#sec-input").style.display="block"; el("#sec-stats").style.display="none"; };
 
-  els(".tab").forEach(t=> t.onclick=()=>{
-    state.cat = t.dataset.cat;
-    els(".tab").forEach(x=>x.classList.remove("active"));
-    t.classList.add("active");
-    buildTable();
-  });
+  Array.from(document.querySelectorAll(".tab")).forEach(t=> t.onclick=()=>{ state.cat=t.dataset.cat; Array.from(document.querySelectorAll(".tab")).forEach(x=>x.classList.remove("active")); t.classList.add("active"); buildTable(); });
 
-  const rerender = debounce(renderStats, 200);
-  ["#dateStart","#dateEnd","#wardFilter"].forEach(sel=>{
-    const node = el(sel);
-    node && node.addEventListener("change", rerender);
-    node && node.addEventListener("input", rerender);
-  });
+  const rerender=debounce(renderStats,200); ["#dateStart","#dateEnd","#wardFilter"].forEach(sel=>{ const n=el(sel); n&&n.addEventListener("change",rerender); n&&n.addEventListener("input",rerender); });
 });
 </script>
 </body>
