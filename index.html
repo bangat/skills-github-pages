@@ -44,29 +44,31 @@
   .panel a{color:#2563eb;font-weight:700}
 
   /* ===== 통계 화면 전용 ===== */
-  body.mode-stats header{display:none;}            /* 통계 모드에서 헤더 숨김 */
-  #sec-stats .row-wrap{display:flex;gap:10px;align-items:center;flex-wrap:nowrap}
+  body.mode-stats header{display:none;} /* 통계 모드에서 헤더 숨김 */
+
+  #sec-stats .row-wrap{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
   #sec-stats .row-wrap>*{flex:0 0 auto}
-  #sec-stats .row-wrap input[type=date]{font-size:16px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#fff}
-  #sec-stats .row-wrap select{padding:10px 12px;border:1px solid var(--border);border-radius:12px}
-  #statsWrap{overflow-x:hidden}                    /* 가로스크롤 금지 */
+  /* 날짜 한 줄: 두 input이 유연하게 폭 나눠 갖고 글씨/패딩 축소 */
+  #sec-stats .row-wrap.dates input[type=date]{flex:1 1 0; min-width:0; font-size:15px; padding:6px; border:1px solid var(--border); border-radius:12px; background:#fff}
+  #sec-stats .row-wrap select{padding:8px 10px;border:1px solid var(--border);border-radius:12px}
+  #statsWrap{overflow-x:hidden} /* 가로 스크롤 금지 */
 
   /* === 통계표: 세로 헤더 + 고정폭(모바일 한화면) === */
   .statsTable{ table-layout:fixed; border-collapse:collapse; width:100%; max-width:100vw; }
   .statsTable th, .statsTable td{
-    padding:8px; text-align:center; border:1px solid var(--border);
-    font-size:14px; line-height:1.1; font-variant-numeric:tabular-nums;
+    padding:6px; text-align:center; border:1px solid var(--border);
+    font-size:13px; line-height:1.05; font-variant-numeric:tabular-nums;
   }
-  .statsTable th.firstCol{ width:56px; }   /* 병동 */
-  .statsTable th.sumCol{   width:50px; }   /* 합계 */
+  .statsTable th.firstCol{ width:50px; }  /* 병동 더 좁게 */
+  .statsTable th.sumCol{   width:44px; }  /* 합계 더 좁게 */
   .statsTable th.rot{
     writing-mode: vertical-rl;
     text-orientation: upright; /* 한글/숫자 세로 */
     line-height:1;
     letter-spacing:0;
     white-space:nowrap;
-    width:28px;                /* 모든 품목 동일폭 -> 가로 스크롤 없이 맞춤 */
-    padding:6px 4px;
+    width:24px;               /* 모든 품목 동일폭(축소) */
+    padding:4px 2px;
   }
 
   @media (max-width:480px){
@@ -122,7 +124,7 @@
     <h1>기간 통계</h1>
 
     <!-- 날짜 한 줄 -->
-    <div class="row-wrap" style="margin-bottom:8px">
+    <div class="row-wrap dates" style="margin-bottom:8px">
       <input type="date" id="dateStart" />
       <span aria-hidden="true">~</span>
       <input type="date" id="dateEnd" />
@@ -141,7 +143,7 @@
       <button class="btn acc" id="calcStats">조회</button>
     </div>
 
-    <!-- 바로 표(“상세내역” 문구 삭제) -->
+    <!-- 바로 표 -->
     <div id="statsWrap"></div>
     <div id="statsEmpty" class="empty" style="display:none">해당 기간 데이터가 없습니다.</div>
 
@@ -224,13 +226,13 @@
 <script>
 const APP_DOWNLOAD_URL = "https://example.com/app-download";
 
-/* 품목 */
+/* 품목 (공백 제거하여 불필요한 폭 증가 방지) */
 const ITEMS={
-  "시트":["대시트","반시트","베갯잇","수  건"],
+  "시트":["대시트","반시트","베갯잇","수건"],
   "환자복":["일반상의","일반하의","정형상의","정형하의"],
-  "기타":["억제대","얼음포","기  타"]
+  "기타":["억제대","얼음포","기타"]
 };
-const COLORED_ITEMS = new Set(["대시트","반시트","베갯잇","수  건"]);
+const COLORED_ITEMS = new Set(["대시트","반시트","베갯잇","수건"]);
 const ALL_ITEMS = Object.values(ITEMS).flat();
 const WARDS=["93","83","73","71","63","62","61","52","51","42","41","기타"];
 
@@ -346,9 +348,9 @@ async function saveAll(){
 function colorStyle(item, value){
   if(!COLORED_ITEMS.has(item)) return "";
   const v = Number(value)||0;
-  if(v>=20) return ' style="color:#dc2626;font-weight:700"'; // red
-  if(v>=15) return ' style="color:#2563eb;font-weight:700"'; // blue
-  if(v===10) return ' style="color:#f59e0b;font-weight:700"'; // yellow
+  if(v>=20) return ' style="color:#dc2626;font-weight:700"';
+  if(v>=15) return ' style="color:#2563eb;font-weight:700"';
+  if(v===10) return ' style="color:#f59e0b;font-weight:700"';
   return "";
 }
 
