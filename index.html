@@ -30,7 +30,18 @@
   td:first-child, th:first-child{text-align:left}
   .col-item{width:42%} .col-qty{width:58%}
   th.item-name, td.item-name{white-space:nowrap;word-break:keep-all;overflow:hidden;text-overflow:ellipsis}
-  .qtyCell{display:flex;align-items:center;gap:6px;justify-content:flex-end;flex-wrap:nowrap}
+  /* 기존 .qtyCell 정의를 아래로 교체 */
+.qtyCell{
+  display:grid;
+  grid-auto-flow: column;     /* 가로로만 흐르게 */
+  grid-auto-columns: max-content;
+  align-items:center;
+  justify-content:end;
+  column-gap:6px;
+  flex-wrap:unset;            /* 안전빵 */
+  white-space:nowrap;         /* 더블 세이프 */
+  overflow-x:clip;            /* 혹시 넘치면 잘라내기(스크롤 싫으면 clip) */
+}
   .chip{height:40px;min-width:40px;padding:0 10px;border:1px solid var(--border);background:#eef2f7;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:15px}
   .qtyCell input{width:76px;height:40px;text-align:center;font-size:16px;padding:0 6px;border:1px solid var(--border);border-radius:12px;background:#fff}
   input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
@@ -57,19 +68,29 @@
   .statsTable th.firstCol{ width:50px; }
   .statsTable th.sumCol{ width:44px; }
   .statsTable th.rot{ writing-mode: vertical-rl; text-orientation: upright; line-height:1; letter-spacing:0; white-space:nowrap; width:24px; padding:4px 2px; }
-  @media (max-width:480px){
-    .chip{min-width:34px;height:34px;font-size:14px;padding:0 8px}
-    .qtyCell input{height:34px;width:68px;font-size:15px}
-    th,td{padding:10px}
-  }
+@media (max-width:480px){
+  .chip{min-width:32px;height:34px;font-size:14px;padding:0 6px}
+  .qtyCell input{height:34px;width:64px;font-size:15px}
+  .qtyCell{ column-gap:4px; }
+}
   .flash-red {
   animation: flashRed 0.2s linear;
 }
-@keyframes flashRed {
-  0%   { background-color: #f9fafb; }
-  50%  { background-color: #f87171; } /* 빨강 */
-  100% { background-color: #f9fafb; }
+/* 전체 화면 오버레이 점멸 */
+#flashOverlay{
+  position:fixed; inset:0;
+  background:#ef4444;
+  opacity:0;
+  pointer-events:none;
+  animation: flashOverlay 0.25s ease-in-out 2; /* 2번 점멸 */
+  z-index:9999;  /* 최상단 */
 }
+@keyframes flashOverlay{
+  0%{opacity:0}
+  50%{opacity:0.35}  /* 눈에 잘 띄는 빨간빛 */
+  100%{opacity:0}
+}
+
 
 </style>
 </head>
@@ -219,18 +240,24 @@ function isAppEnv(){
   return isStandalonePWA || isAndroidWebView || isCustomUA || forced;
 }
 
-/* 경고 진동: 짧게 3번 */
 function buzzWarn(){
-  try {
+  // 진동: 짧게 3번
+  try{
     if(navigator.vibrate){
-      navigator.vibrate([150,80,150,80,150]); // 짧게 3번
+      navigator.vibrate([150,80,150,80,150]);
     }
-  } catch(e){}
+  }catch(e){}
 
-  // 화면 빨간색 점멸
-  document.body.classList.add("flash-red");
-  setTimeout(()=> document.body.classList.remove("flash-red"), 200);
+  // 화면 전체 빨간 점멸 2회
+  const ov = document.createElement('div');
+  ov.id = 'flashOverlay';
+  document.body.appendChild(ov);
+  // 애니메이션 끝나면 제거
+  ov.addEventListener('animationend', ()=> {
+    if(ov && ov.parentNode) ov.parentNode.removeChild(ov);
+  });
 }
+
 
 
 /* 품목 */
@@ -294,6 +321,12 @@ tr.innerHTML = `
   </td>`;
 
 const DEFAULT_TEN_ITEMS = new Set(["대시트","반시트","베갯잇"]);
+    // 페이지를 '다시 열 때' 기본값을 강제로 심어주는 함수
+function resetDefaultTenForThisWard(){
+  const d = getDraft();            // 현재 병동 드래프트 불러오기
+  DEFAULT_TEN_ITEMS.forEach(n => { d[n] = 10; });  // 무조건 10으로 덮어쓰기
+  setDraft(d);
+}
 
    const inp = tr.querySelector("input");
 
@@ -530,7 +563,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   el("#issueDate").value = `${yyyy}-${mm}-${dd}`;
   el("#dateStart").value = `${yyyy}-${mm}-${dd}`;
   el("#dateEnd").value   = `${yyyy}-${mm}-${dd}`;
-
+ resetDefaultTenForThisWard();
   buildTable();
   el("#saveAll").onclick = saveAll;
   el("#exportXLSXBtn").onclick = exportXLSX;
