@@ -39,7 +39,7 @@
   .chip{height:40px;min-width:40px;padding:0 10px;border:1px solid var(--border);background:#eef2f7;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:15px}
   .chip.reset{background:#ffe8ea;border-color:#ffd5da}
   .qtyCell input{width:76px;height:40px;text-align:center;font-size:16px;padding:0 6px;border:1px solid var(--border);border-radius:12px;background:#fff}
-  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield}
   .empty{margin-top:20px;padding:20px;border:2px dashed var(--border);border-radius:16px;text-align:center;color:#6b7280}
 
@@ -56,6 +56,9 @@
   body.mode-stats #saveAll{ display:none; }
   body.mode-stats #appDownloadBtn{ display:none; }
   body.mode-stats #exportXLSXBtn{ display:block; width:100%; font-size:16px; padding:12px 16px; border-radius:12px }
+
+  /* ★ 앱(WebView/PWA) 환경에선 다운로드 버튼 숨김 */
+  body.app #appDownloadBtn{ display:none !important; }
 
   #sec-stats .row-wrap{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
   #sec-stats .row-wrap>*{flex:0 0 auto}
@@ -233,6 +236,28 @@
 <!-- App Script -->
 <script>
 const APP_DOWNLOAD_URL = "https://github.com/bangat/linenward/releases/download/v1.0.0/ward.apk"; // 필요 시 실제 URL로 교체
+
+/* ★ 환경 감지: WebView/PWA 인지 판별 */
+function isAppEnv(){
+  const ua = (navigator.userAgent||"") + " " + (navigator.vendor||"");
+  // PWA 스탠드얼론
+  const isStandalonePWA =
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+    (window.navigator && window.navigator.standalone === true); // iOS
+
+  // 안드로이드 WebView 흔적: ; wv 토큰, Headless 런타임, 하이브리드 프레임워크 UA
+  const isAndroidWebView =
+    /\b; wv\b/i.test(ua) || /\bVersion\/\d+\.\d+ Chrome\/\d+.* Mobile Safari\/\d+/i.test(ua) ||
+    /\bCordova\b|\bCrosswalk\b|\bwv\b/i.test(ua);
+
+  // 선택: 커스텀 UA가 가능하면 여기 키워드 추가 (예: MyLinenApp)
+  const isCustomUA = /\bMyLinenApp\b/i.test(ua);
+
+  // 강제 스위치 (?app=1 저장 / localStorage)
+  const forced = localStorage.getItem('appMode') === '1';
+
+  return isStandalonePWA || isAndroidWebView || isCustomUA || forced;
+}
 
 /* 품목 */
 const ITEMS={
@@ -507,6 +532,18 @@ function debounce(fn, delay=200){
 
 /* 초기화 */
 window.addEventListener("DOMContentLoaded",()=>{
+  /* ★ 앱 모드 강제 토글 (?app=1 / ?app=0) */
+  const urlApp = new URL(location.href).searchParams.get("app");
+  if(urlApp === "1"){ localStorage.setItem("appMode", "1"); }
+  if(urlApp === "0"){ localStorage.removeItem("appMode"); }
+
+  /* ★ 앱 환경이면 body에 .app 클래스 부여 & 다운로드 버튼 숨김 */
+  if(isAppEnv()){
+    document.body.classList.add("app");
+    const btn = el("#appDownloadBtn");
+    if(btn) btn.style.display = "none";
+  }
+
   // 병동 캐싱
   const urlWard=new URL(location.href).searchParams.get("ward");
   if(urlWard){ state.ward=urlWard; localStorage.setItem(LS.ward,state.ward); }
