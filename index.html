@@ -10,7 +10,8 @@
   html, body { -webkit-text-size-adjust: 100%; }
   body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
   header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
-  .left{display:flex;gap:10px;align-items:center;flex-wrap:nowrap}
+  .left{display:flex;gap:12px;align-items:center;flex-wrap:nowrap}
+  .appTitle{font-weight:900;font-size:16px;letter-spacing:.2px}
   .right{display:flex;gap:8px}
   label.head{font-weight:800;white-space:nowrap;margin-right:6px}
   select{padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:12px;background:#fff}
@@ -19,10 +20,11 @@
   .btn{background:#94a3b8;color:#fff}
   .btn.acc{background:var(--accent);color:#fff}
   main{max-width:980px;margin:0 auto;padding:16px}
-  h1{font-size:20px;margin:18px 0 8px}
+  h1{font-size:20px;margin:18px 0 8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .subControls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .tabs{display:flex;gap:8px;margin:12px 0}
   .tab{flex:1;text-align:center;padding:10px;background:#e5e7eb;color:#374151;font-weight:700;border-radius:12px;cursor:pointer}
-  .tab.active{background:var(--accent);color:#fff}
+  .tab.active{background:#2563eb;color:#fff}
   table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;table-layout:fixed}
   th,td{border-bottom:1px solid var(--border);padding:12px;font-size:16px;text-align:center}
   th{background:#f3f4f6;font-weight:700}
@@ -37,17 +39,23 @@
   input[type=number]{-moz-appearance:textfield}
   .empty{margin-top:20px;padding:20px;border:2px dashed var(--border);border-radius:16px;text-align:center;color:#6b7280}
   .footerBar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);padding:12px;display:flex;justify-content:center;z-index:50}
-  .footerBar button{width:80%;font-size:18px;border-radius:14px}
+  .footerCol{display:flex;flex-direction:column;gap:8px;width:80%}
+  .footerCol .btn{width:100%;font-size:18px;border-radius:14px}
   .stack{display:flex;flex-direction:column;gap:12px}
   .panel{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--border);box-shadow:0 -6px 20px rgba(0,0,0,.08);padding:14px;display:none;z-index:60}
   .panel .row{display:flex;gap:8px;flex-wrap:wrap}
   .panel a{color:#2563eb;font-weight:700}
-  @media (max-width:480px){ .chip{min-width:34px;height:34px;font-size:14px;padding:0 8px} .qtyCell input{height:34px;width:68px;font-size:15px} th,td{padding:10px} }
+  @media (max-width:480px){
+    .chip{min-width:34px;height:34px;font-size:14px;padding:0 8px}
+    .qtyCell input{height:34px;width:68px;font-size:15px}
+    th,td{padding:10px}
+  }
 </style>
 </head>
 <body>
 <header>
   <div class="left">
+    <div class="appTitle">린넨 출고관리</div>
     <label class="head" for="wardSelect">병동명</label>
     <select id="wardSelect">
       <option value="">선택…</option>
@@ -66,18 +74,25 @@
 <main>
   <!-- 입력 -->
   <section id="sec-input">
-    <h1>출고 입력</h1>
+    <h1>
+      출고 입력
+      <span class="subControls">
+        <label for="issueDate">출고일</label>
+        <input type="date" id="issueDate" style="font-size:16px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#fff" />
+      </span>
+    </h1>
+
     <div class="tabs">
       <div class="tab active" data-cat="시트">시트</div>
       <div class="tab" data-cat="환자복">환자복</div>
       <div class="tab" data-cat="기타">기타</div>
     </div>
+
     <table id="inputTable" aria-label="품목 입력 표">
       <colgroup><col class="col-item" /><col class="col-qty" /></colgroup>
       <thead><tr><th class="item-name">품목</th><th>수량</th></tr></thead>
       <tbody></tbody>
     </table>
-    <div id="needWard" class="empty" style="display:none">먼저 상단에서 병동을 선택하세요.</div>
   </section>
 
   <!-- 통계 -->
@@ -98,7 +113,7 @@
           <option>기타</option>
         </select>
         <button class="btn acc" id="calcStats">계산</button>
-        <button class="btn" id="exportXLSBtn">엑셀(.xls) 내보내기</button>
+        <button class="btn" id="exportXLSXBtn">엑셀(.xlsx) 내보내기</button>
       </div>
       <div><h3 style="margin:8px 0">상세(병동×품목)</h3><div id="statsWrap"></div></div>
       <div id="statsEmpty" class="empty" style="display:none">해당 기간 데이터가 없습니다.</div>
@@ -106,7 +121,12 @@
   </section>
 </main>
 
-<div class="footerBar"><button class="btn acc" id="saveAll">저장하기</button></div>
+<div class="footerBar">
+  <div class="footerCol">
+    <button class="btn acc" id="saveAll">저장하기</button>
+    <button class="btn" id="appDownloadBtn">어플리케이션 다운로드</button>
+  </div>
+</div>
 
 <!-- 내보내기 폴백 패널 -->
 <div id="fallbackPanel" class="panel">
@@ -118,6 +138,9 @@
   <div class="small">* 인앱 미리보기에서는 자동 다운로드가 막힐 수 있어요. 링크를 직접 누르거나 “새 탭으로 열기”를 사용해 주세요.</div>
 </div>
 
+<!-- SheetJS for real .xlsx export -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
 <!-- ===== Firebase (RTDB) ===== -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -125,7 +148,6 @@
   import { getDatabase, ref, push, get, query, orderByChild, startAt, endAt } 
     from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-  /* 프로젝트 설정 */
   const firebaseConfig = {
     apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
     authDomain: "hallymlinen.firebaseapp.com",
@@ -141,16 +163,13 @@
   const auth = getAuth(app);
   const rtdb = getDatabase(app);
 
-  // 익명 로그인 (키오스크)
   onAuthStateChanged(auth, (user)=>{ if(!user) signInAnonymously(auth); });
 
-  // 저장: /logs/{autoId}
   async function saveLogsToRTDB(batchArray){
     const baseRef = ref(rtdb, "logs");
     await Promise.all(batchArray.map(d => push(baseRef, d)));
   }
 
-  // 기간 조회: ts(ms), 종료일 포함
   function dayStart(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
   function dayEndInclusiveMs(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59,999).getTime(); }
   async function fetchRangeFromRTDB(startDate, endDateInclusive){
@@ -162,17 +181,19 @@
     return Object.keys(val).map(k => ({ id:k, ...val[k] }));
   }
 
-  // 앱에서 사용
   window.__fb = { saveLogsToRTDB, fetchRangeFromRTDB };
 </script>
 
 <!-- ===== App Script ===== -->
 <script>
+/* 앱 다운로드 링크 (필요시 수정) */
+const APP_DOWNLOAD_URL = "https://example.com/app-download";
+
 /* 품목 */
 const ITEMS={
   "시트":["대시트","반시트","베갯잇","수건"],
   "환자복":["일반상의","일반하의","정형상의","정형하의"],
-  "기타":["억제대","얼음포","기타"]
+  "기타":["억제대","얼음포","기타"] /* '기타' 행 아래에 안내줄 추가됨 */
 };
 const COLORED_ITEMS = new Set(["대시트","반시트","베갯잇","수건"]); // 색상 적용 대상
 const ALL_ITEMS = Object.values(ITEMS).flat();
@@ -181,10 +202,8 @@ const LS={ ward:"linen/ward", logs:"linen/logs", draft:(ward)=>`linen/draft/${wa
 let state={ ward:localStorage.getItem(LS.ward)||"", section:"input", cat:"시트" };
 const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorAll(s));
 
-/* 진동(지원 기기에서만) */
 function vibrateOnce(ms=1000){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(_){ } }
 
-/* 날짜 범위 → ms 상하한 */
 function rangeMsByDates(startStr, endStr){
   const sParts = startStr.split("-").map(Number);
   const eParts = endStr.split("-").map(Number);
@@ -194,7 +213,6 @@ function rangeMsByDates(startStr, endStr){
   return [s.getTime(), e.getTime()+1];
 }
 
-/* 로컬 저장/초안 */
 function getLogs(){ return JSON.parse(localStorage.getItem(LS.logs)||"[]"); }
 function setLogs(a){ localStorage.setItem(LS.logs, JSON.stringify(a)); }
 function getDraft(){ try{ return JSON.parse(localStorage.getItem(LS.draft(state.ward))||"{}"); }catch(_){ return {}; } }
@@ -207,31 +225,28 @@ function buildTable(){
   const tb=el("#inputTable tbody"); tb.innerHTML="";
   ITEMS[state.cat].forEach(name=>{
     const tr=document.createElement("tr");
-   tr.innerHTML=`
-  <td class="item-name">
-    ${name.startsWith("기타(")
-      ? `기타<br><span style="display:block;background:#fff9c4;color:#111;padding:2px 6px;border-radius:6px;font-size:13px">${name.replace(/^기타/,'')}</span>`
-      : name}
-  </td>
-  <td class="qtyCell">
-    <button type="button" class="chip reset" data-reset>리셋</button>
-    <button type="button" class="chip" data-delta="-1">−1</button>
-    <input type="number" inputmode="numeric" min="0" value="0" aria-label="${name} 수량"/>
-    <button type="button" class="chip" data-delta="+1">＋1</button>
-    <button type="button" class="chip" data-delta="+5">＋5</button>
-  </td>`;
+    tr.innerHTML=`
+      <td class="item-name">
+        ${name.startsWith("기타(")
+          ? `기타<br><span style="display:block;background:#fff9c4;color:#000;padding:2px 6px;border-radius:6px;font-size:13px">${name.replace(/^기타/,'')}</span>`
+          : name}
+      </td>
+      <td class="qtyCell">
+        <button type="button" class="chip reset" data-reset>리셋</button>
+        <button type="button" class="chip" data-delta="-1">−1</button>
+        <input type="number" inputmode="numeric" min="0" value="0" aria-label="${name} 수량"/>
+        <button type="button" class="chip" data-delta="+1">＋1</button>
+        <button type="button" class="chip" data-delta="+5">＋5</button>
+      </td>`;
 
     const inp=tr.querySelector("input");
-    // 초기 값(시트 탭 기본 10)
     const draftVal = getDraftQty(name);
     if(draftVal>0){ inp.value = String(draftVal); }
     else if(["대시트","반시트","베갯잇","수건"].includes(name)){ inp.value = "10"; setDraftQty(name, 10); }
     else { inp.value = "0"; }
 
-    // 이전 값 저장(20 초과로 "넘어가는" 순간만 진동)
     inp.dataset.prev = String(parseInt(inp.value||"0")||0);
 
-    // 입력 변경
     inp.addEventListener("input", ()=>{
       const prev = parseInt(inp.dataset.prev||"0")||0;
       const cur = Math.max(0, parseInt(inp.value||"0")||0);
@@ -243,7 +258,6 @@ function buildTable(){
       inp.dataset.prev = String(cur);
     });
 
-    // 증감 버튼
     tr.querySelectorAll("[data-delta]").forEach(btn=>{
       btn.onclick=()=>{
         const prev = parseInt(inp.dataset.prev||"0")||0;
@@ -257,38 +271,44 @@ function buildTable(){
       };
     });
 
-    // 리셋
-    tr.querySelector("[data-reset]").onclick=()=>{
-      inp.value="0"; setDraftQty(name,0); inp.dataset.prev="0";
-    };
+    tr.querySelector("[data-reset]").onclick=()=>{ inp.value="0"; setDraftQty(name,0); inp.dataset.prev="0"; };
 
     tb.appendChild(tr);
-// 기타 탭의 '기타' 품목이면 안내 행 추가
-if (state.cat === "기타" && name === "기타") {
-  const noteTr = document.createElement("tr");
-  noteTr.innerHTML = `
-    <td colspan="2" style="padding-top:0">
-      <span style="
-        display:inline-block;
-        background:#fff9c4;
-        color:#111;
-        padding:6px 8px;
-        border-radius:6px;
-        font-size:13px;
-      ">기타품목 : (한쪽끈, 고관절, 중환의)</span>
-    </td>`;
-  tb.appendChild(noteTr);
-}
 
+    // 기타 탭의 '기타' 품목이면 안내 행 추가
+    if (state.cat === "기타" && name === "기타") {
+      const noteTr = document.createElement("tr");
+      noteTr.innerHTML = `
+        <td colspan="2" style="padding-top:0">
+          <span style="
+            display:inline-block;
+            background:#fff9c4;
+            color:#000;
+            padding:6px 8px;
+            border-radius:6px;
+            font-size:13px;
+          ">기타 품목 : 고관절, 중환의</span>
+        </td>`;
+      tb.appendChild(noteTr);
+    }
   });
-  el("#needWard").style.display = state.ward ? "none" : "block";
 }
 
 /* 저장 */
 async function saveAll(){
   if(!state.ward){ alert("병동을 먼저 선택하세요."); return; }
+
+  // 출고일 선택값(누락 대비 기본 오늘)
+  const issue = el("#issueDate").value;
+  let ts;
+  if(issue){
+    const [y,m,d] = issue.split("-").map(Number);
+    ts = new Date(y, m-1, d, 12, 0, 0, 0).getTime(); // 선택일 12:00
+  }else{
+    ts = Date.now();
+  }
+
   const draft = getDraft();
-  const ts = Date.now();
   const batch = [];
   ALL_ITEMS.forEach(item=>{
     const qty = Math.max(0, parseInt(draft[item]||"0") || 0);
@@ -296,26 +316,25 @@ async function saveAll(){
   });
   if(batch.length===0){ alert("저장할 항목이 없습니다. (모두 0)"); return; }
 
-  // 로컬 저장
   const logs = getLogs(); batch.forEach(b=> logs.unshift(b)); setLogs(logs.slice(0, 10000));
 
-  // RTDB 업로드
   try { if(window.__fb) await window.__fb.saveLogsToRTDB(batch); }
   catch(e){ console.warn("RTDB 업로드 실패 -> 로컬만 저장", e); }
 
-  // 입력 리셋
   const cleared = {}; ALL_ITEMS.forEach(i=> cleared[i]=0); setDraft(cleared);
   els("#inputTable tbody input").forEach(inp=> { inp.value="0"; inp.dataset.prev="0"; });
   alert("저장되었습니다.");
 }
 
-/* 색상 결정: 기본 검정, 15+ 파랑, 20+ 빨강 (대/반/베/수건만) */
+/* 통계 색상: (대/반/베/수건만 적용)
+   20 이상 빨강, 15 이상 파랑, 정확히 10 노랑, 그 외 검정 */
 function colorStyle(item, value){
   if(!COLORED_ITEMS.has(item)) return "";
   const v = Number(value)||0;
   if(v>=20) return ' style="color:#dc2626;font-weight:700"'; // red
   if(v>=15) return ' style="color:#2563eb;font-weight:700"'; // blue
-  return ""; // black(default)
+  if(v===10) return ' style="color:#f59e0b;font-weight:700"'; // yellow
+  return ""; // black
 }
 
 /* 피벗(기간 + 병동 필터) */
@@ -332,14 +351,13 @@ function pivotFromLogsRange(logs, startStr, endStr, wardFilter){
   return {pivot:p, wards: wardList};
 }
 
-/* 통계 렌더 (기간 + 병동 필터 + 색상) */
+/* 통계 렌더 */
 async function renderStats(){
   const s = el("#dateStart").value;
   const e = el("#dateEnd").value;
   const wardFilter = el("#wardFilter").value || "전체";
   if(!s || !e){ alert("시작일과 종료일을 선택하세요."); return; }
 
-  // RTDB에서 조회(성공 시 우선)
   let logs = [];
   try {
     if(window.__fb){
@@ -368,40 +386,27 @@ async function renderStats(){
     html+=`<tr><td>${w}</td>${cells}<td><b>${sum}</b></td></tr>`;
   });
   const itemTotals = items.map(i=>wards.reduce((a,w)=>a+(pivot[w]?.[i]||0),0));
-  html+=`<tr><th>합계</th>${itemTotals.map((sv,idx)=>`<th${colorStyle(items[idx], sv)}>${sv}</th>`).join("")}<th>${grand}</th></tr>`;
+  html+=`<tr><th>품목합계</th>${itemTotals.map((sv,idx)=>`<th${colorStyle(items[idx], sv)}>${sv}</th>`).join("")}<th>${grand}</th></tr>`;
   html+="</tbody></table>";
   el("#statsWrap").innerHTML=html;
   el("#statsEmpty").style.display = grand ? "none" : "block";
 }
 
-/* XLS 내보내기 (현재 표 기준) */
-function makeXLSBlobFromTable(){ 
-  const html=`<html><head><meta charset="UTF-8"></head><body>${el("#statsWrap").innerHTML}</body></html>`;
-  return new Blob([html],{type:"application/vnd.ms-excel;charset=utf-8"});
+/* 진짜 .xlsx 내보내기 (SheetJS) */
+function exportXLSX(){
+  const table = document.querySelector("#statsWrap table");
+  if(!table){ alert("표가 없습니다."); return; }
+  const wb = XLSX.utils.table_to_book(table, {sheet:"통계"});
+  XLSX.writeFile(wb, `stats_${el("#dateStart").value}_to_${el("#dateEnd").value}.xlsx`);
 }
-async function tryShare(blob, filename, title){
-  try{
-    if('canShare' in navigator && 'share' in navigator){
-      const file=new File([blob],filename,{type:blob.type});
-      if(navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:title||filename}); return true; }
-    }
-  }catch(_){}
-  return false;
-}
-function autoDownloadOrShow(blob, filename){
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a"); a.href=url; a.download=filename; a.target="_blank"; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+
+/* XLSX가 막힌 인앱 대비 폴백 (객체 URL) */
+function autoDownloadOrShowURL(url){
+  const a=document.createElement("a"); a.href=url; a.target="_blank"; document.body.appendChild(a); a.click(); document.body.removeChild(a);
   const panel=el("#fallbackPanel");
   el("#directLink").href=url;
   el("#openNewTab").onclick=()=>window.open(url,"_blank","noopener");
   panel.style.display="block";
-}
-function exportXLS(){
-  const s = el("#dateStart").value, e = el("#dateEnd").value;
-  if(!s||!e){ alert("시작일과 종료일을 선택하세요."); return; }
-  const blob = makeXLSBlobFromTable();
-  const fn = `stats_${s}_to_${e}.xls`;
-  tryShare(blob, fn, "린넨실 통계 엑셀").then(shared=>{ if(!shared) autoDownloadOrShow(blob, fn); });
 }
 
 /* 초기화 */
@@ -412,21 +417,29 @@ window.addEventListener("DOMContentLoaded",()=>{
   el("#wardSelect").value = state.ward;
   el("#wardSelect").onchange = e=>{ state.ward = e.target.value || ""; localStorage.setItem(LS.ward, state.ward); buildTable(); };
 
-  // 입력 표
-  buildTable();
-  el("#saveAll").onclick = saveAll;
-
-  // 통계: 오늘 1일치 디폴트
+  // 출고일/통계 디폴트 오늘
   const d=new Date();
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth()+1).padStart(2,"0");
   const dd = String(d.getDate()).padStart(2,"0");
+  el("#issueDate").value = `${yyyy}-${mm}-${dd}`;
   el("#dateStart").value = `${yyyy}-${mm}-${dd}`;
   el("#dateEnd").value   = `${yyyy}-${mm}-${dd}`;
-  el("#wardFilter").value = "전체";
 
+  // 표/버튼
+  buildTable();
+  el("#saveAll").onclick = saveAll;
   el("#calcStats").onclick = renderStats;
-  el("#exportXLSBtn").onclick = exportXLS;
+  el("#exportXLSXBtn").onclick = exportXLSX;
+
+  // 앱 다운로드
+  el("#appDownloadBtn").onclick = ()=> {
+    if(APP_DOWNLOAD_URL && APP_DOWNLOAD_URL.startsWith("http")){
+      window.location.href = APP_DOWNLOAD_URL;
+    }else{
+      alert("다운로드 링크가 설정되지 않았습니다. APP_DOWNLOAD_URL 값을 수정하세요.");
+    }
+  };
 
   // 섹션 이동
   el("#gotoInput").onclick = ()=> (el("#sec-input").style.display="block", el("#sec-stats").style.display="none");
