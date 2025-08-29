@@ -33,7 +33,7 @@
   .chip{height:40px;min-width:40px;padding:0 10px;border:1px solid var(--border);background:#eef2f7;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:15px}
   .chip.reset{background:#ffe8ea;border-color:#ffd5da}
   .qtyCell input{width:76px;height:40px;text-align:center;font-size:16px;padding:0 6px;border:1px solid var(--border);border-radius:12px;background:#fff}
-  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inear-spin-button{-webkit-appearance:none;margin:0}
+  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield}
   .empty{margin-top:20px;padding:20px;border:2px dashed var(--border);border-radius:16px;text-align:center;color:#6b7280}
   .footerBar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);padding:12px;display:flex;justify-content:center;z-index:50}
@@ -43,18 +43,30 @@
   .panel .row{display:flex;gap:8px;flex-wrap:wrap}
   .panel a{color:#2563eb;font-weight:700}
 
-  /* === 통계표: 세로 헤더로 열/행 정렬 고정 === */
-  .statsTable{ table-layout:fixed; border-collapse:collapse; width:100%; }
-  .statsTable th, .statsTable td{ padding:10px; text-align:center; border:1px solid var(--border); }
-  .statsTable th.firstCol{ width:72px; }  /* 병동 */
-  .statsTable th.sumCol{ width:64px; }   /* 합계 */
+  /* ===== 통계 화면 전용 ===== */
+  body.mode-stats header{display:none;}            /* 통계 모드에서 헤더 숨김 */
+  #sec-stats .row-wrap{display:flex;gap:10px;align-items:center;flex-wrap:nowrap}
+  #sec-stats .row-wrap>*{flex:0 0 auto}
+  #sec-stats .row-wrap input[type=date]{font-size:16px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#fff}
+  #sec-stats .row-wrap select{padding:10px 12px;border:1px solid var(--border);border-radius:12px}
+  #statsWrap{overflow-x:hidden}                    /* 가로스크롤 금지 */
+
+  /* === 통계표: 세로 헤더 + 고정폭(모바일 한화면) === */
+  .statsTable{ table-layout:fixed; border-collapse:collapse; width:100%; max-width:100vw; }
+  .statsTable th, .statsTable td{
+    padding:8px; text-align:center; border:1px solid var(--border);
+    font-size:14px; line-height:1.1; font-variant-numeric:tabular-nums;
+  }
+  .statsTable th.firstCol{ width:56px; }   /* 병동 */
+  .statsTable th.sumCol{   width:50px; }   /* 합계 */
   .statsTable th.rot{
     writing-mode: vertical-rl;
     text-orientation: upright; /* 한글/숫자 세로 */
     line-height:1;
+    letter-spacing:0;
     white-space:nowrap;
-    width:44px;               /* 모든 품목 동일폭 */
-    padding:8px 6px;
+    width:28px;                /* 모든 품목 동일폭 -> 가로 스크롤 없이 맞춤 */
+    padding:6px 4px;
   }
 
   @media (max-width:480px){
@@ -88,7 +100,7 @@
     <h1>
       <span style="display:flex;gap:10px;align-items:center">
         <label for="issueDate">출고일</label>
-        <input type="date" id="issueDate" style="font-size:16px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#fff" />
+        <input type="date" id="issueDate" />
       </span>
     </h1>
 
@@ -108,37 +120,33 @@
   <!-- 통계 -->
   <section id="sec-stats" style="display:none">
     <h1>기간 통계</h1>
-    <div class="stack">
-      <!-- 날짜 줄: 라벨 제거, ~ 로 연결 -->
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <input type="date" id="dateStart"
-               style="font-size:16px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#fff" />
-        <span aria-hidden="true">~</span>
-        <input type="date" id="dateEnd"
-               style="font-size:16px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#fff" />
-      </div>
-      <!-- 병동 + 조회 -->
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <label for="wardFilter">병동</label>
-        <select id="wardFilter" style="padding:10px 12px;border:1px solid var(--border);border-radius:12px;">
-          <option value="전체">전체</option>
-          <option>93</option><option>83</option><option>73</option><option>71</option>
-          <option>63</option><option>62</option><option>61</option>
-          <option>52</option><option>51</option><option>42</option><option>41</option>
-          <option>기타</option>
-        </select>
-        <button class="btn acc" id="calcStats">조회</button>
-      </div>
 
-      <div>
-        <h3 style="margin:8px 0">상세내역</h3>
-        <div id="statsWrap"></div>
-      </div>
-      <div id="statsEmpty" class="empty" style="display:none">해당 기간 데이터가 없습니다.</div>
+    <!-- 날짜 한 줄 -->
+    <div class="row-wrap" style="margin-bottom:8px">
+      <input type="date" id="dateStart" />
+      <span aria-hidden="true">~</span>
+      <input type="date" id="dateEnd" />
+    </div>
 
-      <div style="margin-top:8px">
-        <button class="btn" id="exportXLSXBtn">엑셀로 내려받기</button>
-      </div>
+    <!-- 병동 + 조회 -->
+    <div class="row-wrap" style="margin-bottom:12px">
+      <label for="wardFilter">병동</label>
+      <select id="wardFilter">
+        <option value="전체">전체</option>
+        <option>93</option><option>83</option><option>73</option><option>71</option>
+        <option>63</option><option>62</option><option>61</option>
+        <option>52</option><option>51</option><option>42</option><option>41</option>
+        <option>기타</option>
+      </select>
+      <button class="btn acc" id="calcStats">조회</button>
+    </div>
+
+    <!-- 바로 표(“상세내역” 문구 삭제) -->
+    <div id="statsWrap"></div>
+    <div id="statsEmpty" class="empty" style="display:none">해당 기간 데이터가 없습니다.</div>
+
+    <div style="margin-top:8px">
+      <button class="btn" id="exportXLSXBtn">엑셀로 내려받기</button>
     </div>
   </section>
 </main>
@@ -214,16 +222,15 @@
 
 <!-- App Script -->
 <script>
-/* 앱 다운로드 링크 (필요시 수정) */
 const APP_DOWNLOAD_URL = "https://example.com/app-download";
 
 /* 품목 */
 const ITEMS={
-  "시트":["대시트","반시트","베갯잇","수 건"],
+  "시트":["대시트","반시트","베갯잇","수건"],
   "환자복":["일반상의","일반하의","정형상의","정형하의"],
-  "기타":["억제대","얼음포","기 타"]
+  "기타":["억제대","얼음포","기타"]
 };
-const COLORED_ITEMS = new Set(["대시트","반시트","베갯잇","수 건"]);
+const COLORED_ITEMS = new Set(["대시트","반시트","베갯잇","수건"]);
 const ALL_ITEMS = Object.values(ITEMS).flat();
 const WARDS=["93","83","73","71","63","62","61","52","51","42","41","기타"];
 
@@ -328,7 +335,7 @@ async function saveAll(){
   const cleared = {}; ALL_ITEMS.forEach(i=> cleared[i]=0); setDraft(cleared);
   els("#inputTable tbody input").forEach(inp=> { inp.value="0"; inp.dataset.prev="0"; });
 
-  // 🔊 효과음 (사용자 클릭 이벤트 체인 내 재생)
+  // 🔊 효과음
   const snd = el("#submitSound");
   snd && snd.play().catch(err=>console.warn("사운드 재생 실패:", err));
 
@@ -359,7 +366,7 @@ function pivotFromLogsRange(logs, startStr, endStr, wardFilter){
   return {pivot:p, wards: wardList};
 }
 
-/* 통계 렌더: RTDB 실시간만 사용 (로컬 캐시 미사용) */
+/* 통계 렌더: RTDB 실시간만 사용 */
 async function renderStats(){
   const s = el("#dateStart").value;
   const e = el("#dateEnd").value;
@@ -376,7 +383,6 @@ async function renderStats(){
   } catch (err) {
     console.warn("RTDB 조회 실패", err);
   }
-  // ❗ 로컬 fallback 제거: 최신만 반영(실패 시 빈 배열)
 
   const {pivot, wards} = pivotFromLogsRange(logs, s, e, wardFilter);
   const items=ALL_ITEMS;
@@ -414,7 +420,7 @@ function exportXLSX(){
   XLSX.writeFile(wb, `stats_${el("#dateStart").value}_to_${el("#dateEnd").value}.xlsx`);
 }
 
-/* 인앱 폴백용 링크 표시 (남겨둠: 필요 시 사용) */
+/* 인앱 폴백용 링크 표시(옵션) */
 function autoDownloadOrShowURL(url){
   const a=document.createElement("a"); a.href=url; a.target="_blank"; document.body.appendChild(a); a.click(); document.body.removeChild(a);
   const panel=el("#fallbackPanel");
@@ -455,9 +461,18 @@ window.addEventListener("DOMContentLoaded",()=>{
     }
   };
 
-  // 섹션 이동
-  el("#gotoInput").onclick = ()=> (el("#sec-input").style.display="block", el("#sec-stats").style.display="none");
-  el("#gotoStats").onclick = ()=> (el("#sec-input").style.display="none", el("#sec-stats").style.display="block", renderStats());
+  // 섹션 이동(통계 모드에서 헤더 숨김)
+  el("#gotoInput").onclick = ()=> {
+    document.body.classList.remove("mode-stats");
+    el("#sec-input").style.display="block";
+    el("#sec-stats").style.display="none";
+  };
+  el("#gotoStats").onclick = ()=> {
+    document.body.classList.add("mode-stats");
+    el("#sec-input").style.display="none";
+    el("#sec-stats").style.display="block";
+    renderStats();
+  };
 
   // 탭
   els(".tab").forEach(t=> t.onclick=()=>{
