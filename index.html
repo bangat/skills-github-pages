@@ -1,394 +1,374 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#ffffff">
-  <title>팡팡게임 + 더하기게임</title>
-  <style>
-    body {
-      margin: 0;
-      background: #fdfdfd;
-      color: #333;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      height: 100vh;
-      overflow: hidden;
-      user-select: none;
-      position: relative;
-    }
-    /* ====== 공통 시작화면 ====== */
-    #start-screen {
-      position: absolute;
-      inset: 0;
-      background: rgba(255,255,255,0.9);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-      user-select: none;
-    }
-    #start-screen .button-row{
-      display:flex; gap:12px;
-    }
-    #start-screen button {
-      padding: 16px 32px;
-      font-size: 22px;
-      border-radius: 12px;
-      border: none;
-      cursor: pointer;
-      background: #3399ff;
-      color: #fff;
-      box-shadow: 0 0 10px #3399ff;
-    }
-    #start-screen button:hover { background:#2288ee; }
-
-    /* ====== 팡팡게임 영역 ====== */
-    .timer-bar {
-      width: 90vw;
-      height: 30px;
-      background: rgba(0,0,0,0.1);
-      border-radius: 15px;
-      margin: 12px 0;
-      position: relative;
-      box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
-      display: none;
-    }
-    .timer-fill { position:absolute; height:100%; background:#3399ff; border-radius:15px; width:100%; transition:width 1s linear; }
-    .timer-text { position:absolute; width:100%; text-align:center; top:0; font-size:20px; line-height:30px; font-weight:600; color:#004c99; pointer-events:none; text-shadow:0 0 2px #ddd; }
-    .board {
-      position: relative;
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      grid-template-rows: repeat(10, 1fr);
-      gap: 6px;
-      max-width: 90vw;
-      max-height: 90vh;
-      margin: 0 auto;
-      user-select: none;
-      display: none;
-    }
-    .tile {
-      background-color: #ffffff;
-      border: 2px solid #ccc;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #333;
-      box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15);
-      cursor: pointer;
-      transition: transform 0.1s ease, box-shadow 0.1s ease;
-      width: 100%;
-      height: 100%;
-      user-select: none;
-      overflow: hidden;
-    }
-    .tile img { width:80%; height:80%; object-fit:contain; pointer-events:none; user-select:none; border-radius:10px; transition:transform 0.1s ease; }
-    .tile.selected { transform: scale(1.15); box-shadow: 0 0 15px #3399ff; z-index: 2; }
-    .gameover {
-      position: absolute;
-      top: 40%;
-      text-align: center;
-      background: rgba(255,255,255,0.95);
-      border-radius: 16px;
-      padding: 20px 40px;
-      box-shadow: 0 0 20px #3399ff;
-      font-size: 24px;
-      color: #333;
-      z-index: 100;
-      user-select: none;
-      display: none;
-    }
-    .gameover button { margin-top:12px; padding:8px 16px; font-size:16px; border:none; background:#3399ff; color:#fff; border-radius:8px; cursor:pointer; }
-
-    /* ====== 더하기 게임(같이하기) ====== */
-    #math-mode {
-      position: absolute;
-      inset: 0;
-      background: #fafafa;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      overflow-y: auto;
-    }
-    #math-problem {
-      font-size: 2.5rem;
-      margin: 20px 0;
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      text-align: center;
-    }
-    #math-status { margin: 12px 0; min-height: 1.5em; font-size: 1.1rem; text-align: center; }
-    #math-instruction { font-size: 0.95rem; color: #777; margin-bottom: 10px; text-align: center; }
-    #math-scoreBox { margin-bottom: 10px; font-size: 1.1rem; color: #444; text-align: center; }
-    .button-inline { display:flex; gap:8px; justify-content:center; margin-bottom:10px; flex-wrap:wrap; }
-    .button-inline button {
-      background: #4CAF50;
-      color: #fff;
-      font-size: 1rem;
-      padding: 10px 14px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-    }
-    #math-backBtn { background:#777; }
-    #math-voiceBtn { background:#3399ff; }
-    .number-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      margin-top: 20px;
-    }
-    .num-btn { background:#f0f0f0; font-size:1.3rem; border:2px solid #ddd; padding:12px; border-radius:8px; cursor:pointer; }
-    .num-btn:hover { background:#ddd; }
-    .correct { color:#4CAF50; font-weight:bold; }
-    .wrong { color:#f44336; font-weight:bold; }
-    .listening { color:#3399ff; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>린넨실 키오스크</title>
+<style>
+  :root{
+    --bg:#f9fafb; --card:#ffffff; --accent:#2563eb; --muted:#6b7280; --text:#111827;
+    --border:#e5e7eb; --danger:#dc2626;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
+  header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+  .left{display:flex;gap:10px;align-items:center}
+  .right{display:flex;gap:8px}
+  label.head{font-weight:800}
+  select{padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:12px;width:220px;background:#fff}
+  button{border:0;border-radius:12px;padding:10px 14px;font-size:15px;font-weight:700;cursor:pointer}
+  .btn{background:#94a3b8;color:#fff}
+  .btn.acc{background:var(--accent);color:#fff}
+  main{max-width:980px;margin:0 auto;padding:16px}
+  h1{font-size:20px;margin:18px 0 8px}
+  .tabs{display:flex;gap:8px;margin:12px 0}
+  .tab{flex:1;text-align:center;padding:10px;background:#e5e7eb;color:#374151;font-weight:700;border-radius:12px;cursor:pointer}
+  .tab.active{background:var(--accent);color:#fff}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden}
+  th,td{border-bottom:1px solid var(--border);padding:12px;font-size:16px;text-align:center}
+  th{background:#f3f4f6;font-weight:700}
+  td:first-child, th:first-child{text-align:left}
+  /* 한 줄 입력 레이아웃 */
+  .qtyCell{display:flex;align-items:center;gap:8px;justify-content:flex-end;flex-wrap:nowrap}
+  .chip{
+    height:40px;min-width:40px;padding:0 10px;border:1px solid var(--border);background:#eef2f7;
+    border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;color:#111827
+  }
+  .chip.reset{background:#ffe8ea;border-color:#ffd5da}
+  .qtyCell input{
+    width:76px;height:40px;text-align:center;font-size:16px;
+    padding:0 6px;border:1px solid var(--border);border-radius:12px;background:#fff
+  }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input[type=number]{-moz-appearance:textfield}
+  .empty{margin-top:20px;padding:20px;border:2px dashed var(--border);border-radius:16px;text-align:center;color:#6b7280;font-size:16px}
+  .footerBar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);padding:12px;display:flex;justify-content:center;z-index:50}
+  .footerBar button{width:80%;font-size:18px;border-radius:14px}
+  .stack{display:flex;flex-direction:column;gap:12px}
+  /* 내보내기 폴백 패널 */
+  .panel{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--border);box-shadow:0 -6px 20px rgba(0,0,0,.08);padding:14px;display:none;z-index:60}
+  .panel h4{margin:0 0 10px}
+  .panel .row{display:flex;gap:8px;flex-wrap:wrap}
+  .panel a{color:#2563eb;font-weight:700}
+  .panel .small{font-size:13px;color:#6b7280}
+  @media (max-width:480px){
+    .chip{min-width:36px;height:36px;font-size:14px;padding:0 8px}
+    .qtyCell input{height:36px;width:70px;font-size:15px}
+    th,td{padding:10px}
+  }
+</style>
 </head>
 <body>
-  <!-- 시작 화면 -->
-  <div id="start-screen">
-    <div class="button-row">
-      <button id="start-button">혼자하기</button>
-      <button id="multi-button">같이하기</button>
+<header>
+  <div class="left">
+    <label class="head" for="wardSelect">병동명 :</label>
+    <select id="wardSelect">
+      <option value="">선택…</option>
+      <option>93</option><option>83</option><option>73</option><option>71</option>
+      <option>63</option><option>62</option><option>61</option>
+      <option>52</option><option>51</option><option>42</option><option>41</option>
+      <option>기타</option>
+    </select>
+  </div>
+  <div class="right">
+    <button class="btn acc" id="gotoInput">입력</button>
+    <button class="btn" id="gotoStats">통계</button>
+  </div>
+</header>
+
+<main>
+  <!-- 출고 입력 -->
+  <section id="sec-input">
+    <h1>출고 입력</h1>
+    <div class="tabs">
+      <div class="tab active" data-cat="시트">시트</div>
+      <div class="tab" data-cat="환자복">환자복</div>
+      <div class="tab" data-cat="기타">기타</div>
     </div>
-  </div>
+    <table id="inputTable" aria-label="품목 입력 표">
+      <thead>
+        <tr><th style="width:50%">품목</th><th>수량</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div id="needWard" class="empty" style="display:none">먼저 상단에서 병동을 선택하세요.</div>
+  </section>
 
-  <!-- 팡팡게임 -->
-  <div class="timer-bar">
-    <div class="timer-fill" id="timer-fill"></div>
-    <div class="timer-text" id="timer-text">90초</div>
-  </div>
-  <div class="board" id="board"></div>
-  <div id="gameover" class="gameover">
-    <div id="gameover-text">게임오버</div>
-    <button id="restart-button">다시 시작</button>
-  </div>
-
-  <!-- 더하기 게임 -->
-  <div id="math-mode">
-    <div id="math-problem">시작 버튼을 눌러보세요.</div>
-    <div id="math-status"></div>
-    <div id="math-instruction">말할 땐 “음성으로 답하기” 버튼을 누르세요.</div>
-    <div id="math-scoreBox">점수: <span id="math-score">0</span></div>
-
-    <div class="button-inline">
-      <button id="math-startBtn">게임 시작</button>
-      <button id="math-voiceBtn">음성으로 답하기</button>
-      <button id="math-backBtn">← 메인으로</button>
+  <!-- 통계 -->
+  <section id="sec-stats" style="display:none">
+    <h1>월별 통계</h1>
+    <div class="stack">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="month" id="monthPick" style="font-size:16px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#fff" />
+        <button class="btn acc" id="calcStats">계산</button>
+        <button class="btn" id="exportCSVBtn">CSV 내보내기</button>
+        <button class="btn" id="exportXLSBtn">엑셀(.xls) 내보내기</button>
+      </div>
+      <div>
+        <h3 style="margin:8px 0">상세(병동×품목)</h3>
+        <div id="statsWrap"></div>
+      </div>
+      <div id="statsEmpty" class="empty" style="display:none">해당 월 데이터가 없습니다.</div>
     </div>
+  </section>
+</main>
 
-    <div class="number-grid" id="math-numberGrid"></div>
+<div class="footerBar"><button class="btn acc" id="saveAll">저장하기</button></div>
+
+<!-- 내보내기 폴백 패널 -->
+<div id="fallbackPanel" class="panel">
+  <h4>다운로드가 차단되었어요. 아래 방법 중 하나로 저장하세요.</h4>
+  <div class="row">
+    <a id="directLink" href="#" target="_blank" rel="noopener">① 직접 다운로드 링크 열기</a>
+    <button class="btn" id="openNewTab">② 새 탭으로 열기</button>
+    <button class="btn" id="copyToClipboard">③ 내용 복사</button>
   </div>
-
-  <!-- 효과음 -->
-  <audio id="match-sound" src="https://blog.kakaocdn.net/dn/sfC9c/btsOsytKxVK/NssSFFb6HyZMrSALw78pS0/%EC%A1%B0%ED%95%A9%EC%84%B1%EA%B3%B5.mp3?attach=1&knm=tfile.mp3" preload="auto"></audio>
-  <audio id="gameover-sound" src="https://blog.kakaocdn.net/dn/buAhnr/btsOsP26Zg7/mh0rQhx79hXkMjbm9haFdk/gameover.mp3?attach=1&knm=tfile.mp3" preload="auto"></audio>
+  <div class="small">* 구글드라이브/인앱 미리보기에서는 자동 다운로드가 막힐 수 있어요. 링크를 직접 누르거나 “새 탭으로 열기”를 사용해 주세요.</div>
+</div>
 
 <script>
-/* ----------------------- 팡팡게임 ----------------------- */
-const images = [
-  'https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbB2Nbp%2FbtsOtII3ACz%2FIJDpkiIGzyQgSkt32877f0%2Fimg.png',
-  'https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FrWL76%2FbtsOslIhSXm%2F3jbQlb7JoeDTLCgWnn4ooK%2Fimg.png',
-  'https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fdrqou1%2FbtsOsln3jNp%2FaBzqIgKorGcVvw3UkGi4J1%2Fimg.png',
-  'https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FGk7Sn%2FbtsOsf88LKD%2F7oIF6fjz9lGGvFNJY5Bc70%2Fimg.png'
-];
+/* ===== 분류/품목 ===== */
+const ITEMS={
+  "시트":["대시트","반시트","베갯잇"],
+  "환자복":["일반상의","일반하의","정형상의","정형하의"],
+  "기타":["억제대","얼음주머니","기타"]
+};
+const ALL_ITEMS = Object.values(ITEMS).flat();
 
-const board = document.getElementById('board');
-const timerBar = document.querySelector('.timer-bar');
-const timerFill = document.getElementById('timer-fill');
-const timerText = document.getElementById('timer-text');
-const gameoverElem = document.getElementById('gameover');
-const gameoverText = document.getElementById('gameover-text');
-const restartButton = document.getElementById('restart-button');
-const startScreen = document.getElementById('start-screen');
-const startButton = document.getElementById('start-button');
-const multiButton = document.getElementById('multi-button');
-const matchSound = document.getElementById('match-sound');
-const gameoverSound = document.getElementById('gameover-sound');
+/* ===== 병동 / 저장키 ===== */
+const WARDS=["93","83","73","71","63","62","61","52","51","42","41","기타"];
+const LS={ ward:"linen/ward", logs:"linen/logs", draft:(ward)=>`linen/draft/${ward||'_none_'}` };
 
-const ROWS = 10, COLS = 5, TOTAL_CELLS = ROWS * COLS;
-let tiles = [], selectedTile = null, timer = 90, timerId = null, gameStarted = false;
+/* ===== 상태 ===== */
+let state={ ward:localStorage.getItem(LS.ward)||"", section:"input", cat:"시트" };
 
-function generateTiles(){ tiles = new Array(TOTAL_CELLS).fill(0).map(()=>Math.floor(Math.random()*images.length)); }
-function renderBoard(){
-  board.innerHTML = '';
-  for(let i=0;i<TOTAL_CELLS;i++){
-    const d=document.createElement('div'); d.className='tile'; d.dataset.index=i;
-    const img=document.createElement('img'); img.src=images[tiles[i]]; d.appendChild(img);
-    board.appendChild(d);
-  }
-}
-function onTileClick(e){
-  if(!gameStarted) return;
-  const t=e.currentTarget;
-  if(selectedTile===null){selectedTile=t; t.classList.add('selected');}
-  else if(selectedTile===t){t.classList.remove('selected'); selectedTile=null;}
-  else{
-    const i1=+selectedTile.dataset.index, i2=+t.dataset.index;
-    if(tiles[i1]===tiles[i2]){ selectedTile.style.visibility='hidden'; t.style.visibility='hidden'; matchSound.play(); }
-    selectedTile.classList.remove('selected'); selectedTile=null;
-  }
-}
-function startTimer(){
-  timer=90; timerFill.style.width='100%'; timerText.textContent=`${timer}초`;
-  timerId=setInterval(()=>{ timer--; timerFill.style.width=`${(timer/90)*100}%`; timerText.textContent=`${timer}초`; if(timer<=0) clearInterval(timerId); },1000);
-}
-function startPangPangGame(){
-  startScreen.style.display='none'; document.getElementById('math-mode').style.display='none';
-  board.style.display='grid'; timerBar.style.display='block';
-  generateTiles(); renderBoard(); gameStarted=true; startTimer();
-}
-board.addEventListener('click', e=>{
-  const t=e.target.closest('.tile'); if(t) onTileClick({currentTarget:t});
-});
-restartButton.addEventListener('click', startPangPangGame);
-startButton.addEventListener('click', startPangPangGame);
+/* ===== 유틸 ===== */
+const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorAll(s));
+function monthRange(ym){const [y,m]=ym.split("-").map(Number);return [new Date(y,m-1,1).getTime(),new Date(y,m,1).getTime()];}
+function getLogs(){ return JSON.parse(localStorage.getItem(LS.logs)||"[]"); }
+function setLogs(a){ localStorage.setItem(LS.logs, JSON.stringify(a)); }
+function getDraft(){ try{ return JSON.parse(localStorage.getItem(LS.draft(state.ward))||"{}"); }catch(_){ return {}; } }
+function setDraft(obj){ localStorage.setItem(LS.draft(state.ward), JSON.stringify(obj||{})); }
+function setDraftQty(item, qty){ const d=getDraft(); d[item]=Math.max(0, qty|0); setDraft(d); }
+function getDraftQty(item){ const d=getDraft(); return Math.max(0, parseInt(d[item]||0) || 0); }
 
-/* ----------------------- 더하기 게임 ----------------------- */
-const mathMode = document.getElementById('math-mode');
-const mathProblemEl = document.getElementById('math-problem');
-const mathStatusEl = document.getElementById('math-status');
-const mathScoreEl = document.getElementById('math-score');
-const mathStartBtn = document.getElementById('math-startBtn');
-const mathBackBtn = document.getElementById('math-backBtn');
-const mathNumberGrid = document.getElementById('math-numberGrid');
-const mathVoiceBtn = document.getElementById('math-voiceBtn');
-const mathInstruction = document.getElementById('math-instruction');
+/* ===== 입력 테이블 (한 줄 + 기본값 10) ===== */
+function buildTable(){
+  const tb=el("#inputTable tbody"); tb.innerHTML="";
+  const list = ITEMS[state.cat];
+  list.forEach(name=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${name}</td>
+      <td class="qtyCell">
+        <button type="button" class="chip reset" data-reset>리셋</button>
+        <button type="button" class="chip" data-delta="-1">−1</button>
+        <input type="number" inputmode="numeric" min="0" value="0" aria-label="${name} 수량"/>
+        <button type="button" class="chip" data-delta="+1">＋1</button>
+        <button type="button" class="chip" data-delta="+5">＋5</button>
+      </td>`;
+    const inp=tr.querySelector("input");
+    const draftVal = getDraftQty(name);
+    // 기본값 10: 대시트/반시트/베갯잇 이고 초안이 0일 때
+    if(draftVal>0){ inp.value = String(draftVal); }
+    else if(["대시트","반시트","베갯잇"].includes(name)){ inp.value = "10"; setDraftQty(name, 10); }
+    else { inp.value = "0"; }
 
-let mA=0,mB=0,ans=0,score=0,q=0,total=10;
-let answered=false;       // 이 문제가 끝났는가?
-let questionId=0;         // 오래된 콜백 무시하기 위한 id
-const USE_ALWAYS_ON = false; // true면 자동 재시작 모드(상시 듣기 흉내)
+    inp.addEventListener("input", ()=> setDraftQty(name, parseInt(inp.value||"0")||0));
 
-let rec=null, canSTT=false;
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-if(SR){ rec = new SR(); rec.lang='ko-KR'; rec.interimResults=false; rec.maxAlternatives=1; canSTT=true; }
+    tr.querySelectorAll("[data-delta]").forEach(btn=>{
+      btn.onclick=()=>{
+        const delta = btn.dataset.delta==="-1" ? -1 :
+                      btn.dataset.delta==="+1" ? 1 : 5;
+        const v = Math.max(0,(parseInt(inp.value||"0")||0)+delta);
+        inp.value=v; setDraftQty(name,v);
+      };
+    });
 
-multiButton.addEventListener('click',()=>{
-  startScreen.style.display='none'; board.style.display='none'; timerBar.style.display='none'; gameoverElem.style.display='none';
-  mathMode.style.display='flex';
-  resetMathUI();
-});
-mathBackBtn.addEventListener('click',()=>{
-  mathMode.style.display='none'; startScreen.style.display='flex';
-});
-mathStartBtn.addEventListener('click', ()=>{
-  resetMathUI();
-  createNumberButtons(20);
-  ask();
-});
-mathVoiceBtn.addEventListener('click', ()=>{
-  if(!canSTT){ mathStatusEl.textContent='이 브라우저는 음성 인식을 지원하지 않아요.'; return; }
-  startListening(questionId);
-});
+    tr.querySelector("[data-reset]").onclick=()=>{
+      inp.value="0"; setDraftQty(name,0);
+    };
 
-function resetMathUI(){
-  score=0; q=0; mathScoreEl.textContent=score;
-  answered=false; mathStatusEl.textContent=''; mathProblemEl.textContent='시작 버튼을 눌러보세요.';
-  mathInstruction.textContent = USE_ALWAYS_ON
-    ? '말해도 되는 타이밍에 말하세요! (항상 듣는 모드)'
-    : '말할 때는 “음성으로 답하기” 버튼을 누르세요.';
+    tb.appendChild(tr);
+  });
+  el("#needWard").style.display = state.ward ? "none" : "block";
 }
-function speak(text, onend){
-  if(!('speechSynthesis' in window)) { onend && onend(); return; }
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang='ko-KR'; u.rate=1.0; u.onend=onend||null;
-  window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+
+/* ===== 저장 ===== */
+function saveAll(){
+  if(!state.ward){ alert("병동을 먼저 선택하세요."); return; }
+  const draft = getDraft();
+  const ts = Date.now();
+  const batch = [];
+  ALL_ITEMS.forEach(item=>{
+    const qty = Math.max(0, parseInt(draft[item]||0) || 0);
+    if(qty>0) batch.push({ ts, ward: state.ward, item, qty });
+  });
+  if(batch.length===0){ alert("저장할 항목이 없습니다. (모두 0)"); return; }
+  const logs = getLogs();
+  batch.forEach(b=> logs.unshift(b));
+  setLogs(logs.slice(0, 10000));
+  // 초안 리셋
+  const cleared = {}; ALL_ITEMS.forEach(i=> cleared[i]=0); setDraft(cleared);
+  els("#inputTable tbody input").forEach(inp=> inp.value="0");
+  alert("저장되었습니다.");
 }
-function createNumberButtons(maxVal){
-  mathNumberGrid.innerHTML='';
-  for(let i=1;i<=maxVal;i++){
-    const b=document.createElement('button');
-    b.textContent=i; b.className='num-btn';
-    b.addEventListener('click',()=>check(i, questionId));
-    mathNumberGrid.appendChild(b);
-  }
+
+/* ===== 통계 ===== */
+function calcPivot(ym){
+  const [s,e]=monthRange(ym);
+  const logs=getLogs().filter(L=> L.ts>=s && L.ts<e);
+  const pivot={}; WARDS.forEach(w=>pivot[w]={}); ALL_ITEMS.forEach(i=>WARDS.forEach(w=>pivot[w][i]=0));
+  logs.forEach(L=>{ if(!(L.ward in pivot)) pivot[L.ward]={}; if(typeof pivot[L.ward][L.item]!=="number") pivot[L.ward][L.item]=0; pivot[L.ward][L.item]+=Number(L.qty)||0; });
+  return pivot;
 }
-function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
-function balancedPair(sum,min){
-  let a=Math.floor(sum/2), b=sum-a;
-  if(a<min){a=min;b=sum-a;} if(b<min){b=min;a=sum-b;}
-  if(a===1||b===1){a=Math.max(2,a); b=sum-a;}
-  return [a,b];
+function renderStats(){
+  const ym=el("#monthPick").value; if(!ym) return;
+  const pivot=calcPivot(ym);
+  const items=ALL_ITEMS;
+
+  let html=`<table><thead><tr><th>병동</th>${items.map(i=>`<th>${i}</th>`).join("")}<th>합계</th></tr></thead><tbody>`;
+  let grand=0;
+  WARDS.forEach(w=>{
+    let sum=0; const cells=items.map(i=>{const v=pivot[w][i]; sum+=v; return `<td>${v}</td>`}).join("");
+    grand+=sum; html+=`<tr><td>${w}</td>${cells}<td><b>${sum}</b></td></tr>`;
+  });
+  const itemTotals = items.map(i=>WARDS.reduce((a,w)=>a+(pivot[w]?.[i]||0),0));
+  html+=`<tr><th>품목합계</th>${itemTotals.map(s=>`<th>${s}</th>`).join("")}<th>${grand}</th></tr>`;
+  html+="</tbody></table>";
+  el("#statsWrap").innerHTML=html;
+
+  el("#statsEmpty").style.display = grand ? "none" : "block";
 }
-function makeProblem(){
-  const [minSum, maxSum] = q < 5 ? [4,10] : [10,20];
-  ans = rand(minSum,maxSum);
-  [mA,mB] = balancedPair(ans,2);
-  mathProblemEl.textContent = `${mA} + ${mB} = ?`;
+
+/* ===== 내보내기 (CSV / XLS) ===== */
+function toCSVRows(pivot){
+  const items=ALL_ITEMS;
+  const rows=[["병동",...items,"합계"]];
+  WARDS.forEach(w=>{
+    const vals=items.map(i=>pivot[w][i]);
+    const sum=vals.reduce((a,b)=>a+b,0);
+    rows.push([w,...vals,sum]);
+  });
+  const itemTotals = items.map(i=>WARDS.reduce((a,w)=>a+pivot[w][i],0));
+  rows.push(["품목합계",...itemTotals,itemTotals.reduce((a,b)=>a+b,0)]);
+  return rows;
 }
-function ask(){
-  if(q>=total){
-    mathProblemEl.textContent='게임 클리어!';
-    mathStatusEl.innerHTML=`<span class="correct">최종 점수: ${score}점</span>`;
-    speak(`게임 클리어! 총 점수는 ${score}점 입니다.`);
-    return;
-  }
-  q++; answered=false; questionId++;
-  makeProblem();
-  mathStatusEl.textContent='';
-  // TTS 끝난 뒤에만 듣기 시작
-  speak(`${mA} 더하기 ${mB}는 얼마일까?`, ()=>{
-    if(USE_ALWAYS_ON && canSTT) startListening(questionId);
+
+function makeCSVBlob(rows){
+  const BOM="\uFEFF";
+  const csv=rows.map(r=> r.map(v=> `"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");
+  return new Blob([BOM+csv],{type:"text/csv;charset=utf-8"});
+}
+function makeXLSBlobFromTable(){
+  const tableHTML = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:x="urn:schemas-microsoft-com:office:excel"
+          xmlns="http://www.w3.org/TR/REC-html40">
+    <head><meta charset="UTF-8"></head>
+    <body>${el("#statsWrap").innerHTML}</body></html>`;
+  return new Blob([tableHTML], {type: "application/vnd.ms-excel;charset=utf-8"});
+}
+
+async function tryShare(blob, filename, title){
+  try{
+    if('canShare' in navigator && 'share' in navigator){
+      const file = new File([blob], filename, {type: blob.type});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], title: title||filename});
+        return true;
+      }
+    }
+  }catch(_){}
+  return false;
+}
+function autoDownloadOrShow(blob, filename){
+  // 1) 자동 다운로드 시도
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download=filename; a.target="_blank";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  // 2) 패널 노출 + 직접 링크 제공 (인앱/미리보기 차단 대비)
+  const panel=el("#fallbackPanel");
+  el("#directLink").href=url;
+  el("#openNewTab").onclick=()=>window.open(url,"_blank","noopener");
+  el("#copyToClipboard").onclick=async()=>{
+    const reader=new FileReader();
+    reader.onload=async (e)=>{
+      const asText=e.target.result;
+      try{
+        await navigator.clipboard.writeText(asText);
+        alert("복사되었습니다. 메모장/엑셀에 붙여넣기 해주세요.");
+      }catch(_){
+        const w=window.open("about:blank","_blank"); w.document.write(`<pre>${asText.replaceAll("<","&lt;")}</pre>`);
+      }
+    };
+    // csv는 text, xls는 바이너리-텍스트가 아닐 수 있어 csv일 때만 복사
+    if(blob.type.includes("csv")) reader.readAsText(blob);
+    else alert("XLS는 복사 대신 '직접 링크 열기'를 사용하세요.");
+  };
+  panel.style.display="block";
+  // 3) 일정 시간 뒤 URL 회수는 사용자가 링크 누른 뒤 처리(여기선 생략)
+}
+
+/* 이벤트 바인딩 */
+function exportCSV(){
+  const ym=el("#monthPick").value; if(!ym){ alert("월을 선택하세요."); return; }
+  const rows = toCSVRows(calcPivot(ym));
+  const blob = makeCSVBlob(rows);
+  tryShare(blob, `stats_detail_${ym}.csv`, "린넨실 통계 CSV").then(shared=>{
+    if(!shared) autoDownloadOrShow(blob, `stats_detail_${ym}.csv`);
   });
 }
-function check(value, id){
-  // 오래된 콜백이면 무시
-  if(id !== questionId || answered) return;
-
-  if(isNaN(value)){
-    // 숫자 못 알아들었으면 다시 듣기만
-    mathStatusEl.innerHTML = `<span class="wrong">다시 말해볼까?</span>`;
-    if(USE_ALWAYS_ON && canSTT) startListening(questionId);
-    return;
-  }
-
-  answered = true;
-  if(value === ans){
-    mathStatusEl.innerHTML = `<span class="correct">정답!</span>`;
-    speak('정답!', ()=> setTimeout(ask, 600));
-    score++; mathScoreEl.textContent=score;
-  }else{
-    mathStatusEl.innerHTML = `<span class="wrong">틀렸어! 우하하하하하!</span>`;
-    speak('틀렸어! 우하하하하하!', ()=> setTimeout(ask, 800));
-  }
+function exportXLS(){
+  const ym=el("#monthPick").value; if(!ym){ alert("월을 선택하세요."); return; }
+  const blob = makeXLSBlobFromTable();
+  tryShare(blob, `stats_detail_${ym}.xls`, "린넨실 통계 엑셀").then(shared=>{
+    if(!shared) autoDownloadOrShow(blob, `stats_detail_${ym}.xls`);
+  });
 }
-function startListening(id){
-  if(!rec) return;
-  mathStatusEl.innerHTML = `<span class="listening">듣는 중... 숫자를 말해보세요!</span>`;
-  try{ rec.abort && rec.abort(); }catch(_){}
-  try{ rec.stop && rec.stop(); }catch(_){}
 
-  rec.onresult = (e)=>{
-    try{ rec.stop(); }catch(_){}
-    const transcript = e.results[0][0].transcript;
-    const m = transcript.match(/\d+/);
-    const value = m ? parseInt(m[0],10) : NaN;
-    check(value, id);
-  };
-  rec.onerror = ()=>{
-    try{ rec.stop(); }catch(_){}
-    if(!answered && USE_ALWAYS_ON) startListening(id); // 자동 재시작
-  };
-  rec.onend = ()=>{
-    if(!answered && USE_ALWAYS_ON){
-      // 아직 정답이 안났고 항상듣기면 재시작
-      startListening(id);
-    }
-  };
-
-  try{ rec.start(); }catch(_){}
+/* ===== 섹션 전환 ===== */
+function showSection(sec){
+  el("#sec-input").style.display = (sec==="input")?"block":"none";
+  el("#sec-stats").style.display = (sec==="stats")?"block":"none";
 }
+
+/* ===== 초기화 ===== */
+window.addEventListener("DOMContentLoaded",()=>{
+  // 병동
+  el("#wardSelect").value = state.ward;
+  el("#wardSelect").onchange = e=>{
+    state.ward = e.target.value || "";
+    localStorage.setItem(LS.ward, state.ward);
+    buildTable();
+  };
+
+  // 입력 표
+  buildTable();
+
+  // 저장
+  el("#saveAll").onclick = saveAll;
+
+  // 통계
+  const d=new Date();
+  el("#monthPick").value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+  el("#calcStats").onclick = renderStats;
+  el("#exportCSVBtn").onclick = exportCSV;
+  el("#exportXLSBtn").onclick = exportXLS;
+
+  // 메뉴
+  el("#gotoInput").onclick = ()=> showSection("input");
+  el("#gotoStats").onclick = ()=> { showSection("stats"); renderStats(); };
+
+  // 탭
+  els(".tab").forEach(t=> t.onclick=()=>{
+    state.cat = t.dataset.cat;
+    els(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    buildTable();
+  });
+});
 </script>
 </body>
 </html>
