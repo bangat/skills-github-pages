@@ -27,7 +27,7 @@
   .left{display:flex;gap:10px;align-items:center}
   .right{display:flex;gap:8px}
   label.head{font-weight:800;color:#334155;margin-right:6px;white-space:nowrap}
-  select,input[type=date]{padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:var(--r-md);background:#fff;color:var(--text);transition:border-color .12s,box-shadow .12s}
+  select,input[type=date]{padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:var(--r-md);background:#fff;color:#var(--text);transition:border-color .12s,box-shadow .12s}
   select:focus,input[type=date]:focus{outline:none;border-color:var(--accent);box-shadow:var(--focus)}
   #wardSelect{width:170px}
 
@@ -74,42 +74,35 @@
   body.mode-stats #exportXLSXBtn{display:block;width:100%;font-size:16px;padding:12px 16px;border-radius:12px}
 
   #sec-stats .row-wrap{display:flex;align-items:center;gap:8px}
-  #sec-stats .row-wrap.dates input[type=date]{flex:1 1 0;min-width:0;font-size:15px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--text)}
-  #sec-stats .row-wrap select{padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--text)}
+  #sec-stats .row-wrap.dates input[type=date]{flex:1 1 0;min-width:0;font-size:15px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:#var(--text)}
+  #sec-stats .row-wrap select{padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:#var(--text)}
 
   /* 통계표 */
   #statsWrap{overflow-x:hidden}
   .statsTable{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-2)}
   .statsTable th,.statsTable td{padding:6px;text-align:center;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:13px;line-height:1.05;font-variant-numeric:tabular-nums;color:#0f172a;white-space:nowrap}
   .statsTable thead th{background:#f6f8fc;color:#0f172a;font-weight:800}
-  /* === 정렬 교정: 첫 컬럼(병동/합계) 항상 좌측 === */
   .statsTable th:first-child,
   .statsTable td:first-child{ text-align:left !important; }
   .statsTable thead th:first-child{ text-align:left !important; }
-  /* 숫자칸은 센터 고정 */
   .statsTable td[data-num], .statsTable th[data-num]{ text-align:center; padding:6px 4px; overflow:hidden; }
-  /* 첫 컬럼 너비 고정 */
   .statsTable th:first-child,.statsTable td:first-child{width:60px}
-  /* 합계행 스타일 & 좌측 들여쓰기 유지 */
   .statsTable .total-row th:first-child{ text-align:left !important; }
   .statsTable tr:last-child td,.statsTable tr:last-child th{border-bottom:none}
-
   .statsTable th.rot{writing-mode:vertical-rl;text-orientation:upright;line-height:1;letter-spacing:0;width:22px;padding:4px 2px}
 
-  /* 요약표(2번째 표) */
+  /* 요약표 */
   .summaryTable{width:100%;margin-top:12px;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-2)}
   .summaryTable th,.summaryTable td{padding:10px 12px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:14px;line-height:1.2;color:#0f172a}
   .summaryTable thead th{background:#f6f8fc;font-weight:800}
   .summaryTable tr:last-child td,.summaryTable tr:last-child th{border-bottom:none}
   .summaryTable td:first-child{white-space:nowrap;text-align:left}
 
-  /* 숫자 축소(글자 크기) */
   .num{display:inline-block; line-height:1; font-variant-numeric:tabular-nums;}
   .d3{font-size:11px}
   .d4{font-size:10px}
   .d5{font-size:9px}
 
-  /* 최다사용 병동 강조 + 왕관 밀림 방지 */
   .maxWardRow td{background:#fff7d6 !important}
   .statsTable td:first-child{position:relative}
   .statsTable td:first-child .wardName,
@@ -123,17 +116,14 @@
     .qtyCell input{height:34px;width:54px;font-size:14px}
   }
 
-  /* 플래시 */
   #flashOverlay{position:fixed; inset:0; background:#ef4444; opacity:0; pointer-events:none; animation: flashOverlay3 .24s ease-in-out 3; z-index:9999}
   @keyframes flashOverlay3{0%{opacity:0}50%{opacity:.30}100%{opacity:0}}
 
-  /* 모달 */
   .modal-open { overflow:hidden; }
   .modalOverlay{ position:fixed; inset:0; display:none; background:rgba(15,23,42,.5); z-index:10000; }
   .modalCard{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:min(92vw,520px); background:#fff; color:#0f172a; border-radius:16px; box-shadow:0 20px 60px rgba(15,23,42,.25); overflow:hidden; }
   .modalHead{ padding:16px 18px; font-weight:800; font-size:18px; border-bottom:1px solid var(--border); }
   .modalBody{ padding:16px 18px; font-size:14px; line-height:1.5; color:#475569; }
-  .modalBody code{ background:#f1f5f9; padding:2px 6px; border-radius:6px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }
   .modalActions{ display:flex; gap:10px; padding:14px 16px; background:#f8fafc; border-top:1px solid var(--border); }
   .modalActions .btn{ flex:1; }
   .modalActions .btn.cancel{ background:#eef2f7; color:#1f2a44; border:1px solid var(--border); }
@@ -244,12 +234,88 @@
   </div>
 </div>
 
-<!-- 효과음 (원격 소스 유지: 실패 시 WebAudio 폴백이 자동 대체) -->
-<audio id="submitSound" preload="auto" src="https://blog.kakaocdn.net/dna/MEv0X/dJMb9L4Selx/AAAAAAAAAAAAAAAAAAAAAKXPuVkeMAzxy7Bh1SCt30bi2C_1bwZptqCrwQ0ljMyS/%EC%A0%9C%EC%B6%9C%ED%95%98%EA%B8%B0.mp3"></audio>
-<audio id="tabSound" preload="auto" src="https://blog.kakaocdn.net/dna/PzPow/dJMb8597iUU/AAAAAAAAAAAAAAAAAAAAAEfGdwd_aPGAiS8W_xjwE-wiO0YWzNYGwEiMupOPzPpT/%ED%83%AD%EC%9D%B4%EB%8F%99.wav"></audio>
-<audio id="btnClickSound" preload="auto" src="https://blog.kakaocdn.net/dna/bwYLog/dJMb9aXTgeJ/AAAAAAAAAAAAAAAAAAAAADmduRzhpb3MzOEfQjYt4_cZMEVg0HqosiW-zgFGI0Ft/%EB%B2%84%ED%8A%BC%ED%81%B4%EB%A6%AD.mp3"></audio>
+<!-- 효과음 -->
+<audio id="submitSound" preload="auto">
+  <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/제출하기.mp3" type="audio/mpeg" />
+</audio>
+<audio id="tabSound" preload="auto">
+  <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/탭이동.wav" type="audio/wav" />
+</audio>
+<audio id="btnClickSound" preload="auto">
+  <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/버튼클릭.mp3" type="audio/mpeg" />
+</audio>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+
+<!-- =================== 텔레그램 로거 (콘솔/에러 전송) =================== -->
+<script>
+/* ⚠️ 주의: 토큰이 클라이언트에 노출됩니다. 공개 배포시 IP/Referrer 제한 프록시를 권장 */
+const TELEGRAM_CHAT_ID = "5432510881";
+const TELEGRAM_TOKEN   = "7377526562:AAEhb8p-mld6b2tMH7TAct2Jhqg8dpP6p20";
+const TG_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+
+// 전송 스로틀링/버퍼링
+const __tgBuf = [];
+let __tgTimer = null;
+function tgFlush() {
+  if (!__tgBuf.length) return;
+  // 메시지 합치기 (텔레그램 최대 4096자 → 여유있게 3500자로 자름)
+  let payload = __tgBuf.splice(0).join("\n");
+  if (payload.length > 3500) payload = payload.slice(0, 3500) + "\n...(truncated)";
+  const text =
+    `[linenward]\n` +
+    `URL: ${location.href}\n` +
+    `UA: ${(navigator.userAgent||'')}\n` +
+    `Time: ${new Date().toISOString()}\n\n` +
+    payload;
+
+  const body = { chat_id: TELEGRAM_CHAT_ID, text };
+  // 1) fetch POST
+  fetch(TG_API, {
+    method: "POST",
+    headers: { "Content-Type":"application/json" },
+    body: JSON.stringify(body)
+  }).catch(()=>{
+    // 2) fallback: GET 비콘
+    const url = `${TG_API}?chat_id=${encodeURIComponent(TELEGRAM_CHAT_ID)}&text=${encodeURIComponent(text)}`;
+    try { if (navigator.sendBeacon) navigator.sendBeacon(url); else (new Image()).src = url; } catch(_){}
+  });
+}
+function tgSendNow(line){
+  __tgBuf.push(line);
+  if (__tgTimer) return;            // 1초에 1번만 전송
+  __tgTimer = setTimeout(()=>{ __tgTimer=null; tgFlush(); }, 1000);
+}
+function asLine(arg){
+  try{
+    if (arg instanceof Error) return (arg.stack||arg.message||String(arg));
+    if (typeof arg === 'object') return JSON.stringify(arg);
+    return String(arg);
+  }catch(_){ return String(arg); }
+}
+
+// 콘솔 가로채기
+["error","warn"].forEach(type=>{
+  const orig = console[type];
+  console[type] = function(...args){
+    try{ orig.apply(console, args); }catch(_){}
+    try{
+      tgSendNow(`[${type.toUpperCase()}] ` + args.map(asLine).join(" "));
+    }catch(_){}
+  };
+});
+// 수동 로깅용
+window.tgLog = (...args)=> tgSendNow(`[LOG] ` + args.map(asLine).join(" "));
+
+// 전역 에러 훅
+window.addEventListener("error", (e)=>{
+  tgSendNow(`[ONERROR] ${e.message} @ ${e.filename}:${e.lineno}:${e.colno}\n${e.error?.stack||''}`);
+});
+window.addEventListener("unhandledrejection", (e)=>{
+  tgSendNow(`[UNHANDLED] ${(e.reason && (e.reason.stack||e.reason.message)) || asLine(e.reason)}`);
+});
+</script>
+<!-- =================== /텔레그램 로거 =================== -->
 
 <!-- Firebase (RTDB) -->
 <script type="module">
@@ -352,9 +418,9 @@ function closeModal(sel){ document.body.classList.remove('modal-open'); el(sel).
 /* 사운드 */
 function playSnd(sel){
   const freqMap = {
-    "#btnClickSound": 880,   // 클릭: A5
-    "#tabSound": 659,        // 탭:  E5
-    "#submitSound": 523      // 제출: C5
+    "#btnClickSound": 880,
+    "#tabSound": 659,
+    "#submitSound": 523
   };
   try{
     const a = el(sel);
@@ -365,7 +431,6 @@ function playSnd(sel){
     if (p && typeof p.then === "function") {
       p.then(()=>{}).catch(err=>{
         console.warn("[audio] play failed:", sel, err?.name||err, err);
-        // 어떤 이유든 실패 시 즉시 폴백 비프
         beep(sel==="#submitSound"?180:100, freqMap[sel]||660);
       });
     }
@@ -452,7 +517,7 @@ async function saveAll(){
   if(!batch.length){ alert("저장할 항목이 없습니다. (모두 0)"); return; }
 
   const logs=getLogs(); batch.forEach(b=>logs.unshift(b)); setLogs(logs.slice(0,10000));
-  let ok=false; try{ if(window.__fb){ await window.__fb.saveLogsToRTDB(batch); ok=true; } }catch(e){ console.warn(e); }
+  let ok=false; try{ if(window.__fb){ await window.__fb.saveLogsToRTDB(batch); ok=true; } }catch(e){ console.warn(e); tgLog("saveAll() 실패:", e); }
   if(ok){
     const cur=getLogs(), keyOf=L=>[L.ts,L.ward,L.item,L.qty].join("|");
     const rm=new Set(batch.map(keyOf));
@@ -500,7 +565,7 @@ function renderPivot(logs,s,e,wardFilter){
   return {p,wards,items};
 }
 
-/* 숫자 자리수에 따른 폰트 축소(3~5자리) - 표 전체(th/td 모두) */
+/* 숫자 자리수에 따른 폰트 축소 */
 function shrinkBigNumbers(root){
   Array.from(root.querySelectorAll('[data-num] > .num')).forEach(span=>{
     const len=(span.textContent||'').trim().length;
@@ -527,12 +592,10 @@ async function renderStats(){
 
       const {p,wards,items}=renderPivot(merged,s,e,wardFilter);
 
-      /* 병동별 총합으로 최다 병동 찾기 */
       const wardTotals = wards.map(w => items.reduce((a,i)=>a+(p[w]?.[i]||0),0));
       const maxTotal = Math.max(...wardTotals, 0);
       const maxWardIdx = wardTotals.findIndex(v=>v===maxTotal && v>0);
 
-      /* 메인 표 */
       let html=`<table class="statsTable"><thead><tr><th><span class="wardName">병동</span></th>${items.map(i=>`<th class="rot">${i}</th>`).join("")}</tr></thead><tbody>`;
       wards.forEach((w,rowIdx)=>{
         const isMax = (wardFilter==="전체" && rowIdx===maxWardIdx);
@@ -551,7 +614,6 @@ async function renderStats(){
       html+=`</tbody></table>`;
       el("#statsWrap").innerHTML=html;
 
-      /* === 요약표 (일평균/기간합계) === */
       const daysCount = Math.max(1, Math.round((new Date(e) - new Date(s)) / (1000*60*60*24)) + 1);
       let sumHtml = `<table class="summaryTable">
         <thead><tr><th>품목</th><th>일평균 사용량</th><th>기간합계</th></tr></thead><tbody>`;
@@ -565,7 +627,6 @@ async function renderStats(){
       sumHtml+=`</tbody></table>`;
       el("#statsSummary").innerHTML = sumHtml;
 
-      /* 숫자 축소(메인표 전체에 적용: td+th) */
       shrinkBigNumbers(el("#statsWrap").querySelector("table"));
 
       const any=wards.some(w=>items.some(i=>(p[w]?.[i]||0)>0));
@@ -574,7 +635,7 @@ async function renderStats(){
   }
 }
 
-/* 엑셀 (합계 밑에 '일평균' 자동추가) */
+/* 엑셀 내보내기 */
 function exportXLSX(){
   const table=document.querySelector("#statsWrap table"); if(!table){ alert("통계 표가 없습니다."); return; }
   const s=el("#dateStart").value||"", e=el("#dateEnd").value||"", ward=el("#wardFilter").value||"전체";
@@ -622,7 +683,6 @@ window.addEventListener("DOMContentLoaded",()=>{
   el("#saveAll").onclick=saveAll;
   el("#exportXLSXBtn").onclick=exportXLSX;
 
-  /* 다운로드 모달 */
   function openDownloadModal(){ openModal('#downloadModal', '#dlConfirm'); }
   function closeDownloadModal(){ closeModal('#downloadModal'); }
   el("#appDownloadBtn").onclick = openDownloadModal;
@@ -630,11 +690,9 @@ window.addEventListener("DOMContentLoaded",()=>{
   el("#dlConfirm").onclick = () => { closeDownloadModal(); const url = LATEST_DIRECT; if(url && url.startsWith("http")) window.location.href = url; else alert("다운로드 링크가 설정되지 않았습니다."); };
   el("#downloadModal").addEventListener("click",(e)=>{ if(e.target === e.currentTarget) closeDownloadModal(); });
 
-  /* 제출 모달 */
   el('#submitModal').addEventListener('click', (e)=>{ if(e.target===e.currentTarget) closeModal('#submitModal'); });
   el('#smOk').onclick = ()=> closeModal('#submitModal');
 
-  /* 탭 전환 */
   Array.from(document.querySelectorAll(".tab")).forEach(t=>
     t.onclick=()=>{
       state.cat=t.dataset.cat;
@@ -645,13 +703,11 @@ window.addEventListener("DOMContentLoaded",()=>{
     }
   );
 
-  /* 통계 렌더 바인딩 */
   const rerender=debounce(renderStats,200);
   ["#dateStart","#dateEnd","#wardFilter"].forEach(sel=>{
     const n=el(sel); n&&n.addEventListener("change",rerender); n&&n.addEventListener("input",rerender);
   });
 
-  /* 진입 */
   el("#gotoStats").onclick=()=>{ 
     document.body.classList.add("mode-stats"); 
     el("#sec-input").style.display="none"; 
