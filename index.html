@@ -25,39 +25,47 @@
   .tabs{display:flex;gap:8px;margin:12px 0}
   .tab{flex:1;text-align:center;padding:10px;background:#e5e7eb;color:#374151;font-weight:700;border-radius:12px;cursor:pointer}
   .tab.active{background:#2563eb;color:#fff}
+
   table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden}
   th,td{border-bottom:1px solid var(--border);padding:12px;font-size:16px;text-align:center}
   td:first-child, th:first-child{text-align:left}
   .col-item{width:42%} .col-qty{width:58%}
   th.item-name, td.item-name{white-space:nowrap;word-break:keep-all;overflow:hidden;text-overflow:ellipsis}
-  /* 기존 .qtyCell 정의를 아래로 교체 */
-.qtyCell{
-  display:grid;
-  grid-auto-flow: column;     /* 가로로만 흐르게 */
-  grid-auto-columns: max-content;
-  align-items:center;
-  justify-content:end;
-  column-gap:6px;
-  flex-wrap:unset;            /* 안전빵 */
-  white-space:nowrap;         /* 더블 세이프 */
-  overflow-x:clip;            /* 혹시 넘치면 잘라내기(스크롤 싫으면 clip) */
-}
+
+  /* 가로 고정 배치: -5 -1 [입력] +1 +5 */
+  .qtyCell{
+    display:grid;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    align-items:center;
+    justify-content:end;
+    column-gap:6px;
+    white-space:nowrap;
+    overflow-x:clip;
+  }
   .chip{height:40px;min-width:40px;padding:0 10px;border:1px solid var(--border);background:#eef2f7;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:15px}
   .qtyCell input{width:76px;height:40px;text-align:center;font-size:16px;padding:0 6px;border:1px solid var(--border);border-radius:12px;background:#fff}
   input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield}
+
   .empty{margin-top:20px;padding:20px;border:2px dashed var(--border);border-radius:16px;text-align:center;color:#6b7280}
+
   .footerBar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);padding:12px;display:flex;justify-content:center;z-index:50}
   .footerCol{display:flex;flex-direction:column;gap:8px;align-items:stretch;justify-content:center;width:100%;max-width:980px}
   #saveAll{width:100%; font-size:18px; padding:12px 16px; border-radius:14px}
   #appDownloadBtn{width:100%; font-size:16px; padding:12px 16px; border-radius:12px; background:#6b7280}
   #saveAll, #appDownloadBtn{ display:block; }
   #exportXLSXBtn{ display:none; }
+
+  /* 통계 화면 */
   body.mode-stats header{display:none;}
   body.mode-stats #saveAll{ display:none; }
   body.mode-stats #appDownloadBtn{ display:none; }
   body.mode-stats #exportXLSXBtn{ display:block; width:100%; font-size:16px; padding:12px 16px; border-radius:12px }
+
+  /* 앱 모드에서 다운로드 버튼 숨김 */
   body.app #appDownloadBtn{ display:none !important; }
+
   #sec-stats .row-wrap{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
   #sec-stats .row-wrap>*{flex:0 0 auto}
   #sec-stats .row-wrap.dates input[type=date]{flex:1 1 0; min-width:0; font-size:15px; padding:6px; border:1px solid var(--border); border-radius:12px; background:#fff}
@@ -68,30 +76,27 @@
   .statsTable th.firstCol{ width:50px; }
   .statsTable th.sumCol{ width:44px; }
   .statsTable th.rot{ writing-mode: vertical-rl; text-orientation: upright; line-height:1; letter-spacing:0; white-space:nowrap; width:24px; padding:4px 2px; }
-@media (max-width:480px){
-  .chip{min-width:32px;height:34px;font-size:14px;padding:0 6px}
-  .qtyCell input{height:34px;width:64px;font-size:15px}
-  .qtyCell{ column-gap:4px; }
-}
-  .flash-red {
-  animation: flashRed 0.2s linear;
-}
-/* 전체 화면 오버레이 점멸 */
-#flashOverlay{
-  position:fixed; inset:0;
-  background:#ef4444;
-  opacity:0;
-  pointer-events:none;
-  animation: flashOverlay 0.25s ease-in-out 2; /* 2번 점멸 */
-  z-index:9999;  /* 최상단 */
-}
-@keyframes flashOverlay{
-  0%{opacity:0}
-  50%{opacity:0.35}  /* 눈에 잘 띄는 빨간빛 */
-  100%{opacity:0}
-}
 
+  @media (max-width:480px){
+    .chip{min-width:32px;height:34px;font-size:14px;padding:0 6px}
+    .qtyCell input{height:34px;width:64px;font-size:15px}
+    .qtyCell{ column-gap:4px; }
+  }
 
+  /* 화면 전체 빨간 점멸(2회) */
+  #flashOverlay{
+    position:fixed; inset:0;
+    background:#ef4444;
+    opacity:0;
+    pointer-events:none;
+    animation: flashOverlay 0.25s ease-in-out 2;
+    z-index:9999;
+  }
+  @keyframes flashOverlay{
+    0%{opacity:0}
+    50%{opacity:0.35}
+    100%{opacity:0}
+  }
 </style>
 </head>
 <body>
@@ -173,10 +178,10 @@
   src="https://blog.kakaocdn.net/dna/nDY4i/dJMb9MW0NzU/AAAAAAAAAAAAAAAAAAAAAPx9B-3G2pvytNqx-vR3eYmHXaIga9OYo8N_ydqJ4RH2/%EC%A0%84%EC%86%A1.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1756652399&allow_ip=&allow_referer=&signature=NKOSow0S2fb7Q%2FBB560terQ0zko%3D&attach=1&knm=tfile.mp3">
 </audio>
 
-<!-- 🔄 SheetJS → xlsx-js-style 로 교체 -->
+<!-- xlsx-js-style (스타일 가능한 SheetJS 포크) -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
-<!-- Firebase (인증 없음 / RTDB) -->
+<!-- Firebase (RTDB) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getDatabase, ref, push, query, orderByChild, startAt, endAt, onValue, off } 
@@ -226,7 +231,21 @@
 <script>
 const APP_DOWNLOAD_URL = "https://github.com/bangat/linenward/releases/download/v1.0.0/ward.apk";
 
-/* 앱 환경 감지(WebView/PWA) */
+/* ==== 전역 상수/유틸 ==== */
+const ITEMS={
+  "시트":["대시트","반시트","베갯잇","수건"],
+  "환자복":["일반상의","일반하의","정형상의","정형하의"],
+  "기타":["억제대","얼음포","기타"]
+};
+const COLORED_ITEMS = new Set(["대시트","반시트","베갯잇","수건"]);
+const DEFAULT_TEN_ITEMS = new Set(["대시트","반시트","베갯잇"]);  // 항상 10으로 시작
+const ALL_ITEMS = Object.values(ITEMS).flat();
+const WARDS=["93","83","73","71","63","62","61","52","51","42","41","기타"];
+
+const LS={ ward:"linen/ward", logs:"linen/logs", draft:(ward)=>`linen/draft/${ward||'_none_'}` };
+let state={ ward:localStorage.getItem(LS.ward)||"", section:"input", cat:"시트" };
+const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorAll(s));
+
 function isAppEnv(){
   const ua = (navigator.userAgent||"") + " " + (navigator.vendor||"");
   const isStandalonePWA =
@@ -240,40 +259,16 @@ function isAppEnv(){
   return isStandalonePWA || isAndroidWebView || isCustomUA || forced;
 }
 
+/* 화면 경고: 진동 3회 + 전체 점멸 2회 */
 function buzzWarn(){
-  // 진동: 짧게 3번
-  try{
-    if(navigator.vibrate){
-      navigator.vibrate([150,80,150,80,150]);
-    }
-  }catch(e){}
-
-  // 화면 전체 빨간 점멸 2회
+  try{ if(navigator.vibrate){ navigator.vibrate([150,80,150,80,150]); } }catch(e){}
   const ov = document.createElement('div');
   ov.id = 'flashOverlay';
   document.body.appendChild(ov);
-  // 애니메이션 끝나면 제거
-  ov.addEventListener('animationend', ()=> {
-    if(ov && ov.parentNode) ov.parentNode.removeChild(ov);
-  });
+  ov.addEventListener('animationend', ()=> { if(ov && ov.parentNode) ov.parentNode.removeChild(ov); });
 }
 
-
-
-/* 품목 */
-const ITEMS={
-  "시트":["대시트","반시트","베갯잇","수건"],
-  "환자복":["일반상의","일반하의","정형상의","정형하의"],
-  "기타":["억제대","얼음포","기타"]
-};
-const COLORED_ITEMS = new Set(["대시트","반시트","베갯잇","수건"]);
-const ALL_ITEMS = Object.values(ITEMS).flat();
-const WARDS=["93","83","73","71","63","62","61","52","51","42","41","기타"];
-
-const LS={ ward:"linen/ward", logs:"linen/logs", draft:(ward)=>`linen/draft/${ward||'_none_'}` };
-let state={ ward:localStorage.getItem(LS.ward)||"", section:"input", cat:"시트" };
-const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorAll(s));
-
+/* 날짜 범위 */
 function rangeMsByDates(startStr, endStr){
   const sParts = startStr.split("-").map(Number);
   const eParts = endStr.split("-").map(Number);
@@ -283,80 +278,61 @@ function rangeMsByDates(startStr, endStr){
   return [s.getTime(), e.getTime()+1];
 }
 
+/* 로컬 저장 */
 function getLogs(){ return JSON.parse(localStorage.getItem(LS.logs)||"[]"); }
 function setLogs(a){ localStorage.setItem(LS.logs, JSON.stringify(a)); }
 function getDraft(){ try{ return JSON.parse(localStorage.getItem(LS.draft(state.ward))||"{}"); }catch(_){ return {}; } }
 function setDraft(obj){ localStorage.setItem(LS.draft(state.ward), JSON.stringify(obj||{})); }
+function setDraftQty(item, qty){ const d=getDraft(); d[item]= (parseInt(qty)||0); setDraft(d); }
 
-function setDraftQty(item, qty){
-  const d=getDraft();
-  d[item]= (parseInt(qty)||0);   // 음수 포함 저장
+/* 재오픈/병동 변경 시: 대/반/베를 항상 10으로 초기화 */
+function resetDefaultTenForThisWard(){
+  const d = getDraft();
+  DEFAULT_TEN_ITEMS.forEach(n => { d[n] = 10; });
   setDraft(d);
 }
-function getDraftQty(item){
-  const d=getDraft();
-  return (parseInt(d[item]||0) || 0);
-}
 
-function maybeBuzz(prev, next){
-  if(prev < 20 && next >= 20){ buzzWarn(); }
-}
+/* 20 이상 넘어갈 때 경고 */
+function maybeBuzz(prev, next){ if(prev < 20 && next >= 20){ buzzWarn(); } }
 
-/* 입력 테이블 */
+/* === 입력 테이블 === */
 function buildTable(){
   const tb = el("#inputTable tbody");
   tb.innerHTML = "";
 
   ITEMS[state.cat].forEach(name=>{
     const tr = document.createElement("tr");
-    // buildTable() 안의 tr.innerHTML 부분만 교체
-tr.innerHTML = `
-  <td class="item-name">${name}</td>
-  <td class="qtyCell">
-    <button type="button" class="chip" data-delta="-5">−5</button>
-    <button type="button" class="chip" data-delta="-1">−1</button>
-    <input type="number" inputmode="numeric" value="0" aria-label="${name} 수량"/>
-    <button type="button" class="chip" data-delta="+1">＋1</button>
-    <button type="button" class="chip" data-delta="+5">＋5</button>
-  </td>`;
+    tr.innerHTML = `
+      <td class="item-name">${name}</td>
+      <td class="qtyCell">
+        <button type="button" class="chip" data-delta="-5">−5</button>
+        <button type="button" class="chip" data-delta="-1">−1</button>
+        <input type="number" inputmode="numeric" value="0" aria-label="${name} 수량"/>
+        <button type="button" class="chip" data-delta="+1">＋1</button>
+        <button type="button" class="chip" data-delta="+5">＋5</button>
+      </td>`;
 
-const DEFAULT_TEN_ITEMS = new Set(["대시트","반시트","베갯잇"]);
-    // 페이지를 '다시 열 때' 기본값을 강제로 심어주는 함수
-function resetDefaultTenForThisWard(){
-  const d = getDraft();            // 현재 병동 드래프트 불러오기
-  DEFAULT_TEN_ITEMS.forEach(n => { d[n] = 10; });  // 무조건 10으로 덮어쓰기
-  setDraft(d);
-}
+    const inp = tr.querySelector("input");
 
-   const inp = tr.querySelector("input");
+    // 저장된 값 우선. 없으면(미정의) 기본 10 세트는 10, 그 외 0
+    const draftObj = getDraft();
+    const hasSaved = Object.prototype.hasOwnProperty.call(draftObj, name);
+    let initVal;
+    if (hasSaved) initVal = parseInt(draftObj[name]) || 0;
+    else initVal = DEFAULT_TEN_ITEMS.has(name) ? 10 : 0;
 
-// ✅ 저장된 값이 있는지 '존재 여부'로 판단 (0도 유효값으로 인정)
-const draftObj = getDraft();
-const hasSaved = Object.prototype.hasOwnProperty.call(draftObj, name);
-let initVal;
+    inp.value = String(initVal);
+    inp.dataset.prev = String(initVal);
 
-if (hasSaved) {
-  initVal = parseInt(draftObj[name]) || 0;     // 저장된 값 사용(0 포함)
-} else if (DEFAULT_TEN_ITEMS.has(name)) {
-  initVal = 10;                                 // 대/반/베는 기본 10
-  setDraftQty(name, 10);                        // 로컬 드래프트에도 기록
-} else {
-  initVal = 0;                                  // 나머지는 0 시작
-}
-
-inp.value = String(initVal);
-inp.dataset.prev = String(initVal);
-
-// 직접 입력
-inp.addEventListener("input", ()=>{
-  const prev = parseInt(inp.dataset.prev || "0") || 0;
-  const cur  = parseInt(inp.value || "0") || 0;
-  inp.value = String(cur);
-  setDraftQty(name, cur);
-  maybeBuzz(prev, cur);              // 20 이상 넘어갈 때 진동+점멸
-  inp.dataset.prev = String(cur);
-});
-
+    // 직접 입력
+    inp.addEventListener("input", ()=>{
+      const prev = parseInt(inp.dataset.prev || "0") || 0;
+      const cur  = parseInt(inp.value || "0") || 0;
+      inp.value = String(cur);
+      setDraftQty(name, cur);
+      maybeBuzz(prev, cur);
+      inp.dataset.prev = String(cur);
+    });
 
     // 버튼 증감
     tr.querySelectorAll("[data-delta]").forEach(btn=>{
@@ -378,13 +354,13 @@ inp.addEventListener("input", ()=>{
     const noteRow = document.createElement("tr");
     noteRow.innerHTML = `
       <td colspan="2" style="text-align:left; padding:12px; font-size:14px; color:#6b7280;">
-        기타품목 : 고관절, 중환의, 한쪽끈, 양쪽끈
+        기타 : 중환의, 고관절, 양쪽끈, 양쪽고무줄
       </td>`;
     tb.appendChild(noteRow);
   }
 }
 
-/* 저장 */
+/* === 저장 === */
 async function saveAll(){
   if(!state.ward){ alert("병동을 먼저 선택하세요."); return; }
 
@@ -419,8 +395,14 @@ async function saveAll(){
     setLogs(cleaned);
   }
 
+  // 입력값 초기화 후, 기본 10 다시 세팅
   const cleared = {}; ALL_ITEMS.forEach(i=> cleared[i]=0); setDraft(cleared);
-  els("#inputTable tbody input").forEach(inp=> { inp.value="0"; inp.dataset.prev="0"; });
+  resetDefaultTenForThisWard();
+  els("#inputTable tbody input").forEach(inp=> { 
+    const n = inp.getAttribute('aria-label').replace(' 수량','');
+    const v = DEFAULT_TEN_ITEMS.has(n) ? 10 : 0;
+    inp.value=String(v); inp.dataset.prev=String(v);
+  });
 
   const snd = el("#submitSound");
   snd && snd.play().catch(()=>{});
@@ -434,7 +416,8 @@ async function saveAll(){
   }
 }
 
-/* 통계 색상: 음수 회색 / 0~9 검정 / 10~14 노랑 / 15~19 파랑 / 20+ 빨강 */
+/* === 통계 === */
+/* 색상: 음수 회색 / 0~9 검정 / 10~14 노랑 / 15~19 파랑 / 20+ 빨강 */
 function colorStyle(item, value){
   if(!COLORED_ITEMS.has(item)) return "";
   const v = Number(value)||0;
@@ -444,8 +427,6 @@ function colorStyle(item, value){
   if (v >= 10) return ' style="color:#f59e0b;font-weight:700"';
   return "";
 }
-
-/* 피벗 */
 function pivotFromLogsRange(logs, startStr, endStr, wardFilter){
   const [s,e] = rangeMsByDates(startStr, endStr);
   const selected = logs.filter(L => L.ts>=s && L.ts<e && (wardFilter==="전체" || L.ward===wardFilter));
@@ -458,8 +439,6 @@ function pivotFromLogsRange(logs, startStr, endStr, wardFilter){
   });
   return {pivot:p, wards: wardList};
 }
-
-/* 통계 렌더 */
 async function renderStats(){
   const todayStr = new Date().toISOString().slice(0,10);
   const s = el("#dateStart").value || todayStr;
@@ -509,7 +488,7 @@ async function renderStats(){
   }
 }
 
-/* ✅ xlsx-js-style 사용: 제목 굵게+가운데 정렬로 내보내기 */
+/* === 엑셀 내보내기 (제목 Bold+Center) === */
 function exportXLSX(){
   const table = document.querySelector("#statsWrap table");
   if(!table){ alert("통계 표가 없습니다. 통계 화면에서 날짜/병동을 선택해 주세요."); return; }
@@ -518,36 +497,25 @@ function exportXLSX(){
   const e = el("#dateEnd").value || "";
   const ward = el("#wardFilter").value || "전체";
 
-  // 표를 A2부터 배치
   const ws = XLSX.utils.table_to_sheet(table, {origin: "A2"});
-
-  // 제목 (A1)
   const title = `${s} ~ ${e} ${ward}병동 출고량`;
   XLSX.utils.sheet_add_aoa(ws, [[title]], {origin: "A1"});
 
-  // 제목 병합 (A1 ~ 마지막 열)
   const lastCol = table.rows[0].cells.length - 1;
   ws["!merges"] = ws["!merges"] || [];
   ws["!merges"].push({ s: {r:0, c:0}, e: {r:0, c:lastCol} });
 
-  // 제목 스타일 (굵게 + 가운데)
-  ws["A1"].s = {
-    font: { bold: true, sz: 14 },
-    alignment: { horizontal: "center", vertical: "center" }
-  };
-  // 제목 높이(선택)
-  ws["!rows"] = ws["!rows"] || [];
-  ws["!rows"][0] = { hpt: 22 };
+  ws["A1"].s = { font:{bold:true, sz:14}, alignment:{horizontal:"center", vertical:"center"} };
+  ws["!rows"] = ws["!rows"] || []; ws["!rows"][0] = { hpt: 22 };
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "통계");
   XLSX.writeFile(wb, `stats_${s}_to_${e}.xlsx`);
 }
 
-/* 유틸 */
+/* === 초기화 === */
 function debounce(fn, delay=200){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,args), delay); }; }
 
-/* 초기화 */
 window.addEventListener("DOMContentLoaded",()=>{
   const urlApp = new URL(location.href).searchParams.get("app");
   if(urlApp === "1"){ localStorage.setItem("appMode", "1"); }
@@ -557,14 +525,22 @@ window.addEventListener("DOMContentLoaded",()=>{
   const urlWard=new URL(location.href).searchParams.get("ward");
   if(urlWard){ state.ward=urlWard; localStorage.setItem(LS.ward,state.ward); }
   el("#wardSelect").value = state.ward;
-  el("#wardSelect").onchange = e=>{ state.ward = e.target.value || ""; localStorage.setItem(LS.ward, state.ward); buildTable(); };
+
+  el("#wardSelect").onchange = e=>{
+    state.ward = e.target.value || "";
+    localStorage.setItem(LS.ward, state.ward);
+    resetDefaultTenForThisWard();   // 병동 바꿀 때도 기본 10
+    buildTable();
+  };
 
   const d=new Date(); const yyyy=d.getFullYear(); const mm=String(d.getMonth()+1).padStart(2,"0"); const dd=String(d.getDate()).padStart(2,"0");
   el("#issueDate").value = `${yyyy}-${mm}-${dd}`;
   el("#dateStart").value = `${yyyy}-${mm}-${dd}`;
   el("#dateEnd").value   = `${yyyy}-${mm}-${dd}`;
- resetDefaultTenForThisWard();
+
+  resetDefaultTenForThisWard();     // 페이지 재오픈 시 기본 10 보장
   buildTable();
+
   el("#saveAll").onclick = saveAll;
   el("#exportXLSXBtn").onclick = exportXLSX;
 
