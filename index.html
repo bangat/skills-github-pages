@@ -252,10 +252,12 @@ function getDraftQty(item){ const d=getDraft(); return Math.max(0, parseInt(d[it
 
 /* 입력 테이블 */
 function buildTable(){
-  const tb=el("#inputTable tbody"); tb.innerHTML="";
+  const tb = el("#inputTable tbody");
+  tb.innerHTML = "";
+
   ITEMS[state.cat].forEach(name=>{
-    const tr=document.createElement("tr");
-    tr.innerHTML=`
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
       <td class="item-name">${name}</td>
       <td class="qtyCell">
         <button type="button" class="chip reset" data-reset>리셋</button>
@@ -265,38 +267,67 @@ function buildTable(){
         <button type="button" class="chip" data-delta="+5">＋5</button>
       </td>`;
 
-    const inp=tr.querySelector("input");
+    const inp = tr.querySelector("input");
     const draftVal = getDraftQty(name);
-    if(draftVal>0){ inp.value = String(draftVal); }
-    else if(COLORED_ITEMS.has(name)){ inp.value = "10"; setDraftQty(name, 10); }
-    else { inp.value = "0"; }
-    inp.dataset.prev = String(parseInt(inp.value||"0")||0);
 
+    if (draftVal > 0) {
+      inp.value = String(draftVal);
+    } else if (COLORED_ITEMS.has(name)) {
+      inp.value = "10";
+      setDraftQty(name, 10);
+    } else {
+      inp.value = "0";
+    }
+    inp.dataset.prev = String(parseInt(inp.value || "0") || 0);
+
+    // 수기 입력
     inp.addEventListener("input", ()=>{
-      const prev = parseInt(inp.dataset.prev||"0")||0;
-      const cur = Math.max(0, parseInt(inp.value||"0")||0);
+      const prev = parseInt(inp.dataset.prev || "0") || 0;
+      const cur = Math.max(0, parseInt(inp.value || "0") || 0);
       inp.value = String(cur);
       setDraftQty(name, cur);
-      if(state.cat==="시트" && COLORED_ITEMS.has(name) && prev<=20 && cur>20) vibrateOnce(1000);
+      if (state.cat === "시트" && COLORED_ITEMS.has(name) && prev <= 20 && cur > 20) {
+        vibrateOnce(1000);
+      }
       inp.dataset.prev = String(cur);
     });
 
+    // +/− 버튼
     tr.querySelectorAll("[data-delta]").forEach(btn=>{
-      btn.onclick=()=>{
-        const prev = parseInt(inp.dataset.prev||"0")||0;
-        const delta = btn.dataset.delta==="-1" ? -1 : (btn.dataset.delta==="+1" ? 1 : 5);
-        const v = Math.max(0,(parseInt(inp.value||"0")||0)+delta);
-        inp.value=v; setDraftQty(name,v);
-        if(state.cat==="시트" && COLORED_ITEMS.has(name) && prev<=20 && v>20) vibrateOnce(1000);
+      btn.onclick = ()=>{
+        const prev = parseInt(inp.dataset.prev || "0") || 0;
+        const delta = btn.dataset.delta === "-1" ? -1 : (btn.dataset.delta === "+1" ? 1 : 5);
+        const v = Math.max(0, (parseInt(inp.value || "0") || 0) + delta);
+        inp.value = v;
+        setDraftQty(name, v);
+        if (state.cat === "시트" && COLORED_ITEMS.has(name) && prev <= 20 && v > 20) {
+          vibrateOnce(1000);
+        }
         inp.dataset.prev = String(v);
       };
     });
 
-    tr.querySelector("[data-reset]").onclick=()=>{ inp.value="0"; setDraftQty(name,0); inp.dataset.prev="0"; };
+    // 리셋
+    tr.querySelector("[data-reset]").onclick = ()=>{
+      inp.value = "0";
+      setDraftQty(name, 0);
+      inp.dataset.prev = "0";
+    };
 
     tb.appendChild(tr);
   });
+
+  // 🔻 기타 탭일 때 안내 문구 행 추가 (텍스트만, 입력/저장과 무관)
+  if (state.cat === "기타") {
+    const noteRow = document.createElement("tr");
+    noteRow.innerHTML = `
+      <td colspan="2" style="text-align:left; padding:12px; font-size:14px; color:#6b7280;">
+        기타품목 : 고관절, 중환의
+      </td>`;
+    tb.appendChild(noteRow);
+  }
 }
+
 
 /* 저장 (3번 방법: RTDB 업로드 성공 시 로컬 자동 정리) */
 async function saveAll(){
