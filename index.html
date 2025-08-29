@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>린넨실 출고관리 (Firebase · 기간 통계)</title>
+<title>린넨실 출고관리</title>
 <style>
   :root{ --bg:#f9fafb; --card:#ffffff; --accent:#2563eb; --muted:#6b7280; --text:#111827; --border:#e5e7eb; }
   *{box-sizing:border-box}
@@ -13,7 +13,8 @@
   .left{display:flex;gap:10px;align-items:center;flex-wrap:nowrap}
   .right{display:flex;gap:8px}
   label.head{font-weight:800;white-space:nowrap;margin-right:6px}
-  select{padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:12px;width:220px;background:#fff}
+  select{padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:12px;background:#fff}
+  #wardSelect{width:170px}
   button{border:0;border-radius:12px;padding:10px 14px;font-size:15px;font-weight:700;cursor:pointer}
   .btn{background:#94a3b8;color:#fff}
   .btn.acc{background:var(--accent);color:#fff}
@@ -88,8 +89,15 @@
         <input type="date" id="dateStart" style="font-size:16px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#fff" />
         <label>종료</label>
         <input type="date" id="dateEnd" style="font-size:16px;padding:8px;border:1px solid var(--border);border-radius:12px;background:#fff" />
+        <label>병동</label>
+        <select id="wardFilter" style="padding:10px 12px;border:1px solid var(--border);border-radius:12px;">
+          <option value="전체">전체</option>
+          <option>93</option><option>83</option><option>73</option><option>71</option>
+          <option>63</option><option>62</option><option>61</option>
+          <option>52</option><option>51</option><option>42</option><option>41</option>
+          <option>기타</option>
+        </select>
         <button class="btn acc" id="calcStats">계산</button>
-        <button class="btn" id="exportCSVBtn">CSV 내보내기</button>
         <button class="btn" id="exportXLSBtn">엑셀(.xls) 내보내기</button>
       </div>
       <div><h3 style="margin:8px 0">상세(병동×품목)</h3><div id="statsWrap"></div></div>
@@ -104,71 +112,63 @@
 <div id="fallbackPanel" class="panel">
   <h4>다운로드가 차단되었어요. 아래 방법 중 하나로 저장하세요.</h4>
   <div class="row">
-    <a id="directLink" href="#" target="_blank" rel="noopener">① 직접 다운로드 링크 열기</a>
+    <a id="directLink" href="#" target="_blank" rel="noopener">① 직접 링크 열기</a>
     <button class="btn" id="openNewTab">② 새 탭으로 열기</button>
-    <button class="btn" id="copyToClipboard">③ 내용 복사</button>
   </div>
   <div class="small">* 인앱 미리보기에서는 자동 다운로드가 막힐 수 있어요. 링크를 직접 누르거나 “새 탭으로 열기”를 사용해 주세요.</div>
 </div>
 
-<!-- ===== Firebase (module) ===== -->
+<!-- ===== Firebase (RTDB) ===== -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { 
-    getFirestore, collection, addDoc, getDocs, query, where,
-    enableIndexedDbPersistence, Timestamp 
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getDatabase, ref, push, get, query, orderByChild, startAt, endAt } 
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-  /* 네 프로젝트 구성 (그대로 사용) */
+  /* 프로젝트 설정 */
   const firebaseConfig = {
-      apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
-      authDomain: "hallymlinen.firebaseapp.com",
-      databaseURL: "https://hallymlinen-default-rtdb.firebaseio.com",
-      projectId: "hallymlinen",
-      storageBucket: "hallymlinen.appspot.com",
-      messagingSenderId: "867775830688",
-      appId: "1:867775830688:web:cef3ed4e70ae9818f347c5",
-      measurementId: "G-T02ZFK18L3"
+    apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
+    authDomain: "hallymlinen.firebaseapp.com",
+    databaseURL: "https://hallymlinen-default-rtdb.firebaseio.com",
+    projectId: "hallymlinen",
+    storageBucket: "hallymlinen.appspot.com",
+    messagingSenderId: "867775830688",
+    appId: "1:867775830688:web:cef3ed4e70ae9818f347c5",
+    measurementId: "G-T02ZFK18L3"
   };
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-  const db   = getFirestore(app);
-  enableIndexedDbPersistence(db).catch(()=>{});
+  const rtdb = getDatabase(app);
 
+  // 익명 로그인 (키오스크)
   onAuthStateChanged(auth, (user)=>{ if(!user) signInAnonymously(auth); });
 
-  // Firestore: 기간 조회(종료일은 익일 00:00 미만으로)
-  function endNextDay(d){ const n=new Date(d.getTime()); n.setDate(n.getDate()+1); n.setHours(0,0,0,0); return n; }
-
-  async function saveLogsToFirestore(batchArray){
-    const colRef = collection(db, "logs");
-    await Promise.all(batchArray.map(d => addDoc(colRef, {
-      ts: Timestamp.fromMillis(d.ts),
-      yyyymm: new Date(d.ts).toISOString().slice(0,7),
-      ward: d.ward, item: d.item, qty: d.qty
-    })));
+  // 저장: /logs/{autoId}
+  async function saveLogsToRTDB(batchArray){
+    const baseRef = ref(rtdb, "logs");
+    await Promise.all(batchArray.map(d => push(baseRef, d)));
   }
 
-  async function fetchRangeFromFirestore(startDate, endDateInclusive){
-    const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0,0,0,0);
-    const endLt = endNextDay(endDateInclusive); // < endLt
-    const colRef = collection(db, "logs");
-    const qy = query(colRef,
-      where("ts", ">=", Timestamp.fromDate(start)),
-      where("ts", "<",  Timestamp.fromDate(endLt))
-    );
-    const snap = await getDocs(qy);
-    return snap.docs.map(d=>({ id:d.id, ...d.data(), ts:d.data().ts.toMillis() }));
+  // 기간 조회: ts(ms), 종료일 포함
+  function dayStart(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
+  function dayEndInclusiveMs(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59,999).getTime(); }
+  async function fetchRangeFromRTDB(startDate, endDateInclusive){
+    const sMs = dayStart(startDate);
+    const eMs = dayEndInclusiveMs(endDateInclusive);
+    const qy = query(ref(rtdb, "logs"), orderByChild("ts"), startAt(sMs), endAt(eMs));
+    const snap = await get(qy);
+    const val = snap.val() || {};
+    return Object.keys(val).map(k => ({ id:k, ...val[k] }));
   }
 
-  window.__fb = { saveLogsToFirestore, fetchRangeFromFirestore };
+  // 앱에서 사용
+  window.__fb = { saveLogsToRTDB, fetchRangeFromRTDB };
 </script>
 
 <!-- ===== App Script ===== -->
 <script>
-/* 품목 구성 (요청안 유지) */
+/* 품목 */
 const ITEMS={
   "시트":["대시트","반시트","베갯잇","수건"],
   "환자복":["일반상의","일반하의","정형상의","정형하의"],
@@ -180,15 +180,14 @@ const LS={ ward:"linen/ward", logs:"linen/logs", draft:(ward)=>`linen/draft/${wa
 let state={ ward:localStorage.getItem(LS.ward)||"", section:"input", cat:"시트" };
 const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorAll(s));
 
-/* 공통 유틸: 날짜 범위(ms) */
+/* 날짜 범위 → ms 상하한 */
 function rangeMsByDates(startStr, endStr){
   const sParts = startStr.split("-").map(Number);
   const eParts = endStr.split("-").map(Number);
   let s = new Date(sParts[0], sParts[1]-1, sParts[2], 0,0,0,0);
   let e = new Date(eParts[0], eParts[1]-1, eParts[2], 23,59,59,999);
-  // 순서가 바뀌면 교환
   if(e.getTime() < s.getTime()){ const tmp=s; s=e; e=tmp; }
-  return [s.getTime(), e.getTime()+1]; // 상한 미만 비교용(+1ms)
+  return [s.getTime(), e.getTime()+1];
 }
 
 /* 로컬 저장/초안 */
@@ -240,103 +239,94 @@ async function saveAll(){
   const batch = [];
   ALL_ITEMS.forEach(item=>{
     const qty = Math.max(0, parseInt(draft[item]||"0") || 0);
-    if(qty>0) batch.push({ ts, ward: state.ward, item, qty });
+    if(qty>0) batch.push({ ts, yyyymm: new Date(ts).toISOString().slice(0,7), ward: state.ward, item, qty });
   });
   if(batch.length===0){ alert("저장할 항목이 없습니다. (모두 0)"); return; }
 
-  // 로컬
+  // 로컬 저장
   const logs = getLogs(); batch.forEach(b=> logs.unshift(b)); setLogs(logs.slice(0, 10000));
 
-  // Firestore 업로드(실패 무시)
-  try { if(window.__fb) await window.__fb.saveLogsToFirestore(batch); }
-  catch(e){ console.warn("Firestore 업로드 실패 -> 로컬만 저장", e); }
+  // RTDB 업로드
+  try { if(window.__fb) await window.__fb.saveLogsToRTDB(batch); }
+  catch(e){ console.warn("RTDB 업로드 실패 -> 로컬만 저장", e); }
 
-  // 리셋
+  // 입력 리셋
   const cleared = {}; ALL_ITEMS.forEach(i=> cleared[i]=0); setDraft(cleared);
   els("#inputTable tbody input").forEach(inp=> inp.value="0");
   alert("저장되었습니다.");
 }
 
-/* 피벗(기간) */
-function pivotFromLogsRange(logs, startStr, endStr){
+/* 피벗(기간 + 병동 필터) */
+function pivotFromLogsRange(logs, startStr, endStr, wardFilter){
   const [s,e] = rangeMsByDates(startStr, endStr);
-  const monthLogs = logs.filter(L => L.ts>=s && L.ts<e);
-  const p={}; WARDS.forEach(w=>p[w]={}); ALL_ITEMS.forEach(i=>WARDS.forEach(w=>p[w][i]=0));
-  monthLogs.forEach(L=>{
+  const selected = logs.filter(L => L.ts>=s && L.ts<e && (wardFilter==="전체" || L.ward===wardFilter));
+  const p={}; const wardList = (wardFilter==="전체")? WARDS : WARDS.filter(w=>w===wardFilter);
+  wardList.forEach(w=>p[w]={}); ALL_ITEMS.forEach(i=> wardList.forEach(w=> p[w][i]=0));
+  selected.forEach(L=>{
     if(!(L.ward in p)) p[L.ward]={};
     if(typeof p[L.ward][L.item]!=="number") p[L.ward][L.item]=0;
     p[L.ward][L.item]+=Number(L.qty)||0;
   });
-  return p;
+  return {pivot:p, wards: wardList};
 }
 
-/* 통계 렌더 (기간) */
+/* 통계 렌더 (기간 + 병동 필터) */
 async function renderStats(){
   const s = el("#dateStart").value;
   const e = el("#dateEnd").value;
+  const wardFilter = el("#wardFilter").value || "전체";
   if(!s || !e){ alert("시작일과 종료일을 선택하세요."); return; }
 
-  // Firestore에서 조회(있으면 우선)
+  // RTDB에서 조회(성공 시 우선)
   let logs = [];
   try {
     if(window.__fb){
       const sDate = new Date(s+"T00:00:00");
       const eDate = new Date(e+"T00:00:00");
-      logs = await window.__fb.fetchRangeFromFirestore(sDate, eDate);
+      logs = await window.__fb.fetchRangeFromRTDB(sDate, eDate);
     }
   } catch (err) {
-    console.warn("Firestore 조회 실패, 로컬로 대체", err);
+    console.warn("RTDB 조회 실패, 로컬로 대체", err);
   }
   if(!logs.length) logs = getLogs();
 
-  const pivot = pivotFromLogsRange(logs, s, e);
+  const {pivot, wards} = pivotFromLogsRange(logs, s, e, wardFilter);
   const items=ALL_ITEMS;
 
   let html=`<table><thead><tr><th>병동</th>${items.map(i=>`<th>${i}</th>`).join("")}<th>합계</th></tr></thead><tbody>`;
   let grand=0;
-  WARDS.forEach(w=>{
-    let sum=0; const cells=items.map(i=>{const v=pivot[w][i]||0; sum+=v; return `<td>${v}</td>`}).join("");
+  wards.forEach(w=>{
+    let sum=0; const cells=items.map(i=>{const v=(pivot[w]?.[i])||0; sum+=v; return `<td>${v}</td>`}).join("");
     grand+=sum; html+=`<tr><td>${w}</td>${cells}<td><b>${sum}</b></td></tr>`;
   });
-  const itemTotals = items.map(i=>WARDS.reduce((a,w)=>a+(pivot[w]?.[i]||0),0));
+  const itemTotals = items.map(i=>wards.reduce((a,w)=>a+(pivot[w]?.[i]||0),0));
   html+=`<tr><th>품목합계</th>${itemTotals.map(sv=>`<th>${sv}</th>`).join("")}<th>${grand}</th></tr>`;
   html+="</tbody></table>";
   el("#statsWrap").innerHTML=html;
   el("#statsEmpty").style.display = grand ? "none" : "block";
 }
 
-/* 내보내기 */
-function toCSVRowsFromPivot(pivot){
-  const items=ALL_ITEMS, rows=[["병동",...items,"합계"]];
-  WARDS.forEach(w=>{ const vals=items.map(i=>pivot[w][i]||0); const sum=vals.reduce((a,b)=>a+b,0); rows.push([w,...vals,sum]); });
-  const itemTotals = items.map(i=>WARDS.reduce((a,w)=>a+(pivot[w]?.[i]||0),0));
-  rows.push(["품목합계",...itemTotals,itemTotals.reduce((a,b)=>a+b,0)]);
-  return rows;
+/* XLS 내보내기 (현재 표 기준) */
+function makeXLSBlobFromTable(){ 
+  const html=`<html><head><meta charset="UTF-8"></head><body>${el("#statsWrap").innerHTML}</body></html>`;
+  return new Blob([html],{type:"application/vnd.ms-excel;charset=utf-8"});
 }
-function makeCSVBlob(rows){ const BOM="\uFEFF"; const csv=rows.map(r=> r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(",")).join("\n"); return new Blob([BOM+csv],{type:"text/csv;charset=utf-8"}); }
-function makeXLSBlobFromTable(){ const html=`<html><head><meta charset="UTF-8"></head><body>${el("#statsWrap").innerHTML}</body></html>`; return new Blob([html],{type:"application/vnd.ms-excel;charset=utf-8"}); }
-async function tryShare(blob, filename, title){ try{ if('canShare' in navigator && 'share' in navigator){ const file=new File([blob],filename,{type:blob.type}); if(navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:title||filename}); return true; } } }catch(_){} return false; }
+async function tryShare(blob, filename, title){
+  try{
+    if('canShare' in navigator && 'share' in navigator){
+      const file=new File([blob],filename,{type:blob.type});
+      if(navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:title||filename}); return true; }
+    }
+  }catch(_){}
+  return false;
+}
 function autoDownloadOrShow(blob, filename){
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a"); a.href=url; a.download=filename; a.target="_blank"; document.body.appendChild(a); a.click(); document.body.removeChild(a);
   const panel=el("#fallbackPanel");
   el("#directLink").href=url;
   el("#openNewTab").onclick=()=>window.open(url,"_blank","noopener");
-  el("#copyToClipboard").onclick=async()=>{
-    const reader=new FileReader();
-    reader.onload=async (e)=>{ try{ await navigator.clipboard.writeText(e.target.result); alert("복사되었습니다. 메모장/엑셀에 붙여넣기 해주세요."); }catch(_){ const w=window.open("about:blank","_blank"); w.document.write(`<pre>${e.target.result.replaceAll("<","&lt;")}</pre>`); } };
-    if(blob.type.includes("csv")) reader.readAsText(blob); else alert("XLS는 '직접 링크 열기' 사용해주세요.");
-  };
   panel.style.display="block";
-}
-function exportCSV(){
-  const s = el("#dateStart").value, e = el("#dateEnd").value;
-  if(!s||!e){ alert("시작일과 종료일을 선택하세요."); return; }
-  const pivot = pivotFromLogsRange(getLogs(), s, e); // 로컬 기준 내보내기(안전)
-  const rows = toCSVRowsFromPivot(pivot);
-  const blob = makeCSVBlob(rows);
-  const fn = `stats_${s}_to_${e}.csv`;
-  tryShare(blob, fn, "린넨실 통계 CSV").then(shared=>{ if(!shared) autoDownloadOrShow(blob, fn); });
 }
 function exportXLS(){
   const s = el("#dateStart").value, e = el("#dateEnd").value;
@@ -365,9 +355,9 @@ window.addEventListener("DOMContentLoaded",()=>{
   const dd = String(d.getDate()).padStart(2,"0");
   el("#dateStart").value = `${yyyy}-${mm}-${dd}`;
   el("#dateEnd").value   = `${yyyy}-${mm}-${dd}`;
+  el("#wardFilter").value = "전체";
 
   el("#calcStats").onclick = renderStats;
-  el("#exportCSVBtn").onclick = exportCSV;
   el("#exportXLSBtn").onclick = exportXLS;
 
   // 섹션 이동
