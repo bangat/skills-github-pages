@@ -99,7 +99,7 @@
 
   /* 통계 컨트롤 */
   #sec-stats .row-wrap{display:flex;align-items:center;gap:8px}
-  #sec-stats .row-wrap.dates input[type=date]{flex:1 1 0;min-width:0;font-size:15px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:#var(--text)}
+  #sec-stats .row-wrap.dates input[type=date]{flex:1 1 0;min-width:0;font-size:15px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--text)}
   #sec-stats .row-wrap select{padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:#var(--text)}
 
   /* 통계표: 가로스크롤 금지 & ‘합계’ 열 제거 버전 */
@@ -227,7 +227,7 @@
 
 <!-- 다운로드 안내 모달 -->
 <div id="downloadModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="dlTitle">
-  <div class="modalCard">
+  <div class="modalCard" role="document">
     <div class="modalHead" id="dlTitle">다운로드 안내</div>
     <div class="modalBody">
       ⚠️ 이 앱은 <b>린넨실 전용</b> 어플리케이션 입니다.<br>
@@ -575,6 +575,14 @@ el("#dlConfirm").onclick = () => {
 el("#downloadModal").addEventListener("click",(e)=>{
   if(e.target === e.currentTarget) closeDownloadModal();
 });
+
+  /* ESC 키 누르면 닫기 */
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape' && el('#downloadModal').style.display === 'block'){
+    closeDownloadModal();
+  }
+});
+
 
 
   el("#gotoStats").onclick=()=>{ 
