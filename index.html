@@ -37,37 +37,35 @@
   input[type=number]{-moz-appearance:textfield}
   .empty{margin-top:20px;padding:20px;border:2px dashed var(--border);border-radius:16px;text-align:center;color:#6b7280}
   .footerBar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);padding:12px;display:flex;justify-content:center;z-index:50}
-  .footerCol{display:flex;flex-direction:column;gap:8px;width:80%}
-  .footerCol .btn{width:100%;font-size:18px;border-radius:14px}
-  .panel{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--border);box-shadow:0 -6px 20px rgba(0,0,0,.08);padding:14px;display:none;z-index:60}
-  .panel .row{display:flex;gap:8px;flex-wrap:wrap}
-  .panel a{color:#2563eb;font-weight:700}
+  .footerCol{display:flex;gap:8px;width:80%}
+  .footerCol .btn{flex:1 1 0%;font-size:18px;border-radius:14px}
+
+  .panel{display:none} /* 사용안함 */
 
   /* ===== 통계 화면 전용 ===== */
-  body.mode-stats header{display:none;} /* 통계 모드에서 헤더 숨김 */
+  body.mode-stats header{display:none;}           /* 통계 모드에서 헤더 숨김 */
+  body.mode-stats #saveAll{ display:none; }       /* 통계 모드에서 제출하기 숨김 */
 
   #sec-stats .row-wrap{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
   #sec-stats .row-wrap>*{flex:0 0 auto}
-  /* 날짜 한 줄: 두 input이 유연하게 폭 나눠 갖고 글씨/패딩 축소 */
   #sec-stats .row-wrap.dates input[type=date]{flex:1 1 0; min-width:0; font-size:15px; padding:6px; border:1px solid var(--border); border-radius:12px; background:#fff}
   #sec-stats .row-wrap select{padding:8px 10px;border:1px solid var(--border);border-radius:12px}
-  #statsWrap{overflow-x:hidden} /* 가로 스크롤 금지 */
+  #statsWrap{overflow-x:hidden}
 
-  /* === 통계표: 세로 헤더 + 고정폭(모바일 한화면) === */
   .statsTable{ table-layout:fixed; border-collapse:collapse; width:100%; max-width:100vw; }
   .statsTable th, .statsTable td{
     padding:6px; text-align:center; border:1px solid var(--border);
     font-size:13px; line-height:1.05; font-variant-numeric:tabular-nums;
   }
-  .statsTable th.firstCol{ width:50px; }  /* 병동 더 좁게 */
-  .statsTable th.sumCol{   width:44px; }  /* 합계 더 좁게 */
+  .statsTable th.firstCol{ width:50px; }
+  .statsTable th.sumCol{   width:44px; }
   .statsTable th.rot{
     writing-mode: vertical-rl;
-    text-orientation: upright; /* 한글/숫자 세로 */
+    text-orientation: upright;
     line-height:1;
     letter-spacing:0;
     white-space:nowrap;
-    width:24px;               /* 모든 품목 동일폭(축소) */
+    width:24px;
     padding:4px 2px;
   }
 
@@ -91,7 +89,7 @@
     </select>
   </div>
   <div class="right">
-    <button class="btn acc" id="gotoInput">입력</button>
+    <!-- 입력 버튼 삭제 -->
     <button class="btn" id="gotoStats">통계</button>
   </div>
 </header>
@@ -130,7 +128,7 @@
       <input type="date" id="dateEnd" />
     </div>
 
-    <!-- 병동 + 조회 -->
+    <!-- 병동 -->
     <div class="row-wrap" style="margin-bottom:12px">
       <label for="wardFilter">병동</label>
       <select id="wardFilter">
@@ -140,34 +138,19 @@
         <option>52</option><option>51</option><option>42</option><option>41</option>
         <option>기타</option>
       </select>
-      <button class="btn acc" id="calcStats">조회</button>
+      <!-- 조회/엑셀 버튼 제거 (자동 반영 + 푸터로 이동) -->
     </div>
 
-    <!-- 바로 표 -->
     <div id="statsWrap"></div>
     <div id="statsEmpty" class="empty" style="display:none">해당 기간 데이터가 없습니다.</div>
-
-    <div style="margin-top:8px">
-      <button class="btn" id="exportXLSXBtn">엑셀로 내려받기</button>
-    </div>
   </section>
 </main>
 
 <div class="footerBar">
   <div class="footerCol">
     <button class="btn acc" id="saveAll">제출하기</button>
-    <button class="btn" id="appDownloadBtn">어플리케이션 다운로드</button>
+    <button class="btn" id="exportXLSXBtn">엑셀로 내려받기</button>
   </div>
-</div>
-
-<!-- 폴백 패널 -->
-<div id="fallbackPanel" class="panel">
-  <h4>다운로드가 차단되었어요. 아래 방법 중 하나로 저장하세요.</h4>
-  <div class="row">
-    <a id="directLink" href="#" target="_blank" rel="noopener">① 직접 링크 열기</a>
-    <button class="btn" id="openNewTab">② 새 탭으로 열기</button>
-  </div>
-  <div class="small">* 인앱 미리보기에서는 자동 다운로드가 막힐 수 있어요. 링크를 직접 누르거나 “새 탭으로 열기”를 사용해 주세요.</div>
 </div>
 
 <!-- 저장 성공 효과음 -->
@@ -224,9 +207,7 @@
 
 <!-- App Script -->
 <script>
-const APP_DOWNLOAD_URL = "https://example.com/app-download";
-
-/* 품목 (공백 제거하여 불필요한 폭 증가 방지) */
+/* 품목 */
 const ITEMS={
   "시트":["대시트","반시트","베갯잇","수건"],
   "환자복":["일반상의","일반하의","정형상의","정형하의"],
@@ -315,7 +296,7 @@ async function saveAll(){
   let ts;
   if(issue){
     const [y,m,d] = issue.split("-").map(Number);
-    ts = new Date(y, m-1, d, 12, 0, 0, 0).getTime(); // 선택일 12:00
+    ts = new Date(y, m-1, d, 12, 0, 0, 0).getTime();
   }else{
     ts = Date.now();
   }
@@ -344,7 +325,7 @@ async function saveAll(){
   alert("저장되었습니다.");
 }
 
-/* 통계 색상: (대/반/베/수건만 적용) */
+/* 통계 색상 */
 function colorStyle(item, value){
   if(!COLORED_ITEMS.has(item)) return "";
   const v = Number(value)||0;
@@ -354,7 +335,7 @@ function colorStyle(item, value){
   return "";
 }
 
-/* 피벗(기간 + 병동 필터) */
+/* 피벗 */
 function pivotFromLogsRange(logs, startStr, endStr, wardFilter){
   const [s,e] = rangeMsByDates(startStr, endStr);
   const selected = logs.filter(L => L.ts>=s && L.ts<e && (wardFilter==="전체" || L.ward===wardFilter));
@@ -368,25 +349,45 @@ function pivotFromLogsRange(logs, startStr, endStr, wardFilter){
   return {pivot:p, wards: wardList};
 }
 
-/* 통계 렌더: RTDB 실시간만 사용 */
+/* 통계 렌더: RTDB + 로컬 병합 */
 async function renderStats(){
   const s = el("#dateStart").value;
   const e = el("#dateEnd").value;
   const wardFilter = el("#wardFilter").value || "전체";
-  if(!s || !e){ alert("시작일과 종료일을 선택하세요."); return; }
+  if(!s || !e){ return; }
 
-  let logs = [];
+  const [sMs, eMs] = rangeMsByDates(s, e);
+
+  // 1) RTDB
+  let logsRT = [];
   try {
     if(window.__fb){
       const sDate = new Date(s+"T00:00:00");
       const eDate = new Date(e+"T00:00:00");
-      logs = await window.__fb.fetchRangeFromRTDB(sDate, eDate);
+      logsRT = await window.__fb.fetchRangeFromRTDB(sDate, eDate);
     }
   } catch (err) {
     console.warn("RTDB 조회 실패", err);
   }
 
-  const {pivot, wards} = pivotFromLogsRange(logs, s, e, wardFilter);
+  // 2) 로컬
+  let logsLS = [];
+  try {
+    logsLS = getLogs().filter(L => L.ts>=sMs && L.ts<eMs);
+  } catch (err) {
+    console.warn("로컬 로그 파싱 실패", err);
+  }
+
+  // 3) 병합(중복 제거)
+  const uniq = new Map();
+  [...logsRT, ...logsLS].forEach(L=>{
+    const key = [L.ts, L.ward, L.item, L.qty].join("|");
+    if(!uniq.has(key)) uniq.set(key, L);
+  });
+  const mergedLogs = Array.from(uniq.values());
+
+  // 4) 렌더
+  const {pivot, wards} = pivotFromLogsRange(mergedLogs, s, e, wardFilter);
   const items=ALL_ITEMS;
 
   let html=`<table class="statsTable"><thead><tr>
@@ -414,21 +415,20 @@ async function renderStats(){
   el("#statsEmpty").style.display = grand ? "none" : "block";
 }
 
-/* .xlsx 내보내기 (SheetJS) */
+/* .xlsx 내보내기 */
 function exportXLSX(){
+  // 통계 표가 보이는 상태에서만 동작
   const table = document.querySelector("#statsWrap table");
-  if(!table){ alert("표가 없습니다."); return; }
+  if(!table){ alert("통계 표가 없습니다. 통계 화면에서 날짜/병동을 선택해 주세요."); return; }
+  const s = el("#dateStart").value || "";
+  const e = el("#dateEnd").value || "";
   const wb = XLSX.utils.table_to_book(table, {sheet:"통계"});
-  XLSX.writeFile(wb, `stats_${el("#dateStart").value}_to_${el("#dateEnd").value}.xlsx`);
+  XLSX.writeFile(wb, `stats_${s}_to_${e}.xlsx`);
 }
 
-/* 인앱 폴백용 링크 표시(옵션) */
-function autoDownloadOrShowURL(url){
-  const a=document.createElement("a"); a.href=url; a.target="_blank"; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  const panel=el("#fallbackPanel");
-  el("#directLink").href=url;
-  el("#openNewTab").onclick=()=>window.open(url,"_blank","noopener");
-  panel.style.display="block";
+/* 유틸: 디바운스 */
+function debounce(fn, delay=200){
+  let t; return function(...args){ clearTimeout(t); t=setTimeout(()=>fn.apply(this,args), delay); };
 }
 
 /* 초기화 */
@@ -451,24 +451,9 @@ window.addEventListener("DOMContentLoaded",()=>{
   // 표/버튼
   buildTable();
   el("#saveAll").onclick = saveAll;
-  el("#calcStats").onclick = renderStats;
   el("#exportXLSXBtn").onclick = exportXLSX;
 
-  // 앱 다운로드
-  el("#appDownloadBtn").onclick = ()=> {
-    if(APP_DOWNLOAD_URL && APP_DOWNLOAD_URL.startsWith("http")){
-      window.location.href = APP_DOWNLOAD_URL;
-    }else{
-      alert("다운로드 링크가 설정되지 않았습니다. APP_DOWNLOAD_URL 값을 수정하세요.");
-    }
-  };
-
-  // 섹션 이동(통계 모드에서 헤더 숨김)
-  el("#gotoInput").onclick = ()=> {
-    document.body.classList.remove("mode-stats");
-    el("#sec-input").style.display="block";
-    el("#sec-stats").style.display="none";
-  };
+  // 통계로 이동
   el("#gotoStats").onclick = ()=> {
     document.body.classList.add("mode-stats");
     el("#sec-input").style.display="none";
@@ -482,6 +467,14 @@ window.addEventListener("DOMContentLoaded",()=>{
     els(".tab").forEach(x=>x.classList.remove("active"));
     t.classList.add("active");
     buildTable();
+  });
+
+  // 통계 자동 반영(날짜/병동 변경 시)
+  const rerender = debounce(renderStats, 200);
+  ["#dateStart","#dateEnd","#wardFilter"].forEach(sel=>{
+    const node = el(sel);
+    node && node.addEventListener("change", rerender);
+    node && node.addEventListener("input", rerender);
   });
 });
 </script>
