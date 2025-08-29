@@ -39,7 +39,7 @@
   .chip{height:40px;min-width:40px;padding:0 10px;border:1px solid var(--border);background:#eef2f7;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:15px}
   .chip.reset{background:#ffe8ea;border-color:#ffd5da}
   .qtyCell input{width:76px;height:40px;text-align:center;font-size:16px;padding:0 6px;border:1px solid var(--border);border-radius:12px;background:#fff}
-  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+  input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield}
   .empty{margin-top:20px;padding:20px;border:2px dashed var(--border);border-radius:16px;text-align:center;color:#6b7280}
 
@@ -57,7 +57,7 @@
   body.mode-stats #appDownloadBtn{ display:none; }
   body.mode-stats #exportXLSXBtn{ display:block; width:100%; font-size:16px; padding:12px 16px; border-radius:12px }
 
-  /* ★ 앱(WebView/PWA) 환경에선 다운로드 버튼 숨김 */
+  /* 앱(WebView/PWA) 환경에선 다운로드 버튼 숨김 */
   body.app #appDownloadBtn{ display:none !important; }
 
   #sec-stats .row-wrap{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
@@ -235,27 +235,19 @@
 
 <!-- App Script -->
 <script>
-const APP_DOWNLOAD_URL = "https://github.com/bangat/linenward/releases/download/v1.0.0/ward.apk"; // 필요 시 실제 URL로 교체
+const APP_DOWNLOAD_URL = "https://github.com/bangat/linenward/releases/download/v1.0.0/ward.apk";
 
-/* ★ 환경 감지: WebView/PWA 인지 판별 */
+/* 환경 감지: WebView/PWA 인지 판별 */
 function isAppEnv(){
   const ua = (navigator.userAgent||"") + " " + (navigator.vendor||"");
-  // PWA 스탠드얼론
   const isStandalonePWA =
     (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
-    (window.navigator && window.navigator.standalone === true); // iOS
-
-  // 안드로이드 WebView 흔적: ; wv 토큰, Headless 런타임, 하이브리드 프레임워크 UA
+    (window.navigator && window.navigator.standalone === true);
   const isAndroidWebView =
     /\b; wv\b/i.test(ua) || /\bVersion\/\d+\.\d+ Chrome\/\d+.* Mobile Safari\/\d+/i.test(ua) ||
     /\bCordova\b|\bCrosswalk\b|\bwv\b/i.test(ua);
-
-  // 선택: 커스텀 UA가 가능하면 여기 키워드 추가 (예: MyLinenApp)
   const isCustomUA = /\bMyLinenApp\b/i.test(ua);
-
-  // 강제 스위치 (?app=1 저장 / localStorage)
   const forced = localStorage.getItem('appMode') === '1';
-
   return isStandalonePWA || isAndroidWebView || isCustomUA || forced;
 }
 
@@ -288,8 +280,17 @@ function getLogs(){ return JSON.parse(localStorage.getItem(LS.logs)||"[]"); }
 function setLogs(a){ localStorage.setItem(LS.logs, JSON.stringify(a)); }
 function getDraft(){ try{ return JSON.parse(localStorage.getItem(LS.draft(state.ward))||"{}"); }catch(_){ return {}; } }
 function setDraft(obj){ localStorage.setItem(LS.draft(state.ward), JSON.stringify(obj||{})); }
-function setDraftQty(item, qty){ const d=getDraft(); d[item]=Math.max(0, qty|0); setDraft(d); }
-function getDraftQty(item){ const d=getDraft(); return Math.max(0, parseInt(d[item]||0) || 0); }
+
+/* ★ 음수 허용 */
+function setDraftQty(item, qty){
+  const d=getDraft();
+  d[item]= (parseInt(qty)||0);   // 음수 포함 저장
+  setDraft(d);
+}
+function getDraftQty(item){
+  const d=getDraft();
+  return (parseInt(d[item]||0) || 0); // 음수 포함 반환
+}
 
 /* 입력 테이블 */
 function buildTable(){
@@ -303,7 +304,7 @@ function buildTable(){
       <td class="qtyCell">
         <button type="button" class="chip reset" data-reset>리셋</button>
         <button type="button" class="chip" data-delta="-1">−1</button>
-        <input type="number" inputmode="numeric" min="0" value="0" aria-label="${name} 수량"/>
+        <input type="number" inputmode="numeric" value="0" aria-label="${name} 수량"/>
         <button type="button" class="chip" data-delta="+1">＋1</button>
         <button type="button" class="chip" data-delta="+5">＋5</button>
       </td>`;
@@ -311,20 +312,19 @@ function buildTable(){
     const inp = tr.querySelector("input");
     const draftVal = getDraftQty(name);
 
-    if (draftVal > 0) {
+    if (!isNaN(draftVal)) {
       inp.value = String(draftVal);
     } else if (COLORED_ITEMS.has(name)) {
-      inp.value = "10";
-      setDraftQty(name, 10);
+      inp.value = "10"; setDraftQty(name, 10);
     } else {
       inp.value = "0";
     }
     inp.dataset.prev = String(parseInt(inp.value || "0") || 0);
 
-    // 수기 입력
+    // 수기 입력 (★ 음수 허용)
     inp.addEventListener("input", ()=>{
       const prev = parseInt(inp.dataset.prev || "0") || 0;
-      const cur = Math.max(0, parseInt(inp.value || "0") || 0);
+      const cur = parseInt(inp.value || "0") || 0;   // 음수 허용
       inp.value = String(cur);
       setDraftQty(name, cur);
       if (state.cat === "시트" && COLORED_ITEMS.has(name) && prev <= 20 && cur > 20) {
@@ -333,12 +333,12 @@ function buildTable(){
       inp.dataset.prev = String(cur);
     });
 
-    // +/− 버튼
+    // +/− 버튼 (★ 음수 허용)
     tr.querySelectorAll("[data-delta]").forEach(btn=>{
       btn.onclick = ()=>{
         const prev = parseInt(inp.dataset.prev || "0") || 0;
         const delta = btn.dataset.delta === "-1" ? -1 : (btn.dataset.delta === "+1" ? 1 : 5);
-        const v = Math.max(0, (parseInt(inp.value || "0") || 0) + delta);
+        const v = (parseInt(inp.value || "0") || 0) + delta;  // 음수 허용
         inp.value = v;
         setDraftQty(name, v);
         if (state.cat === "시트" && COLORED_ITEMS.has(name) && prev <= 20 && v > 20) {
@@ -387,8 +387,8 @@ async function saveAll(){
   const draft = getDraft();
   const batch = [];
   ALL_ITEMS.forEach(item=>{
-    const qty = Math.max(0, parseInt(draft[item]||"0") || 0);
-    if(qty>0) batch.push({ ts, yyyymm: new Date(ts).toISOString().slice(0,7), ward: state.ward, item, qty });
+    const qty = (parseInt(draft[item]||"0") || 0); // ★ 음수 허용
+    if(qty!==0) batch.push({ ts, yyyymm: new Date(ts).toISOString().slice(0,7), ward: state.ward, item, qty });
   });
   if(batch.length===0){ alert("저장할 항목이 없습니다. (모두 0)"); return; }
 
@@ -425,22 +425,23 @@ async function saveAll(){
 
   alert("저장되었습니다.");
 
-  /* 🔄 제출 직후 통계 즉시 반영: 저장한 출고일로 강제 동기화 */
+  /* 🔄 제출 직후 통계 즉시 반영 */
   if (document.body.classList.contains("mode-stats")) {
     const savedDate = new Date(ts).toISOString().slice(0,10);
     el("#dateStart").value = savedDate;
     el("#dateEnd").value   = savedDate;
-    await renderStats(); // 구독도 해당 범위로 재시작
+    await renderStats();
   }
 }
 
-/* 통계 색상 */
+/* ★ 통계 색상: 음수/구간별 컬러 */
 function colorStyle(item, value){
   if(!COLORED_ITEMS.has(item)) return "";
   const v = Number(value)||0;
-  if(v>=20) return ' style="color:#dc2626;font-weight:700"';
-  if(v>=15) return ' style="color:#2563eb;font-weight:700"';
-  if(v===10) return ' style="color:#f59e0b;font-weight:700"';
+  if (v < 0)  return ' style="color:#6b7280;font-weight:700"'; // 회색
+  if (v >= 20) return ' style="color:#dc2626;font-weight:700"'; // 빨강
+  if (v >= 15) return ' style="color:#2563eb;font-weight:700"'; // 파랑
+  if (v >= 0)  return ' style="color:#f59e0b;font-weight:700"'; // 노랑 (0~14)
   return "";
 }
 
@@ -453,7 +454,7 @@ function pivotFromLogsRange(logs, startStr, endStr, wardFilter){
   selected.forEach(L=>{
     if(!(L.ward in p)) p[L.ward]={};
     if(typeof p[L.ward][L.item]!=="number") p[L.ward][L.item]=0;
-    p[L.ward][L.item]+=Number(L.qty)||0;
+    p[L.ward][L.item]+=Number(L.qty)||0; // 음수 포함 합산
   });
   return {pivot:p, wards: wardList};
 }
@@ -472,9 +473,7 @@ async function renderStats(){
 
       // 로컬 로그(같은 기간)
       let logsLS = [];
-      try {
-        logsLS = getLogs().filter(L => L.ts>=sMs && L.ts<eMs);
-      } catch {}
+      try { logsLS = getLogs().filter(L => L.ts>=sMs && L.ts<eMs); } catch {}
 
       // 병합(중복 키 제거)
       const uniq = new Map();
@@ -532,12 +531,12 @@ function debounce(fn, delay=200){
 
 /* 초기화 */
 window.addEventListener("DOMContentLoaded",()=>{
-  /* ★ 앱 모드 강제 토글 (?app=1 / ?app=0) */
+  // 앱 모드 강제 토글 (?app=1 / ?app=0)
   const urlApp = new URL(location.href).searchParams.get("app");
   if(urlApp === "1"){ localStorage.setItem("appMode", "1"); }
   if(urlApp === "0"){ localStorage.removeItem("appMode"); }
 
-  /* ★ 앱 환경이면 body에 .app 클래스 부여 & 다운로드 버튼 숨김 */
+  // 앱 환경이면 버튼 숨김
   if(isAppEnv()){
     document.body.classList.add("app");
     const btn = el("#appDownloadBtn");
@@ -578,14 +577,13 @@ window.addEventListener("DOMContentLoaded",()=>{
     document.body.classList.add("mode-stats");
     el("#sec-input").style.display="none";
     el("#sec-stats").style.display="block";
-    // 출고일을 통계 기간으로 자동 설정
     const chosen = el("#issueDate").value || new Date().toISOString().slice(0,10);
     el("#dateStart").value = chosen;
     el("#dateEnd").value   = chosen;
     renderStats();
   };
 
-  // ✅ 상단 타이틀 클릭 → 메인 화면으로 전환
+  // 상단 타이틀 클릭 → 메인
   el("#gotoMain").onclick = ()=>{
     document.body.classList.remove("mode-stats");
     el("#sec-input").style.display="block";
@@ -600,7 +598,7 @@ window.addEventListener("DOMContentLoaded",()=>{
     buildTable();
   });
 
-  // 통계 자동 반영(날짜/병동 변경 시)
+  // 통계 자동 반영
   const rerender = debounce(renderStats, 200);
   ["#dateStart","#dateEnd","#wardFilter"].forEach(sel=>{
     const node = el(sel);
