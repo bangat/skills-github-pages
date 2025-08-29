@@ -27,7 +27,7 @@
   .left{display:flex;gap:10px;align-items:center}
   .right{display:flex;gap:8px}
   label.head{font-weight:800;color:#334155;margin-right:6px;white-space:nowrap}
-  select,input[type=date]{padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:var(--r-md);background:#fff;color:var(--text);transition:border-color .12s,box-shadow .12s}
+  select,input[type=date]{padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:var(--r-md);background:#fff;color:#var(--text);transition:border-color .12s,box-shadow .12s}
   select:focus,input[type=date]:focus{outline:none;border-color:var(--accent);box-shadow:var(--focus)}
   #wardSelect{width:170px}
 
@@ -82,9 +82,10 @@
   .statsTable{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-2)}
   .statsTable th,.statsTable td{padding:6px;text-align:center;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:13px;line-height:1.05;font-variant-numeric:tabular-nums;color:#0f172a;white-space:nowrap}
   .statsTable thead th{background:#f6f8fc;color:#0f172a;font-weight:800}
-  .statsTable th:first-child,.statsTable td:first-child{width:52px}
+  .statsTable th:first-child,.statsTable td:first-child{width:60px} /* 고정폭 확보 */
   .statsTable th.rot{writing-mode:vertical-rl;text-orientation:upright;line-height:1;letter-spacing:0;width:22px;padding:4px 2px}
   .statsTable tr:last-child td,.statsTable tr:last-child th{border-bottom:none}
+  .statsTable td[data-num], .statsTable th[data-num]{padding:6px 4px; overflow:hidden;} /* 숫자칸 더 타이트 */
 
   /* 요약표(2번째 표) */
   .summaryTable{width:100%;margin-top:12px;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-2)}
@@ -93,16 +94,16 @@
   .summaryTable tr:last-child td,.summaryTable tr:last-child th{border-bottom:none}
   .summaryTable td:first-child{white-space:nowrap}
 
-  /* 숫자 자리수에 따른 글자 크기 축소(칸 안에서) */
-  .num{display:inline-block}
-  .d3{font-size:12px}
-  .d4{font-size:11px}
-  .d5{font-size:10px}
+  /* 숫자 축소(글자 크기) */
+  .num{display:inline-block; line-height:1; font-variant-numeric:tabular-nums;}
+  .d3{font-size:11px}
+  .d4{font-size:10px}
+  .d5{font-size:9px}
 
-  /* 최다사용 병동 강조 + 왕관 밀림 수정 */
+  /* 최다사용 병동 강조 + 왕관 밀림 방지 */
   .maxWardRow td{background:#fff7d6 !important}
-  .maxWardRow td:first-child{font-weight:900; position:relative}
-  .maxWardRow td:first-child .wardName{display:inline-block; padding-left:20px; position:relative}
+  .statsTable td:first-child{position:relative}
+  .statsTable td:first-child .wardName{display:inline-block; padding-left:20px; position:relative}
   .maxWardRow td:first-child .wardName::before{
     content:"👑"; position:absolute; left:2px; top:50%; transform:translateY(-50%);
   }
@@ -213,9 +214,9 @@
   <div class="modalCard" role="document">
     <div class="modalHead" id="dlTitle">다운로드 안내</div>
     <div class="modalBody">
-      ⚠️ 이 앱은 <b>린넨실 전용</b> 어플리케이션 입니다.<br>
-      GitHub <b>공식 릴리스</b>에서 배포되며, 파일 출처는
-      <code>release-assets.githubusercontent.com</code> 입니다.<br>
+      ⚠ 이 앱은 <b>린넨실 전용</b> 어플리케이션 입니다.<br>
+      <b>린넨실</b>에서 제작하였으며, 공식 릴리즈에서
+      배포 됩니다.<br>
       안심하고 설치하셔도 됩니다.
     </div>
     <div class="modalActions">
@@ -234,9 +235,9 @@
 </div>
 
 <!-- 효과음 -->
-<audio id="submitSound" preload="auto" src="https://blog.kakaocdn.net/dna/MEv0X/dJMb9L4Selx/AAAAAAAAAAAAAAAAAAAAAKXPuVkeMAzxy7Bh1SCt30bi2C_1bwZptqCrwQ0ljMyS/%EC%A0%9C%EC%B6%9C%ED%95%98%EA%B8%B0.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1756652399&allow_ip=&allow_referer=&signature=bBTf6jPM0QoS4X1eHIz5E0OUbWs%3D&attach=1&knm=tfile.mp3"></audio>
-<audio id="tabSound" preload="auto" src="https://blog.kakaocdn.net/dna/PzPow/dJMb8597iUU/AAAAAAAAAAAAAAAAAAAAAEfGdwd_aPGAiS8W_xjwE-wiO0YWzNYGwEiMupOPzPpT/%ED%83%AD%EC%9D%B4%EB%8F%99.wav?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1756652399&allow_ip=&allow_referer=&signature=LR3qy5CI%2BpIhqYLCUU6LCDsruAM%3D&attach=1&knm=tfile.wav"></audio>
-<audio id="btnClickSound" preload="auto" src="https://blog.kakaocdn.net/dna/bwYLog/dJMb9aXTgeJ/AAAAAAAAAAAAAAAAAAAAADmduRzhpb3MzOEfQjYt4_cZMEVg0HqosiW-zgFGI0Ft/%EB%B2%84%ED%8A%BC%ED%81%B4%EB%A6%AD.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1756652399&allow_ip=&allow_referer=&signature=JRStjWXe5PrINCjwa%2BD8gG8hatU%3D&attach=1&knm=tfile.mp3"></audio>
+<audio id="submitSound" preload="auto" src="https://blog.kakaocdn.net/dna/MEv0X/dJMb9L4Selx/AAAAAAAAAAAAAAAAAAAAAKXPuVkeMAzxy7Bh1SCt30bi2C_1bwZptqCrwQ0ljMyS/%EC%A0%9C%EC%B6%9C%ED%95%98%EA%B8%B0.mp3"></audio>
+<audio id="tabSound" preload="auto" src="https://blog.kakaocdn.net/dna/PzPow/dJMb8597iUU/AAAAAAAAAAAAAAAAAAAAAEfGdwd_aPGAiS8W_xjwE-wiO0YWzNYGwEiMupOPzPpT/%ED%83%AD%EC%9D%B4%EB%8F%99.wav"></audio>
+<audio id="btnClickSound" preload="auto" src="https://blog.kakaocdn.net/dna/bwYLog/dJMb9aXTgeJ/AAAAAAAAAAAAAAAAAAAAADmduRzhpb3MzOEfQjYt4_cZMEVg0HqosiW-zgFGI0Ft/%EB%B2%84%ED%8A%BC%ED%81%B4%EB%A6%AD.mp3"></audio>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
@@ -436,14 +437,13 @@ function renderPivot(logs,s,e,wardFilter){
   return {p,wards,items};
 }
 
-/* 숫자 자리수에 따라 클래스 부여(3자리~5자리 폰트 축소) */
-function shrinkBigNumbers(tbody){
-  Array.from(tbody.querySelectorAll('td[data-num]')).forEach(td=>{
-    const txt=td.textContent.trim();
-    const len=txt.length;
-    if(len>=5) td.firstChild.classList.add('d5');
-    else if(len===4) td.firstChild.classList.add('d4');
-    else if(len===3) td.firstChild.classList.add('d3');
+/* 숫자 자리수에 따른 폰트 축소(3~5자리) - 표 전체(th/td 모두) */
+function shrinkBigNumbers(root){
+  Array.from(root.querySelectorAll('[data-num] > .num')).forEach(span=>{
+    const len=(span.textContent||'').trim().length;
+    if(len>=5) span.classList.add('d5');
+    else if(len===4) span.classList.add('d4');
+    else if(len===3) span.classList.add('d3');
   });
 }
 
@@ -473,7 +473,8 @@ async function renderStats(){
       let html=`<table class="statsTable"><thead><tr><th>병동</th>${items.map(i=>`<th class="rot">${i}</th>`).join("")}</tr></thead><tbody>`;
       wards.forEach((w,rowIdx)=>{
         const isMax = (wardFilter==="전체" && rowIdx===maxWardIdx);
-        html+=`<tr class="${isMax?'maxWardRow':''}"><td>${isMax?'<span class="wardName">'+w+'</span>':w}</td>${
+        html+=`<tr class="${isMax?'maxWardRow':''}">
+          <td><span class="wardName">${w}</span></td>${
           items.map(i=>{
             const v=(p[w]?.[i]||0);
             return `<td data-num="1"><span class="num"${colorStyle(i,v)}>${v}</span></td>`;
@@ -481,11 +482,13 @@ async function renderStats(){
         }</tr>`;
       });
       const periodTotals=items.map(i=>wards.reduce((a,w)=>a+(p[w]?.[i]||0),0));
-      html+=`<tr><th>합계</th>${periodTotals.map((v,idx)=>`<th${colorStyle(items[idx],v)}>${v}</th>`).join("")}</tr>`;
+      html+=`<tr><th>합계</th>${
+        periodTotals.map((v,idx)=>`<th data-num="1"><span class="num"${colorStyle(items[idx],v)}>${v}</span></th>`).join("")
+      }</tr>`;
       html+=`</tbody></table>`;
       el("#statsWrap").innerHTML=html;
 
-      /* === 요약표 (일평균 사용량 / 기간합계) === */
+      /* === 요약표 (일평균/기간합계) === */
       const daysCount = Math.max(1, Math.round((new Date(e) - new Date(s)) / (1000*60*60*24)) + 1);
       let sumHtml = `<table class="summaryTable">
         <thead><tr><th>품목</th><th>일평균 사용량</th><th>기간합계</th></tr></thead><tbody>`;
@@ -499,8 +502,8 @@ async function renderStats(){
       sumHtml+=`</tbody></table>`;
       el("#statsSummary").innerHTML = sumHtml;
 
-      /* 숫자 자리수 축소 처리(메인표) */
-      shrinkBigNumbers(el("#statsWrap").querySelector("tbody"));
+      /* 숫자 축소(메인표 전체에 적용: td+th) */
+      shrinkBigNumbers(el("#statsWrap").querySelector("table"));
 
       const any=wards.some(w=>items.some(i=>(p[w]?.[i]||0)>0));
       el("#statsEmpty").style.display = any ? "none" : "block";
@@ -508,26 +511,26 @@ async function renderStats(){
   }
 }
 
-/* 엑셀 */
+/* 엑셀 (합계 밑에 '일평균' 자동추가) */
 function exportXLSX(){
   const table=document.querySelector("#statsWrap table"); if(!table){ alert("통계 표가 없습니다."); return; }
   const s=el("#dateStart").value||"", e=el("#dateEnd").value||"", ward=el("#wardFilter").value||"전체";
 
-  // 메인 표를 시트로
+  // 메인 표 → 시트
   const ws=XLSX.utils.table_to_sheet(table,{origin:"A2"});
   const title=`${s} ~ ${e} ${ward}병동 출고량`;
   XLSX.utils.sheet_add_aoa(ws,[[title]],{origin:"A1"});
 
-  // 머지 & 제목 서식
+  // 제목 머지 & 서식
   const lastCol=table.rows[0].cells.length-1;
   ws["!merges"]=ws["!merges"]||[]; ws["!merges"].push({s:{r:0,c:0},e:{r:0,c:lastCol}});
   ws["A1"].s={font:{bold:true,sz:14},alignment:{horizontal:"center",vertical:"center"}};
   ws["!rows"]=ws["!rows"]||[]; ws["!rows"][0]={hpt:22};
 
-  // 기간합계 행(마지막 행)에서 합계를 읽어 평균 계산
+  // 합계행에서 합계 읽고 일평균 계산
   const daysCount = Math.max(1, Math.round((new Date(e) - new Date(s)) / (1000*60*60*24)) + 1);
   const tBody = table.tBodies[0];
-  const lastRow = tBody.rows[tBody.rows.length-1]; // 합계행
+  const lastRow = tBody.rows[tBody.rows.length-1]; // 합계
   const totals = Array.from(lastRow.cells).slice(1).map(c=>parseInt(c.innerText)||0);
   const avgs = totals.map(v=>Math.round(v/daysCount));
 
