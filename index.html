@@ -36,15 +36,18 @@
   input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield}
   .empty{margin-top:20px;padding:20px;border:2px dashed var(--border);border-radius:16px;text-align:center;color:#6b7280}
-  .footerBar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);padding:12px;display:flex;justify-content:center;z-index:50}
-  .footerCol{display:flex;gap:8px;width:80%}
-  .footerCol .btn{flex:1 1 0%;font-size:18px;border-radius:14px}
 
-  .panel{display:none} /* 사용안함 */
+  /* ===== 푸터 ===== */
+  .footerBar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);padding:12px;display:flex;justify-content:center;z-index:50}
+  .footerCol{display:flex;gap:8px;align-items:center;justify-content:center;width:100%}
+  /* 버튼 폭 자동(fit-content) + 과하게 크지 않게 */
+  .footerCol .btn{width:auto; font-size:16px; padding:10px 16px; border-radius:12px}
 
   /* ===== 통계 화면 전용 ===== */
-  body.mode-stats header{display:none;}           /* 통계 모드에서 헤더 숨김 */
-  body.mode-stats #saveAll{ display:none; }       /* 통계 모드에서 제출하기 숨김 */
+  body.mode-stats header{display:none;}                /* 통계 모드에서 헤더 숨김 */
+  body.mode-stats #saveAll{ display:none; }            /* 통계 모드에선 제출 숨김 */
+  #exportXLSXBtn{ display:none; }                      /* 기본(메인)에서는 엑셀 숨김 */
+  body.mode-stats #exportXLSXBtn{ display:inline-flex;}/* 통계 모드에서만 엑셀 표시 */
 
   #sec-stats .row-wrap{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
   #sec-stats .row-wrap>*{flex:0 0 auto}
@@ -89,7 +92,7 @@
     </select>
   </div>
   <div class="right">
-    <!-- 입력 버튼 삭제 -->
+    <!-- 입력 버튼 없음 -->
     <button class="btn" id="gotoStats">통계</button>
   </div>
 </header>
@@ -121,7 +124,7 @@
   <section id="sec-stats" style="display:none">
     <h1>기간 통계</h1>
 
-    <!-- 날짜 한 줄 -->
+    <!-- 날짜 -->
     <div class="row-wrap dates" style="margin-bottom:8px">
       <input type="date" id="dateStart" />
       <span aria-hidden="true">~</span>
@@ -138,7 +141,6 @@
         <option>52</option><option>51</option><option>42</option><option>41</option>
         <option>기타</option>
       </select>
-      <!-- 조회/엑셀 버튼 제거 (자동 반영 + 푸터로 이동) -->
     </div>
 
     <div id="statsWrap"></div>
@@ -146,6 +148,7 @@
   </section>
 </main>
 
+<!-- 푸터: 메인에서는 제출만, 통계에서는 엑셀만 보임 -->
 <div class="footerBar">
   <div class="footerCol">
     <button class="btn acc" id="saveAll">제출하기</button>
@@ -417,7 +420,6 @@ async function renderStats(){
 
 /* .xlsx 내보내기 */
 function exportXLSX(){
-  // 통계 표가 보이는 상태에서만 동작
   const table = document.querySelector("#statsWrap table");
   if(!table){ alert("통계 표가 없습니다. 통계 화면에서 날짜/병동을 선택해 주세요."); return; }
   const s = el("#dateStart").value || "";
@@ -453,7 +455,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   el("#saveAll").onclick = saveAll;
   el("#exportXLSXBtn").onclick = exportXLSX;
 
-  // 통계로 이동
+  // 통계로 이동(통계 모드에서만 엑셀 버튼 노출)
   el("#gotoStats").onclick = ()=> {
     document.body.classList.add("mode-stats");
     el("#sec-input").style.display="none";
