@@ -299,6 +299,21 @@
   </section>
 </main>
 
+  <!-- PWA 설치 안내 모달 -->
+<div id="pwaInstallModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="piTitle" style="display:none">
+  <div class="modalCard" role="document">
+    <div class="modalHead" id="piTitle">앱 설치</div>
+    <div class="modalBody">
+      앱을 설치하면 더 빠르게 실행되고, 주소창 없이 전체화면으로 사용할 수 있어요.
+    </div>
+    <div class="modalActions">
+      <button type="button" class="btn cancel" id="piCancel">나중에</button>
+      <button type="button" class="btn primary" id="piConfirm">설치</button>
+    </div>
+  </div>
+</div>
+
+
 <!-- 제출 완료 모달 -->
 <div id="submitModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="smTitle">
   <div class="modalCard" role="document">
@@ -966,31 +981,37 @@ window.addEventListener("DOMContentLoaded",()=>{
 </script>
 
 <script>
-let deferredPrompt = null;
-let canInstall = false;
+/** ================= 통합 설치 제어 스크립트 ================= */
+let deferredPrompt = null;     // beforeinstallprompt 저장
+let canInstall = false;        // 설치가능 플래그
 
+/* 1) SW 등록 */
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("sw.js").catch(console.warn);
   });
 }
 
+/* 2) PWA 설치 프롬프트 캡처 */
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
-  deferredPrompt = e;       // 저장
-  canInstall = true;        // 설치 가능 플래그
+  deferredPrompt = e;
+  canInstall = true;
+  // 설치 버튼 노출
   const b = document.getElementById("appDownloadBtn");
   if (b) b.style.display = "block";
 });
 
+/* 3) 설치 완료 */
 window.addEventListener("appinstalled", () => {
   deferredPrompt = null;
   canInstall = false;
   const b = document.getElementById("appDownloadBtn");
   if (b) b.style.display = "none";
-  showToast && showToast("설치 완료", "홈 화면에서 실행하세요");
+  if (typeof showToast === "function") showToast("설치 완료", "홈 화면에서 실행하세요");
 });
 
+/* 4) 환경 판별 */
 function isIOS() {
   const ua = navigator.userAgent || "";
   const isTouchMac = /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
@@ -1001,49 +1022,106 @@ function isStandalone() {
       || (window.navigator.standalone === true);
 }
 
-// 네가 쓰던 APK 모달 열기 함수 (없다면 기존 다운로드 모달 열기)
+/* 5) 모달/폴백 헬퍼들 */
+const APK_URL = (typeof LATEST_DIRECT === "string" && LATEST_DIRECT)
+  ? LATEST_DIRECT
+  : "https://github.com/bangat/linenward/releases/latest/download/WardLinen.apk";
+
+/** APK 다운로드 안내 모달(없으면 바로 이동) */
 function openAPKModal() {
-  // 열려 있는 다운로드 모달을 재사용
-  openModal && openModal('#downloadModal', '#dlConfirm');
+  if (typeof openModal === "function" && document.querySelector("#downloadModal")) {
+    openModal('#downloadModal', '#dlConfirm');
+  } else {
+    location.href = APK_URL;
+  }
+}
+/** iOS 설치 안내 모달(없으면 alert) */
+function openIOSInstallModal() {
+  if (typeof openModal === "function" && document.querySelector("#iosInstallModal")) {
+    openModal('#iosInstallModal', '#iosOk');
+  } else {
+    alert("Safari → 공유 → '홈 화면에 추가'로 설치하세요.");
+  }
+}
+/** PWA 설치 유도 커스텀 모달(없으면 즉시 prompt) */
+function openPwaInstallModal() {
+  if (typeof openModal === "function" && document.querySelector("#pwaInstallModal")) {
+    openModal('#pwaInstallModal', '#piConfirm');
+  } else {
+    triggerInstallPrompt(); // 바로 시스템 프롬프트
+  }
+}
+/** 커스텀 모달 닫기 */
+function closeModalIfExists(sel) {
+  if (typeof closeModal === "function" && document.querySelector(sel)) closeModal(sel);
 }
 
+/* 6) 실제 설치 프롬프트 */
+async function triggerInstallPrompt() {
+  if (!deferredPrompt) return;
+  const p = deferredPrompt;          // 한 번만 사용 가능
+  deferredPrompt = null;
+  canInstall = false;
+  try {
+    await p.prompt();                // ← 여기서 시스템 설치 대화상자 표시
+    const { outcome } = await p.userChoice;   // "accepted" | "dismissed"
+    if (outcome === "accepted") return;
+    // 사용자가 닫았으면 대안
+    if (isIOS()) { openIOSInstallModal(); return; }
+    openAPKModal();
+  } catch {
+    if (isIOS()) { openIOSInstallModal(); return; }
+    openAPKModal();
+  }
+}
+
+/* 7) 커스텀 모달 버튼 와이어링(있을 때만) */
+document.addEventListener("click", (e) => {
+  const id = (e.target && e.target.id) || "";
+  // PWA 설치 모달
+  if (id === "piConfirm") {            // 설치
+    closeModalIfExists('#pwaInstallModal');
+    triggerInstallPrompt();
+  }
+  if (id === "piCancel") {             // 나중에
+    closeModalIfExists('#pwaInstallModal');
+  }
+  // iOS 안내 모달
+  if (id === "iosOk" || id === "iosClose") {
+    closeModalIfExists('#iosInstallModal');
+  }
+  // 다운로드 모달의 확인 버튼이 #dlConfirm 라면 바로 APK
+  if (id === "dlConfirm") {
+    closeModalIfExists('#downloadModal');
+    location.href = APK_URL;
+  }
+});
+
+/* 8) 메인 버튼: 상황별 흐름 */
 (function wireInstallButton(){
   const btn = document.getElementById("appDownloadBtn");
   if (!btn) return;
   if (isStandalone()) { btn.style.display = "none"; return; }
 
-  btn.onclick = async (event) => {
-    try { addRipple && addRipple(event); } catch(_) {}
+  btn.onclick = (event) => {
+    try { typeof addRipple === "function" && addRipple(event); } catch(_) {}
 
-    // 1) 크롬/삼성인터넷/엣지(안드·데스크톱): 설치 프롬프트 우선
+    // A) 설치 가능: 우리 모달 → 설치(또는 즉시 prompt)
     if (canInstall && deferredPrompt) {
-      const p = deferredPrompt;        // 한 번만 사용 가능
-      deferredPrompt = null;
-      canInstall = false;
-      try {
-        await p.prompt();
-        const { outcome } = await p.userChoice;
-        if (outcome === "accepted") return;  // 설치 진행
-        // 거부했다면 대안 제시
-        if (isIOS()) { openIOSInstallModal && openIOSInstallModal(); return; }
-        openAPKModal(); 
-        return;
-      } catch {
-        // 프롬프트 에러 → 대안
-        if (isIOS()) { openIOSInstallModal && openIOSInstallModal(); return; }
-        openAPKModal();
-        return;
-      }
+      openPwaInstallModal();
+      return;
     }
-
-    // 2) iOS Safari: 설치 안내 모달
-    if (isIOS()) { openIOSInstallModal && openIOSInstallModal(); return; }
-
-    // 3) 그 외(프롬프트 미지원/조건 미충족): APK 모달
+    // B) iOS: iOS 안내
+    if (isIOS()) {
+      openIOSInstallModal();
+      return;
+    }
+    // C) 그 외: APK 다운로드 안내/이동
     openAPKModal();
   };
 })();
 </script>
+
 
 
 </body>
