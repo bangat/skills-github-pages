@@ -328,6 +328,23 @@
   </div>
 </div>
 
+  <!-- 제출 확인 모달 -->
+<div id="confirmModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="csTitle" style="display:none">
+  <div class="modalCard" role="document">
+    <div class="modalHead" id="csTitle">제출 확인</div>
+    <div class="modalBody">
+      <div id="confirmSummary">
+        입력하신 수량을 제출할까요?
+      </div>
+    </div>
+    <div class="modalActions">
+      <button type="button" class="btn cancel" id="csCancel">취소</button>
+      <button type="button" class="btn primary" id="csOk">제출</button>
+    </div>
+  </div>
+</div>
+
+  
 <!-- 다운로드 안내 모달 -->
 <div id="downloadModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="dlTitle">
   <div class="modalCard" role="document">
@@ -531,9 +548,10 @@ function setDraftQty(item,qty){ const d=getDraft(); d[item]=(parseInt(qty)||0); 
 
 /* 합계 & 버튼 활성화 */
 function getCurrentTotal(){
-  const inputs = Array.from(document.querySelectorAll("#inputTable tbody input"));
-  return inputs.reduce((a,inp)=> a + (parseInt(inp.value)||0), 0);
+  const draft = getDraft();   // 로컬스토리지 저장된 현 상태
+  return Object.values(draft).reduce((a,v)=> a + (parseInt(v)||0), 0);
 }
+
 function refreshTotalUI(){
   const total = getCurrentTotal();
   const save = el("#saveAll");
@@ -613,6 +631,69 @@ function buildTable(){
   refreshTotalUI();
   fitCardToFooter(); // 표 갱신 후 높이 재계산
 }
+
+  function buildConfirmSummaryHTML() {
+  const ward = (state.ward || "").toString().trim() || "미선택";
+  const dateStr = document.querySelector("#issueDate").value || new Date().toISOString().slice(0,10);
+  const draft = (function(){ try { return JSON.parse(localStorage.getItem(LS.draft(state.ward))||"{}"); } catch(_) { return {}; } })();
+
+  // 0이 아닌 항목만 추림
+  const rows = [];
+  Object.keys(draft).forEach(k => {
+    const v = parseInt(draft[k] || "0", 10) || 0;
+    if (v !== 0) rows.push([k, v]);
+  });
+
+  const total = rows.reduce((a, [,v]) => a + v, 0);
+
+  if (total === 0) {
+    return `
+      <p>제출할 항목이 없습니다. (모두 0)</p>
+    `;
+  }
+
+  // 최대 12개까지만 표시 (너무 길어지지 않게)
+  const MAX = 12;
+  const more = rows.length > MAX ? `<li>외 ${rows.length - MAX}개 항목…</li>` : "";
+  const list = rows.slice(0, MAX).map(([k,v]) => `<li><b>${k}</b> · ${v.toLocaleString()}개</li>`).join("");
+
+  return `
+    <p><b>${dateStr}</b> · <b>${ward}</b>병동</p>
+    <p>아래 내역으로 제출할까요?</p>
+    <ul style="margin:8px 0 0 18px; padding:0; line-height:1.4">${list}${more}</ul>
+    <p style="margin-top:10px">총 <b>${total.toLocaleString()}개</b></p>
+  `;
+}
+
+  function openConfirmSubmit() {
+  // 내용 갱신
+  const summary = document.getElementById("confirmSummary");
+  if (summary) summary.innerHTML = buildConfirmSummaryHTML();
+
+  // 모달 띄우기
+  if (typeof openModal === "function") {
+    openModal("#confirmModal", "#csOk");
+  } else {
+    // 혹시 openModal이 없으면 기본 confirm로 폴백
+    if (confirm("입력하신 수량을 제출할까요?")) {
+      saveAll();
+    }
+  }
+}
+
+// 모달 버튼 이벤트
+document.addEventListener("click", (e) => {
+  const id = (e.target && e.target.id) || "";
+  if (id === "csCancel") {
+    if (typeof closeModal === "function") closeModal("#confirmModal");
+  }
+  if (id === "csOk") {
+    if (typeof closeModal === "function") closeModal("#confirmModal");
+    // 실제 저장 실행
+    saveAll();
+  }
+});
+
 
 /* Save */
 async function saveAll(){
@@ -922,7 +1003,11 @@ window.addEventListener("DOMContentLoaded",()=>{
   if (window.visualViewport) window.visualViewport.addEventListener('resize', fitCardToFooter);
 
   el("#saveAll").addEventListener('click', addRipple);
-  el("#saveAll").onclick=saveAll;
+ el("#saveAll").onclick = (e) => {
+  try { addRipple && addRipple(e); } catch(_) {}
+  openConfirmSubmit();
+};
+
   el("#exportXLSXBtn").addEventListener('click', addRipple);
   el("#exportXLSXBtn").onclick=exportXLSX;
   el("#appDownloadBtn").addEventListener('click', addRipple);
