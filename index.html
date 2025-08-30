@@ -37,7 +37,7 @@
   .btn:active{transform:translateY(0)}
   .btn.acc{background:linear-gradient(180deg,#4f83ff,#2563eb);color:#fff;border:1px solid #2856c7;box-shadow:0 6px 22px rgba(37,99,235,.25)}
 
-  /* ▼ 리플 이펙트 */
+  /* Ripple */
   .ripple{position:absolute; border-radius:50%; transform:scale(0); animation:ripple .5s ease-out; background:rgba(255,255,255,.5); pointer-events:none}
   @keyframes ripple{to{transform:scale(10); opacity:0}}
 
@@ -45,7 +45,7 @@
   h1{font-size:20px;margin:10px 0 6px;display:flex;align-items:center;gap:10px;color:#0f172a}
   h1 label{color:#475569;font-weight:700}
 
-  /* ▼ 탭 + 슬라이더 */
+  /* Tabs + slider */
   .tabs{
     width:100%;display:flex;gap:8px;margin:10px 0;background:#f2f5fb;border:1px solid var(--border);
     border-radius:var(--r-lg);padding:6px;box-shadow:var(--shadow-1); position:relative;
@@ -70,7 +70,7 @@
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield}
 
-  .empty{margin-top:16px;padding:18px;border:1px dashed var(--border);border-radius:16px;text-align:center;color:var(--muted);background:#fff}
+  .empty{margin-top:16px;padding:18px;border:1px dashed var(--border);border-radius:16px;text-align:center;color:#var(--muted);background:#fff}
 
   .footerBar{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--border);padding:10px;display:flex;justify-content:center;z-index:50}
   .footerCol{display:flex;flex-direction:column;gap:10px;align-items:stretch;max-width:980px;width:100%}
@@ -87,32 +87,25 @@
   #sec-stats .row-wrap.dates input[type=date]{flex:1 1 0;min-width:0;font-size:15px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:#var(--text)}
   #sec-stats .row-wrap select{padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:#var(--text)}
 
-  /* ▼ 통계표 (넘침 방지 & 스크롤) */
-  #statsWrap{overflow-x:auto} /* ← 기존 hidden → auto */
+  /* Stats table */
+  #statsWrap{overflow-x:auto}
   .statsTable{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-2)}
   .statsTable th,.statsTable td{padding:6px 4px;text-align:center;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:13px;line-height:1.05;font-variant-numeric:tabular-nums;color:#0f172a;white-space:nowrap}
   .statsTable thead th{background:#f6f8fc;color:#0f172a;font-weight:800}
-  .statsTable th:first-child,
-  .statsTable td:first-child{ text-align:left !important; }
-  .statsTable thead th:first-child{ text-align:left !important; }
+  .statsTable th:first-child,.statsTable td:first-child{ text-align:left !important; width:60px }
   .statsTable td[data-num], .statsTable th[data-num]{ text-align:center; padding:6px 2px; overflow:hidden; }
-  .statsTable th:first-child,.statsTable td:first-child{width:60px}
   .statsTable .total-row th:first-child{ text-align:left !important; }
   .statsTable tr:last-child td,.statsTable tr:last-child th{border-bottom:none}
   .statsTable th.rot{writing-mode:vertical-rl;text-orientation:upright;line-height:1;letter-spacing:0;width:22px;padding:4px 2px}
-  /* 숫자 글자수에 따라 안전 축소 */
-  .num{display:inline-block; line-height:1; font-variant-numeric:tabular-nums; max-width:100%; transform-origin:center}
+  .num{display:inline-block; line-height:1; font-variant-numeric:tabular-nums; max-width:100%}
   .d3{font-size:11px; letter-spacing:-.3px}
   .d4{font-size:10px; letter-spacing:-.4px}
   .d5{font-size:9px;  letter-spacing:-.5px}
-
   .maxWardRow td{background:#fff7d6 !important}
   .statsTable td:first-child{position:relative}
   .statsTable td:first-child .wardName,
   .statsTable th:first-child .wardName{display:inline-block; padding-left:20px; position:relative}
-  .maxWardRow td:first-child .wardName::before{
-    content:"👑"; position:absolute; left:2px; top:50%; transform:translateY(-50%);
-  }
+  .maxWardRow td:first-child .wardName::before{ content:"👑"; position:absolute; left:2px; top:50%; transform:translateY(-50%); }
 
   @media (max-width:480px){
     .chip{min-width:32px;height:34px;font-size:13px}
@@ -132,7 +125,7 @@
   .modalActions .btn.cancel{ background:#eef2f7; color:#1f2a44; border:1px solid var(--border); }
   .modalActions .btn.primary{ background:linear-gradient(180deg,#4f83ff,#2563eb); color:#fff; border:1px solid #2856c7; }
 
-  /* ▼ 저장 토스트(초록) */
+  /* Toast (green) */
   .toast{
     position:fixed; right:18px; bottom:90px; transform:translateY(20px);
     background:linear-gradient(180deg,#10b981,#059669); color:#fff; font-weight:900;
@@ -143,6 +136,19 @@
   .toast.show{opacity:1; transform:translateY(0)}
   .toast .sub{font-weight:600;opacity:.9;font-size:12px}
   .toast .check{width:18px; height:18px; border-radius:50%; background:#fff; color:#059669; display:inline-grid; place-items:center; font-weight:900}
+
+  /* Charts section */
+  #statsCharts{margin-top:14px}
+  #statsCharts .card{
+    background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow-2);
+    padding:12px;
+  }
+  #statsCharts h2{margin:10px 2px 8px; font-size:18px}
+  .chartControls{display:flex; gap:8px; align-items:center; margin:8px 2px 12px; flex-wrap:wrap}
+  .chartControls select{padding:8px 10px; border:1px solid var(--border); border-radius:10px}
+  .chartGrid{display:grid; grid-template-columns:1fr; gap:12px}
+  @media (min-width:720px){ .chartGrid{grid-template-columns:1fr 1fr} }
+  #exportChartXLSXBtn{padding:10px 12px; border-radius:10px}
 </style>
 </head>
 <body>
@@ -175,7 +181,6 @@
     </h1>
 
     <div class="tabs">
-      <!-- ▼ 슬라이더 추가 -->
       <div class="tab-slider" id="tabSlider" aria-hidden="true"></div>
       <div class="tab active" data-cat="시트">시트</div>
       <div class="tab" data-cat="환자복">환자복</div>
@@ -211,6 +216,23 @@
 
     <div id="statsWrap"></div>
     <div id="statsSummary" class="summaryWrap"></div>
+
+    <!-- ▼ 신규: 품목별 증가추이 그래프 섹션 -->
+    <section id="statsCharts">
+      <h2>품목별 사용량 증가추이</h2>
+      <div class="card">
+        <div class="chartControls">
+          <label for="chartItem">품목</label>
+          <select id="chartItem"></select>
+          <button class="btn" id="exportChartXLSXBtn">그래프 데이터 엑셀로</button>
+        </div>
+        <div class="chartGrid">
+          <canvas id="lineChart" height="220" aria-label="일자별 사용량 추이"></canvas>
+          <canvas id="dowChart" height="220" aria-label="요일별 합계"></canvas>
+        </div>
+      </div>
+    </section>
+
     <div id="statsEmpty" class="empty" style="display:none">해당 기간 데이터가 없습니다.</div>
   </section>
 </main>
@@ -243,7 +265,7 @@
   </div>
 </div>
 
-<!-- ▼ 초록 토스트 -->
+<!-- Toast -->
 <div class="toast" id="toast">
   <span class="check">✓</span>
   <div>
@@ -260,7 +282,7 @@
   </div>
 </div>
 
-<!-- 효과음 -->
+<!-- 사운드 -->
 <audio id="submitSound" preload="auto">
   <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/제출하기.mp3" type="audio/mpeg" />
 </audio>
@@ -271,61 +293,32 @@
   <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/버튼클릭.mp3" type="audio/mpeg" />
 </audio>
 
+<!-- XLSX -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<!-- Chart.js (for graphs) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-<!-- =================== 텔레그램 로거 (콘솔/에러 전송) =================== -->
+<!-- =================== 텔레그램 로거 =================== -->
 <script>
-/* ⚠️ 주의: 토큰이 클라이언트에 노출됩니다. 공개 배포시 IP/Referrer 제한 프록시를 권장 */
 const TELEGRAM_CHAT_ID = "5432510881";
 const TELEGRAM_TOKEN   = "7377526562:AAEhb8p-mld6b2tMH7TAct2Jhqg8dpP6p20";
 const TG_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
-
-// 전송 스로틀링/버퍼링
-const __tgBuf = [];
-let __tgTimer = null;
+const __tgBuf = []; let __tgTimer = null;
 function tgFlush() {
   if (!__tgBuf.length) return;
   let payload = __tgBuf.splice(0).join("\n");
   if (payload.length > 3500) payload = payload.slice(0, 3500) + "\n...(truncated)";
-  const text =
-    `[linenward]\n` +
-    `URL: ${location.href}\n` +
-    `UA: ${(navigator.userAgent||'')}\n` +
-    `Time: ${new Date().toISOString()}\n\n` +
-    payload;
-
+  const text = `[linenward]\nURL: ${location.href}\nUA: ${(navigator.userAgent||'')}\nTime: ${new Date().toISOString()}\n\n` + payload;
   const body = { chat_id: TELEGRAM_CHAT_ID, text };
-  fetch(TG_API, {
-    method: "POST",
-    headers: { "Content-Type":"application/json" },
-    body: JSON.stringify(body)
-  }).catch(()=>{
-    const url = `${TG_API}?chat_id=${encodeURIComponent(TELEGRAM_CHAT_ID)}&text=${encodeURIComponent(text)}`;
-    try { if (navigator.sendBeacon) navigator.sendBeacon(url); else (new Image()).src = url; } catch(_){}
-  });
+  fetch(TG_API, { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(body) })
+  .catch(()=>{ const url = `${TG_API}?chat_id=${encodeURIComponent(TELEGRAM_CHAT_ID)}&text=${encodeURIComponent(text)}`; try { if (navigator.sendBeacon) navigator.sendBeacon(url); else (new Image()).src = url; } catch(_){}})
 }
-function tgSendNow(line){
-  __tgBuf.push(line);
-  if (__tgTimer) return;
-  __tgTimer = setTimeout(()=>{ __tgTimer=null; tgFlush(); }, 1000);
-}
-function asLine(arg){
-  try{
-    if (arg instanceof Error) return (arg.stack||arg.message||String(arg));
-    if (typeof arg === 'object') return JSON.stringify(arg);
-    return String(arg);
-  }catch(_){ return String(arg); }
-}
-["error","warn"].forEach(type=>{
-  const orig = console[type];
-  console[type] = function(...args){
-    try{ orig.apply(console, args); }catch(_){}
-    try{ tgSendNow(`[${type.toUpperCase()}] ` + args.map(asLine).join(" ")); }catch(_){}
-  };
-});
-window.tgLog = (...args)=> tgSendNow(`[LOG] ` + args.map(asLine).join(" ") );
-window.addEventListener("error", (e)=>{ tgSendNow(`[ONERROR] ${e.message} @ ${e.filename}:${e.lineno}:${e.colno}\n${e.error?.stack||''}`); });
-window.addEventListener("unhandledrejection", (e)=>{ tgSendNow(`[UNHANDLED] ${(e.reason && (e.reason.stack||e.reason.message)) || asLine(e.reason)}`); });
+function tgSendNow(line){ __tgBuf.push(line); if (__tgTimer) return; __tgTimer=setTimeout(()=>{__tgTimer=null; tgFlush();},1000); }
+function asLine(arg){ try{ if (arg instanceof Error) return (arg.stack||arg.message||String(arg)); if (typeof arg==='object') return JSON.stringify(arg); return String(arg);}catch(_){ return String(arg);} }
+;["error","warn"].forEach(type=>{ const orig = console[type]; console[type]=function(...args){ try{orig.apply(console,args);}catch(_){ } try{ tgSendNow(`[${type.toUpperCase()}] `+args.map(asLine).join(" ")); }catch(_){ } };});
+window.tgLog=(...args)=> tgSendNow(`[LOG] `+args.map(asLine).join(" "));
+window.addEventListener("error", e=> tgSendNow(`[ONERROR] ${e.message} @ ${e.filename}:${e.lineno}:${e.colno}\n${e.error?.stack||''}`));
+window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.reason && (e.reason.stack||e.reason.message)) || asLine(e.reason)}`));
 </script>
 <!-- =================== /텔레그램 로거 =================== -->
 
@@ -393,7 +386,7 @@ const LS={ ward:"linen/ward", logs:"linen/logs", draft:(ward)=>`linen/draft/${wa
 let state={ ward:(localStorage.getItem(LS.ward)||"").toString().trim(), section:"input", cat:"시트" };
 const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorAll(s));
 
-/* ===== WebAudio Fallback + Unlock ===== */
+/* WebAudio fallback + unlock */
 let __ac=null, __audioUnlocked=false;
 function getAC(){ if(!__ac){ __ac=new (window.AudioContext||window.webkitAudioContext)(); } return __ac; }
 function beep(ms=120,freq=660){
@@ -412,22 +405,16 @@ function unlockAudioOnce(){
   try{ getAC().resume(); }catch(_){}
   ["#submitSound","#tabSound","#btnClickSound"].forEach(sel=>{
     const a=el(sel); if(!a) return;
-    try{
-      const p=a.play();
-      if(p?.then) p.then(()=>{ a.pause(); a.currentTime=0; }).catch(()=>{});
-      else { a.pause(); a.currentTime=0; }
-    }catch(_){}
+    try{ const p=a.play(); if(p?.then) p.then(()=>{ a.pause(); a.currentTime=0; }).catch(()=>{}); else { a.pause(); a.currentTime=0; } }catch(_){}
   });
 }
-["pointerdown","touchstart","click","keydown"].forEach(evt=>{
-  window.addEventListener(evt, unlockAudioOnce, { once:true, passive:true });
-});
+["pointerdown","touchstart","click","keydown"].forEach(evt=>{ window.addEventListener(evt, unlockAudioOnce, { once:true, passive:true }); });
 
-/* 모달 */
+/* Modal */
 function openModal(sel, focusSel){ document.body.classList.add('modal-open'); const ov=el(sel); ov.style.display='block'; setTimeout(()=>{ focusSel && el(focusSel)?.focus(); },0); }
 function closeModal(sel){ document.body.classList.remove('modal-open'); el(sel).style.display='none'; }
 
-/* 사운드 */
+/* Sound */
 function playSnd(sel){
   const freqMap = { "#btnClickSound": 880, "#tabSound": 659, "#submitSound": 523 };
   try{
@@ -437,22 +424,16 @@ function playSnd(sel){
     a.currentTime = 0;
     const p = a.play();
     if (p && typeof p.then === "function") {
-      p.then(()=>{}).catch(err=>{
-        console.warn("[audio] play failed:", sel, err?.name||err, err);
-        beep(sel==="#submitSound"?180:100, freqMap[sel]||660);
-      });
+      p.then(()=>{}).catch(err=>{ console.warn("[audio] play failed:", sel, err?.name||err, err); beep(sel==="#submitSound"?180:100, freqMap[sel]||660); });
     }
-  }catch(e){
-    console.warn("[audio] exception:", e);
-    beep(sel==="#submitSound"?180:100, freqMap[sel]||660);
-  }
+  }catch(e){ console.warn("[audio] exception:", e); beep(sel==="#submitSound"?180:100, freqMap[sel]||660); }
 }
 
-/* 경고 */
+/* Warn flash */
 function flashWarn(){ try{ if(navigator.vibrate){ navigator.vibrate([120,80,120,80,120]); } }catch(e){} const ov=document.createElement('div'); ov.id='flashOverlay'; document.body.appendChild(ov); ov.addEventListener('animationend', ()=>{ ov.parentNode && ov.parentNode.removeChild(ov); }); }
 function maybeBuzz(prev,next){ const p=Number(prev)||0, n=Number(next)||0; if(p<16 && n>=16){ flashWarn(); } }
 
-/* 범위 */
+/* Date range helpers */
 function rangeMsByDates(startStr,endStr){
   const sParts=startStr.split("-").map(Number), eParts=endStr.split("-").map(Number);
   let s=new Date(sParts[0],sParts[1]-1,sParts[2],0,0,0,0),
@@ -461,14 +442,14 @@ function rangeMsByDates(startStr,endStr){
   return [s.getTime(), e.getTime()+1];
 }
 
-/* 로컬 */
+/* Local storage */
 function getLogs(){ return JSON.parse(localStorage.getItem(LS.logs)||"[]"); }
 function setLogs(a){ localStorage.setItem(LS.logs, JSON.stringify(a)); }
 function getDraft(){ try{ return JSON.parse(localStorage.getItem(LS.draft(state.ward))||"{}"); }catch(_){ return {}; } }
 function setDraft(o){ localStorage.setItem(LS.draft(state.ward), JSON.stringify(o||{})); }
 function setDraftQty(item,qty){ const d=getDraft(); d[item]=(parseInt(qty)||0); setDraft(d); }
 
-/* 입력 표 */
+/* Input table */
 function buildTable(){
   const tb=el("#inputTable tbody"); tb.innerHTML="";
   ITEMS[state.cat].forEach(name=>{
@@ -493,7 +474,6 @@ function buildTable(){
       inp.value=String(cur); setDraftQty(name,cur); maybeBuzz(prev,cur); inp.dataset.prev=String(cur);
     });
     tr.querySelectorAll("[data-delta]").forEach(btn=>{
-      // 리플
       btn.addEventListener('click', e=>{ addRipple(e); });
       btn.onclick=()=>{
         const prev=parseInt(inp.dataset.prev||"0")||0;
@@ -512,7 +492,7 @@ function buildTable(){
   }
 }
 
-/* 저장 */
+/* Save */
 async function saveAll(){
   const ward=(state.ward||"").toString().trim();
   if(!ward){ alert("병동을 먼저 선택하세요."); return; }
@@ -547,7 +527,7 @@ async function saveAll(){
   }
 }
 
-/* 강조색 */
+/* Highlight color style */
 function colorStyle(item,val){
   if(!COLORED_ITEMS.has(item)) return "";
   const v=Number(val)||0;
@@ -557,13 +537,13 @@ function colorStyle(item,val){
   return '';
 }
 
-/* 범위 필터 */
+/* Filter by range/ward */
 function rangeSelect(logs,sStr,eStr,wardFilter){
   const [s,e]=rangeMsByDates(sStr,eStr);
   return logs.filter(L=>L.ts>=s&&L.ts<e&&(wardFilter==="전체"||(L.ward||"").toString().trim()===wardFilter));
 }
 
-/* 피벗 */
+/* Pivot */
 function renderPivot(logs,s,e,wardFilter){
   const selected=rangeSelect(logs,s,e,wardFilter);
   const wards=(wardFilter==="전체")?WARDS:WARDS.filter(w=>w===wardFilter);
@@ -576,7 +556,7 @@ function renderPivot(logs,s,e,wardFilter){
   return {p,wards,items};
 }
 
-/* 숫자 자리수에 따른 폰트 축소(100↑도 안전) */
+/* Shrink large numbers */
 function shrinkBigNumbers(root){
   Array.from(root.querySelectorAll('[data-num] > .num')).forEach(span=>{
     const len=(span.textContent||'').trim().length;
@@ -586,7 +566,89 @@ function shrinkBigNumbers(root){
   });
 }
 
-/* === 통계 렌더 === */
+/* ===== Charts helpers ===== */
+let __mergedCache = []; // latest merged logs in stats range
+let lineChart=null, dowChart=null;
+
+function fmtYYYYMMDD(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0"); return `${y}-${m}-${dd}`; }
+function dateRangeArray(sStr,eStr){
+  const [sMs,eMs]=rangeMsByDates(sStr,eStr);
+  const arr=[]; for(let t=sMs; t<eMs; t+=86400000){ arr.push(new Date(t)); }
+  return arr;
+}
+function buildDailySeries(item, sStr, eStr, wardFilter){
+  const days = dateRangeArray(sStr,eStr);
+  const map = Object.create(null);
+  days.forEach(d=>map[fmtYYYYMMDD(d)]=0);
+  const selected = rangeSelect(__mergedCache, sStr, eStr, wardFilter);
+  selected.forEach(L=>{
+    if(item!=="모든 품목 합계" && L.item!==item) return;
+    const key = fmtYYYYMMDD(new Date(L.ts));
+    if(!(key in map)) map[key]=0;
+    map[key]+= Number(L.qty)||0;
+  });
+  const labels = days.map(d=>fmtYYYYMMDD(d));
+  const values = labels.map(k=>map[k]||0);
+  return { labels, values };
+}
+function buildDowSeries(values, labels){
+  const dnames = ["일","월","화","수","목","금","토"]; // Date.getDay(): 0=Sun
+  const sums = [0,0,0,0,0,0,0];
+  labels.forEach((dstr, i)=>{
+    const d = new Date(dstr+"T00:00:00");
+    const w = d.getDay(); // 0..6
+    sums[w] += values[i];
+  });
+  // reorder to Mon..Sun as 요청: (월) (화) ... (일)
+  const order = [1,2,3,4,5,6,0];
+  return { labels: order.map(i=>dnames[i]), values: order.map(i=>sums[i]) };
+}
+function ensureChartItemOptions(){
+  const sel = el("#chartItem");
+  if(sel.options.length) return;
+  const opts = ["모든 품목 합계", ...ALL_ITEMS];
+  opts.forEach(x=>{ const o=document.createElement("option"); o.value=o.textContent=x; sel.appendChild(o); });
+}
+
+/* Render charts */
+function renderCharts(){
+  ensureChartItemOptions();
+  const item = el("#chartItem").value || "모든 품목 합계";
+  const s = el("#dateStart").value, e = el("#dateEnd").value, ward = el("#wardFilter").value||"전체";
+
+  const {labels,values} = buildDailySeries(item, s, e, ward);
+  const {labels: dowLabels, values: dowValues} = buildDowSeries(values, labels);
+
+  // Line
+  const lc = el("#lineChart").getContext("2d");
+  if(lineChart) lineChart.destroy();
+  lineChart = new Chart(lc, {
+    type:"line",
+    data:{ labels, datasets:[{ label:`${item} 일자별`, data:values, tension:.25, fill:false }]},
+    options:{
+      responsive:true,
+      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:(ctx)=>` ${ctx.parsed.y.toLocaleString()} 개` } } },
+      scales:{ x:{ ticks:{ maxRotation:0, autoSkip:true, maxTicksLimit:10 } }, y:{ beginAtZero:true, ticks:{ precision:0 } } }
+    }
+  });
+
+  // DOW bar
+  const bc = el("#dowChart").getContext("2d");
+  if(dowChart) dowChart.destroy();
+  dowChart = new Chart(bc, {
+    type:"bar",
+    data:{ labels:dowLabels, datasets:[{ label:`${item} 요일별 합계`, data:dowValues }]},
+    options:{
+      responsive:true,
+      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:(ctx)=>` ${ctx.parsed.y.toLocaleString()} 개` } } },
+      scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
+    }
+  });
+
+  // 차트 영역이 의미 없을 때도 자리 유지 (요구사항)
+}
+
+/* === Stats render === */
 async function renderStats(){
   const today=new Date().toISOString().slice(0,10);
   const s=el("#dateStart").value||today;
@@ -600,6 +662,7 @@ async function renderStats(){
       let logsLS=[]; try{ logsLS=getLogs().filter(L=>L.ts>=sMs&&L.ts<eMs);}catch(_){}
       const uniq=new Map(); [...logsRT,...logsLS].forEach(L=>{ const k=[L.ts,L.ward,L.item,L.qty].join("|"); if(!uniq.has(k)) uniq.set(k,L); });
       const merged=Array.from(uniq.values());
+      __mergedCache = merged; // cache for charts
 
       const {p,wards,items}=renderPivot(merged,s,e,wardFilter);
 
@@ -640,13 +703,17 @@ async function renderStats(){
 
       shrinkBigNumbers(el("#statsWrap").querySelector("table"));
 
-      const any=wards.some(w=>items.some(i=>(p[w]?.[i]||0)>0));
-      el("#statsEmpty").style.display = any ? "none" : "block";
+      // 데이터 없다고 별도 안내는 숨김 유지(요청)
+      el("#statsEmpty").style.display = "none";
+
+      // 차트 갱신
+      ensureChartItemOptions();
+      renderCharts();
     });
   }
 }
 
-/* 엑셀 내보내기 */
+/* Export stats table to XLSX (existing) */
 function exportXLSX(){
   const table=document.querySelector("#statsWrap table"); if(!table){ alert("통계 표가 없습니다."); return; }
   const s=el("#dateStart").value||"", e=el("#dateEnd").value||"", ward=el("#wardFilter").value||"전체";
@@ -672,7 +739,26 @@ function exportXLSX(){
   XLSX.writeFile(wb,`stats_${s}_to_${e}.xlsx`);
 }
 
-/* 리플 유틸 */
+/* Export chart data to XLSX */
+function exportChartXLSX(){
+  const s=el("#dateStart").value||"", e=el("#dateEnd").value||"", ward=el("#wardFilter").value||"전체";
+  const item = el("#chartItem").value || "모든 품목 합계";
+  if(!s || !e){ alert("기간을 먼저 선택하세요."); return; }
+
+  const {labels,values} = buildDailySeries(item, s, e, ward);
+  const {labels: dowLabels, values: dowValues} = buildDowSeries(values, labels);
+
+  const wb = XLSX.utils.book_new();
+  // sheet 1: daily trend
+  const ws1 = XLSX.utils.aoa_to_sheet([["날짜","수량"], ...labels.map((d,i)=>[d,values[i]])]);
+  XLSX.utils.book_append_sheet(wb, ws1, "일자추이");
+  // sheet 2: weekday totals
+  const ws2 = XLSX.utils.aoa_to_sheet([["요일","합계"], ...dowLabels.map((n,i)=>[n,dowValues[i]])]);
+  XLSX.utils.book_append_sheet(wb, ws2, "요일합계");
+  XLSX.writeFile(wb, `trend_${item}_${s}_to_${e}.xlsx`);
+}
+
+/* Ripple */
 function addRipple(e){
   const btn=e.currentTarget;
   const rect=btn.getBoundingClientRect();
@@ -684,7 +770,7 @@ function addRipple(e){
   btn.appendChild(span); setTimeout(()=>span.remove(), 500);
 }
 
-/* 토스트 */
+/* Toast */
 function showToast(msg, sub){
   const t=document.getElementById('toast');
   if(msg) document.getElementById('toastText').textContent = msg;
@@ -693,7 +779,7 @@ function showToast(msg, sub){
   setTimeout(()=> t.classList.remove('show'), 1800);
 }
 
-/* 초기화 */
+/* Init */
 function debounce(fn,delay=200){ let t; return(...a)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,a),delay); }; }
 window.addEventListener("DOMContentLoaded",()=>{
   const urlApp=new URL(location.href).searchParams.get("app"); if(urlApp==="1"){localStorage.setItem("appMode","1");} if(urlApp==="0"){localStorage.removeItem("appMode");}
@@ -728,13 +814,10 @@ window.addEventListener("DOMContentLoaded",()=>{
   el('#submitModal').addEventListener('click', (e)=>{ if(e.target===e.currentTarget) closeModal('#submitModal'); });
   el('#smOk').onclick = ()=> closeModal('#submitModal');
 
-  // 탭 클릭 + 슬라이더 이동
+  // Tabs
   const tabs = Array.from(document.querySelectorAll(".tab"));
   const slider = document.getElementById('tabSlider');
-  function moveSlider(){
-    const idx = ["시트","환자복","기타"].indexOf(state.cat);
-    slider.style.transform = `translateX(${idx*100}%)`;
-  }
+  function moveSlider(){ const idx = ["시트","환자복","기타"].indexOf(state.cat); slider.style.transform = `translateX(${idx*100}%)`; }
   tabs.forEach(t=>{
     t.onclick=()=>{
       state.cat=t.dataset.cat;
@@ -747,10 +830,16 @@ window.addEventListener("DOMContentLoaded",()=>{
   });
   moveSlider();
 
-  const rerender=debounce(renderStats,200);
+  // Stats watchers
+  const rerender=debounce(()=>{ renderStats(); },200);
   ["#dateStart","#dateEnd","#wardFilter"].forEach(sel=>{
     const n=el(sel); n&&n.addEventListener("change",rerender); n&&n.addEventListener("input",rerender);
   });
+
+  // Charts controls
+  ensureChartItemOptions();
+  el("#chartItem").addEventListener("change", ()=> renderCharts());
+  el("#exportChartXLSXBtn").addEventListener("click", ()=>{ addRipple(event); exportChartXLSX(); });
 
   el("#gotoStats").onclick=()=>{ 
     document.body.classList.add("mode-stats"); 
