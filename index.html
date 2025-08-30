@@ -41,21 +41,21 @@
   main{max-width:980px;margin:0 auto;padding:12px 16px  calc(110px + env(safe-area-inset-bottom));}
 
   h1{font-size:20px;margin:6px 0 8px;color:#0f172a}
-  /* 출고일 라인 정렬 */
   .fieldRow{display:flex;align-items:center;gap:10px}
   .fieldRow .lab{flex:0 0 72px; font-weight:800; color:#334155}
   #issueDate{flex:1; min-width:0}
 
-  /* 프리미엄 섹션 카드(광택 오버레이 제거) */
+  /* 프리미엄 섹션 카드 + 최소 높이(푸터 위까지 채우기) */
   .sectionCard{
     padding:14px;
     border-radius:20px;
     background:#fff;
     box-shadow: 0 16px 44px rgba(15,23,42,.10);
     border:1px solid rgba(15,23,42,.06);
+    min-height: var(--fillH, auto);
   }
 
-  /* Tabs (세로 압축) */
+  /* Tabs */
   .tabs{
     width:100%;display:flex;gap:8px;margin:8px 0;background:#f2f5fb;border:1px solid var(--border);
     border-radius:14px;padding:4px;box-shadow:var(--shadow-1); position:relative;
@@ -75,8 +75,12 @@
   td:first-child,th:first-child{text-align:left}
   .col-item{width:42%}.col-qty{width:58%}
 
-  /* 품목명(조금 축소 + 줄바꿈 금지) */
+  /* 품목명 */
   .item-name{font-size:15px; white-space:nowrap}
+  /* 2글자(수건/기타)를 3글자 너비처럼 보이게 */
+  .item-name.k2::after{content:""; display:inline-block; width:.9em;}
+  @media (max-width:430px){ .item-name.k2::after{ width:1.05em; } }
+
   /* 정형 항목 강조 */
   tr.kind-ortho td.item-name{color:#2563eb; font-weight:800}
 
@@ -86,12 +90,7 @@
 
   .chip{height:36px;min-width:46px;padding:0 12px;border:1px solid #d8deea;background:#f3f6fb;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;color:#0f172a;white-space:nowrap;line-height:1}
   .chip.spring{ animation:springy .18s cubic-bezier(.17,.89,.32,1.28); }
-  @keyframes springy{
-    0%{transform:scale(1)}
-    40%{transform:scale(.96)}
-    70%{transform:scale(1.06)}
-    100%{transform:scale(1)}
-  }
+  @keyframes springy{0%{transform:scale(1)}40%{transform:scale(.96)}70%{transform:scale(1.06)}100%{transform:scale(1)}}
 
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield}
@@ -153,7 +152,7 @@
   .modalActions .btn.cancel{ background:#eef2f7; color:#1f2a44; border:1px solid var(--border); }
   .modalActions .btn.primary{ background:linear-gradient(180deg,#4f83ff,#2563eb); color:#fff; border:1px solid #2856c7; }
 
-  /* Toast (green) */
+  /* Toast */
   .toast{
     position:fixed; right:18px; bottom:90px; transform:translateY(20px);
     background:linear-gradient(180deg,#10b981,#059669); color:#fff; font-weight:900;
@@ -182,43 +181,29 @@
     .chip.spring{ animation:none !important; }
     .tab-slider{ transition:none }
   }
-/* ===== Mobile compact density (<=430px) ===== */
-@media (max-width: 430px){
 
-  /* 카드/헤더 여백 압축 */
-  .sectionCard{ padding:10px 10px 12px; box-shadow:0 8px 22px rgba(15,23,42,.08); }
-  h1{ margin:6px 0 8px; font-size:18px; }
+  /* Mobile compact */
+  @media (max-width: 430px){
+    .sectionCard{ padding:10px 10px 12px; box-shadow:0 8px 22px rgba(15,23,42,.08); }
+    h1{ margin:6px 0 8px; font-size:18px; }
+    #sec-input h1 span{ width:100%; }
+    #issueDate{ flex:1; width:100%; }
+    .tabs{ margin:6px 0 8px; padding:2px; border-radius:12px; }
+    .tab{ padding:6px 8px; font-size:15px; line-height:1; }
+    .tab-slider{ top:2px; bottom:2px; }
+    #inputTable{ margin-top:6px; border-radius:12px; }
+    #inputTable thead th{ padding:8px 6px; font-size:14px; }
+    #inputTable td, #inputTable th{ padding:8px 6px; font-size:14px; }
+    .col-item{ width:40%; }
+    .col-qty{ width:60%; }
+    .qtyCell{ gap:4px; flex-wrap:nowrap; }
+    .chip{ height:32px; min-width:40px; padding:0 8px; font-size:13px; white-space:nowrap; }
+    .qtyCell input{ width:44px; height:32px; font-size:14px; }
+    .item-name{ font-size:14.5px; white-space:nowrap; }
+  }
 
-  /* 출고일 입력 라인: 오른쪽 끝선까지 꽉 채우기 */
-  #sec-input h1 span{ width:100%; }
-  #issueDate{ flex:1; width:100%; }
-
-  /* 탭 높이 축소 */
-  .tabs{ margin:6px 0 8px; padding:2px; border-radius:12px; }
-  .tab{ padding:6px 8px; font-size:15px; line-height:1; }
-  .tab-slider{ top:2px; bottom:2px; }
-
-  /* 표 자체를 슬림하게 */
-  #inputTable{ margin-top:6px; border-radius:12px; }
-  #inputTable thead th{ padding:8px 6px; font-size:14px; }
-  #inputTable td, #inputTable th{ padding:8px 6px; font-size:14px; }
-
-  /* 열 너비: 품목칸 조금 줄이고 버튼칸 넓힘 (한 줄 정렬 유지) */
-  .col-item{ width:40%; }
-  .col-qty{ width:60%; }
-
-  /* 버튼/입력칸 크기 축소 + 줄바꿈 방지 */
-  .qtyCell{ gap:4px; flex-wrap:nowrap; }
-  .chip{ height:32px; min-width:40px; padding:0 8px; font-size:13px; white-space:nowrap; }
-  .qtyCell input{ width:44px; height:32px; font-size:14px; }
-
-  /* 품목명 살짝 축소 + 줄바꿈 금지(잘림 방지) */
-  .item-name{ font-size:14.5px; white-space:nowrap; }
-}
-
-/* 안드로이드 WebView 탭/표 겹침 가끔 생기는 거 차단 */
-.tabs{ overflow:hidden; contain:layout paint; }
-
+  /* 안드 WebView 겹침 방지 */
+  .tabs{ overflow:hidden; contain:layout paint; }
 </style>
 </head>
 <body>
@@ -443,9 +428,9 @@ const APK_NAME  = "WardLinen.apk";
 const LATEST_DIRECT = `https://github.com/${REPO_SLUG}/releases/latest/download/${APK_NAME}`;
 
 const ITEMS={
-  "시트":["대시트","반시트","베갯잇","수건"],
+  "시트":["대시트","반시트","베갯잇","수　건"],
   "환자복":["일반상의","일반하의","정형상의","정형하의"],
-  "기타":["억제대","얼음포","기타"]
+  "기타":["억제대","얼음포","기　타"]
 };
 const COLORED_ITEMS = new Set(["대시트","반시트","베갯잇","수건"]);
 const ORTHO_ITEMS = new Set(["정형상의","정형하의"]);
@@ -503,7 +488,7 @@ function playSnd(sel){
 function flashWarn(){ try{ if(navigator.vibrate){ navigator.vibrate([120,80,120,80,120]); } }catch(e){} const ov=document.createElement('div'); ov.id='flashOverlay'; document.body.appendChild(ov); ov.addEventListener('animationend', ()=>{ ov.parentNode && ov.parentNode.removeChild(ov); }); }
 function maybeBuzz(prev,next){ const p=Number(prev)||0, n=Number(next)||0; if(p<16 && n>=16){ flashWarn(); } }
 
-/* Date range helpers */
+/* Date helpers */
 function rangeMsByDates(startStr,endStr){
   const sParts=startStr.split("-").map(Number), eParts=endStr.split("-").map(Number);
   let s=new Date(sParts[0],sParts[1]-1,sParts[2],0,0,0,0),
@@ -536,9 +521,19 @@ function refreshTotalUI(){
 
 /* 칩 스프링 */
 function springOnce(btn){
-  try{
-    btn.classList.remove('spring'); void btn.offsetWidth; btn.classList.add('spring');
-  }catch(_){}
+  try{ btn.classList.remove('spring'); void btn.offsetWidth; btn.classList.add('spring'); }catch(_){}
+}
+
+/* ---- 컨테이너를 푸터 직전까지 채우기 ---- */
+function fitCardToFooter(){
+  const card   = document.querySelector('#sec-input .sectionCard');
+  const footer = document.querySelector('.footerBar');
+  if(!card || !footer) return;
+  card.style.setProperty('--fillH', 'auto');
+  const cardTop   = card.getBoundingClientRect().top;
+  const footerTop = footer.getBoundingClientRect().top;
+  const gap = Math.max(0, Math.floor(footerTop - cardTop - 12)); // 푸터와 12px 여백
+  card.style.setProperty('--fillH', gap + 'px');
 }
 
 /* Input table */
@@ -546,10 +541,11 @@ function buildTable(){
   const tb=el("#inputTable tbody"); tb.innerHTML="";
   ITEMS[state.cat].forEach(name=>{
     const isOrtho = ORTHO_ITEMS.has(name);
+    const isTwoChar = (name==="수건" || name==="기타"); // 2글자 폭 보정
     const tr=document.createElement("tr");
     tr.className = isOrtho ? "kind-ortho" : "";
     tr.innerHTML=`
-      <td class="item-name">${name}</td>
+      <td class="item-name${isTwoChar?' k2':''}">${name}</td>
       <td class="qtyCell">
         <button type="button" class="chip" data-delta="-5">-5</button>
         <button type="button" class="chip" data-delta="-1">-1</button>
@@ -590,6 +586,7 @@ function buildTable(){
   }
 
   refreshTotalUI();
+  fitCardToFooter(); // 표 갱신 후 높이 재계산
 }
 
 /* Save */
@@ -638,7 +635,7 @@ function colorStyle(item,val){
   return '';
 }
 
-/* Filter by range/ward */
+/* Filter */
 function rangeSelect(logs,sStr,eStr,wardFilter){
   const [s,e]=rangeMsByDates(sStr,eStr);
   return logs.filter(L=>L.ts>=s&&L.ts<e&&(wardFilter==="전체"||(L.ward||"").toString().trim()===wardFilter));
@@ -883,7 +880,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   const urlWard=new URL(location.href).searchParams.get("ward");
   if(urlWard){ state.ward=(urlWard||"").toString().trim(); localStorage.setItem(LS.ward,state.ward); }
   el("#wardSelect").value=state.ward;
-  el("#wardSelect").onchange=e=>{ state.ward=(e.target.value||"").toString().trim(); localStorage.setItem(LS.ward,state.ward); buildTable(); };
+  el("#wardSelect").onchange=e=>{ state.ward=(e.target.value||"").toString().trim(); localStorage.setItem(LS.ward,state.ward); buildTable(); fitCardToFooter(); };
 
   const d=new Date(), yyyy=d.getFullYear(), mm=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0");
   el("#issueDate").value=`${yyyy}-${mm}-${dd}`;
@@ -892,6 +889,12 @@ window.addEventListener("DOMContentLoaded",()=>{
 
   buildTable();
   refreshTotalUI();
+  fitCardToFooter();
+
+  /* viewport 변화에도 보정 */
+  window.addEventListener('resize', fitCardToFooter);
+  window.addEventListener('orientationchange', fitCardToFooter);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', fitCardToFooter);
 
   el("#saveAll").addEventListener('click', addRipple);
   el("#saveAll").onclick=saveAll;
@@ -920,6 +923,7 @@ window.addEventListener("DOMContentLoaded",()=>{
       t.classList.add("active");
       moveSlider();
       buildTable();
+      fitCardToFooter();
       playSnd("#tabSound");
     };
   });
@@ -948,6 +952,7 @@ window.addEventListener("DOMContentLoaded",()=>{
     document.body.classList.remove("mode-stats"); 
     el("#sec-input").style.display="block"; 
     el("#sec-stats").style.display="none"; 
+    fitCardToFooter();
   };
 });
 </script>
