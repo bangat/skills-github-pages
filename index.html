@@ -912,7 +912,7 @@ window.addEventListener("DOMContentLoaded",()=>{
 
   function openDownloadModal(){ openModal('#downloadModal', '#dlConfirm'); }
   function closeDownloadModal(){ closeModal('#downloadModal'); }
-  el("#appDownloadBtn").onclick = openDownloadModal;
+  // el("#appDownloadBtn").onclick = openDownloadModal;
   el("#dlCancel").onclick = closeDownloadModal;
   el("#dlConfirm").onclick = () => { closeDownloadModal(); const url = LATEST_DIRECT; if(url && url.startsWith("http")) window.location.href = url; else alert("다운로드 링크가 설정되지 않았습니다."); };
   el("#downloadModal").addEventListener("click",(e)=>{ if(e.target === e.currentTarget) closeDownloadModal(); });
@@ -965,30 +965,30 @@ window.addEventListener("DOMContentLoaded",()=>{
 });
 </script>
 
-  <script>
+<script>
 let deferredPrompt = null;
+let canInstall = false;
 
-// SW 등록
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js")
-      .catch(err => console.warn("[SW] register failed:", err));
+    navigator.serviceWorker.register("sw.js").catch(console.warn);
   });
 }
 
-// 설치 프롬프트 잡기(안드/데스크톱 크롬)
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
-  deferredPrompt = e;
+  deferredPrompt = e;       // 저장
+  canInstall = true;        // 설치 가능 플래그
   const b = document.getElementById("appDownloadBtn");
   if (b) b.style.display = "block";
 });
 
 window.addEventListener("appinstalled", () => {
   deferredPrompt = null;
+  canInstall = false;
   const b = document.getElementById("appDownloadBtn");
   if (b) b.style.display = "none";
-  // (선택) 토스트 등
+  showToast && showToast("설치 완료", "홈 화면에서 실행하세요");
 });
 
 function isIOS() {
@@ -1001,7 +1001,11 @@ function isStandalone() {
       || (window.navigator.standalone === true);
 }
 
-const APK_FALLBACK = "https://github.com/bangat/linenward/releases/latest/download/WardLinen.apk";
+// 네가 쓰던 APK 모달 열기 함수 (없다면 기존 다운로드 모달 열기)
+function openAPKModal() {
+  // 열려 있는 다운로드 모달을 재사용
+  openModal && openModal('#downloadModal', '#dlConfirm');
+}
 
 (function wireInstallButton(){
   const btn = document.getElementById("appDownloadBtn");
@@ -1009,22 +1013,38 @@ const APK_FALLBACK = "https://github.com/bangat/linenward/releases/latest/downlo
   if (isStandalone()) { btn.style.display = "none"; return; }
 
   btn.onclick = async (event) => {
-    if (deferredPrompt) {
-      try { deferredPrompt.prompt(); await deferredPrompt.userChoice; } catch(_) {}
+    try { addRipple && addRipple(event); } catch(_) {}
+
+    // 1) 크롬/삼성인터넷/엣지(안드·데스크톱): 설치 프롬프트 우선
+    if (canInstall && deferredPrompt) {
+      const p = deferredPrompt;        // 한 번만 사용 가능
       deferredPrompt = null;
-      return;
+      canInstall = false;
+      try {
+        await p.prompt();
+        const { outcome } = await p.userChoice;
+        if (outcome === "accepted") return;  // 설치 진행
+        // 거부했다면 대안 제시
+        if (isIOS()) { openIOSInstallModal && openIOSInstallModal(); return; }
+        openAPKModal(); 
+        return;
+      } catch {
+        // 프롬프트 에러 → 대안
+        if (isIOS()) { openIOSInstallModal && openIOSInstallModal(); return; }
+        openAPKModal();
+        return;
+      }
     }
-    if (isIOS()) {
-      // iOS 설치 안내 모달 열기 (이미 정의돼 있으면 그 함수 호출)
-      if (typeof openIOSInstallModal === "function") openIOSInstallModal();
-      else alert("Safari → 공유 → '홈 화면에 추가'로 설치하세요.");
-      return;
-    }
-    // 기타 브라우저는 APK 다운로드
-    window.location.href = APK_FALLBACK;
+
+    // 2) iOS Safari: 설치 안내 모달
+    if (isIOS()) { openIOSInstallModal && openIOSInstallModal(); return; }
+
+    // 3) 그 외(프롬프트 미지원/조건 미충족): APK 모달
+    openAPKModal();
   };
 })();
 </script>
+
 
 </body>
 </html>
