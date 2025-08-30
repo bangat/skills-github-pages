@@ -1,3 +1,6 @@
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
+
 const CACHE = "linenward-v1";
  const ASSETS = [
    "./",
@@ -24,4 +27,5 @@ self.addEventListener("fetch", e => {
     )
   );
 });
+
 
