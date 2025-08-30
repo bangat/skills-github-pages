@@ -971,7 +971,7 @@ let deferredPrompt = null;
 // SW 등록
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/linenward/sw.js")
+    navigator.serviceWorker.register("sw.js")
       .catch(err => console.warn("[SW] register failed:", err));
   });
 }
