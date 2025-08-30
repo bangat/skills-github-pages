@@ -37,82 +37,54 @@
   .btn:active{transform:translateY(0)}
   .btn.acc{background:linear-gradient(180deg,#4f83ff,#2563eb);color:#fff;border:1px solid #2856c7;box-shadow:0 6px 22px rgba(37,99,235,.25)}
 
-  /* Ripple */
-  .ripple{position:absolute; border-radius:50%; transform:scale(0); animation:ripple .5s ease-out; background:rgba(255,255,255,.5); pointer-events:none}
-  @keyframes ripple{to{transform:scale(10); opacity:0}}
+  /* main spacing: 하단 sticky와 겹침 방지 */
+  main{max-width:980px;margin:0 auto;padding:12px 16px  calc(110px + env(safe-area-inset-bottom));}
 
-  main{max-width:980px;margin:0 auto;padding:12px 16px}
-  h1{font-size:20px;margin:10px 0 6px;display:flex;align-items:center;gap:10px;color:#0f172a}
-  h1 label{color:#475569;font-weight:700}
+  h1{font-size:20px;margin:6px 0 8px;color:#0f172a}
+  /* 출고일 라인 정렬 */
+  .fieldRow{display:flex;align-items:center;gap:10px}
+  .fieldRow .lab{flex:0 0 72px; font-weight:800; color:#334155}
+  #issueDate{flex:1; min-width:0}
 
-  /* ▷▷ 프리미엄 섹션 카드 */
+  /* 프리미엄 섹션 카드(광택 오버레이 제거) */
   .sectionCard{
-    position:relative;
     padding:14px;
     border-radius:20px;
-    background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.98));
-    box-shadow: 0 16px 44px rgba(15,23,42,.10), inset 0 1px 0 rgba(255,255,255,.7);
+    background:#fff;
+    box-shadow: 0 16px 44px rgba(15,23,42,.10);
     border:1px solid rgba(15,23,42,.06);
   }
-  .sectionCard::before{
-    content:"";
-    position:absolute; inset:-1px;
-    border-radius:inherit;
-    padding:1px;
-    background:linear-gradient(180deg, rgba(37,99,235,.28), rgba(37,99,235,0) 60%);
-    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor; mask-composite: exclude;
-    pointer-events:none;
-  }
-  .sectionCard::after{
-    content:"";
-    position:absolute; top:10px; right:16px; width:90px; height:26px;
-    background:radial-gradient(120px 24px at 0% 0%, rgba(255,255,255,.8), transparent 60%);
-    filter:blur(2px); pointer-events:none;
-  }
 
-  /* Tabs + slider */
+  /* Tabs (세로 압축) */
   .tabs{
-    width:100%;display:flex;gap:8px;margin:10px 0;background:#f2f5fb;border:1px solid var(--border);
-    border-radius:var(--r-lg);padding:6px;box-shadow:var(--shadow-1); position:relative;
+    width:100%;display:flex;gap:8px;margin:8px 0;background:#f2f5fb;border:1px solid var(--border);
+    border-radius:14px;padding:4px;box-shadow:var(--shadow-1); position:relative;
   }
-  .tab{flex:1;text-align:center;padding:10px;border-radius:10px;font-weight:800;color:#334155;cursor:pointer; position:relative; z-index:1}
+  .tab{flex:1;text-align:center;padding:8px 10px;border-radius:10px;font-weight:800;color:#334155;cursor:pointer; position:relative; z-index:1}
   .tab.active{color:#0b3fb8}
   .tab-slider{
-    position:absolute; top:6px; bottom:6px; width:33.3333%;
+    position:absolute; top:4px; bottom:4px; width:33.3333%;
     border-radius:10px; background:#e6efff; box-shadow:inset 0 0 0 1px rgba(37,99,235,.25);
     transition:transform .25s cubic-bezier(.2,.8,.2,1);
   }
 
+  /* 표 */
   table{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-2)}
   thead th{background:#f6f8fc;color:#1e293b;font-weight:800}
-  th,td{border-bottom:1px solid var(--border);padding:12px;font-size:16px;text-align:center}
+  th,td{border-bottom:1px solid var(--border);padding:10px;font-size:16px;text-align:center}
   td:first-child,th:first-child{text-align:left}
-  .col-item{width:45%}.col-qty{width:55%}
+  .col-item{width:42%}.col-qty{width:58%}
 
-  .qtyCell{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:nowrap}
+  /* 품목명(조금 축소 + 줄바꿈 금지) */
+  .item-name{font-size:15px; white-space:nowrap}
+  /* 정형 항목 강조 */
+  tr.kind-ortho td.item-name{color:#2563eb; font-weight:800}
 
-  /* 입력 + 플립 오버레이 래퍼 */
+  .qtyCell{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap}
   .qtyInputWrap{ position:relative; display:inline-block; }
-  .qtyCell input{width:56px;height:36px;text-align:center;font-size:15px;padding:0 6px;border:1px solid var(--border);border-radius:10px;background:#fff;color:#0f172a}
+  .qtyCell input{width:52px;height:36px;text-align:center;font-size:15px;padding:0 6px;border:1px solid var(--border);border-radius:10px;background:#fff;color:#0f172a}
 
-  /* ▷ 숫자 플립(슬림) */
-  .flipOverlay{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    pointer-events:none; font-variant-numeric:tabular-nums; line-height:1;
-  }
-  .flipDigit{ display:inline-block; min-width:.65ch; text-align:center; opacity:0; }
-  .flipOverlay.run .flipDigit.changed{
-    animation:numFlip .28s cubic-bezier(.2,.8,.2,1);
-    opacity:1;
-  }
-  @keyframes numFlip{
-    0%{ transform:translateY(8px) rotateX(35deg); filter:blur(2px); opacity:0 }
-    100%{ transform:none; filter:none; opacity:1 }
-  }
-
-  .chip{height:36px;min-width:34px;padding:0 8px;border:1px solid #d8deea;background:#f3f6fb;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;color:#0f172a}
-  /* ▷ 칩 스프링 애니메이션 */
+  .chip{height:36px;min-width:46px;padding:0 12px;border:1px solid #d8deea;background:#f3f6fb;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;color:#0f172a;white-space:nowrap;line-height:1}
   .chip.spring{ animation:springy .18s cubic-bezier(.17,.89,.32,1.28); }
   @keyframes springy{
     0%{transform:scale(1)}
@@ -126,7 +98,7 @@
 
   .empty{margin-top:16px;padding:18px;border:1px dashed var(--border);border-radius:16px;text-align:center;color:#var(--muted);background:#fff}
 
-  .footerBar{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--border);padding:10px;display:flex;justify-content:center;z-index:50}
+  .footerBar{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--border);padding:10px;display:flex;justify-content:center;z-index:50; padding-bottom: max(10px, env(safe-area-inset-bottom));}
   .footerCol{display:flex;flex-direction:column;gap:10px;align-items:stretch;max-width:980px;width:100%}
   #saveAll{width:100%;font-size:18px;padding:12px 16px;border-radius:14px}
   #appDownloadBtn{width:100%;font-size:16px;padding:12px 16px;border-radius:12px;background:#eef2f7;color:#1f2a44;border:1px solid var(--border)}
@@ -161,9 +133,11 @@
   .statsTable th:first-child .wardName{display:inline-block; padding-left:20px; position:relative}
   .maxWardRow td:first-child .wardName::before{ content:"👑"; position:absolute; left:2px; top:50%; transform:translateY(-50%); }
 
-  @media (max-width:480px){
-    .chip{min-width:32px;height:34px;font-size:13px}
-    .qtyCell input{height:34px;width:54px;font-size:14px}
+  @media (max-width:420px){
+    .chip{min-width:44px;height:34px;font-size:14px}
+    .qtyCell input{height:34px;width:48px;font-size:14px}
+    .item-name{font-size:14.5px}
+    .tab{padding:7px 8px}
   }
 
   #flashOverlay{position:fixed; inset:0; background:#ef4444; opacity:0; pointer-events:none; animation: flashOverlay3 .24s ease-in-out 3; z-index:9999}
@@ -191,7 +165,7 @@
   .toast .sub{font-weight:600;opacity:.9;font-size:12px}
   .toast .check{width:18px; height:18px; border-radius:50%; background:#fff; color:#059669; display:inline-grid; place-items:center; font-weight:900}
 
-  /* Charts section */
+  /* Charts */
   #statsCharts{margin-top:14px}
   #statsCharts .card{
     background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow-2);
@@ -204,12 +178,47 @@
   @media (min-width:720px){ .chartGrid{grid-template-columns:1fr 1fr} }
   #exportChartXLSXBtn{padding:10px 12px; border-radius:10px}
 
-  /* 모션 최소화 대응 */
   @media (prefers-reduced-motion: reduce){
     .chip.spring{ animation:none !important; }
-    .flipOverlay.run .flipDigit.changed{ animation:none !important; opacity:1; }
     .tab-slider{ transition:none }
   }
+/* ===== Mobile compact density (<=430px) ===== */
+@media (max-width: 430px){
+
+  /* 카드/헤더 여백 압축 */
+  .sectionCard{ padding:10px 10px 12px; box-shadow:0 8px 22px rgba(15,23,42,.08); }
+  h1{ margin:6px 0 8px; font-size:18px; }
+
+  /* 출고일 입력 라인: 오른쪽 끝선까지 꽉 채우기 */
+  #sec-input h1 span{ width:100%; }
+  #issueDate{ flex:1; width:100%; }
+
+  /* 탭 높이 축소 */
+  .tabs{ margin:6px 0 8px; padding:2px; border-radius:12px; }
+  .tab{ padding:6px 8px; font-size:15px; line-height:1; }
+  .tab-slider{ top:2px; bottom:2px; }
+
+  /* 표 자체를 슬림하게 */
+  #inputTable{ margin-top:6px; border-radius:12px; }
+  #inputTable thead th{ padding:8px 6px; font-size:14px; }
+  #inputTable td, #inputTable th{ padding:8px 6px; font-size:14px; }
+
+  /* 열 너비: 품목칸 조금 줄이고 버튼칸 넓힘 (한 줄 정렬 유지) */
+  .col-item{ width:40%; }
+  .col-qty{ width:60%; }
+
+  /* 버튼/입력칸 크기 축소 + 줄바꿈 방지 */
+  .qtyCell{ gap:4px; flex-wrap:nowrap; }
+  .chip{ height:32px; min-width:40px; padding:0 8px; font-size:13px; white-space:nowrap; }
+  .qtyCell input{ width:44px; height:32px; font-size:14px; }
+
+  /* 품목명 살짝 축소 + 줄바꿈 금지(잘림 방지) */
+  .item-name{ font-size:14.5px; white-space:nowrap; }
+}
+
+/* 안드로이드 WebView 탭/표 겹침 가끔 생기는 거 차단 */
+.tabs{ overflow:hidden; contain:layout paint; }
+
 </style>
 </head>
 <body>
@@ -234,12 +243,10 @@
 
 <main>
   <section id="sec-input">
-    <div class="sectionCard"><!-- ▷ 프리미엄 카드 래퍼 -->
-      <h1>
-        <span style="display:flex;gap:10px;align-items:center">
-          <label for="issueDate">출고일</label>
-          <input type="date" id="issueDate" />
-        </span>
+    <div class="sectionCard">
+      <h1 class="fieldRow">
+        <span class="lab">출고일</span>
+        <input type="date" id="issueDate" />
       </h1>
 
       <div class="tabs">
@@ -280,7 +287,6 @@
     <div id="statsWrap"></div>
     <div id="statsSummary" class="summaryWrap"></div>
 
-    <!-- ▼ 품목별 증가추이 그래프 -->
     <section id="statsCharts">
       <h2>품목별 사용량 증가추이</h2>
       <div class="card">
@@ -358,7 +364,7 @@
 
 <!-- XLSX -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-<!-- Chart.js (for graphs) -->
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <!-- =================== 텔레그램 로거 =================== -->
@@ -442,6 +448,7 @@ const ITEMS={
   "기타":["억제대","얼음포","기타"]
 };
 const COLORED_ITEMS = new Set(["대시트","반시트","베갯잇","수건"]);
+const ORTHO_ITEMS = new Set(["정형상의","정형하의"]);
 const ALL_ITEMS = Object.values(ITEMS).flat();
 const WARDS=["93","83","73","71","63","62","61","52","51","42","41","기타"];
 
@@ -512,14 +519,13 @@ function getDraft(){ try{ return JSON.parse(localStorage.getItem(LS.draft(state.
 function setDraft(o){ localStorage.setItem(LS.draft(state.ward), JSON.stringify(o||{})); }
 function setDraftQty(item,qty){ const d=getDraft(); d[item]=(parseInt(qty)||0); setDraft(d); }
 
-/* === 합계 & 버튼 활성화 === */
+/* 합계 & 버튼 활성화 */
 function getCurrentTotal(){
   const inputs = Array.from(document.querySelectorAll("#inputTable tbody input"));
   return inputs.reduce((a,inp)=> a + (parseInt(inp.value)||0), 0);
 }
 function refreshTotalUI(){
   const total = getCurrentTotal();
-  const badge = el("#totalBadge"); if (badge) badge.textContent = `총 ${total.toLocaleString()}개`;
   const save = el("#saveAll");
   if (save){
     save.disabled = total===0;
@@ -528,37 +534,10 @@ function refreshTotalUI(){
   }
 }
 
-/* ▷ 칩 스프링 핸들러 */
+/* 칩 스프링 */
 function springOnce(btn){
   try{
-    btn.classList.remove('spring');
-    // reflow to restart animation
-    // eslint-disable-next-line no-unused-expressions
-    btn.offsetWidth;
-    btn.classList.add('spring');
-  }catch(_){}
-}
-
-/* ▷ 숫자 플립(얇게 오버레이) */
-function showNumberFlip(inputEl, prev, next){
-  try{
-    if(prev===next) return;
-    const wrap = inputEl.closest('.qtyInputWrap');
-    if(!wrap) return;
-    const ov = document.createElement('div');
-    ov.className = 'flipOverlay';
-    const ps = String(prev), ns = String(next);
-    const len = Math.max(ps.length, ns.length);
-    const P = ps.padStart(len,' '), N = ns.padStart(len,' ');
-    for(let i=0;i<len;i++){
-      const sp = document.createElement('span');
-      sp.className = 'flipDigit' + (P[i]!==N[i] ? ' changed' : '');
-      sp.textContent = N[i];
-      ov.appendChild(sp);
-    }
-    wrap.appendChild(ov);
-    requestAnimationFrame(()=> ov.classList.add('run'));
-    setTimeout(()=> ov.remove(), 420);
+    btn.classList.remove('spring'); void btn.offsetWidth; btn.classList.add('spring');
   }catch(_){}
 }
 
@@ -566,17 +545,19 @@ function showNumberFlip(inputEl, prev, next){
 function buildTable(){
   const tb=el("#inputTable tbody"); tb.innerHTML="";
   ITEMS[state.cat].forEach(name=>{
+    const isOrtho = ORTHO_ITEMS.has(name);
     const tr=document.createElement("tr");
+    tr.className = isOrtho ? "kind-ortho" : "";
     tr.innerHTML=`
       <td class="item-name">${name}</td>
       <td class="qtyCell">
-        <button type="button" class="chip" data-delta="-5">−5</button>
-        <button type="button" class="chip" data-delta="-1">−1</button>
+        <button type="button" class="chip" data-delta="-5">-5</button>
+        <button type="button" class="chip" data-delta="-1">-1</button>
         <span class="qtyInputWrap">
           <input type="number" inputmode="numeric" value="0" aria-label="${name} 수량" />
         </span>
-        <button type="button" class="chip" data-delta="+1">＋1</button>
-        <button type="button" class="chip" data-delta="+5">＋5</button>
+        <button type="button" class="chip" data-delta="+1">+1</button>
+        <button type="button" class="chip" data-delta="+5">+5</button>
       </td>`;
     const inp=tr.querySelector("input");
     const draft=getDraft();
@@ -587,7 +568,6 @@ function buildTable(){
       const prev=parseInt(inp.dataset.prev||"0")||0;
       const cur=parseInt(inp.value||"0")||0;
       inp.value=String(cur); setDraftQty(name,cur); maybeBuzz(prev,cur); inp.dataset.prev=String(cur);
-      showNumberFlip(inp, prev, cur);
       refreshTotalUI();
     });
     tr.querySelectorAll("[data-delta]").forEach(btn=>{
@@ -597,7 +577,6 @@ function buildTable(){
         const v=(parseInt(inp.value||"0")||0)+parseInt(btn.dataset.delta,10);
         inp.value=v; setDraftQty(name,v); maybeBuzz(prev,v); inp.dataset.prev=String(v);
         playSnd("#btnClickSound");
-        showNumberFlip(inp, prev, v);
         refreshTotalUI();
       };
     });
@@ -649,7 +628,7 @@ async function saveAll(){
   }
 }
 
-/* Highlight color style */
+/* 색 강조 */
 function colorStyle(item,val){
   if(!COLORED_ITEMS.has(item)) return "";
   const v=Number(val)||0;
@@ -678,7 +657,7 @@ function renderPivot(logs,s,e,wardFilter){
   return {p,wards,items};
 }
 
-/* Shrink large numbers */
+/* 숫자 길이 축소 */
 function shrinkBigNumbers(root){
   Array.from(root.querySelectorAll('[data-num] > .num')).forEach(span=>{
     const len=(span.textContent||'').trim().length;
@@ -689,7 +668,7 @@ function shrinkBigNumbers(root){
 }
 
 /* ===== Charts helpers ===== */
-let __mergedCache = []; // latest merged logs in stats range
+let __mergedCache = []; 
 let lineChart=null, dowChart=null;
 
 function fmtYYYYMMDD(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0"); return `${y}-${m}-${dd}`; }
@@ -880,6 +859,8 @@ function addRipple(e){
   span.className='ripple'; span.style.width=span.style.height=size+'px';
   span.style.left=(e.clientX-rect.left-size/2)+'px';
   span.style.top=(e.clientY-rect.top-size/2)+'px';
+  span.style.position='absolute'; span.style.borderRadius='50%'; span.style.transform='scale(0)';
+  span.style.animation='ripple .5s ease-out'; span.style.background='rgba(255,255,255,.5)'; span.style.pointerEvents='none';
   btn.appendChild(span); setTimeout(()=>span.remove(), 500);
 }
 
@@ -953,7 +934,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   // Charts controls
   ensureChartItemOptions();
   el("#chartItem").addEventListener("change", ()=> renderCharts());
-  el("#exportChartXLSXBtn").addEventListener("click", ()=>{ addRipple(event); exportChartXLSX(); });
+  el("#exportChartXLSXBtn").addEventListener("click", (event)=>{ addRipple(event); exportChartXLSX(); });
 
   el("#gotoStats").onclick=()=>{ 
     document.body.classList.add("mode-stats"); 
