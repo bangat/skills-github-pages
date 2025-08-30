@@ -45,6 +45,32 @@
   h1{font-size:20px;margin:10px 0 6px;display:flex;align-items:center;gap:10px;color:#0f172a}
   h1 label{color:#475569;font-weight:700}
 
+  /* ▷▷ 프리미엄 섹션 카드 */
+  .sectionCard{
+    position:relative;
+    padding:14px;
+    border-radius:20px;
+    background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.98));
+    box-shadow: 0 16px 44px rgba(15,23,42,.10), inset 0 1px 0 rgba(255,255,255,.7);
+    border:1px solid rgba(15,23,42,.06);
+  }
+  .sectionCard::before{
+    content:"";
+    position:absolute; inset:-1px;
+    border-radius:inherit;
+    padding:1px;
+    background:linear-gradient(180deg, rgba(37,99,235,.28), rgba(37,99,235,0) 60%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    pointer-events:none;
+  }
+  .sectionCard::after{
+    content:"";
+    position:absolute; top:10px; right:16px; width:90px; height:26px;
+    background:radial-gradient(120px 24px at 0% 0%, rgba(255,255,255,.8), transparent 60%);
+    filter:blur(2px); pointer-events:none;
+  }
+
   /* Tabs + slider */
   .tabs{
     width:100%;display:flex;gap:8px;margin:10px 0;background:#f2f5fb;border:1px solid var(--border);
@@ -58,15 +84,43 @@
     transition:transform .25s cubic-bezier(.2,.8,.2,1);
   }
 
-  table{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-2)}
+  table{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-2)}
   thead th{background:#f6f8fc;color:#1e293b;font-weight:800}
   th,td{border-bottom:1px solid var(--border);padding:12px;font-size:16px;text-align:center}
   td:first-child,th:first-child{text-align:left}
   .col-item{width:45%}.col-qty{width:55%}
 
   .qtyCell{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:nowrap}
-  .chip{height:36px;min-width:34px;padding:0 8px;border:1px solid #d8deea;background:#f3f6fb;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;color:#0f172a}
+
+  /* 입력 + 플립 오버레이 래퍼 */
+  .qtyInputWrap{ position:relative; display:inline-block; }
   .qtyCell input{width:56px;height:36px;text-align:center;font-size:15px;padding:0 6px;border:1px solid var(--border);border-radius:10px;background:#fff;color:#0f172a}
+
+  /* ▷ 숫자 플립(슬림) */
+  .flipOverlay{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    pointer-events:none; font-variant-numeric:tabular-nums; line-height:1;
+  }
+  .flipDigit{ display:inline-block; min-width:.65ch; text-align:center; opacity:0; }
+  .flipOverlay.run .flipDigit.changed{
+    animation:numFlip .28s cubic-bezier(.2,.8,.2,1);
+    opacity:1;
+  }
+  @keyframes numFlip{
+    0%{ transform:translateY(8px) rotateX(35deg); filter:blur(2px); opacity:0 }
+    100%{ transform:none; filter:none; opacity:1 }
+  }
+
+  .chip{height:36px;min-width:34px;padding:0 8px;border:1px solid #d8deea;background:#f3f6fb;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;color:#0f172a}
+  /* ▷ 칩 스프링 애니메이션 */
+  .chip.spring{ animation:springy .18s cubic-bezier(.17,.89,.32,1.28); }
+  @keyframes springy{
+    0%{transform:scale(1)}
+    40%{transform:scale(.96)}
+    70%{transform:scale(1.06)}
+    100%{transform:scale(1)}
+  }
+
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield}
 
@@ -149,6 +203,13 @@
   .chartGrid{display:grid; grid-template-columns:1fr; gap:12px}
   @media (min-width:720px){ .chartGrid{grid-template-columns:1fr 1fr} }
   #exportChartXLSXBtn{padding:10px 12px; border-radius:10px}
+
+  /* 모션 최소화 대응 */
+  @media (prefers-reduced-motion: reduce){
+    .chip.spring{ animation:none !important; }
+    .flipOverlay.run .flipDigit.changed{ animation:none !important; opacity:1; }
+    .tab-slider{ transition:none }
+  }
 </style>
 </head>
 <body>
@@ -173,25 +234,27 @@
 
 <main>
   <section id="sec-input">
-    <h1>
-      <span style="display:flex;gap:10px;align-items:center">
-        <label for="issueDate">출고일</label>
-        <input type="date" id="issueDate" />
-      </span>
-    </h1>
+    <div class="sectionCard"><!-- ▷ 프리미엄 카드 래퍼 -->
+      <h1>
+        <span style="display:flex;gap:10px;align-items:center">
+          <label for="issueDate">출고일</label>
+          <input type="date" id="issueDate" />
+        </span>
+      </h1>
 
-    <div class="tabs">
-      <div class="tab-slider" id="tabSlider" aria-hidden="true"></div>
-      <div class="tab active" data-cat="시트">시트</div>
-      <div class="tab" data-cat="환자복">환자복</div>
-      <div class="tab" data-cat="기타">기타</div>
+      <div class="tabs">
+        <div class="tab-slider" id="tabSlider" aria-hidden="true"></div>
+        <div class="tab active" data-cat="시트">시트</div>
+        <div class="tab" data-cat="환자복">환자복</div>
+        <div class="tab" data-cat="기타">기타</div>
+      </div>
+
+      <table id="inputTable" aria-label="품목 입력 표">
+        <colgroup><col class="col-item" /><col class="col-qty" /></colgroup>
+        <thead><tr><th class="item-name">품목</th><th>수량</th></tr></thead>
+        <tbody></tbody>
+      </table>
     </div>
-
-    <table id="inputTable" aria-label="품목 입력 표">
-      <colgroup><col class="col-item" /><col class="col-qty" /></colgroup>
-      <thead><tr><th class="item-name">품목</th><th>수량</th></tr></thead>
-      <tbody></tbody>
-    </table>
   </section>
 
   <section id="sec-stats" style="display:none">
@@ -217,7 +280,7 @@
     <div id="statsWrap"></div>
     <div id="statsSummary" class="summaryWrap"></div>
 
-    <!-- ▼ 신규: 품목별 증가추이 그래프 섹션 -->
+    <!-- ▼ 품목별 증가추이 그래프 -->
     <section id="statsCharts">
       <h2>품목별 사용량 증가추이</h2>
       <div class="card">
@@ -276,7 +339,6 @@
 
 <div class="footerBar">
   <div class="footerCol">
-    <!-- 초기 로드 즉시 비활성화를 보장하기 위해 disabled 추가 -->
     <button class="btn acc" id="saveAll" disabled>제출하기</button>
     <button class="btn" id="appDownloadBtn">어플리케이션 다운로드</button>
     <button class="btn" id="exportXLSXBtn">엑셀로 내려받기</button>
@@ -466,6 +528,40 @@ function refreshTotalUI(){
   }
 }
 
+/* ▷ 칩 스프링 핸들러 */
+function springOnce(btn){
+  try{
+    btn.classList.remove('spring');
+    // reflow to restart animation
+    // eslint-disable-next-line no-unused-expressions
+    btn.offsetWidth;
+    btn.classList.add('spring');
+  }catch(_){}
+}
+
+/* ▷ 숫자 플립(얇게 오버레이) */
+function showNumberFlip(inputEl, prev, next){
+  try{
+    if(prev===next) return;
+    const wrap = inputEl.closest('.qtyInputWrap');
+    if(!wrap) return;
+    const ov = document.createElement('div');
+    ov.className = 'flipOverlay';
+    const ps = String(prev), ns = String(next);
+    const len = Math.max(ps.length, ns.length);
+    const P = ps.padStart(len,' '), N = ns.padStart(len,' ');
+    for(let i=0;i<len;i++){
+      const sp = document.createElement('span');
+      sp.className = 'flipDigit' + (P[i]!==N[i] ? ' changed' : '');
+      sp.textContent = N[i];
+      ov.appendChild(sp);
+    }
+    wrap.appendChild(ov);
+    requestAnimationFrame(()=> ov.classList.add('run'));
+    setTimeout(()=> ov.remove(), 420);
+  }catch(_){}
+}
+
 /* Input table */
 function buildTable(){
   const tb=el("#inputTable tbody"); tb.innerHTML="";
@@ -476,7 +572,9 @@ function buildTable(){
       <td class="qtyCell">
         <button type="button" class="chip" data-delta="-5">−5</button>
         <button type="button" class="chip" data-delta="-1">−1</button>
-        <input type="number" inputmode="numeric" value="0" aria-label="${name} 수량" />
+        <span class="qtyInputWrap">
+          <input type="number" inputmode="numeric" value="0" aria-label="${name} 수량" />
+        </span>
         <button type="button" class="chip" data-delta="+1">＋1</button>
         <button type="button" class="chip" data-delta="+5">＋5</button>
       </td>`;
@@ -489,16 +587,18 @@ function buildTable(){
       const prev=parseInt(inp.dataset.prev||"0")||0;
       const cur=parseInt(inp.value||"0")||0;
       inp.value=String(cur); setDraftQty(name,cur); maybeBuzz(prev,cur); inp.dataset.prev=String(cur);
-      refreshTotalUI(); // ← 입력시 즉시 반영
+      showNumberFlip(inp, prev, cur);
+      refreshTotalUI();
     });
     tr.querySelectorAll("[data-delta]").forEach(btn=>{
-      btn.addEventListener('click', e=>{ addRipple(e); });
+      btn.addEventListener('click', e=>{ addRipple(e); springOnce(btn); });
       btn.onclick=()=>{
         const prev=parseInt(inp.dataset.prev||"0")||0;
         const v=(parseInt(inp.value||"0")||0)+parseInt(btn.dataset.delta,10);
         inp.value=v; setDraftQty(name,v); maybeBuzz(prev,v); inp.dataset.prev=String(v);
         playSnd("#btnClickSound");
-        refreshTotalUI(); // ← ± 버튼 클릭시 즉시 반영
+        showNumberFlip(inp, prev, v);
+        refreshTotalUI();
       };
     });
     tb.appendChild(tr);
@@ -510,7 +610,6 @@ function buildTable(){
     tb.appendChild(noteRow);
   }
 
-  // 테이블(탭/병동 변경 포함) 갱신 직후 상태 반영
   refreshTotalUI();
 }
 
@@ -538,8 +637,6 @@ async function saveAll(){
 
   const cleared={}; ALL_ITEMS.forEach(i=>cleared[i]=0); setDraft(cleared);
   Array.from(document.querySelectorAll("#inputTable tbody input")).forEach(inp=>{ inp.value="0"; inp.dataset.prev="0"; });
-
-  // 저장 후 합계/버튼 상태 재계산
   refreshTotalUI();
 
   playSnd("#submitSound");
@@ -617,14 +714,13 @@ function buildDailySeries(item, sStr, eStr, wardFilter){
   return { labels, values };
 }
 function buildDowSeries(values, labels){
-  const dnames = ["일","월","화","수","목","금","토"]; // Date.getDay(): 0=Sun
+  const dnames = ["일","월","화","수","목","금","토"];
   const sums = [0,0,0,0,0,0,0];
   labels.forEach((dstr, i)=>{
     const d = new Date(dstr+"T00:00:00");
-    const w = d.getDay(); // 0..6
+    const w = d.getDay();
     sums[w] += values[i];
   });
-  // reorder to Mon..Sun
   const order = [1,2,3,4,5,6,0];
   return { labels: order.map(i=>dnames[i]), values: order.map(i=>sums[i]) };
 }
@@ -644,7 +740,6 @@ function renderCharts(){
   const {labels,values} = buildDailySeries(item, s, e, ward);
   const {labels: dowLabels, values: dowValues} = buildDowSeries(values, labels);
 
-  // Line
   const lc = el("#lineChart").getContext("2d");
   if(lineChart) lineChart.destroy();
   lineChart = new Chart(lc, {
@@ -657,7 +752,6 @@ function renderCharts(){
     }
   });
 
-  // DOW bar
   const bc = el("#dowChart").getContext("2d");
   if(dowChart) dowChart.destroy();
   dowChart = new Chart(bc, {
@@ -685,7 +779,7 @@ async function renderStats(){
       let logsLS=[]; try{ logsLS=getLogs().filter(L=>L.ts>=sMs&&L.ts<eMs);}catch(_){}
       const uniq=new Map(); [...logsRT,...logsLS].forEach(L=>{ const k=[L.ts,L.ward,L.item,L.qty].join("|"); if(!uniq.has(k)) uniq.set(k,L); });
       const merged=Array.from(uniq.values());
-      __mergedCache = merged; // cache for charts
+      __mergedCache = merged;
 
       const {p,wards,items}=renderPivot(merged,s,e,wardFilter);
 
@@ -734,7 +828,7 @@ async function renderStats(){
   }
 }
 
-/* Export stats table to XLSX (existing) */
+/* Export stats table to XLSX */
 function exportXLSX(){
   const table=document.querySelector("#statsWrap table"); if(!table){ alert("통계 표가 없습니다."); return; }
   const s=el("#dateStart").value||"", e=el("#dateEnd").value||"", ward=el("#wardFilter").value||"전체";
@@ -770,10 +864,8 @@ function exportChartXLSX(){
   const {labels: dowLabels, values: dowValues} = buildDowSeries(values, labels);
 
   const wb = XLSX.utils.book_new();
-  // sheet 1: daily trend
   const ws1 = XLSX.utils.aoa_to_sheet([["날짜","수량"], ...labels.map((d,i)=>[d,values[i]])]);
   XLSX.utils.book_append_sheet(wb, ws1, "일자추이");
-  // sheet 2: weekday totals
   const ws2 = XLSX.utils.aoa_to_sheet([["요일","합계"], ...dowLabels.map((n,i)=>[n,dowValues[i]])]);
   XLSX.utils.book_append_sheet(wb, ws2, "요일합계");
   XLSX.writeFile(wb, `trend_${item}_${s}_to_${e}.xlsx`);
@@ -818,7 +910,6 @@ window.addEventListener("DOMContentLoaded",()=>{
   el("#dateEnd").value=`${yyyy}-${mm}-${dd}`;
 
   buildTable();
-  // 초기 진입시 합계 0이면 바로 비활성화 상태로
   refreshTotalUI();
 
   el("#saveAll").addEventListener('click', addRipple);
