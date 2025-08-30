@@ -4,6 +4,14 @@
 <meta charset="utf-8" />
 <meta http-equiv="Cache-Control" content="no-store" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="/linenward/manifest.json" />
+<meta name="theme-color" content="#2563eb" />
+
+<!-- iOS 전용 -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<link rel="apple-touch-icon" href="/linenward/icons/apple-touch-icon.png" />
+
 <title>린넨실 출고관리</title>
 <style>
   :root{
@@ -956,5 +964,67 @@ window.addEventListener("DOMContentLoaded",()=>{
   };
 });
 </script>
+
+  <script>
+let deferredPrompt = null;
+
+// SW 등록
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/linenward/sw.js")
+      .catch(err => console.warn("[SW] register failed:", err));
+  });
+}
+
+// 설치 프롬프트 잡기(안드/데스크톱 크롬)
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const b = document.getElementById("appDownloadBtn");
+  if (b) b.style.display = "block";
+});
+
+window.addEventListener("appinstalled", () => {
+  deferredPrompt = null;
+  const b = document.getElementById("appDownloadBtn");
+  if (b) b.style.display = "none";
+  // (선택) 토스트 등
+});
+
+function isIOS() {
+  const ua = navigator.userAgent || "";
+  const isTouchMac = /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
+  return /iPhone|iPad|iPod/.test(ua) || isTouchMac;
+}
+function isStandalone() {
+  return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches)
+      || (window.navigator.standalone === true);
+}
+
+const APK_FALLBACK = "https://github.com/bangat/linenward/releases/latest/download/WardLinen.apk";
+
+(function wireInstallButton(){
+  const btn = document.getElementById("appDownloadBtn");
+  if (!btn) return;
+  if (isStandalone()) { btn.style.display = "none"; return; }
+
+  btn.onclick = async (event) => {
+    if (deferredPrompt) {
+      try { deferredPrompt.prompt(); await deferredPrompt.userChoice; } catch(_) {}
+      deferredPrompt = null;
+      return;
+    }
+    if (isIOS()) {
+      // iOS 설치 안내 모달 열기 (이미 정의돼 있으면 그 함수 호출)
+      if (typeof openIOSInstallModal === "function") openIOSInstallModal();
+      else alert("Safari → 공유 → '홈 화면에 추가'로 설치하세요.");
+      return;
+    }
+    // 기타 브라우저는 APK 다운로드
+    window.location.href = APK_FALLBACK;
+  };
+})();
+</script>
+
 </body>
 </html>
