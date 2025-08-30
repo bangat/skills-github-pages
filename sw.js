@@ -1,9 +1,9 @@
 const CACHE = "linenward-v1";
-const ASSETS = [
-  "/linenward/",
-  "/linenward/index.html",
-  "/linenward/manifest.json"
-];
+ const ASSETS = [
+   "./",
+   "./index.html",
+   "./manifest.json"
+ ];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
@@ -24,3 +24,4 @@ self.addEventListener("fetch", e => {
     )
   );
 });
+
