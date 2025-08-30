@@ -276,7 +276,8 @@
 
 <div class="footerBar">
   <div class="footerCol">
-    <button class="btn acc" id="saveAll">제출하기</button>
+    <!-- 초기 로드 즉시 비활성화를 보장하기 위해 disabled 추가 -->
+    <button class="btn acc" id="saveAll" disabled>제출하기</button>
     <button class="btn" id="appDownloadBtn">어플리케이션 다운로드</button>
     <button class="btn" id="exportXLSXBtn">엑셀로 내려받기</button>
   </div>
@@ -449,6 +450,22 @@ function getDraft(){ try{ return JSON.parse(localStorage.getItem(LS.draft(state.
 function setDraft(o){ localStorage.setItem(LS.draft(state.ward), JSON.stringify(o||{})); }
 function setDraftQty(item,qty){ const d=getDraft(); d[item]=(parseInt(qty)||0); setDraft(d); }
 
+/* === 합계 & 버튼 활성화 === */
+function getCurrentTotal(){
+  const inputs = Array.from(document.querySelectorAll("#inputTable tbody input"));
+  return inputs.reduce((a,inp)=> a + (parseInt(inp.value)||0), 0);
+}
+function refreshTotalUI(){
+  const total = getCurrentTotal();
+  const badge = el("#totalBadge"); if (badge) badge.textContent = `총 ${total.toLocaleString()}개`;
+  const save = el("#saveAll");
+  if (save){
+    save.disabled = total===0;
+    save.style.opacity = total===0 ? .6 : 1;
+    save.textContent = total===0 ? "제출하기" : `제출하기 · 총 ${total.toLocaleString()}개`;
+  }
+}
+
 /* Input table */
 function buildTable(){
   const tb=el("#inputTable tbody"); tb.innerHTML="";
@@ -472,6 +489,7 @@ function buildTable(){
       const prev=parseInt(inp.dataset.prev||"0")||0;
       const cur=parseInt(inp.value||"0")||0;
       inp.value=String(cur); setDraftQty(name,cur); maybeBuzz(prev,cur); inp.dataset.prev=String(cur);
+      refreshTotalUI(); // ← 입력시 즉시 반영
     });
     tr.querySelectorAll("[data-delta]").forEach(btn=>{
       btn.addEventListener('click', e=>{ addRipple(e); });
@@ -480,6 +498,7 @@ function buildTable(){
         const v=(parseInt(inp.value||"0")||0)+parseInt(btn.dataset.delta,10);
         inp.value=v; setDraftQty(name,v); maybeBuzz(prev,v); inp.dataset.prev=String(v);
         playSnd("#btnClickSound");
+        refreshTotalUI(); // ← ± 버튼 클릭시 즉시 반영
       };
     });
     tb.appendChild(tr);
@@ -490,6 +509,9 @@ function buildTable(){
     noteRow.innerHTML=`<td colspan="2" style="text-align:left;padding:12px;font-size:14px;color:#64748b;">기타 : 중환의, 고관절, 양쪽끈, 양쪽고무줄</td>`;
     tb.appendChild(noteRow);
   }
+
+  // 테이블(탭/병동 변경 포함) 갱신 직후 상태 반영
+  refreshTotalUI();
 }
 
 /* Save */
@@ -516,6 +538,9 @@ async function saveAll(){
 
   const cleared={}; ALL_ITEMS.forEach(i=>cleared[i]=0); setDraft(cleared);
   Array.from(document.querySelectorAll("#inputTable tbody input")).forEach(inp=>{ inp.value="0"; inp.dataset.prev="0"; });
+
+  // 저장 후 합계/버튼 상태 재계산
+  refreshTotalUI();
 
   playSnd("#submitSound");
   openModal('#submitModal', '#smOk');
@@ -599,7 +624,7 @@ function buildDowSeries(values, labels){
     const w = d.getDay(); // 0..6
     sums[w] += values[i];
   });
-  // reorder to Mon..Sun as 요청: (월) (화) ... (일)
+  // reorder to Mon..Sun
   const order = [1,2,3,4,5,6,0];
   return { labels: order.map(i=>dnames[i]), values: order.map(i=>sums[i]) };
 }
@@ -644,8 +669,6 @@ function renderCharts(){
       scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
     }
   });
-
-  // 차트 영역이 의미 없을 때도 자리 유지 (요구사항)
 }
 
 /* === Stats render === */
@@ -703,10 +726,8 @@ async function renderStats(){
 
       shrinkBigNumbers(el("#statsWrap").querySelector("table"));
 
-      // 데이터 없다고 별도 안내는 숨김 유지(요청)
       el("#statsEmpty").style.display = "none";
 
-      // 차트 갱신
       ensureChartItemOptions();
       renderCharts();
     });
@@ -797,6 +818,8 @@ window.addEventListener("DOMContentLoaded",()=>{
   el("#dateEnd").value=`${yyyy}-${mm}-${dd}`;
 
   buildTable();
+  // 초기 진입시 합계 0이면 바로 비활성화 상태로
+  refreshTotalUI();
 
   el("#saveAll").addEventListener('click', addRipple);
   el("#saveAll").onclick=saveAll;
