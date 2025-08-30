@@ -455,7 +455,7 @@ const ITEMS={
   "환자복":["일반상의","일반하의","정형상의","정형하의"],
   "기타":["억제대","얼음포","기　타"]
 };
-const COLORED_ITEMS = new Set(["대시트","반시트","베갯잇","수건"]);
+const COLORED_ITEMS = new Set(["대시트","반시트","베갯잇","수　건"]);
 const ORTHO_ITEMS = new Set(["정형상의","정형하의"]);
 const ALL_ITEMS = Object.values(ITEMS).flat();
 const WARDS=["93","83","73","71","63","62","61","52","51","42","41","기타"];
@@ -564,7 +564,7 @@ function buildTable(){
   const tb=el("#inputTable tbody"); tb.innerHTML="";
   ITEMS[state.cat].forEach(name=>{
     const isOrtho = ORTHO_ITEMS.has(name);
-    const isTwoChar = (name==="수건" || name==="기타"); // 2글자 폭 보정
+    const isTwoChar = (name==="수　건" || name==="기　타");
     const tr=document.createElement("tr");
     tr.className = isOrtho ? "kind-ortho" : "";
     tr.innerHTML=`
