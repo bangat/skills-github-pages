@@ -25,16 +25,20 @@
   body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
 
 /* === 상단 3탭 네비 (NEW) === */
+/* 동일 위치, 딱 한 줄 추가해서 입력탭과 컨테이너 사이 간격 만들기 */
 .topNav{
   position:sticky; top:0; z-index:90;
-  /* 유리 느낌 + 웹 앱바 */
   background:rgba(255,255,255,.65);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border-bottom:1px solid rgba(15,23,42,.08);
   box-shadow: 0 6px 20px rgba(2, 6, 23, .06);
   padding:8px 12px; min-height:64px;
+  margin-bottom:10px;   /* ← 여기 숫자 8~14px 사이로 취향 조절 */
 }
+
+
+
 .topNav .nav{
   max-width:980px; margin:0 auto; position:relative;
   display:grid; grid-template-columns:repeat(3,1fr);
@@ -83,7 +87,23 @@
   label.head{font-weight:800;color:#334155;margin-right:6px;white-space:nowrap}
   select,input[type=date]{padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:var(--r-md);background:#fff;color:var(--text);transition:border-color .12s,box-shadow .12s}
   select:focus,input[type=date]:focus{outline:none;border-color:var(--accent);box-shadow:var(--focus)}
-  #wardSelect{width:170px}
+  /* 고정폭 제거 → 카드 그리드 너비 100%로 맞춤 */
+#wardSelect{ width:100% !important; }
+
+/* 폼 2열(입력영역)에서 내장 최소폭으로 삐져나오는 현상 방지 */
+.formRow{ grid-template-columns: var(--label-w) 1fr; }
+.formRow > *:nth-child(2){ min-width:0; }
+
+/* 두 컨트롤 공통 스타일(이미 있다면 유지) */
+.formRow select,
+.formRow input[type="date"]{
+  width:100%;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  transition:border-color .12s, box-shadow .12s;
+}
+
 
   button{border:0;border-radius:12px;padding:10px 14px;font-size:15px;font-weight:700;cursor:pointer;transition:transform .12s,filter .12s; position:relative; overflow:hidden}
   .btn{background:#eef2f7;color:#1f2a44;border:1px solid var(--border);box-shadow:var(--shadow-1)}
@@ -285,6 +305,59 @@
   .confirmTotal strong{font-size:18px}
 
   .modalCard{width:min(92vw,560px)}
+
+/* 기존 상단 header 숨김 */
+header{ display:none !important; }
+
+/* 카드 상단 폼 헤더 */
+.formHeader{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-bottom:10px; /* 탭과 간격 */
+}
+
+/* 라벨 고정폭 그리드 → 폼 시작선(gutter) 정렬 */
+.formRow{
+  --label-w: 76px;              /* 라벨 폭 */
+  display:grid;
+  grid-template-columns: var(--label-w) 1fr;
+  align-items:center;
+  column-gap:10px;
+}
+
+/* 라벨 */
+.fLabel{
+  font-weight:800;
+  color:#334155;
+  white-space:nowrap;
+}
+
+/* 인풋/셀렉트(카드 분위기와 통일) */
+.formRow select,
+.formRow input[type="date"]{
+  width:100%;
+  padding:10px 12px;
+  font-size:16px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#fff;
+  color:var(--text);
+  transition:border-color .12s, box-shadow .12s;
+}
+.formRow select:focus,
+.formRow input[type="date"]:focus{
+  outline:none;
+  border-color:var(--accent);
+  box-shadow:var(--focus);
+}
+
+/* 모바일 라벨 폭 살짝 축소 */
+@media (max-width:430px){
+  .formRow{ --label-w: 68px; }
+}
+
+
 </style>
 </head>
 <body>
@@ -299,42 +372,43 @@
   </div>
 </div>
 
-<header>
-  <div class="left">
-    <label class="head" for="wardSelect">병동명</label>
-    <select id="wardSelect">
-      <option value="">선택…</option>
-      <option>93</option><option>83</option><option>73</option><option>71</option>
-      <option>63</option><option>62</option><option>61</option>
-      <option>52</option><option>51</option><option>42</option><option>41</option>
-      <option>기타</option>
-    </select>
-  </div>
-  <div class="right"><!-- 통계 버튼 제거됨 --></div>
-</header>
+<section id="sec-input">
+  <div class="sectionCard">
 
-<main>
-  <!-- 입력탭 -->
-  <section id="sec-input">
-    <div class="sectionCard">
-      <h1 class="fieldRow">
-        <span class="lab">출고일</span>
-        <input type="date" id="issueDate" />
-      </h1>
-
-      <div class="tabs">
-        <div class="tab-slider" id="tabSlider" aria-hidden="true"></div>
-        <div class="tab active" data-cat="시트">시트</div>
-        <div class="tab" data-cat="환자복">환자복</div>
-        <div class="tab" data-cat="기타">기타</div>
+    <!-- 폼 헤더: 병동명 → 출고일 (같은 시작선에 정렬) -->
+    <div class="formHeader">
+      <div class="formRow">
+        <label class="fLabel" for="wardSelect">병동명</label>
+        <select id="wardSelect">
+          <option value="">선택…</option>
+          <option>93</option><option>83</option><option>73</option><option>71</option>
+          <option>63</option><option>62</option><option>61</option>
+          <option>52</option><option>51</option><option>42</option><option>41</option>
+          <option>기타</option><option>린넨실</option>
+        </select>
       </div>
 
-      <table id="inputTable" aria-label="품목 입력 표">
-        <colgroup><col class="col-item" /><col class="col-qty" /></colgroup>
-        <thead><tr><th class="item-name">품목</th><th>수량</th></tr></thead>
-        <tbody></tbody>
-      </table>
+      <div class="formRow">
+        <label class="fLabel" for="issueDate">출고일</label>
+        <input type="date" id="issueDate" />
+      </div>
     </div>
+
+    <!-- (기존 h1.fieldRow 블록은 삭제) -->
+    <!-- ↓ 기존 탭/테이블 그대로 유지 -->
+    <div class="tabs">
+      <div class="tab-slider" id="tabSlider" aria-hidden="true"></div>
+      <div class="tab active" data-cat="시트">시트</div>
+      <div class="tab" data-cat="환자복">환자복</div>
+      <div class="tab" data-cat="기타">기타</div>
+    </div>
+
+    <table id="inputTable" aria-label="품목 입력 표">
+      <colgroup><col class="col-item" /><col class="col-qty" /></colgroup>
+      <thead><tr><th class="item-name">품목</th><th>수량</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
   </section>
 
   <!-- 통계탭 -->
