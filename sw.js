@@ -17,7 +17,7 @@ messaging.onBackgroundMessage((payload) => {
   const n = payload.notification || {};
   self.registration.showNotification(n.title || "알림", {
     body: n.body || "",
-    icon: n.icon || "/icons/apple-touch-icon.png",
+    icon: "/icons/icon-192.png",
     data: payload.data || {}
   });
 });
@@ -93,6 +93,7 @@ self.addEventListener('fetch', (event) => {
   }
   event.respondWith(handleAsset(req));
 });
+
 
 
 
