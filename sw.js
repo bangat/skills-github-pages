@@ -1,5 +1,5 @@
 // sw.js
-const SW_VERSION   = 'v2025-08-31-02';     // ✅ 배포마다 이 문자열만 바꿔줘
+const SW_VERSION   = 'v2025-08-31-03';     // ✅ 배포마다 이 문자열만 바꿔줘
 const STATIC_CACHE = `static-${SW_VERSION}`;
 
 // 필요하면 여기에 선캐시할 파일 추가
@@ -61,5 +61,6 @@ self.addEventListener('fetch', (event) => {
   }
   event.respondWith(handleAsset(req));
 });
+
 
 
