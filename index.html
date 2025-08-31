@@ -388,6 +388,10 @@
 <audio id="btnClickSound" preload="auto">
   <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/버튼클릭.mp3" type="audio/mpeg" />
 </audio>
+  <audio id="warnSound" preload="auto">
+  <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/경고.mp3" type="audio/mpeg" />
+</audio>
+
 
 <!-- XLSX -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -500,7 +504,7 @@ function unlockAudioOnce(){
   if(__audioUnlocked) return;
   __audioUnlocked=true;
   try{ getAC().resume(); }catch(_){}
-  ["#submitSound","#tabSound","#btnClickSound"].forEach(sel=>{
+  ["#submitSound","#tabSound","#btnClickSound","#warnSound"].forEach(sel=>{
     const a=el(sel); if(!a) return;
     try{ const p=a.play(); if(p?.then) p.then(()=>{ a.pause(); a.currentTime=0; }).catch(()=>{}); else { a.pause(); a.currentTime=0; } }catch(_){}
   });
@@ -528,7 +532,18 @@ function playSnd(sel){
 
 /* Warn flash */
 function flashWarn(){ try{ if(navigator.vibrate){ navigator.vibrate([120,80,120,80,120]); } }catch(e){} const ov=document.createElement('div'); ov.id='flashOverlay'; document.body.appendChild(ov); ov.addEventListener('animationend', ()=>{ ov.parentNode && ov.parentNode.removeChild(ov); }); }
-function maybeBuzz(prev,next){ const p=Number(prev)||0, n=Number(next)||0; if(p<16 && n>=16){ flashWarn(); } }
+function maybeBuzz(prev,next){
+  const p = Number(prev)||0, n = Number(next)||0;
+
+  // 16개→이상: 기존 점멸(진동+빨간 플래시)
+  if (p < 16 && n >= 16) { flashWarn(); }
+
+  // 20개→이상: 경고음 추가
+  if (p < 20 && n >= 20) {
+    try { playSnd("#warnSound"); } catch(_) {}
+  }
+}
+
 
 /* Date helpers */
 function rangeMsByDates(startStr,endStr){
