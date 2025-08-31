@@ -150,15 +150,51 @@
   #flashOverlay{position:fixed; inset:0; background:#ef4444; opacity:0; pointer-events:none; animation: flashOverlay3 .24s ease-in-out 3; z-index:9999}
   @keyframes flashOverlay3{0%{opacity:0}50%{opacity:.30}100%{opacity:0}}
 
-  .modal-open { overflow:hidden; }
-  .modalOverlay{ position:fixed; inset:0; display:none; background:rgba(15,23,42,.5); z-index:10000; }
-  .modalCard{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:min(92vw,520px); background:#fff; color:#0f172a; border-radius:16px; box-shadow:0 20px 60px rgba(15,23,42,.25); overflow:hidden; }
-  .modalHead{ padding:16px 18px; font-weight:800; font-size:18px; border-bottom:1px solid var(--border); }
-  .modalBody{ padding:16px 18px; font-size:14px; line-height:1.5; color:#475569; }
-  .modalActions{ display:flex; gap:10px; padding:14px 16px; background:#f8fafc; border-top:1px solid var(--border); }
-  .modalActions .btn{ flex:1; }
-  .modalActions .btn.cancel{ background:#eef2f7; color:#1f2a44; border:1px solid var(--border); }
-  .modalActions .btn.primary{ background:linear-gradient(180deg,#4f83ff,#2563eb); color:#fff; border:1px solid #2856c7; }
+.modal-open { overflow:hidden; }
+.modalOverlay{
+  position:fixed; inset:0; display:none;
+  background:rgba(15,23,42,.5); z-index:10000;
+}
+
+/* === 카드 전체 레이아웃 === */
+.modalCard{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:min(92vw,520px);
+  max-height:88vh;                 /* 화면 88% 이상 안 넘어가게 */
+  display:flex; flex-direction:column; /* 세로 플렉스 */
+  background:#fff; color:#0f172a;
+  border-radius:16px; box-shadow:0 20px 60px rgba(15,23,42,.25);
+  overflow:hidden;
+}
+
+.modalHead{
+  padding:16px 18px; font-weight:800; font-size:18px;
+  border-bottom:1px solid var(--border);
+  flex:0 0 auto; /* 높이 고정 */
+}
+
+.modalBody{
+  padding:16px 18px; font-size:14px; line-height:1.5; color:#475569;
+  flex:1 1 auto;       /* 남은 공간 채우기 */
+  min-height:0;        /* 스크롤 가능 핵심 */
+  overflow:auto;       /* 내용 많으면 본문만 스크롤 */
+  max-height:50vh;     /* 절반쯤부터 스크롤 */
+}
+
+.modalActions{
+  display:flex; gap:10px; padding:14px 16px;
+  background:#f8fafc; border-top:1px solid var(--border);
+  flex:0 0 auto; /* 하단 고정 */
+}
+.modalActions .btn{ flex:1; }
+.modalActions .btn.cancel{
+  background:#eef2f7; color:#1f2a44; border:1px solid var(--border);
+}
+.modalActions .btn.primary{
+  background:linear-gradient(180deg,#4f83ff,#2563eb);
+  color:#fff; border:1px solid #2856c7;
+}
+
 
   /* Toast */
   .toast{
@@ -767,6 +803,7 @@ function buildTable(){
 }
 
 // 모달 버튼 이벤트
+// 모달 버튼 이벤트
 document.addEventListener("click", (e) => {
   const id = (e.target && e.target.id) || "";
   if (id === "csCancel") {
@@ -774,10 +811,30 @@ document.addEventListener("click", (e) => {
   }
   if (id === "csOk") {
     if (typeof closeModal === "function") closeModal("#confirmModal");
-    // 실제 저장 실행
     saveAll();
   }
 });
+
+/* ===== 여기 아래에 추가 ===== */
+function sizeModalBody(modalSel, fraction=0.5){
+  const modal  = document.querySelector(modalSel);
+  if (!modal) return;
+  const card   = modal.querySelector('.modalCard');
+  const head   = modal.querySelector('.modalHead');
+  const body   = modal.querySelector('.modalBody');
+  const acts   = modal.querySelector('.modalActions');
+  const vh     = window.innerHeight || document.documentElement.clientHeight || 640;
+
+  if (card) card.style.maxHeight = Math.round(vh * 0.88) + 'px';
+
+  if (body){
+    const reserve = (head?.offsetHeight||0) + (acts?.offsetHeight||0);
+    const target  = Math.max(120, Math.floor(vh * fraction) - reserve);
+    body.style.maxHeight = target + 'px';
+    body.style.overflow  = 'auto';
+  }
+}
+
 
 
 /* Save */
@@ -1086,6 +1143,10 @@ window.addEventListener("DOMContentLoaded",()=>{
   window.addEventListener('resize', fitCardToFooter);
   window.addEventListener('orientationchange', fitCardToFooter);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', fitCardToFooter);
+    // ✅ 모달 본문 스크롤 높이 재계산(회전/리사이즈 대응)
+  window.addEventListener('resize', ()=> sizeModalBody('#confirmModal', 0.5));
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', ()=> sizeModalBody('#confirmModal', 0.5));
+
 
   el("#saveAll").addEventListener('click', addRipple);
  el("#saveAll").onclick = (e) => {
@@ -1235,8 +1296,12 @@ function openIOSInstallModal() {
 function openPwaInstallModal() {
   // 항상 우리 모달만 먼저 띄움 (즉시 prompt 폴백 제거)
   if (typeof openModal === "function") {
-    openModal('#pwaInstallModal', '#piConfirm');
+    openModal("#pwaInstallModal", "#piConfirm");  // ✅ 대상 수정
+    sizeModalBody("#pwaInstallModal", 0.5);       // ✅ 이 모달도 높이 맞춤
   }
+}
+
+
 }
 
 /** 커스텀 모달 닫기 */
@@ -1293,6 +1358,7 @@ if (id === "piCancel") {             // 나중에
   }
 });
 
+  
 /* 8) 메인 버튼: 상황별 흐름 */
 (function wireInstallButton(){
   const btn = document.getElementById("appDownloadBtn");
