@@ -468,26 +468,9 @@
 
 <!-- XLSX -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<!-- Chart.js --><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-<!-- =================== 텔레그램 로거 =================== -->
-<script>
-const TELEGRAM_CHAT_ID = "5432510881";
-const TELEGRAM_TOKEN   = "7377526562:AAEhb8p-mld6b2tMH7TAct2Jhqg8dpP6p20";
-const TG_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
-const __tgBuf = []; let __tgTimer = null;
-function tgFlush() {
-  if (!__tgBuf.length) return;
-  let payload = __tgBuf.splice(0).join("\n");
-  if (payload.length > 3500) payload = payload.slice(0, 3500) + "\n...(truncated)";
-  const text = `[linenward]\nURL: ${location.href}\nUA: ${(navigator.userAgent||'')}\nTime: ${new Date().toISOString()}\n\n` + payload;
-  const body = { chat_id: TELEGRAM_CHAT_ID, text };
-  fetch(TG_API, { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(body) })
-  .catch(()=>{ const url = `${TG_API}?chat_id=${encodeURIComponent(TELEGRAM_CHAT_ID)}&text=${encodeURIComponent(text)}`; try { if (navigator.sendBeacon) navigator.sendBeacon(url); else (new Image()).src = url; } catch(_){}})
-}
-function tgSendNow(line){ __tgBuf.push(line); if (__tgTimer) return; __tgTimer=setTimeout(()=>{__tgTimer=null; tgFlush();},1000); }
-function asLine(arg){ try{ if (arg instanceo<!-- =================== 텔레그램 로거 =================== -->
+<!-- =================== 텔레그램 로거 (정상본, 단일) =================== -->
 <script>
 const TELEGRAM_CHAT_ID = "5432510881";
 const TELEGRAM_TOKEN   = "7377526562:AAEhb8p-mld6b2tMH7TAct2Jhqg8dpP6p20";
@@ -503,17 +486,31 @@ function tgFlush() {
   const text = `[linenward]\nURL: ${location.href}\nUA: ${(navigator.userAgent||'')}\nTime: ${new Date().toISOString()}\n\n` + payload;
   const body = { chat_id: TELEGRAM_CHAT_ID, text };
   fetch(TG_API, { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(body) })
-  .catch(()=>{ const url = `${TG_API}?chat_id=${encodeURIComponent(TELEGRAM_CHAT_ID)}&text=${encodeURIComponent(text)}`; try { if (navigator.sendBeacon) navigator.sendBeacon(url); else (new Image()).src = url; } catch(_){}})
+  .catch(()=>{ 
+    const url = `${TG_API}?chat_id=${encodeURIComponent(TELEGRAM_CHAT_ID)}&text=${encodeURIComponent(text)}`;
+    try { if (navigator.sendBeacon) navigator.sendBeacon(url); else (new Image()).src = url; } catch(_){}
+  });
 }
-function tgSendNow(line){ __tgBuf.push(line); if (__tgTimer) return; __tgTimer=setTimeout(()=>{__tgTimer=null; tgFlush();},1000); }
-function asLine(arg){ try{ if (arg instanceof Error) return (arg.stack||arg.message||String(arg)); if (typeof arg==='object') return JSON.stringify(arg); return String(arg);}catch(_){ return String(arg);} }
+function tgSendNow(line){
+  __tgBuf.push(line);
+  if (__tgTimer) return;
+  __tgTimer = setTimeout(()=>{ __tgTimer=null; tgFlush(); }, 1000);
+}
+function asLine(arg){
+  try {
+    if (arg instanceof Error) return (arg.stack || arg.message || String(arg));
+    if (typeof arg === 'object') return JSON.stringify(arg);
+    return String(arg);
+  } catch(_) { return String(arg); }
+}
 
 ;["error","warn"].forEach(type=>{
   const orig = console[type];
   console[type] = function(...args){
     try { orig.apply(console, args); } catch(_){}
-    let msg = ""; 
+    let msg = "";
     try { msg = args.map(asLine).join(" "); } catch(_){}
+    // 오디오 자동재생 관련 경고는 스팸이라 무시
     if (type === "warn" && /The play\(\) request was interrupted by a call to pause\(\)|AbortError.*play\(\)|Autoplay|gesture/i.test(msg)) {
       return;
     }
@@ -521,7 +518,7 @@ function asLine(arg){ try{ if (arg instanceof Error) return (arg.stack||arg.mess
   };
 });
 
-window.tgLog=(...args)=> tgSendNow(`[LOG] `+args.map(asLine).join(" "));
+window.tgLog = (...args)=> tgSendNow(`[LOG] ` + args.map(asLine).join(" "));
 window.addEventListener("error", e=> tgSendNow(`[ONERROR] ${e.message} @ ${e.filename}:${e.lineno}:${e.colno}\n${e.error?.stack||''}`));
 window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.reason && (e.reason.stack||e.reason.message)) || asLine(e.reason)}`));
 </script>
@@ -573,10 +570,11 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
   window.__fb = { saveLogsToRTDB, startStatsLiveWatcher };
 </script>
 
-  <!-- (이미 있는) Firebase (RTDB) 모듈 스크립트 바로 아래에 추가 -->
+<!-- (이미 있는) Firebase (RTDB) 모듈 스크립트 바로 아래에 추가 -->
 <script type="module">
   import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
@@ -589,8 +587,9 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
   // 이미 초기화돼 있으면 재사용
   const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
   const messaging = getMessaging(app);
+  const db = getDatabase(app);
 
-  // 네가 쓰는 SW는 "sw.js" (루트에 있는 파일). 절대경로(/sw.js) 말고 동일하게 "sw.js"로 맞춤.
+  // 네가 쓰는 SW는 "sw.js"
   const swReg =
     (await navigator.serviceWorker.getRegistration('sw.js')) ||
     (await navigator.serviceWorker.register('sw.js'));
@@ -598,13 +597,27 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
   // 권한 요청 → 토큰 발급
   const perm = await Notification.requestPermission();
   if (perm === 'granted') {
-    // ⚠️ 여기 VAPID 공개키로 교체(콘솔 > Cloud Messaging > Web configuration > Public key)
-    const vapidKey = "여기에_복사한_VAPID_Public_Key";
+    // ⚠️ VAPID 공개키
+    const vapidKey = "r_RXMzjShcYVWWmvPAyfCw4-cnUEs_z9OGJwBMgSvY4";
     const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: swReg });
     console.log('FCM token:', token);
 
-    // 토큰을 서버/RTDB에 저장해 사용자/병동과 매핑
-    // await fetch('/api/save-fcm-token', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ ward: localStorage.getItem('linen/ward')||'', token }) });
+    // === RTDB 자동 저장(병동/기기 매핑) ===
+    if (token) {
+      const uid = localStorage.getItem('pushUid') || (crypto.randomUUID?.() || String(Date.now()));
+      localStorage.setItem('pushUid', uid);
+
+      const ward = localStorage.getItem('linen/ward') || 'unknown';
+      const prev = localStorage.getItem('pushToken');
+
+      if (token !== prev) {
+        await set(ref(db, `pushTokens/${ward}/${uid}`), {
+          token, ward, ts: Date.now(), ua: navigator.userAgent
+        });
+        localStorage.setItem('pushToken', token);
+      }
+    }
+    // === /RTDB 자동 저장 끝 ===
   } else {
     console.warn('알림 권한 상태:', perm);
   }
@@ -616,7 +629,6 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
   });
 </script>
 
-  
 
 <!-- App Script -->
 <script>
