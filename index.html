@@ -595,7 +595,12 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
     (await navigator.serviceWorker.register('sw.js'));
 
   // 권한 요청 → 토큰 발급
-  const perm = await Notification.requestPermission();
+  let perm = 'denied';
+try {
+  perm = (typeof Notification !== 'undefined' && Notification.requestPermission)
+    ? await Notification.requestPermission()
+    : 'denied';
+} catch { perm = 'denied'; }
   if (perm === 'granted') {
     // ⚠️ VAPID 공개키
     const vapidKey = "r_RXMzjShcYVWWmvPAyfCw4-cnUEs_z9OGJwBMgSvY4";
