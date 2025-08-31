@@ -573,6 +573,51 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
   window.__fb = { saveLogsToRTDB, startStatsLiveWatcher };
 </script>
 
+  <!-- (이미 있는) Firebase (RTDB) 모듈 스크립트 바로 아래에 추가 -->
+<script type="module">
+  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
+    authDomain: "hallymlinen.firebaseapp.com",
+    projectId: "hallymlinen",
+    messagingSenderId: "867775830688",
+    appId: "1:867775830688:web:cef3ed4e70ae9818f347c5"
+  };
+
+  // 이미 초기화돼 있으면 재사용
+  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+  const messaging = getMessaging(app);
+
+  // 네가 쓰는 SW는 "sw.js" (루트에 있는 파일). 절대경로(/sw.js) 말고 동일하게 "sw.js"로 맞춤.
+  const swReg =
+    (await navigator.serviceWorker.getRegistration('sw.js')) ||
+    (await navigator.serviceWorker.register('sw.js'));
+
+  // 권한 요청 → 토큰 발급
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    // ⚠️ 여기 VAPID 공개키로 교체(콘솔 > Cloud Messaging > Web configuration > Public key)
+    const vapidKey = "여기에_복사한_VAPID_Public_Key";
+    const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: swReg });
+    console.log('FCM token:', token);
+
+    // 토큰을 서버/RTDB에 저장해 사용자/병동과 매핑
+    // await fetch('/api/save-fcm-token', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ ward: localStorage.getItem('linen/ward')||'', token }) });
+  } else {
+    console.warn('알림 권한 상태:', perm);
+  }
+
+  // 포그라운드 수신
+  onMessage(messaging, (payload) => {
+    console.log('foreground push:', payload);
+    // 필요하면 토스트/배지 갱신
+  });
+</script>
+
+  
+
 <!-- App Script -->
 <script>
 const REPO_SLUG = "bangat/linenward";
