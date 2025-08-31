@@ -487,31 +487,46 @@ function tgFlush() {
   .catch(()=>{ const url = `${TG_API}?chat_id=${encodeURIComponent(TELEGRAM_CHAT_ID)}&text=${encodeURIComponent(text)}`; try { if (navigator.sendBeacon) navigator.sendBeacon(url); else (new Image()).src = url; } catch(_){}})
 }
 function tgSendNow(line){ __tgBuf.push(line); if (__tgTimer) return; __tgTimer=setTimeout(()=>{__tgTimer=null; tgFlush();},1000); }
+function asLine(arg){ try{ if (arg instanceo<!-- =================== 텔레그램 로거 =================== -->
+<script>
+const TELEGRAM_CHAT_ID = "5432510881";
+const TELEGRAM_TOKEN   = "7377526562:AAEhb8p-mld6b2tMH7TAct2Jhqg8dpP6p20";
+const TG_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+
+const __tgBuf = [];
+let __tgTimer = null;
+
+function tgFlush() {
+  if (!__tgBuf.length) return;
+  let payload = __tgBuf.splice(0).join("\n");
+  if (payload.length > 3500) payload = payload.slice(0, 3500) + "\n...(truncated)";
+  const text = `[linenward]\nURL: ${location.href}\nUA: ${(navigator.userAgent||'')}\nTime: ${new Date().toISOString()}\n\n` + payload;
+  const body = { chat_id: TELEGRAM_CHAT_ID, text };
+  fetch(TG_API, { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(body) })
+  .catch(()=>{ const url = `${TG_API}?chat_id=${encodeURIComponent(TELEGRAM_CHAT_ID)}&text=${encodeURIComponent(text)}`; try { if (navigator.sendBeacon) navigator.sendBeacon(url); else (new Image()).src = url; } catch(_){}})
+}
+function tgSendNow(line){ __tgBuf.push(line); if (__tgTimer) return; __tgTimer=setTimeout(()=>{__tgTimer=null; tgFlush();},1000); }
 function asLine(arg){ try{ if (arg instanceof Error) return (arg.stack||arg.message||String(arg)); if (typeof arg==='object') return JSON.stringify(arg); return String(arg);}catch(_){ return String(arg);} }
+
 ;["error","warn"].forEach(type=>{
   const orig = console[type];
   console[type] = function(...args){
-    // 원래 콘솔엔 그대로 찍고
     try { orig.apply(console, args); } catch(_){}
-
-    // 메시지 문자열로 병합
     let msg = ""; 
     try { msg = args.map(asLine).join(" "); } catch(_){}
-
-    // ✅ 미디어 재생 관련 경고는 TG 전송 제외
     if (type === "warn" && /The play\(\) request was interrupted by a call to pause\(\)|AbortError.*play\(\)|Autoplay|gesture/i.test(msg)) {
       return;
     }
-
     try { tgSendNow(`[${type.toUpperCase()}] ${msg}`); } catch(_){}
   };
 });
-try{ tgSendNow(`[${type.toUpperCase()}] `+args.map(asLine).join(" ")); }catch(_){ } };});
+
 window.tgLog=(...args)=> tgSendNow(`[LOG] `+args.map(asLine).join(" "));
 window.addEventListener("error", e=> tgSendNow(`[ONERROR] ${e.message} @ ${e.filename}:${e.lineno}:${e.colno}\n${e.error?.stack||''}`));
 window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.reason && (e.reason.stack||e.reason.message)) || asLine(e.reason)}`));
 </script>
 <!-- =================== /텔레그램 로거 =================== -->
+
 
 <!-- Firebase (RTDB) -->
 <script type="module">
@@ -1312,12 +1327,12 @@ function openIOSInstallModal() {
 }
 /** PWA 설치 유도 커스텀 모달(없으면 즉시 prompt) */
 function openPwaInstallModal() {
-  // 항상 우리 모달만 먼저 띄움 (즉시 prompt 폴백 제거)
   if (typeof openModal === "function") {
-    openModal("#pwaInstallModal", "#piConfirm");  // ✅ 대상 수정
-    sizeModalBody("#pwaInstallModal", 0.5);       // ✅ 이 모달도 높이 맞춤
+    openModal("#pwaInstallModal", "#piConfirm");
+    sizeModalBody("#pwaInstallModal", 0.5);
   }
 }
+
 
 
 
