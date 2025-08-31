@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="Cache-Control" content="no-store" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#2563eb" />
+<title>방명록 · 실시간</title>
+<style>
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --accent:#2563eb; --muted:#5b677a; --text:#0f172a; --border:#e6eaf2;
+    --r-lg:16px; --r-md:12px; --navH:56px;
+    --shadow-1:0 4px 16px rgba(15,23,42,.08); --shadow-2:0 10px 30px rgba(15,23,42,.10);
+    --focus:0 0 0 2px rgba(37,99,235,.22),0 0 0 6px rgba(37,99,235,.1);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;-webkit-text-size-adjust:100%}
+  body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
+
+  /* 상단바 */
+  .topBar{
+    position:sticky; top:0; z-index:80;
+    background:rgba(255,255,255,.86); backdrop-filter:saturate(180%) blur(10px);
+    border-bottom:1px solid var(--border);
+  }
+  .topBar .wrap{ max-width:980px; margin:0 auto; padding:10px 12px; display:flex; align-items:center; gap:8px; }
+  .backBtn{ display:inline-grid; place-items:center; width:36px; height:36px; border-radius:10px; border:1px solid var(--border); background:#fff; box-shadow:var(--shadow-1); cursor:pointer; }
+  .title{ font-weight:900; font-size:18px; letter-spacing:-.2px; }
+  .sender{
+    margin-left:auto; font-size:13px; color:#475569; display:flex; align-items:center; gap:6px;
+    background:#fff; border:1px solid var(--border); padding:6px 8px; border-radius:10px;
+  }
+  .sender .chip{ font-weight:800; color:#0b3fb8; }
+  .sender a{ color:#64748b; text-underline-offset:2px; }
+
+  /* 본문 */
+  main{ max-width:980px; margin:0 auto; padding:10px 12px calc(100px + env(safe-area-inset-bottom)); }
+  .panel{
+    background:#fff; border:1px solid rgba(15,23,42,.06); border-radius:18px; box-shadow:0 16px 44px rgba(15,23,42,.10);
+    min-height:50vh; display:flex; flex-direction:column; overflow:hidden;
+  }
+
+  /* 메시지 리스트 */
+  .chatScroll{ flex:1; min-height:300px; overflow:auto; padding:12px; background:
+    linear-gradient(#fff,#fff) padding-box,
+    linear-gradient(180deg,rgba(37,99,235,.06),rgba(37,99,235,0)) border-box;
+  }
+  .list{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px; }
+  .msg{
+    background:#f8fafc; border:1px solid var(--border); border-radius:14px; padding:10px 12px;
+    box-shadow:0 6px 20px rgba(15,23,42,.06);
+  }
+  .msg .line{ font-size:15px; line-height:1.35; }
+  .msg .from{ font-weight:900; color:#0b3fb8; white-space:nowrap; }
+  .msg .text{ white-space:pre-wrap; word-break:break-word; }
+  .msg .meta{ margin-top:6px; font-size:12px; color:#64748b; }
+
+  .daySep{ text-align:center; margin:6px 0 2px; }
+  .daySep .badge{
+    display:inline-block; font-size:12px; color:#475569; background:#eef2f7; border:1px solid var(--border);
+    padding:4px 10px; border-radius:999px; box-shadow:var(--shadow-1);
+  }
+
+  /* 입력 박스(하단 고정) */
+  .inputBar{
+    position:fixed; left:0; right:0; bottom:0; z-index:60; background:#fff; border-top:1px solid var(--border);
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  }
+  .inputWrap{ max-width:980px; margin:0 auto; display:flex; gap:8px; }
+  .textbox{
+    flex:1; min-height:44px; max-height:140px; padding:10px 12px; border:1px solid var(--border); border-radius:12px;
+    font-size:15px; resize:vertical; outline:none; background:#fff; color:var(--text);
+  }
+  .textbox:focus{ border-color:var(--accent); box-shadow:var(--focus); }
+  .sendBtn{
+    flex:0 0 auto; padding:0 16px; border:none; border-radius:12px; font-weight:900; font-size:15px; cursor:pointer;
+    background:linear-gradient(180deg,#4f83ff,#2563eb); color:#fff; box-shadow:0 10px 28px rgba(37,99,235,.25);
+  }
+  .sendBtn:disabled{ opacity:.5; cursor:not-allowed; box-shadow:none; }
+
+  /* 스크롤바 살짝 */
+  .chatScroll::-webkit-scrollbar{ width:10px; }
+  .chatScroll::-webkit-scrollbar-thumb{ background:#e5eaf3; border-radius:999px; border:3px solid #fff; }
+
+  @media (max-width:430px){
+    .backBtn{ width:34px;height:34px; }
+    .sender{ display:none; } /* 모바일에선 숨김 */
+  }
+</style>
+</head>
+<body>
+
+<!-- 상단 바 -->
+<div class="topBar">
+  <div class="wrap">
+    <button class="backBtn" id="goBack" title="뒤로">
+      <!-- chevron-left -->
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M15 19L8 12L15 5" stroke="#1f2a44" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="title">방명록 · 실시간</div>
+    <div class="sender" id="whoAmI" title="발신자 병동">
+      발신자 <span class="chip" id="wardChip">-</span>
+      <a href="./" id="changeWard">변경</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <section class="panel" aria-label="실시간 메시지">
+    <div class="chatScroll" id="chatScroll">
+      <ul class="list" id="chatList"></ul>
+    </div>
+  </section>
+</main>
+
+<!-- 하단 입력 바 -->
+<div class="inputBar" role="group" aria-label="메시지 입력">
+  <div class="inputWrap">
+    <textarea id="msgBox" class="textbox" placeholder="메시지를 입력하세요. Enter: 전송  ·  Shift+Enter: 줄바꿈" rows="2" maxlength="500"></textarea>
+    <button id="sendBtn" class="sendBtn" disabled>전송</button>
+  </div>
+</div>
+
+<!-- Firebase RTDB -->
+<script type="module">
+  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, push, serverTimestamp, onChildAdded, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  // === Firebase config (메인과 동일) ===
+  const firebaseConfig = {
+    apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
+    authDomain: "hallymlinen.firebaseapp.com",
+    databaseURL: "https://hallymlinen-default-rtdb.firebaseio.com",
+    projectId: "hallymlinen",
+    storageBucket: "hallymlinen.appspot.com",
+    messagingSenderId: "867775830688",
+    appId: "1:867775830688:web:cef3ed4e70ae9818f347c5",
+    measurementId: "G-T02ZFK18L3"
+  };
+
+  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  // === Helpers ===
+  const el = s => document.querySelector(s);
+
+  function getWard(){
+    // URL ?ward= 우선, 없으면 localStorage
+    const qp = new URL(location.href).searchParams.get("ward");
+    const w  = qp && qp.trim() ? qp.trim() : (localStorage.getItem("linen/ward")||"").trim();
+    return w || "";
+  }
+
+  function escapeHTML(str=""){
+    return str.replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+  }
+
+  // "2025.08.31 오후8시35분" 포맷
+  function fmtTs(ts){
+    const d = new Date(ts);
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const dd= String(d.getDate()).padStart(2,"0");
+    let h  = d.getHours();
+    const ampm = (h>=12) ? "오후" : "오전";
+    h = (h%12) || 12;
+    const mm = String(d.getMinutes()).padStart(2,"0");
+    return `${y}.${m}.${dd} ${ampm}${h}시${mm}분`;
+  }
+
+  function dayKey(ts){
+    const d = new Date(ts);
+    return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`;
+  }
+
+  // === UI 바인딩 ===
+  const ward = getWard();
+  el("#wardChip").textContent = ward ? `${ward}병동` : "미지정";
+  el("#changeWard").addEventListener("click", (e)=>{
+    // 메인으로 이동하면서 현재 병동 쿼리 유지
+    e.preventDefault();
+    const q = ward ? `?ward=${encodeURIComponent(ward)}` : "";
+    location.href = "./" + q;
+  });
+  el("#goBack").addEventListener("click", ()=> history.length>1 ? history.back() : location.href="./");
+
+  // 입력 상태 관리
+  const msgBox = el("#msgBox");
+  const sendBtn = el("#sendBtn");
+
+  function refreshSendState(){
+    const hasText = (msgBox.value || "").trim().length > 0;
+    sendBtn.disabled = !(hasText && ward);
+  }
+  msgBox.addEventListener("input", refreshSendState);
+  refreshSendState();
+
+  // Enter 전송 / Shift+Enter 줄바꿈
+  msgBox.addEventListener("keydown", (e)=>{
+    if(e.key==="Enter" && !e.shiftKey){
+      e.preventDefault();
+      sendBtn.click();
+    }
+  });
+
+  // === 메시지 쓰기 ===
+  const roomRef = ref(db, "guestbook/messages"); // 단일 채널 (필요시 병동별로 분리 가능)
+
+  async function sendMessage(){
+    const text = (msgBox.value||"").trim();
+    if(!text || !ward) return;
+
+    const payload = {
+      ward, text,
+      ts: Date.now()   // 즉시 타임스탬프 (서버시간도 기록하고 싶으면 serverTimestamp 병행 저장)
+    };
+    try{
+      sendBtn.disabled = true;
+      await push(roomRef, { ...payload, ts_server: serverTimestamp() });
+      msgBox.value = "";
+      refreshSendState();
+      // 전송 후 맨 아래로
+      requestAnimationFrame(()=> scrollToBottom(true));
+    }catch(err){
+      alert("전송에 실패했습니다. 네트워크를 확인해주세요.");
+      console.warn(err);
+      refreshSendState();
+    }
+  }
+  sendBtn.addEventListener("click", sendMessage);
+
+  // === 메시지 렌더링 ===
+  const list = el("#chatList");
+  const scrollBox = el("#chatScroll");
+  let lastDayBadge = ""; // 날짜 구분자 표시용
+
+  function atBottom(){
+    return (scrollBox.scrollHeight - scrollBox.scrollTop - scrollBox.clientHeight) < 12;
+  }
+  function scrollToBottom(force=false){
+    if(force || atBottom()){
+      scrollBox.scrollTop = scrollBox.scrollHeight + 9999;
+    }
+  }
+
+  function addDaySeparator(ts){
+    const key = dayKey(ts);
+    if(key === lastDayBadge) return;
+    lastDayBadge = key;
+    const li = document.createElement("li");
+    li.className = "daySep";
+    li.innerHTML = `<span class="badge">${key}</span>`;
+    list.appendChild(li);
+  }
+
+  function renderMessage({ward: w, text, ts}){
+    addDaySeparator(ts);
+    const li = document.createElement("li");
+    li.className = "msg";
+    const who = (w && String(w).trim()) ? `${w}병동` : "익명";
+    li.innerHTML = `
+      <div class="line"><span class="from">${who}</span> : <span class="text">${escapeHTML(text)}</span></div>
+      <div class="meta">${fmtTs(ts)}</div>
+    `;
+    list.appendChild(li);
+  }
+
+  // === 실시간 구독(최근 200개) ===
+  const q = query(roomRef, limitToLast(200));
+  onChildAdded(q, snap => {
+    const v = snap.val()||{};
+    // 정렬은 RTDB 순서대로 들어오므로 바로 렌더
+    const shouldStick = atBottom();
+    renderMessage({ ward: v.ward, text: v.text||"", ts: v.ts || Date.now() });
+    scrollToBottom(shouldStick);
+  });
+
+  // 최초 포커스
+  msgBox.focus();
+</script>
+</body>
+</html>
