@@ -719,7 +719,7 @@ const ITEMS={
 const COLORED_ITEMS = new Set(["대시트","반시트","베갯잇","수　건"]);
 const ORTHO_ITEMS = new Set(["정형상의","정형하의"]);
 const ALL_ITEMS = Object.values(ITEMS).flat();
-const WARDS=["93","83","73","71","63","62","61","52","51","42","41","기타"];
+const WARDS=["93","83","73","71","63","62","61","52","51","42","41","기타","린넨실"];
 
 const LS={ ward:"linen/ward", logs:"linen/logs", draft:(ward)=>`linen/draft/${ward||'_none_'}` };
 let state={ ward:(localStorage.getItem(LS.ward)||"").toString().trim(), section:"input", cat:"시트" };
