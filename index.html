@@ -212,6 +212,43 @@
 
   /* 안드 WebView 겹침 방지 */
   .tabs{ overflow:hidden; contain:layout paint; }
+
+
+/* ===== Confirm Modal: tidy & legible ===== */
+.modalBody .confirmHeader{font-weight:800;color:#0f172a;margin:2px 0 8px}
+.modalBody .confirmHeader .date{font-size:15px}
+.modalBody .confirmHeader .ward{color:#0b3fb8}
+
+.confirmList{list-style:none;margin:10px 0 0;padding:0}
+.confirmList .itemRow{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:8px 10px;margin-top:8px;background:#f8fafc;
+  border:1px solid var(--border);border-radius:12px;
+}
+.itemRow .label{font-weight:700;color:#1f2937}
+.itemRow.isColored .label{color:#0b3fb8}      /* 시트류 강조 */
+.itemRow.isOrtho  .label{color:#2563eb}       /* 정형 강조 */
+
+.qtyBadge{
+  min-width:76px;text-align:right;font-weight:900;
+  padding:6px 10px;border-radius:999px;background:#eef2f7;color:#0f172a
+}
+.qtyBadge.lv1{background:#fff3cd;color:#b45309} /* 10+ */
+.qtyBadge.lv2{background:#dbeafe;color:#1d4ed8} /* 15+ */
+.qtyBadge.lv3{background:#fee2e2;color:#dc2626} /* 20+ */
+
+.confirmTotal{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-top:12px;padding:10px;border-top:1px dashed var(--border);
+  font-size:16px
+}
+.confirmTotal strong{font-size:18px}
+
+/* 살짝 더 넓게(선택) */
+.modalCard{width:min(92vw,560px)}
+
+
+
 </style>
 </head>
 <body>
@@ -386,7 +423,7 @@
   <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/탭이동.wav" type="audio/wav" />
 </audio>
 <audio id="btnClickSound" preload="auto">
-  <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/버튼클릭.mp3" type="audio/mpeg" />
+  <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/버튼클릭2.mp3" type="audio/mpeg" />
 </audio>
   <audio id="warnSound" preload="auto">
   <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/경고.mp3" type="audio/mpeg" />
@@ -647,38 +684,51 @@ function buildTable(){
   fitCardToFooter(); // 표 갱신 후 높이 재계산
 }
 
-  function buildConfirmSummaryHTML() {
+ function buildConfirmSummaryHTML() {
   const ward = (state.ward || "").toString().trim() || "미선택";
   const dateStr = document.querySelector("#issueDate").value || new Date().toISOString().slice(0,10);
   const draft = (function(){ try { return JSON.parse(localStorage.getItem(LS.draft(state.ward))||"{}"); } catch(_) { return {}; } })();
 
-  // 0이 아닌 항목만 추림
-  const rows = [];
+  // 0이 아닌 항목만 [이름,수량] 배열로
+  let rows = [];
   Object.keys(draft).forEach(k => {
     const v = parseInt(draft[k] || "0", 10) || 0;
     if (v !== 0) rows.push([k, v]);
   });
 
-  const total = rows.reduce((a, [,v]) => a + v, 0);
+  // 보기 순서: 수량 내림차순(가시성 ↑). 원래 순서를 원하면 이 정렬 한 줄을 지워도 됨.
+  rows.sort((a,b)=> b[1]-a[1]);
 
+  const total = rows.reduce((a, [,v]) => a + v, 0);
   if (total === 0) {
-    return `
-      <p>제출할 항목이 없습니다. (모두 0)</p>
-    `;
+    return `<p>제출할 항목이 없습니다. (모두 0)</p>`;
   }
 
-  // 최대 12개까지만 표시 (너무 길어지지 않게)
   const MAX = 12;
-  const more = rows.length > MAX ? `<li>외 ${rows.length - MAX}개 항목…</li>` : "";
-  const list = rows.slice(0, MAX).map(([k,v]) => `<li><b>${k}</b> · ${v.toLocaleString()}개</li>`).join("");
+  const moreHtml = rows.length > MAX ? `<li class="more" style="margin-top:8px;color:#64748b">외 ${rows.length - MAX}개 항목…</li>` : "";
+
+  // 색상 규칙(표와 동일 톤): 10+ 갈색, 15+ 파랑, 20+ 빨강
+  const colored = (name)=> (typeof COLORED_ITEMS!=="undefined" && COLORED_ITEMS.has && COLORED_ITEMS.has(name));
+  const ortho   = (name)=> (typeof ORTHO_ITEMS  !=="undefined" && ORTHO_ITEMS.has   && ORTHO_ITEMS.has(name));
+  const lv = (v)=> v>=20 ? "lv3" : (v>=15 ? "lv2" : (v>=10 ? "lv1" : ""));
+
+  const list = rows.slice(0, MAX).map(([k,v]) => `
+    <li class="itemRow ${colored(k)?'isColored':''} ${ortho(k)?'isOrtho':''}">
+      <span class="label">${k}</span>
+      <span class="qtyBadge ${lv(v)}">${v.toLocaleString()}개</span>
+    </li>
+  `).join("");
 
   return `
-    <p><b>${dateStr}</b> · <b>${ward}</b>병동</p>
-    <p>아래 내역으로 제출할까요?</p>
-    <ul style="margin:8px 0 0 18px; padding:0; line-height:1.4">${list}${more}</ul>
-    <p style="margin-top:10px">총 <b>${total.toLocaleString()}개</b></p>
+    <div class="confirmHeader">
+      <span class="date"><b>${dateStr}</b></span> · <span class="ward"><b>${ward}</b>병동</span>
+    </div>
+    <p class="confirmSub" style="margin:0 0 6px;color:#475569">아래 내역으로 제출할까요?</p>
+    <ul class="confirmList">${list}${moreHtml}</ul>
+    <div class="confirmTotal"><span>합계</span><strong>${total.toLocaleString()}개</strong></div>
   `;
 }
+
 
   function openConfirmSubmit() {
   // 내용 갱신
