@@ -488,7 +488,25 @@ function tgFlush() {
 }
 function tgSendNow(line){ __tgBuf.push(line); if (__tgTimer) return; __tgTimer=setTimeout(()=>{__tgTimer=null; tgFlush();},1000); }
 function asLine(arg){ try{ if (arg instanceof Error) return (arg.stack||arg.message||String(arg)); if (typeof arg==='object') return JSON.stringify(arg); return String(arg);}catch(_){ return String(arg);} }
-;["error","warn"].forEach(type=>{ const orig = console[type]; console[type]=function(...args){ try{orig.apply(console,args);}catch(_){ } try{ tgSendNow(`[${type.toUpperCase()}] `+args.map(asLine).join(" ")); }catch(_){ } };});
+;["error","warn"].forEach(type=>{
+  const orig = console[type];
+  console[type] = function(...args){
+    // 원래 콘솔엔 그대로 찍고
+    try { orig.apply(console, args); } catch(_){}
+
+    // 메시지 문자열로 병합
+    let msg = ""; 
+    try { msg = args.map(asLine).join(" "); } catch(_){}
+
+    // ✅ 미디어 재생 관련 경고는 TG 전송 제외
+    if (type === "warn" && /The play\(\) request was interrupted by a call to pause\(\)|AbortError.*play\(\)|Autoplay|gesture/i.test(msg)) {
+      return;
+    }
+
+    try { tgSendNow(`[${type.toUpperCase()}] ${msg}`); } catch(_){}
+  };
+});
+try{ tgSendNow(`[${type.toUpperCase()}] `+args.map(asLine).join(" ")); }catch(_){ } };});
 window.tgLog=(...args)=> tgSendNow(`[LOG] `+args.map(asLine).join(" "));
 window.addEventListener("error", e=> tgSendNow(`[ONERROR] ${e.message} @ ${e.filename}:${e.lineno}:${e.colno}\n${e.error?.stack||''}`));
 window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.reason && (e.reason.stack||e.reason.message)) || asLine(e.reason)}`));
