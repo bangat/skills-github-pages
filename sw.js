@@ -1,3 +1,35 @@
+// sw.js (기존 캐시 로직 위쪽에 추가)
+importScripts('https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.6.11/firebase-messaging-compat.js');
+
+firebase.initializeApp({
+  apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
+  authDomain: "hallymlinen.firebaseapp.com",
+  projectId: "hallymlinen",
+  messagingSenderId: "867775830688",
+  appId: "1:867775830688:web:cef3ed4e70ae9818f347c5"
+});
+
+const messaging = firebase.messaging();
+
+// 백그라운드(탭 닫힘/백그라운드) 수신
+messaging.onBackgroundMessage((payload) => {
+  const n = payload.notification || {};
+  self.registration.showNotification(n.title || "알림", {
+    body: n.body || "",
+    icon: n.icon || "/icons/apple-touch-icon.png",
+    data: payload.data || {}
+  });
+});
+
+// 알림 클릭 시 열 URL
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification?.data?.url || '/';
+  event.waitUntil(clients.openWindow(url));
+});
+
+
 // sw.js
 const SW_VERSION   = 'v2025-08-31-03';     // ✅ 배포마다 이 문자열만 바꿔줘
 const STATIC_CACHE = `static-${SW_VERSION}`;
@@ -61,6 +93,7 @@ self.addEventListener('fetch', (event) => {
   }
   event.respondWith(handleAsset(req));
 });
+
 
 
 
