@@ -541,11 +541,15 @@ function unlockAudioOnce(){
   if(__audioUnlocked) return;
   __audioUnlocked=true;
   try{ getAC().resume(); }catch(_){}
+
+  // 🔧 재생/일시정지 금지. load()만 호출
   ["#submitSound","#tabSound","#btnClickSound","#warnSound"].forEach(sel=>{
-    const a=el(sel); if(!a) return;
-    try{ const p=a.play(); if(p?.then) p.then(()=>{ a.pause(); a.currentTime=0; }).catch(()=>{}); else { a.pause(); a.currentTime=0; } }catch(_){}
+    const a = el(sel);
+    if (!a) return;
+    try { a.load(); } catch(_) {}
   });
 }
+
 ["pointerdown","touchstart","click","keydown"].forEach(evt=>{ window.addEventListener(evt, unlockAudioOnce, { once:true, passive:true }); });
 
 /* Modal */
@@ -554,32 +558,48 @@ function closeModal(sel){ document.body.classList.remove('modal-open'); el(sel).
 
 /* Sound */
 function playSnd(sel){
-  const freqMap = { "#btnClickSound": 880, "#tabSound": 659, "#submitSound": 523 };
+  const freqMap = { "#btnClickSound": 880, "#tabSound": 659, "#submitSound": 523, "#warnSound": 988 };
   try{
     const a = el(sel);
-    if(!a){ beep(100, freqMap[sel]||660); return; }
-    try{ a.pause(); }catch(_){}
-    a.currentTime = 0;
-    const p = a.play();
-    if (p && typeof p.then === "function") {
-      p.then(()=>{}).catch(err=>{ console.warn("[audio] play failed:", sel, err?.name||err, err); beep(sel==="#submitSound"?180:100, freqMap[sel]||660); });
+    if(!a){ beep(sel==="#submitSound"?180:100, freqMap[sel]||660); return; }
+
+    // 이미 재생 중이면 끊지 말고 되감기만
+    if (!a.paused) {
+      try { a.currentTime = 0; } catch(_) {}
+      return;
     }
-  }catch(e){ console.warn("[audio] exception:", e); beep(sel==="#submitSound"?180:100, freqMap[sel]||660); }
+
+    try { a.currentTime = 0; } catch(_) {}
+    const p = a.play();
+    if (p && typeof p.catch === "function") {
+      p.catch(err => {
+        // 다른 호출로 중단된 정상 케이스는 무시
+        if (err && (err.name === "AbortError" || err.code === 20)) return;
+        console.warn("[audio] play failed:", sel, err?.name||err, err);
+        beep(sel==="#submitSound"?180:100, freqMap[sel]||660);
+      });
+    }
+  }catch(e){
+    console.warn("[audio] exception:", e);
+    beep(sel==="#submitSound"?180:100, (freqMap[sel]||660));
+  }
 }
+
 
 /* Warn flash */
 function flashWarn(){ try{ if(navigator.vibrate){ navigator.vibrate([120,80,120,80,120]); } }catch(e){} const ov=document.createElement('div'); ov.id='flashOverlay'; document.body.appendChild(ov); ov.addEventListener('animationend', ()=>{ ov.parentNode && ov.parentNode.removeChild(ov); }); }
 function maybeBuzz(prev,next){
   const p = Number(prev)||0, n = Number(next)||0;
 
-  // 16개→이상: 기존 점멸(진동+빨간 플래시)
+  // 16개→이상: 플래시/진동
   if (p < 16 && n >= 16) { flashWarn(); }
 
-  // 20개→이상: 경고음 추가
-  if (p < 20 && n >= 16) {
+  // 20개→이상: 경고음 (오타 n >= 16 → n >= 20 로 수정)
+  if (p < 20 && n >= 20) {
     try { playSnd("#warnSound"); } catch(_) {}
   }
 }
+
 
 
 /* Date helpers */
