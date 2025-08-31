@@ -539,7 +539,7 @@ function maybeBuzz(prev,next){
   if (p < 16 && n >= 16) { flashWarn(); }
 
   // 20개→이상: 경고음 추가
-  if (p < 20 && n >= 20) {
+  if (p < 20 && n >= 16) {
     try { playSnd("#warnSound"); } catch(_) {}
   }
 }
