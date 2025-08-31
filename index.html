@@ -603,7 +603,7 @@ try {
 } catch { perm = 'denied'; }
   if (perm === 'granted') {
     // ⚠️ VAPID 공개키
-    const vapidKey = "BFb6vL7gP_OGIgauOoZnElu4uNaWlCnP4I2wEjoiqj-qWnvDQuBJ1gDheYqIO9C0pqd7DsRBvsKpEUHscHsDzWM";
+    const vapidKey = "BDUJY48GaGacu_zkXXSFXAtPRQGn20A1-MqRUDtjgXqEnSi_XCpJo8x3ykmeOpeD76zzvFh_vO-xUgeP4c5S-iw";
     const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: swReg });
     console.log('FCM token:', token);
 
