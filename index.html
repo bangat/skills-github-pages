@@ -35,7 +35,7 @@
   .left{display:flex;gap:10px;align-items:center}
   .right{display:flex;gap:8px}
   label.head{font-weight:800;color:#334155;margin-right:6px;white-space:nowrap}
-  select,input[type=date]{padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:var(--r-md);background:#fff;color:#var(--text);transition:border-color .12s,box-shadow .12s}
+  select,input[type=date]{padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:var(--r-md);background:#fff;color:var(--text);transition:border-color .12s,box-shadow .12s}
   select:focus,input[type=date]:focus{outline:none;border-color:var(--accent);box-shadow:var(--focus)}
   #wardSelect{width:170px}
 
@@ -103,7 +103,7 @@
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield}
 
-  .empty{margin-top:16px;padding:18px;border:1px dashed var(--border);border-radius:16px;text-align:center;color:#var(--muted);background:#fff}
+  .empty{margin-top:16px;padding:18px;border:1px dashed var(--border);border-radius:16px;text-align:center;color:var(--muted);background:#fff}
 
   .footerBar{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--border);padding:10px;display:flex;justify-content:center;z-index:50; padding-bottom: max(10px, env(safe-area-inset-bottom));}
   .footerCol{display:flex;flex-direction:column;gap:10px;align-items:stretch;max-width:980px;width:100%}
@@ -1320,7 +1320,7 @@ function openPwaInstallModal() {
 }
 
 
-}
+
 
 /** 커스텀 모달 닫기 */
 function closeModalIfExists(sel) {
