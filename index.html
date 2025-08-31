@@ -24,13 +24,30 @@
   html,body{height:100%;-webkit-text-size-adjust:100%}
   body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
 
-  .topTitle{
-    position:sticky;top:0;z-index:60;text-align:center;font-size:22px;font-weight:800;
-    padding:12px 0;background:var(--card);border-bottom:1px solid var(--border);user-select:none;cursor:pointer;
+  /* === 상단 3탭 네비 === */
+  .topNav{
+    position:sticky; top:0; z-index:70; background:var(--card);
+    border-bottom:1px solid var(--border); padding:10px 12px;
   }
+  .topNav .nav{
+    max-width:980px; margin:0 auto; position:relative;
+    display:flex; gap:8px; padding:4px; border:1px solid var(--border);
+    border-radius:14px; background:#f2f5fb; box-shadow:var(--shadow-1);
+  }
+  .navTab{
+    flex:1 0 0; text-align:center; padding:8px 10px; border-radius:10px;
+    font-weight:800; color:#334155; cursor:pointer; position:relative; z-index:1; background:transparent; border:0;
+  }
+  .navTab.active{ color:#0b3fb8; }
+  .nav-slider{
+    position:absolute; top:4px; bottom:4px; left:4px; width:33.3333%;
+    border-radius:10px; background:#e6efff; box-shadow:inset 0 0 0 1px rgba(37,99,235,.25);
+    transition:transform .25s cubic-bezier(.2,.8,.2,1);
+  }
+
   header{
-    position:sticky;top:48px;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:10px;
-    padding:10px 16px;background:var(--card);border-bottom:1px solid var(--border);
+    position:sticky; top:64px; z-index:50; display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:10px 16px; background:var(--card); border-bottom:1px solid var(--border);
   }
   .left{display:flex;gap:10px;align-items:center}
   .right{display:flex;gap:8px}
@@ -63,7 +80,7 @@
     min-height: var(--fillH, auto);
   }
 
-  /* Tabs */
+  /* (입력 내부) 카테고리 탭 */
   .tabs{
     width:100%;display:flex;gap:8px;margin:8px 0;background:#f2f5fb;border:1px solid var(--border);
     border-radius:14px;padding:4px;box-shadow:var(--shadow-1); position:relative;
@@ -83,13 +100,10 @@
   td:first-child,th:first-child{text-align:left}
   .col-item{width:42%}.col-qty{width:58%}
 
-  /* 품목명 */
   .item-name{font-size:15px; white-space:nowrap}
-  /* 2글자(수건/기타)를 3글자 너비처럼 보이게 */
   .item-name.k2::after{content:""; display:inline-block; width:.9em;}
   @media (max-width:430px){ .item-name.k2::after{ width:1.05em; } }
 
-  /* 정형 항목 강조 */
   tr.kind-ortho td.item-name{color:#2563eb; font-weight:800}
 
   .qtyCell{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap}
@@ -160,41 +174,19 @@
 .modalCard{
   position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
   width:min(92vw,520px);
-  max-height:88vh;                 /* 화면 88% 이상 안 넘어가게 */
-  display:flex; flex-direction:column; /* 세로 플렉스 */
+  max-height:88vh;
+  display:flex; flex-direction:column;
   background:#fff; color:#0f172a;
   border-radius:16px; box-shadow:0 20px 60px rgba(15,23,42,.25);
   overflow:hidden;
 }
 
-.modalHead{
-  padding:16px 18px; font-weight:800; font-size:18px;
-  border-bottom:1px solid var(--border);
-  flex:0 0 auto; /* 높이 고정 */
-}
-
-.modalBody{
-  padding:16px 18px; font-size:14px; line-height:1.5; color:#475569;
-  flex:1 1 auto;       /* 남은 공간 채우기 */
-  min-height:0;        /* 스크롤 가능 핵심 */
-  overflow:auto;       /* 내용 많으면 본문만 스크롤 */
-  max-height:50vh;     /* 절반쯤부터 스크롤 */
-}
-
-.modalActions{
-  display:flex; gap:10px; padding:14px 16px;
-  background:#f8fafc; border-top:1px solid var(--border);
-  flex:0 0 auto; /* 하단 고정 */
-}
+.modalHead{ padding:16px 18px; font-weight:800; font-size:18px; border-bottom:1px solid var(--border); flex:0 0 auto; }
+.modalBody{ padding:16px 18px; font-size:14px; line-height:1.5; color:#475569; flex:1 1 auto; min-height:0; overflow:auto; max-height:50vh; }
+.modalActions{ display:flex; gap:10px; padding:14px 16px; background:#f8fafc; border-top:1px solid var(--border); flex:0 0 auto; }
 .modalActions .btn{ flex:1; }
-.modalActions .btn.cancel{
-  background:#eef2f7; color:#1f2a44; border:1px solid var(--border);
-}
-.modalActions .btn.primary{
-  background:linear-gradient(180deg,#4f83ff,#2563eb);
-  color:#fff; border:1px solid #2856c7;
-}
-
+.modalActions .btn.cancel{ background:#eef2f7; color:#1f2a44; border:1px solid var(--border); }
+.modalActions .btn.primary{ background:linear-gradient(180deg,#4f83ff,#2563eb); color:#fff; border:1px solid #2856c7; }
 
   /* Toast */
   .toast{
@@ -210,10 +202,7 @@
 
   /* Charts */
   #statsCharts{margin-top:14px}
-  #statsCharts .card{
-    background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow-2);
-    padding:12px;
-  }
+  #statsCharts .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow-2); padding:12px; }
   #statsCharts h2{margin:10px 2px 8px; font-size:18px}
   .chartControls{display:flex; gap:8px; align-items:center; margin:8px 2px 12px; flex-wrap:wrap}
   .chartControls select{padding:8px 10px; border:1px solid var(--border); border-radius:10px}
@@ -224,6 +213,7 @@
   @media (prefers-reduced-motion: reduce){
     .chip.spring{ animation:none !important; }
     .tab-slider{ transition:none }
+    .nav-slider{ transition:none }
   }
 
   /* Mobile compact */
@@ -249,47 +239,36 @@
   /* 안드 WebView 겹침 방지 */
   .tabs{ overflow:hidden; contain:layout paint; }
 
+  /* Confirm modal extras */
+  .modalBody .confirmHeader{font-weight:800;color:#0f172a;margin:2px 0 8px}
+  .modalBody .confirmHeader .date{font-size:15px}
+  .modalBody .confirmHeader .ward{color:#0b3fb8}
+  .confirmList{list-style:none;margin:10px 0 0;padding:0}
+  .confirmList .itemRow{ display:flex;justify-content:space-between;align-items:center;gap:12px; padding:8px 10px;margin-top:8px;background:#f8fafc; border:1px solid var(--border);border-radius:12px; }
+  .itemRow .label{font-weight:700;color:#1f2937}
+  .itemRow.isColored .label{color:#0b3fb8}
+  .itemRow.isOrtho  .label{color:#2563eb}
+  .qtyBadge{ min-width:76px;text-align:right;font-weight:900; padding:6px 10px;border-radius:999px;background:#eef2f7;color:#0f172a }
+  .qtyBadge.lv1{background:#fff3cd;color:#b45309}
+  .qtyBadge.lv2{background:#dbeafe;color:#1d4ed8}
+  .qtyBadge.lv3{background:#fee2e2;color:#dc2626}
+  .confirmTotal{ display:flex;justify-content:space-between;align-items:center; margin-top:12px;padding:10px;border-top:1px dashed var(--border); font-size:16px }
+  .confirmTotal strong{font-size:18px}
 
-/* ===== Confirm Modal: tidy & legible ===== */
-.modalBody .confirmHeader{font-weight:800;color:#0f172a;margin:2px 0 8px}
-.modalBody .confirmHeader .date{font-size:15px}
-.modalBody .confirmHeader .ward{color:#0b3fb8}
-
-.confirmList{list-style:none;margin:10px 0 0;padding:0}
-.confirmList .itemRow{
-  display:flex;justify-content:space-between;align-items:center;gap:12px;
-  padding:8px 10px;margin-top:8px;background:#f8fafc;
-  border:1px solid var(--border);border-radius:12px;
-}
-.itemRow .label{font-weight:700;color:#1f2937}
-.itemRow.isColored .label{color:#0b3fb8}      /* 시트류 강조 */
-.itemRow.isOrtho  .label{color:#2563eb}       /* 정형 강조 */
-
-.qtyBadge{
-  min-width:76px;text-align:right;font-weight:900;
-  padding:6px 10px;border-radius:999px;background:#eef2f7;color:#0f172a
-}
-.qtyBadge.lv1{background:#fff3cd;color:#b45309} /* 10+ */
-.qtyBadge.lv2{background:#dbeafe;color:#1d4ed8} /* 15+ */
-.qtyBadge.lv3{background:#fee2e2;color:#dc2626} /* 20+ */
-
-.confirmTotal{
-  display:flex;justify-content:space-between;align-items:center;
-  margin-top:12px;padding:10px;border-top:1px dashed var(--border);
-  font-size:16px
-}
-.confirmTotal strong{font-size:18px}
-
-/* 살짝 더 넓게(선택) */
-.modalCard{width:min(92vw,560px)}
-
-
-
+  .modalCard{width:min(92vw,560px)}
 </style>
 </head>
 <body>
 
-<div id="gotoMain" class="topTitle">병동 출고관리</div>
+<!-- 상단 3탭 네비게이션 -->
+<div class="topNav">
+  <div class="nav">
+    <button class="navTab active" data-section="input">입력탭</button>
+    <button class="navTab" data-section="stats">통계탭</button>
+    <button class="navTab" data-section="guest">방명록</button>
+    <div class="nav-slider" id="navSlider" aria-hidden="true"></div>
+  </div>
+</div>
 
 <header>
   <div class="left">
@@ -302,12 +281,11 @@
       <option>기타</option>
     </select>
   </div>
-  <div class="right">
-    <button class="btn" id="gotoStats">통계</button>
-  </div>
+  <div class="right"><!-- 통계 버튼 제거됨 --></div>
 </header>
 
 <main>
+  <!-- 입력탭 -->
   <section id="sec-input">
     <div class="sectionCard">
       <h1 class="fieldRow">
@@ -330,6 +308,7 @@
     </div>
   </section>
 
+  <!-- 통계탭 -->
   <section id="sec-stats" style="display:none">
     <h1>기간 통계</h1>
 
@@ -376,11 +355,11 @@
 <div id="pwaInstallModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="piTitle" style="display:none">
   <div class="modalCard" role="document">
     <div class="modalHead" id="piTitle">린넨실 앱 설치안내</div>
-<div class="modalBody">
-  📱 휴대폰에서 바로 실행 <br>
-  🔒 보안 연결로 안전하게<br>
-  🖥️ 큰 화면 모드 지원
-</div>
+    <div class="modalBody">
+      📱 휴대폰에서 바로 실행 <br>
+      🔒 보안 연결로 안전하게<br>
+      🖥️ 큰 화면 모드 지원
+    </div>
 
     <div class="modalActions">
       <button type="button" class="btn cancel" id="piCancel">나중에</button>
@@ -388,7 +367,6 @@
     </div>
   </div>
 </div>
-
 
 <!-- 제출 완료 모달 -->
 <div id="submitModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="smTitle">
@@ -401,7 +379,7 @@
   </div>
 </div>
 
-  <!-- 제출 확인 모달 -->
+<!-- 제출 확인 모달 -->
 <div id="confirmModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="csTitle" style="display:none">
   <div class="modalCard" role="document">
     <div class="modalHead" id="csTitle">제출 확인</div>
@@ -417,7 +395,6 @@
   </div>
 </div>
 
-  
 <!-- 다운로드 안내 모달 -->
 <div id="downloadModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="dlTitle">
   <div class="modalCard" role="document">
@@ -461,14 +438,14 @@
 <audio id="btnClickSound" preload="auto">
   <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/버튼클릭2.mp3" type="audio/mpeg" />
 </audio>
-  <audio id="warnSound" preload="auto">
+<audio id="warnSound" preload="auto">
   <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/경고.mp3" type="audio/mpeg" />
 </audio>
 
-
 <!-- XLSX -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-<!-- Chart.js --><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <!-- =================== 텔레그램 로거 (정상본, 단일) =================== -->
 <script>
@@ -510,7 +487,6 @@ function asLine(arg){
     try { orig.apply(console, args); } catch(_){}
     let msg = "";
     try { msg = args.map(asLine).join(" "); } catch(_){}
-    // 오디오 자동재생 관련 경고는 스팸이라 무시
     if (type === "warn" && /The play\(\) request was interrupted by a call to pause\(\)|AbortError.*play\(\)|Autoplay|gesture/i.test(msg)) {
       return;
     }
@@ -523,7 +499,6 @@ window.addEventListener("error", e=> tgSendNow(`[ONERROR] ${e.message} @ ${e.fil
 window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.reason && (e.reason.stack||e.reason.message)) || asLine(e.reason)}`));
 </script>
 <!-- =================== /텔레그램 로거 =================== -->
-
 
 <!-- Firebase (RTDB) -->
 <script type="module">
@@ -584,30 +559,25 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
     appId: "1:867775830688:web:cef3ed4e70ae9818f347c5"
   };
 
-  // 이미 초기화돼 있으면 재사용
   const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
   const messaging = getMessaging(app);
   const db = getDatabase(app);
 
-  // 네가 쓰는 SW는 "sw.js"
   const swReg =
     (await navigator.serviceWorker.getRegistration('sw.js')) ||
     (await navigator.serviceWorker.register('sw.js'));
 
-  // 권한 요청 → 토큰 발급
   let perm = 'denied';
-try {
-  perm = (typeof Notification !== 'undefined' && Notification.requestPermission)
-    ? await Notification.requestPermission()
-    : 'denied';
-} catch { perm = 'denied'; }
+  try {
+    perm = (typeof Notification !== 'undefined' && Notification.requestPermission)
+      ? await Notification.requestPermission()
+      : 'denied';
+  } catch { perm = 'denied'; }
   if (perm === 'granted') {
-    // ⚠️ VAPID 공개키
     const vapidKey = "BDUJY48GaGacu_zkXXSFXAtPRQGn20A1-MqRUDtjgXqEnSi_XCpJo8x3ykmeOpeD76zzvFh_vO-xUgeP4c5S-iw";
     const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: swReg });
     console.log('FCM token:', token);
 
-    // === RTDB 자동 저장(병동/기기 매핑) ===
     if (token) {
       const uid = localStorage.getItem('pushUid') || (crypto.randomUUID?.() || String(Date.now()));
       localStorage.setItem('pushUid', uid);
@@ -622,18 +592,14 @@ try {
         localStorage.setItem('pushToken', token);
       }
     }
-    // === /RTDB 자동 저장 끝 ===
   } else {
     console.warn('알림 권한 상태:', perm);
   }
 
-  // 포그라운드 수신
   onMessage(messaging, (payload) => {
     console.log('foreground push:', payload);
-    // 필요하면 토스트/배지 갱신
   });
 </script>
-
 
 <!-- App Script -->
 <script>
@@ -672,15 +638,12 @@ function unlockAudioOnce(){
   if(__audioUnlocked) return;
   __audioUnlocked=true;
   try{ getAC().resume(); }catch(_){}
-
-  // 🔧 재생/일시정지 금지. load()만 호출
   ["#submitSound","#tabSound","#btnClickSound","#warnSound"].forEach(sel=>{
     const a = el(sel);
     if (!a) return;
     try { a.load(); } catch(_) {}
   });
 }
-
 ["pointerdown","touchstart","click","keydown"].forEach(evt=>{ window.addEventListener(evt, unlockAudioOnce, { once:true, passive:true }); });
 
 /* Modal */
@@ -693,18 +656,11 @@ function playSnd(sel){
   try{
     const a = el(sel);
     if(!a){ beep(sel==="#submitSound"?180:100, freqMap[sel]||660); return; }
-
-    // 이미 재생 중이면 끊지 말고 되감기만
-    if (!a.paused) {
-      try { a.currentTime = 0; } catch(_) {}
-      return;
-    }
-
+    if (!a.paused) { try { a.currentTime = 0; } catch(_) {} return; }
     try { a.currentTime = 0; } catch(_) {}
     const p = a.play();
     if (p && typeof p.catch === "function") {
       p.catch(err => {
-        // 다른 호출로 중단된 정상 케이스는 무시
         if (err && (err.name === "AbortError" || err.code === 20)) return;
         console.warn("[audio] play failed:", sel, err?.name||err, err);
         beep(sel==="#submitSound"?180:100, freqMap[sel]||660);
@@ -716,22 +672,15 @@ function playSnd(sel){
   }
 }
 
-
 /* Warn flash */
 function flashWarn(){ try{ if(navigator.vibrate){ navigator.vibrate([120,80,120,80,120]); } }catch(e){} const ov=document.createElement('div'); ov.id='flashOverlay'; document.body.appendChild(ov); ov.addEventListener('animationend', ()=>{ ov.parentNode && ov.parentNode.removeChild(ov); }); }
 function maybeBuzz(prev,next){
   const p = Number(prev)||0, n = Number(next)||0;
-
-  // 16개→이상: 플래시/진동
   if (p < 16 && n >= 16) { flashWarn(); }
-
-  // 20개→이상: 경고음 (오타 n >= 16 → n >= 20 로 수정)
   if (p < 20 && n >= 20) {
     try { playSnd("#warnSound"); } catch(_) {}
   }
 }
-
-
 
 /* Date helpers */
 function rangeMsByDates(startStr,endStr){
@@ -751,10 +700,9 @@ function setDraftQty(item,qty){ const d=getDraft(); d[item]=(parseInt(qty)||0); 
 
 /* 합계 & 버튼 활성화 */
 function getCurrentTotal(){
-  const draft = getDraft();   // 로컬스토리지 저장된 현 상태
+  const draft = getDraft();
   return Object.values(draft).reduce((a,v)=> a + (parseInt(v)||0), 0);
 }
-
 function refreshTotalUI(){
   const total = getCurrentTotal();
   const save = el("#saveAll");
@@ -778,7 +726,7 @@ function fitCardToFooter(){
   card.style.setProperty('--fillH', 'auto');
   const cardTop   = card.getBoundingClientRect().top;
   const footerTop = footer.getBoundingClientRect().top;
-  const gap = Math.max(0, Math.floor(footerTop - cardTop - 12)); // 푸터와 12px 여백
+  const gap = Math.max(0, Math.floor(footerTop - cardTop - 12));
   card.style.setProperty('--fillH', gap + 'px');
 }
 
@@ -832,33 +780,27 @@ function buildTable(){
   }
 
   refreshTotalUI();
-  fitCardToFooter(); // 표 갱신 후 높이 재계산
+  fitCardToFooter();
 }
 
- function buildConfirmSummaryHTML() {
+function buildConfirmSummaryHTML() {
   const ward = (state.ward || "").toString().trim() || "미선택";
   const dateStr = document.querySelector("#issueDate").value || new Date().toISOString().slice(0,10);
   const draft = (function(){ try { return JSON.parse(localStorage.getItem(LS.draft(state.ward))||"{}"); } catch(_) { return {}; } })();
 
-  // 0이 아닌 항목만 [이름,수량] 배열로
   let rows = [];
   Object.keys(draft).forEach(k => {
     const v = parseInt(draft[k] || "0", 10) || 0;
     if (v !== 0) rows.push([k, v]);
   });
-
-  // 보기 순서: 수량 내림차순(가시성 ↑). 원래 순서를 원하면 이 정렬 한 줄을 지워도 됨.
   rows.sort((a,b)=> b[1]-a[1]);
 
   const total = rows.reduce((a, [,v]) => a + v, 0);
-  if (total === 0) {
-    return `<p>제출할 항목이 없습니다. (모두 0)</p>`;
-  }
+  if (total === 0) return `<p>제출할 항목이 없습니다. (모두 0)</p>`;
 
   const MAX = 12;
   const moreHtml = rows.length > MAX ? `<li class="more" style="margin-top:8px;color:#64748b">외 ${rows.length - MAX}개 항목…</li>` : "";
 
-  // 색상 규칙(표와 동일 톤): 10+ 갈색, 15+ 파랑, 20+ 빨강
   const colored = (name)=> (typeof COLORED_ITEMS!=="undefined" && COLORED_ITEMS.has && COLORED_ITEMS.has(name));
   const ortho   = (name)=> (typeof ORTHO_ITEMS  !=="undefined" && ORTHO_ITEMS.has   && ORTHO_ITEMS.has(name));
   const lv = (v)=> v>=20 ? "lv3" : (v>=15 ? "lv2" : (v>=10 ? "lv1" : ""));
@@ -880,37 +822,23 @@ function buildTable(){
   `;
 }
 
-
-  function openConfirmSubmit() {
-  // 내용 갱신
+function openConfirmSubmit() {
   const summary = document.getElementById("confirmSummary");
   if (summary) summary.innerHTML = buildConfirmSummaryHTML();
-
-  // 모달 띄우기
   if (typeof openModal === "function") {
     openModal("#confirmModal", "#csOk");
   } else {
-    // 혹시 openModal이 없으면 기본 confirm로 폴백
-    if (confirm("입력하신 수량을 제출할까요?")) {
-      saveAll();
-    }
+    if (confirm("입력하신 수량을 제출할까요?")) saveAll();
   }
 }
 
-// 모달 버튼 이벤트
-// 모달 버튼 이벤트
 document.addEventListener("click", (e) => {
   const id = (e.target && e.target.id) || "";
-  if (id === "csCancel") {
-    if (typeof closeModal === "function") closeModal("#confirmModal");
-  }
-  if (id === "csOk") {
-    if (typeof closeModal === "function") closeModal("#confirmModal");
-    saveAll();
-  }
+  if (id === "csCancel") { if (typeof closeModal === "function") closeModal("#confirmModal"); }
+  if (id === "csOk") { if (typeof closeModal === "function") closeModal("#confirmModal"); saveAll(); }
 });
 
-/* ===== 여기 아래에 추가 ===== */
+/* 모달 본문 스크롤 높이 */
 function sizeModalBody(modalSel, fraction=0.5){
   const modal  = document.querySelector(modalSel);
   if (!modal) return;
@@ -921,7 +849,6 @@ function sizeModalBody(modalSel, fraction=0.5){
   const vh     = window.innerHeight || document.documentElement.clientHeight || 640;
 
   if (card) card.style.maxHeight = Math.round(vh * 0.88) + 'px';
-
   if (body){
     const reserve = (head?.offsetHeight||0) + (acts?.offsetHeight||0);
     const target  = Math.max(120, Math.floor(vh * fraction) - reserve);
@@ -929,8 +856,6 @@ function sizeModalBody(modalSel, fraction=0.5){
     body.style.overflow  = 'auto';
   }
 }
-
-
 
 /* Save */
 async function saveAll(){
@@ -1008,7 +933,7 @@ function shrinkBigNumbers(root){
 }
 
 /* ===== Charts helpers ===== */
-let __mergedCache = []; 
+let __mergedCache = [];
 let lineChart=null, dowChart=null;
 
 function fmtYYYYMMDD(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0"); return `${y}-${m}-${dd}`; }
@@ -1213,6 +1138,43 @@ function showToast(msg, sub){
   setTimeout(()=> t.classList.remove('show'), 1800);
 }
 
+/* === 상단 3탭 제어 === */
+function moveTopSlider(section){
+  const idx = ["input","stats","guest"].indexOf(section);
+  const slider = document.getElementById('navSlider');
+  if (slider && idx >= 0) slider.style.transform = `translateX(${idx*100}%)`;
+}
+function setTopActive(section){
+  document.querySelectorAll('.navTab').forEach(b=>{
+    b.classList.toggle('active', b.dataset.section===section);
+  });
+  moveTopSlider(section);
+}
+function goSection(section){
+  if (section === 'guest'){
+    // 방명록 별도 페이지로 이동 (병동명 전달)
+    const url = `방명록.html${state.ward ? ('?ward=' + encodeURIComponent(state.ward)) : ''}`;
+    location.href = url;
+    return;
+  }
+  state.section = section;
+  setTopActive(section);
+  if (section === 'stats'){
+    document.body.classList.add("mode-stats");
+    el("#sec-input").style.display="none";
+    el("#sec-stats").style.display="block";
+    const chosen=el("#issueDate").value||new Date().toISOString().slice(0,10);
+    el("#dateStart").value=chosen; el("#dateEnd").value=chosen;
+    renderStats();
+  } else { // input
+    document.body.classList.remove("mode-stats");
+    el("#sec-input").style.display="block";
+    el("#sec-stats").style.display="none";
+    fitCardToFooter();
+  }
+  playSnd("#tabSound");
+}
+
 /* Init */
 function debounce(fn,delay=200){ let t; return(...a)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,a),delay); }; }
 window.addEventListener("DOMContentLoaded",()=>{
@@ -1234,28 +1196,20 @@ window.addEventListener("DOMContentLoaded",()=>{
   refreshTotalUI();
   fitCardToFooter();
 
-  /* viewport 변화에도 보정 */
   window.addEventListener('resize', fitCardToFooter);
   window.addEventListener('orientationchange', fitCardToFooter);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', fitCardToFooter);
-    // ✅ 모달 본문 스크롤 높이 재계산(회전/리사이즈 대응)
   window.addEventListener('resize', ()=> sizeModalBody('#confirmModal', 0.5));
   if (window.visualViewport) window.visualViewport.addEventListener('resize', ()=> sizeModalBody('#confirmModal', 0.5));
 
-
   el("#saveAll").addEventListener('click', addRipple);
- el("#saveAll").onclick = (e) => {
-  try { addRipple && addRipple(e); } catch(_) {}
-  openConfirmSubmit();
-};
+  el("#saveAll").onclick = (e) => { try { addRipple && addRipple(e); } catch(_) {} openConfirmSubmit(); };
 
   el("#exportXLSXBtn").addEventListener('click', addRipple);
   el("#exportXLSXBtn").onclick=exportXLSX;
   el("#appDownloadBtn").addEventListener('click', addRipple);
 
-  function openDownloadModal(){ openModal('#downloadModal', '#dlConfirm'); }
   function closeDownloadModal(){ closeModal('#downloadModal'); }
-  // el("#appDownloadBtn").onclick = openDownloadModal;
   el("#dlCancel").onclick = closeDownloadModal;
   el("#dlConfirm").onclick = () => { closeDownloadModal(); const url = LATEST_DIRECT; if(url && url.startsWith("http")) window.location.href = url; else alert("다운로드 링크가 설정되지 않았습니다."); };
   el("#downloadModal").addEventListener("click",(e)=>{ if(e.target === e.currentTarget) closeDownloadModal(); });
@@ -1263,7 +1217,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   el('#submitModal').addEventListener('click', (e)=>{ if(e.target===e.currentTarget) closeModal('#submitModal'); });
   el('#smOk').onclick = ()=> closeModal('#submitModal');
 
-  // Tabs
+  // 입력 화면 내부 카테고리 탭
   const tabs = Array.from(document.querySelectorAll(".tab"));
   const slider = document.getElementById('tabSlider');
   function moveSlider(){ const idx = ["시트","환자복","기타"].indexOf(state.cat); slider.style.transform = `translateX(${idx*100}%)`; }
@@ -1280,52 +1234,42 @@ window.addEventListener("DOMContentLoaded",()=>{
   });
   moveSlider();
 
-  // Stats watchers
+  // 통계 watchers
   const rerender=debounce(()=>{ renderStats(); },200);
   ["#dateStart","#dateEnd","#wardFilter"].forEach(sel=>{
     const n=el(sel); n&&n.addEventListener("change",rerender); n&&n.addEventListener("input",rerender);
   });
 
-  // Charts controls
+  // 차트 컨트롤
   ensureChartItemOptions();
   el("#chartItem").addEventListener("change", ()=> renderCharts());
   el("#exportChartXLSXBtn").addEventListener("click", (event)=>{ addRipple(event); exportChartXLSX(); });
 
-  el("#gotoStats").onclick=()=>{ 
-    document.body.classList.add("mode-stats"); 
-    el("#sec-input").style.display="none"; 
-    el("#sec-stats").style.display="block"; 
-    const chosen=el("#issueDate").value||new Date().toISOString().slice(0,10); 
-    el("#dateStart").value=chosen; el("#dateEnd").value=chosen; 
-    renderStats(); 
-  };
-  el("#gotoMain").onclick=()=>{ 
-    document.body.classList.remove("mode-stats"); 
-    el("#sec-input").style.display="block"; 
-    el("#sec-stats").style.display="none"; 
-    fitCardToFooter();
-  };
+  // 상단 3탭 연결
+  document.querySelectorAll('.navTab').forEach(btn=>{
+    btn.addEventListener('click', ()=> goSection(btn.dataset.section));
+  });
+
+  // URL로 초기 탭 선택 (?tab=stats | guest)
+  const urlTab = new URL(location.href).searchParams.get("tab");
+  goSection(urlTab === "stats" ? "stats" : "input");
 });
 </script>
 
 <script>
 /** ================= 통합 설치 제어 스크립트 ================= */
-let deferredPrompt = null;     // beforeinstallprompt 저장
-let canInstall = false;        // 설치가능 플래그
+let deferredPrompt = null;
+let canInstall = false;
 
-/* 1) SW 등록 (새 버전 나오면 자동 새로고침) */
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("sw.js").then(reg => {
-      // 새 SW가 감지되면 -> controllerchange에서 새로고침 처리
       reg.addEventListener("updatefound", () => {
-        // 필요시 로그만 남김
         console.log("[SW] update found");
       });
     }).catch(err => console.warn("[SW] register failed:", err));
   });
 
-  // 새 SW가 활성화되면 controller가 바뀜 → 1회 자동 새로고침
   let refreshed = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (refreshed) return;
@@ -1335,18 +1279,14 @@ if ("serviceWorker" in navigator) {
   });
 }
 
-
-/* 2) PWA 설치 프롬프트 캡처 */
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   deferredPrompt = e;
   canInstall = true;
-  // 설치 버튼 노출
   const b = document.getElementById("appDownloadBtn");
   if (b) b.style.display = "block";
 });
 
-/* 3) 설치 완료 */
 window.addEventListener("appinstalled", () => {
   deferredPrompt = null;
   canInstall = false;
@@ -1355,7 +1295,6 @@ window.addEventListener("appinstalled", () => {
   if (typeof showToast === "function") showToast("설치 완료", "홈 화면에서 실행하세요");
 });
 
-/* 4) 환경 판별 */
 function isIOS() {
   const ua = navigator.userAgent || "";
   const isTouchMac = /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
@@ -1366,12 +1305,10 @@ function isStandalone() {
       || (window.navigator.standalone === true);
 }
 
-/* 5) 모달/폴백 헬퍼들 */
 const APK_URL = (typeof LATEST_DIRECT === "string" && LATEST_DIRECT)
   ? LATEST_DIRECT
   : "https://github.com/bangat/linenward/releases/latest/download/WardLinen.apk";
 
-/** APK 다운로드 안내 모달(없으면 바로 이동) */
 function openAPKModal() {
   if (typeof openModal === "function" && document.querySelector("#downloadModal")) {
     openModal('#downloadModal', '#dlConfirm');
@@ -1379,7 +1316,6 @@ function openAPKModal() {
     location.href = APK_URL;
   }
 }
-/** iOS 설치 안내 모달(없으면 alert) */
 function openIOSInstallModal() {
   if (typeof openModal === "function" && document.querySelector("#iosInstallModal")) {
     openModal('#iosInstallModal', '#iosOk');
@@ -1387,34 +1323,24 @@ function openIOSInstallModal() {
     alert("Safari → 공유 → '홈 화면에 추가'로 설치하세요.");
   }
 }
-/** PWA 설치 유도 커스텀 모달(없으면 즉시 prompt) */
 function openPwaInstallModal() {
   if (typeof openModal === "function") {
     openModal("#pwaInstallModal", "#piConfirm");
     sizeModalBody("#pwaInstallModal", 0.5);
   }
 }
-
-
-
-
-
-/** 커스텀 모달 닫기 */
 function closeModalIfExists(sel) {
   if (typeof closeModal === "function" && document.querySelector(sel)) closeModal(sel);
 }
-
-/* 6) 실제 설치 프롬프트 */
 async function triggerInstallPrompt() {
   if (!deferredPrompt) return;
-  const p = deferredPrompt;          // 한 번만 사용 가능
+  const p = deferredPrompt;
   deferredPrompt = null;
   canInstall = false;
   try {
-    await p.prompt();                // ← 여기서 시스템 설치 대화상자 표시
-    const { outcome } = await p.userChoice;   // "accepted" | "dismissed"
+    await p.prompt();
+    const { outcome } = await p.userChoice;
     if (outcome === "accepted") return;
-    // 사용자가 닫았으면 대안
     if (isIOS()) { openIOSInstallModal(); return; }
     openAPKModal();
   } catch {
@@ -1422,59 +1348,29 @@ async function triggerInstallPrompt() {
     openAPKModal();
   }
 }
-
-/* 7) 커스텀 모달 버튼 와이어링(있을 때만) */
 document.addEventListener("click", (e) => {
   const id = (e.target && e.target.id) || "";
-  // PWA 설치 모달
-if (id === "piConfirm") {            // 설치
-  closeModalIfExists('#pwaInstallModal');
-  if (deferredPrompt) {
-    // 여기서만 시스템 설치 프롬프트 실행
-    triggerInstallPrompt();
-  } else {
-    // 설치조건 미충족 시 대안 제시
-    if (isIOS()) openIOSInstallModal();
-    else openAPKModal();
+  if (id === "piConfirm") {
+    closeModalIfExists('#pwaInstallModal');
+    if (deferredPrompt) triggerInstallPrompt();
+    else { if (isIOS()) openIOSInstallModal(); else openAPKModal(); }
   }
-}
-if (id === "piCancel") {             // 나중에
-  closeModalIfExists('#pwaInstallModal');
-}
-
-  // iOS 안내 모달
-  if (id === "iosOk" || id === "iosClose") {
-    closeModalIfExists('#iosInstallModal');
-  }
-  // 다운로드 모달의 확인 버튼이 #dlConfirm 라면 바로 APK
-  if (id === "dlConfirm") {
-    closeModalIfExists('#downloadModal');
-    location.href = APK_URL;
-  }
+  if (id === "piCancel") { closeModalIfExists('#pwaInstallModal'); }
+  if (id === "iosOk" || id === "iosClose") { closeModalIfExists('#iosInstallModal'); }
+  if (id === "dlConfirm") { closeModalIfExists('#downloadModal'); location.href = APK_URL; }
 });
 
-  
-/* 8) 메인 버튼: 상황별 흐름 */
 (function wireInstallButton(){
   const btn = document.getElementById("appDownloadBtn");
   if (!btn) return;
   if (isStandalone()) { btn.style.display = "none"; return; }
-
   btn.onclick = (event) => {
     try { typeof addRipple === "function" && addRipple(event); } catch(_) {}
-
-    // iOS는 A2HS 안내, 그 외는 무조건 우리 모달 먼저
-    if (isIOS()) {
-      openIOSInstallModal();
-      return;
-    }
-    openPwaInstallModal();   // 설치 가능 여부는 모달의 "설치"에서 판단
+    if (isIOS()) { openIOSInstallModal(); return; }
+    openPwaInstallModal();
   };
 })();
-
 </script>
-
-
 
 </body>
 </html>
