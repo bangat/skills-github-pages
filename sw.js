@@ -33,10 +33,19 @@ messaging.onBackgroundMessage((payload) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const rel = event.notification?.data?.url || ''; // 상대 경로면 BASE 뒤에 붙음
-  const url = rel.startsWith('http') ? rel : (BASE_PATH + rel);
-  event.waitUntil(clients.openWindow(url));
+  const rel = event.notification?.data?.url || '';
+  const url = rel.startsWith('http') ? rel : (BASE_PATH + rel.replace(/^\//,''));
+  event.waitUntil((async () => {
+    const allClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of allClients) {
+      if (client.url === url && 'focus' in client) {
+        return client.focus();
+      }
+    }
+    if (clients.openWindow) return clients.openWindow(url);
+  })());
 });
+
 
 /* ===== 4) 캐시 버전 ===== */
 const SW_VERSION   = 'v2025-08-31-04';      // 배포 때만 변경
@@ -109,3 +118,4 @@ self.addEventListener('fetch', (event) => {
   }
   event.respondWith(handleAsset(req));
 });
+
