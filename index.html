@@ -698,23 +698,31 @@ const swReg = await navigator.serviceWorker.ready; // 이미 등록된 SW 재사
     const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: swReg });
     console.log('FCM token:', token);
 
-    if (token) {
-      const uid = localStorage.getItem('pushUid') || (crypto.randomUUID?.() || String(Date.now()));
-      localStorage.setItem('pushUid', uid);
+if (token) {
+  const uid = localStorage.getItem('pushUid') || (crypto.randomUUID?.() || String(Date.now()));
+  localStorage.setItem('pushUid', uid);
 
-      const ward = localStorage.getItem('linen/ward') || 'unknown';
-      const prev = localStorage.getItem('pushToken');
+  const ward = localStorage.getItem('linen/ward') || 'unknown';
+  const prev = localStorage.getItem('pushToken');
 
-      if (token !== prev) {
-        await set(ref(db, `pushTokens/${ward}/${uid}`), {
-          token, ward, ts: Date.now(), ua: navigator.userAgent
-        });
-        localStorage.setItem('pushToken', token);
-      }
-    }
-  } else {
-    console.warn('알림 권한 상태:', perm);
+  // 토큰이 새로 발급되었을 때만 DB 업데이트(중복쓰기 방지)
+  if (token !== prev) {
+    // 1) 병동 그룹 저장
+    await set(ref(db, `pushTokens/${ward}/${uid}`), {
+      token, ward, ts: Date.now(), ua: navigator.userAgent
+    });
+
+    // 2) 전체 방송 그룹 저장(카톡처럼 모두에게 쏘기 위함)
+    await set(ref(db, `pushTokens/_ALL/${uid}`), {
+      token, ward, ts: Date.now(), ua: navigator.userAgent
+    });
+
+    localStorage.setItem('pushToken', token);
   }
+} else {
+  console.warn('알림 권한 상태:', perm);
+}
+
 
 import { onMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
@@ -1621,6 +1629,7 @@ document.addEventListener("click", (e) => {
 </script>
 </body>
 </html>
+
 
 
 
