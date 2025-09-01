@@ -191,13 +191,28 @@
     return me && (a===me || w===me);
   }
 
-  /* 숫자 → 자리수 읽기(62→육이, 73→칠삼, 51→오일) */
-  const DIG = {'0':'영','1':'일','2':'이','3':'삼','4':'사','5':'오','6':'육','7':'칠','8':'팔','9':'구'};
-  const readDigits = s => String(s).split('').map(ch=>DIG[ch]??ch).join('');
-  const toSpokenWard = label => {
-    const m = String(label).trim().match(/^(\d+)\s*병동$/);
-    return m ? `${readDigits(m[1])}병동` : label;
-  };
+/* 숫자 → 자리수 읽기(62→육이, 73→칠삼, 51→오일) */
+const DIG = {'0':'영','1':'일','2':'이','3':'삼','4':'사','5':'오','6':'육','7':'칠','8':'팔','9':'구'};
+const readDigits = s => String(s).split('').map(ch=>DIG[ch]??ch).join('');
+
+const toSpokenWard = label => {
+  const str = String(label).trim();
+
+  // 1) "린넨실병동" → "린넨실"
+  if (/^린넨실\s*병동$/.test(str)) {
+    return "린넨실";
+  }
+
+  // 2) 숫자 병동 → 자리수 읽기
+  const m = str.match(/^(\d+)\s*병동$/);
+  if (m) {
+    return `${readDigits(m[1])}병동`;
+  }
+
+  // 3) 그 외는 원본 그대로
+  return str;
+};
+
 
   /* 포그라운드 TTS(남이 보낸 메시지만) */
   function speakArrival(senderLabel){
@@ -318,3 +333,4 @@
 
 </body>
 </html>
+
