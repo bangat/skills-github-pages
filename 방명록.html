@@ -47,7 +47,7 @@
     linear-gradient(180deg,rgba(37,99,235,.06),rgba(37,99,235,0)) border-box;
   }
 
-  /* 상단 날짜 1줄 */
+  /* 날짜 구분선 */
   .dayHeader{ text-align:center; margin:6px 0 10px; }
   .dayHeader .badge{
     display:inline-block; font-size:12px; color:#475569; background:#eef2f7; border:1px solid var(--border);
@@ -90,7 +90,7 @@
   .inputWrap{ max-width:980px; margin:0 auto; display:flex; gap:8px; }
   .textbox{
     flex:1; min-height:44px; max-height:140px; padding:10px 12px; border:1px solid var(--border); border-radius:12px;
-    font-size:15px; resize:vertical; outline:none; background:#fff; color:var(--text);
+    font-size:15px; resize:vertical; outline:none; background:#fff; color:#var(--text);
   }
   .textbox:focus{ border-color:var(--accent); box-shadow:var(--focus); }
   .sendBtn{
@@ -117,7 +117,7 @@
 <main>
   <section class="panel" aria-label="실시간 메시지">
     <div class="chatScroll" id="chatScroll">
-      <div class="dayHeader"><span class="badge" id="dayBadge">-</span></div>
+      <!-- 날짜 구분선은 JS가 li.dayHeader로 자동 삽입 -->
       <ul class="msgs" id="msgList"></ul>
     </div>
   </section>
@@ -193,7 +193,6 @@
   const sendBtn = el("#sendBtn");
   const scrollBox = el("#chatScroll");
   const msgList = el("#msgList");
-  const dayBadge = el("#dayBadge");
 
   function refreshSendState(){
     sendBtn.disabled = !(msgBox.value.trim().length > 0 && ward);
@@ -208,9 +207,30 @@
   });
   refreshSendState();
 
-  /* 최신으로 스크롤 */
+  /* 스크롤 유틸 */
+  function isAtBottom(){
+    const dist = scrollBox.scrollHeight - scrollBox.scrollTop - scrollBox.clientHeight;
+    return dist < 4;
+  }
   function scrollToBottom(){
-    try { scrollBox.scrollTop = scrollBox.scrollHeight; } catch {}
+    requestAnimationFrame(()=>{ scrollBox.scrollTop = scrollBox.scrollHeight; });
+  }
+
+  /* 날짜 구분선 삽입 */
+  let __lastDayKey = null;
+  function dayKey(ts){
+    const d = new Date(ts);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function ensureDayHeader(ts){
+    const key = dayKey(ts);
+    if (key !== __lastDayKey){
+      const sep = document.createElement('li');
+      sep.className = 'dayHeader';
+      sep.innerHTML = `<span class="badge">${fmtDateBadge(ts)}</span>`;
+      msgList.appendChild(sep);
+      __lastDayKey = key;
+    }
   }
 
   /* 내가 보낸 메시지 판별 */
@@ -224,9 +244,6 @@
 
   /* 렌더 */
   function renderMessage({ward:w, text, ts, isMine}){
-    // 상단 날짜 1줄 갱신 (마지막 메시지 날짜 기준)
-    dayBadge.textContent = fmtDateBadge(ts);
-
     const row = document.createElement("li");
     row.className = `msgRow ${isMine ? 'right' : 'left'}`;
 
@@ -243,7 +260,6 @@
     time.className = "msgTime";
     time.textContent = fmtAmPmTime(ts);
 
-    // 좌/우에 맞춰 배치
     if (isMine){
       row.appendChild(time);
       row.appendChild(bubble);
@@ -252,7 +268,6 @@
       row.appendChild(time);
     }
 
-    // ▶ 최신이 맨 아래: appendChild
     msgList.appendChild(row);
   }
 
@@ -276,12 +291,18 @@
   }
   sendBtn.addEventListener("click", sendMessage);
 
-  // 구독: 마지막 200개, 추가될수록 아래로 쌓임
+  // 구독: 마지막 200개
   const q = query(ref(db, `guestbook/messages`), limitToLast(200));
   let initialLoaded = false;
   onChildAdded(q, snap=>{
     const v = snap.val() || {};
     const mine = isMineMessage(v);
+
+    // append 전 바닥 여부
+    const stick = isAtBottom();
+
+    // 날짜 구분선 보장
+    ensureDayHeader(v.ts || Date.now());
 
     renderMessage({
       ward: v.author || v.ward || "익명",
@@ -290,12 +311,10 @@
       isMine: mine
     });
 
-    // 초기 로딩 중엔 전체 렌더 후 한 번, 이후엔 새 메시지마다 하단으로
     if (!initialLoaded){
-      // 지연으로 초기 배치 후 스크롤 하단
       clearTimeout(onChildAdded._t);
       onChildAdded._t = setTimeout(()=>{ initialLoaded = true; scrollToBottom(); }, 0);
-    } else {
+    } else if (stick){
       scrollToBottom();
     }
   });
@@ -316,7 +335,7 @@
   }
 </script>
 
-<!-- FCM 포그라운드 수신 -->
+<!-- FCM 포그라운드 수신 + TTS 알림 -->
 <script type="module">
   import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getMessaging, onMessage as onFcmMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
@@ -332,11 +351,27 @@
   const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
   const messaging = getMessaging(app);
 
+  function speak(text){
+    try{
+      if (!('speechSynthesis' in window)) return;
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'ko-KR';
+      u.rate = 1.0;
+      window.speechSynthesis.cancel(); // 겹치기 방지
+      window.speechSynthesis.speak(u);
+    }catch(_){}
+  }
+
   onFcmMessage(messaging, (payload) => {
     const title = payload.notification?.title || '새 방명록';
     const body  = payload.notification?.body  || '';
     console.log('[FCM foreground]', title, body, payload);
+
+    // 진동
     try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
+
+    // ★ 포그라운드 TTS
+    speak('린넨실 메세지 도착!');
   });
 </script>
 
