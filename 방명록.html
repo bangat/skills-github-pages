@@ -323,13 +323,6 @@ async function sendMessage(){
     withStableScroll(()=> renderMessage({ ward: v.ward, text: v.text||"", ts }));
   });
 
-  <script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('firebase-messaging-sw.js') // 상대경로
-    .then(reg => console.log('[FCM SW] registered:', reg.scope))
-    .catch(err => console.warn('[FCM SW] register failed:', err));
-}
-</script>
 
   // 최초 포커스
   msgBox.focus();
@@ -340,6 +333,7 @@ if ('serviceWorker' in navigator) {
   
 </body>
 </html>
+
 
 
 
