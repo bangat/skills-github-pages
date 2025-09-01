@@ -42,7 +42,7 @@ self.addEventListener('notificationclick', (event) => {
 
 
 /* ===== 4) 캐시 버전 ===== */
-const SW_VERSION   = 'v2025-09-01-01';      // 배포 때만 변경
+const SW_VERSION   = 'v2025-09-01-02';      // 배포 때만 변경
 const STATIC_CACHE = `static-${SW_VERSION}`;
 
 /* ===== 5) 프리캐시: 전부 BASE 기준 경로로 ===== */
@@ -112,6 +112,7 @@ self.addEventListener('fetch', (event) => {
   }
   event.respondWith(handleAsset(req));
 });
+
 
 
 
