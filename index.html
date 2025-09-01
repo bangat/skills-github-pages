@@ -675,7 +675,7 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
 <!-- (이미 있는) Firebase (RTDB) 모듈 스크립트 바로 아래에 추가 -->
 <script type="module">
   import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+  import { getMessaging, getToken, onMessage as onFcmMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
   import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
   const firebaseConfig = {
@@ -725,7 +725,7 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
 
 import { onMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
-onMessage(messaging, (payload) => {
+onFcmMessage(messaging, (payload) => {
   // 기존 console.log 대신:
   const title = payload.notification?.title || '새 방명록';
   const body  = payload.notification?.body  || '';
@@ -1620,5 +1620,6 @@ document.addEventListener("click", (e) => {
 
 </body>
 </html>
+
 
 
