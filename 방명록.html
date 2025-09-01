@@ -212,16 +212,15 @@ msgBox.addEventListener("keydown", (e)=>{
 });
 refreshSendState(); // 초기 1회
 
-// === 메시지 쓰기 ===
+// === 메시지 쓰기 ===// === 메시지 쓰기 ===
 const roomRef = ref(db, "guestbook/messages");
 
 async function sendMessage(){
-  const text = (msgBox.value||"").trim();
-  if(!text || !ward) return;async function sendMessage(){
-  const text = (msgBox.value||"").trim();
-  if (!text) return;                // ⬅ ward 없이도 전송 허용
+  const text = (msgBox.value || "").trim();
+  if (!text) return; // 방송 모드: 텍스트만 있으면 전송 허용
 
   const payload = { ward, text, ts: Date.now() };
+
   try{
     sendBtn.disabled = true;
 
@@ -237,12 +236,12 @@ async function sendMessage(){
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ward: '전체',          // 전체 사용자에게 브로드캐스트
-        broadcast: true,       // (워커가 지원하면) 명시 플래그
+        ward: '전체',        // 전체 사용자에게
+        broadcast: true,     // (워커가 지원하면) 명시 플래그
         name: senderName,
         text,
         link,
-        excludeUid: myUid      // 본인 기기 제외(원하면 제거)
+        excludeUid: myUid    // 본인 기기 제외(원하면 제거)
       })
     }).catch(console.warn);
 
@@ -257,8 +256,9 @@ async function sendMessage(){
   }
 }
 
+sendBtn.addEventListener("click", sendMessage);
 
-  sendBtn.addEventListener("click", sendMessage);
+
 
   // === 렌더링(날짜 그룹 단위, 최신이 항상 위) ===
   const list = el("#chatList");
@@ -342,6 +342,7 @@ if ('serviceWorker' in navigator) {
   
 </body>
 </html>
+
 
 
 
