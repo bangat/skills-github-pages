@@ -665,58 +665,6 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
   window.__fb = { saveLogsToRTDB, startStatsLiveWatcher };
 </script>
 
-<!-- (이미 있는) Firebase (RTDB) 모듈 스크립트 바로 아래에 추가 -->
-
-const firebaseConfig = {
-    apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
-    authDomain: "hallymlinen.firebaseapp.com",
-    projectId: "hallymlinen",
-    messagingSenderId: "867775830688",
-    appId: "1:867775830688:web:cef3ed4e70ae9818f347c5"
-  };
-
-  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-  const messaging = getMessaging(app);
-  const db = getDatabase(app);
-
-  const swReg =
-    (await navigator.serviceWorker.getRegistration('sw.js')) ||
-    (await navigator.serviceWorker.register('sw.js'));
-
-  let perm = 'denied';
-  try {
-    perm = (typeof Notification !== 'undefined' && Notification.requestPermission)
-      ? await Notification.requestPermission()
-      : 'denied';
-  } catch { perm = 'denied'; }
-  if (perm === 'granted') {
-    const vapidKey = "BDUJY48GaGacu_zkXXSFXAtPRQGn20A1-MqRUDtjgXqEnSi_XCpJo8x3ykmeOpeD76zzvFh_vO-xUgeP4c5S-iw";
-    const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: swReg });
-    console.log('FCM token:', token);
-
-    if (token) {
-      const uid = localStorage.getItem('pushUid') || (crypto.randomUUID?.() || String(Date.now()));
-      localStorage.setItem('pushUid', uid);
-
-      const ward = localStorage.getItem('linen/ward') || 'unknown';
-      const prev = localStorage.getItem('pushToken');
-
-      if (token !== prev) {
-        await set(ref(db, `pushTokens/${ward}/${uid}`), {
-          token, ward, ts: Date.now(), ua: navigator.userAgent
-        });
-        localStorage.setItem('pushToken', token);
-      }
-    }
-  } else {
-    console.warn('알림 권한 상태:', perm);
-  }
-
-
-  onMessage(messaging, (payload) => {
-    console.log('foreground push:', payload);
-  });
-</script>
 
 <!-- App Script -->
 <script>
@@ -1607,4 +1555,3 @@ document.addEventListener("click", (e) => {
 
 </body>
 </html>
-
