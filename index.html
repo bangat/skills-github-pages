@@ -854,10 +854,7 @@ function fitCardToFooter(){
 
   // 첫 숫자 입력 시 0을 교체해주는 보정
 function wireZeroReplace(inp, onChange){
-  // 포커스되면 전체 선택(바로 덮어쓰기 편하게)
-  inp.addEventListener('focus', () => {
-    try { if (inp.value === "0") inp.select(); } catch(_) {}
-  });
+
 
   // 키다운에서 첫 숫자 입력 시 0을 교체
   inp.addEventListener('keydown', (e) => {
