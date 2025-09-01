@@ -129,18 +129,109 @@
     min-height: var(--fillH, auto);
   }
 
-  /* (입력 내부) 카테고리 탭 */
-  .tabs{
-    width:100%;display:flex;gap:8px;margin:8px 0;background:#f2f5fb;border:1px solid var(--border);
-    border-radius:14px;padding:4px;box-shadow:var(--shadow-1); position:relative;
+  /* (입력 내부) 카테고리 탭 — 가시성 강화 */
+.tabs{
+  width:100%;
+  display:flex;
+  gap:10px;
+  margin:10px 0;
+  padding:6px;
+  background:#eef3ff;               /* 더 밝은 블루 톤 배경 */
+  border:1px solid #cfe0ff;         /* 테두리 대비 */
+  border-radius:14px;
+  box-shadow: var(--shadow-1);
+  position:relative;
+}
+
+/* 탭 버튼: 키우고 또렷하게 */
+.tab{
+  flex:1;
+  height:48px;                      /* ⬆ 세로 사이즈 업 */
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:10px 14px;                /* ⬆ 내부 여백 업 */
+  font-weight:900;                  /* ⬆ 가독성 */
+  font-size:16px;
+  letter-spacing:.1px;
+  color:#1e3a8a;                    /* 짙은 파랑(비활성 텍스트) */
+  background:#ffffffcf;             /* 살짝 반투명 화이트 배경 */
+  border:2px solid transparent;     /* 포커스/활성에서 테두리만 교체 */
+  border-radius:12px;
+  cursor:pointer;
+  position:relative;
+  z-index:1;
+  transition:
+    background .15s ease,
+    color .15s ease,
+    border-color .15s ease,
+    transform .08s ease;
+}
+.tab:hover{ background:#f7faff; color:#0b2ea8; transform:translateY(-1px); }
+.tab:active{ transform:translateY(0); }
+
+/* 활성 탭: 색 대비 확실히 */
+.tab.active{
+  color:#fff;
+  background:linear-gradient(180deg,#4f83ff,#2563eb);
+  border-color:#1d4ed8;
+  box-shadow:0 10px 24px rgba(37,99,235,.25), inset 0 0 0 1px rgba(255,255,255,.14);
+}
+
+/* 키보드 포커스 접근성 */
+.tab:focus-visible{
+  outline:none;
+  border-color:#2563eb;
+  box-shadow:var(--focus);
+}
+
+/* 언더라인 슬라이더(보조 인디케이터) — 두껍게 & 더 눈에 띄게 */
+/* 언더라인 슬라이더 — 탭 아래쪽에 딱 붙게 */
+.tab-slider{
+  position:absolute;
+  left:0;
+  bottom:0;              /* ← 항상 맨 아래 붙게 */
+  width:33.3333%;
+  height:5px;             /* 두께 */
+  border-radius:999px;
+  background:linear-gradient(90deg,#93c5fd,#2563eb);
+  box-shadow:
+    0 0 0 1px rgba(37,99,235,.18),
+    0 8px 18px rgba(37,99,235,.28);
+  transition:transform .25s cubic-bezier(.2,.8,.2,1);
+  pointer-events:none;
+}
+
+/* 모바일에서도 크기 유지 */
+@media (max-width:430px){
+  .tabs{ padding:4px; gap:8px; }
+  .tab{
+    height:44px;                    /* 모바일도 충분히 큼 */
+    padding:8px 10px;
+    font-size:15px;
   }
-  .tab{flex:1;text-align:center;padding:8px 10px;border-radius:10px;font-weight:800;color:#334155;cursor:pointer; position:relative; z-index:1}
-  .tab.active{color:#0b3fb8}
-  .tab-slider{
-    position:absolute; top:4px; bottom:4px; width:33.3333%;
-    border-radius:10px; background:#e6efff; box-shadow:inset 0 0 0 1px rgba(37,99,235,.25);
-    transition:transform .25s cubic-bezier(.2,.8,.2,1);
+  .tab-slider{ height:4px; bottom:0px; }
+}
+
+/* ── 품목 탭 밑줄(슬라이더) 항상 '아래쪽' 고정 ───────────────── */
+.tabs > .tab-slider{
+  position:absolute !important;
+  left:0 !important;
+  right:auto !important;
+  top:auto !important;     /* 위 고정 방지 */
+  bottom:0 !important;     /* 아래에 붙임 */
+  height:5px !important;   /* 두께 유지 */
+  z-index:0 !important;    /* 탭 버튼 아래 레이어 */
+}
+.tabs > .tab{ z-index:1; } /* 버튼이 항상 슬라이더 위에 보이게 */
+
+/* 모바일에서도 동일 적용 */
+@media (max-width:430px){
+  .tabs > .tab-slider{
+    bottom:0 !important;
+    height:4px !important;
   }
+}
 
   /* 표 */
   table{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-2)}
@@ -1336,16 +1427,28 @@ window.addEventListener("DOMContentLoaded",()=>{
   const slider = document.getElementById('tabSlider');
   function moveSlider(){ const idx = ["시트","환자복","기타"].indexOf(state.cat); slider.style.transform = `translateX(${idx*100}%)`; }
   tabs.forEach(t=>{
-    t.onclick=()=>{
-      state.cat=t.dataset.cat;
-      tabs.forEach(x=>x.classList.remove("active"));
-      t.classList.add("active");
-      moveSlider();
-      buildTable();
-      fitCardToFooter();
-      playSnd("#tabSound");
-    };
-  });
+  // 초기 aria 상태
+  t.setAttribute('role','tab');
+  t.setAttribute('aria-selected', t.classList.contains('active') ? 'true' : 'false');
+  t.setAttribute('tabindex', t.classList.contains('active') ? '0' : '-1');
+
+  t.onclick=()=>{
+    state.cat=t.dataset.cat;
+
+    // 활성/비활성 토글 + aria 갱신
+    tabs.forEach(x=>{
+      const isActive = (x === t);
+      x.classList.toggle("active", isActive);
+      x.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      x.setAttribute('tabindex', isActive ? '0' : '-1');
+    });
+
+    moveSlider();
+    buildTable();
+    fitCardToFooter();
+    playSnd("#tabSound");
+  };
+});
   moveSlider();
 
   // 통계 watchers
