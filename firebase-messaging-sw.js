@@ -1,5 +1,4 @@
 // firebase-messaging-sw.js
-// FCM 백그라운드 수신용 SW (경로: 사이트 루트)
 
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
@@ -14,8 +13,9 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// v10 compat: onBackgroundMessage 대체 (notification payload 사용 시 자동 표시되지만,
-// data 전용 메시지일 때 수동 표시)
+// 현재 프로젝트의 베이스 경로: 예) '/skills-github-pages/'
+const BASE = new URL('.', self.registration.scope).pathname;
+
 self.addEventListener('push', (event) => {
   if (!event.data) return;
   const payload = event.data.json() || {};
@@ -24,9 +24,12 @@ self.addEventListener('push', (event) => {
 
   const title = n.title || data.title || '새 알림';
   const body  = n.body  || data.body  || '';
-  const icon  = n.icon  || '/icons/apple-touch-icon.png';
-  const badge = n.badge || '/icons/apple-touch-icon.png';
-  const url   = (payload.fcmOptions && payload.fcmOptions.link) || data.link || '/';
+  const icon  = n.icon  || data.icon  || (BASE + 'icons/apple-touch-icon.png');
+  const badge = n.badge || data.badge || (BASE + 'icons/apple-touch-icon.png');
+  const url   =
+    (payload.fcmOptions && payload.fcmOptions.link) ||
+    data.link ||
+    (BASE + '방명록.html');
 
   event.waitUntil(self.registration.showNotification(title, {
     body, icon, badge,
