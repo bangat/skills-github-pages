@@ -563,14 +563,6 @@
   <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/경고.mp3" type="audio/mpeg" />
 </audio>
 
-    <!-- head나 body 어디든 상관없지만, 로드 후 1회만 실행되면 됨 -->
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/firebase-messaging-sw.js')
-      .catch(err => console.warn('[FCM SW] register failed:', err));
-  }
-</script>
-
 <!-- XLSX -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <!-- Chart.js -->
@@ -692,9 +684,8 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
   const messaging = getMessaging(app);
   const db = getDatabase(app);
 
-  const swReg =
-    (await navigator.serviceWorker.getRegistration('sw.js')) ||
-    (await navigator.serviceWorker.register('sw.js'));
+const swReg = await navigator.serviceWorker.ready; // 이미 등록된 SW 재사용
+
 
   let perm = 'denied';
   try {
@@ -1509,21 +1500,28 @@ window.addEventListener("DOMContentLoaded",()=>{
 let deferredPrompt = null;
 let canInstall = false;
 
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").then(reg => {
-      reg.addEventListener("updatefound", () => {
-        console.log("[SW] update found");
-      });
-    }).catch(err => console.warn("[SW] register failed:", err));
-  });
+const SCOPE = '/skills-github-pages/';     // ← GitHub Pages 프로젝트 루트
+const SW_URL = `${SCOPE}sw.js`;            // ← 서비스워커 파일 위치 고정
 
-  let refreshed = false;
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (refreshed) return;
-    refreshed = true;
-    try { typeof closeModal === "function" && closeModal("#pwaInstallModal"); } catch(_) {}
-    location.reload();
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register(SW_URL, { scope: SCOPE })
+      .then(reg => {
+        console.log('[SW] registered:', reg.scope);
+        // 업데이트 시 한 번만 새로고침 (세션당 1회)
+        let reloaded = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (reloaded) return;
+          reloaded = true;
+          try { typeof closeModal === "function" && closeModal("#pwaInstallModal"); } catch(_) {}
+          // 세션 스토리지로 다중 탭/중복 보호
+          if (!sessionStorage.getItem('sw-reloaded')) {
+            sessionStorage.setItem('sw-reloaded', '1');
+            location.reload();
+          }
+        });
+      })
+      .catch(err => console.warn('[SW] register failed:', err));
   });
 }
 
@@ -1621,18 +1619,9 @@ document.addEventListener("click", (e) => {
   };
 })();
 </script>
-  <!-- 🔔 FCM Service Worker 등록: 여기 삽입 -->
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/skills-github-pages/firebase-messaging-sw.js', {
-    scope: '/skills-github-pages/'
-  })
-  .then(reg => console.log('[FCM SW] registered:', reg.scope))
-  .catch(err => console.warn('[FCM SW] register failed:', err));
-}
-</script>
 </body>
 </html>
+
 
 
 
