@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
@@ -24,84 +24,59 @@
   html,body{height:100%;-webkit-text-size-adjust:100%}
   body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
 
-/* === 요청 반영: -버튼 흰색 + 품목 탭 밑줄 제거 =================== */
+  /* === 요청 반영: -버튼 흰색 + 품목 탭 밑줄 제거 =================== */
 
-/* 1) -버튼(감소) 흰색 스타일 */
-.chip.ctrl.minus{
-  background:#fff !important;           /* 흰색 배경 */
-  color:#ef4444 !important;             /* 글자색은 레드 계열 */
-  border:1px solid #e5e7eb !important;  /* 얕은 테두리 */
-  box-shadow:0 4px 12px rgba(0,0,0,.06) !important;
-}
+  /* 1) -버튼(감소) 흰색 스타일 */
+  .chip.ctrl.minus{
+    background:#fff !important;
+    color:#ef4444 !important;
+    border:1px solid #e5e7eb !important;
+    box-shadow:0 4px 12px rgba(0,0,0,.06) !important;
+  }
+  .chip.ctrl.minus:hover{ filter:none !important; transform:translateY(-1px) !important; }
+  .chip.ctrl.minus:active{ transform:translateY(0) !important; }
 
-/* 호버/액티브 살짝 반응 */
-.chip.ctrl.minus:hover{
-  filter:none !important;
-  transform:translateY(-1px) !important;
-}
-.chip.ctrl.minus:active{
-  transform:translateY(0) !important;
-}
+  /* 2) '시트 · 환자복 · 기타' 카테고리 탭 밑줄(슬라이더) 숨기기 */
+  .tabs .tab-slider{ display:none !important; }
 
-/* 2) '시트 · 환자복 · 기타' 카테고리 탭 밑줄(슬라이더) 숨기기 */
-.tabs .tab-slider{
-  display:none !important;
-}
-
-
-/* === 상단 3탭 네비 (NEW) === */
-/* 동일 위치, 딱 한 줄 추가해서 입력탭과 컨테이너 사이 간격 만들기 */
-.topNav{
-  position:sticky; top:0; z-index:90;
-  background:rgba(255,255,255,.65);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  border-bottom:1px solid rgba(15,23,42,.08);
-  box-shadow: 0 6px 20px rgba(2, 6, 23, .06);
-  padding:8px 12px; min-height:64px;
-  margin-bottom:10px; /* ← 여기 숫자 8~14px 사이로 취향 조절 */
-}
-
-
-
-.topNav .nav{
-  max-width:980px; margin:0 auto; position:relative;
-  display:grid; grid-template-columns:repeat(3,1fr);
-  align-items:center;
-  height:48px; /* 앱바 높이 고정 */
-  padding:0 8px;
-  /* 기존 pill 배경 제거 → 상단은 언더라인 스타일로 차별화 */
-  background:transparent; border:none; box-shadow:none;
-}
-.navTab{
-  appearance:none; background:transparent; border:0;
-  height:100%;
-  display:flex; align-items:center; justify-content:center;
-  font-weight:800; letter-spacing:.1px;
-  color:#334155; cursor:pointer; border-radius:10px;
-  padding:0 4px; position:relative; z-index:1;
-  transition: color .15s ease;
-}
-.navTab:hover{ color:#1e40af; }
-.navTab.active{ color:#0b3fb8; }
-
-/* 언더라인 인디케이터(슬라이더) */
-.nav-slider{
-  position:absolute; left:8px; right:8px; bottom:6px;
-  /* 각 탭이 3등분이므로 너비는 33.3333% 유지, JS의 translateX와 호환 */
-  width:calc(33.3333% - 16px);
-  height:3px; border-radius:999px;
-  background:linear-gradient(90deg,#93c5fd,#2563eb);
-  box-shadow:0 0 0 1px rgba(37,99,235,.15), 0 6px 14px rgba(37,99,235,.25);
-  transition:transform .25s cubic-bezier(.2,.8,.2,1);
-  pointer-events:none;
-}
-
-/* 스크롤 시 살짝 더 떠 보이게 */
-.topNav.elevated{
-  box-shadow:0 10px 28px rgba(2, 6, 23, .10);
-  border-bottom-color: rgba(15,23,42,.12);
-}
+  /* === 상단 3탭 네비 (NEW) === */
+  .topNav{
+    position:sticky; top:0; z-index:90;
+    background:rgba(255,255,255,.65);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-bottom:1px solid rgba(15,23,42,.08);
+    box-shadow: 0 6px 20px rgba(2, 6, 23, .06);
+    padding:8px 12px; min-height:64px;
+    margin-bottom:10px;
+  }
+  .topNav .nav{
+    max-width:980px; margin:0 auto; position:relative;
+    display:grid; grid-template-columns:repeat(3,1fr);
+    align-items:center; height:48px; padding:0 8px;
+    background:transparent; border:none; box-shadow:none;
+  }
+  .navTab{
+    appearance:none; background:transparent; border:0;
+    height:100%; display:flex; align-items:center; justify-content:center;
+    font-weight:800; letter-spacing:.1px; color:#334155; cursor:pointer;
+    border-radius:10px; padding:0 4px; position:relative; z-index:1;
+    transition: color .15s ease;
+  }
+  .navTab:hover{ color:#1e40af; }
+  .navTab.active{ color:#0b3fb8; }
+  .nav-slider{
+    position:absolute; left:8px; right:8px; bottom:6px;
+    width:calc(33.3333% - 16px); height:3px; border-radius:999px;
+    background:linear-gradient(90deg,#93c5fd,#2563eb);
+    box-shadow:0 0 0 1px rgba(37,99,235,.15), 0 6px 14px rgba(37,99,235,.25);
+    transition:transform .25s cubic-bezier(.2,.8,.2,1);
+    pointer-events:none;
+  }
+  .topNav.elevated{
+    box-shadow:0 10px 28px rgba(2, 6, 23, .10);
+    border-bottom-color: rgba(15,23,42,.12);
+  }
 
   header{
     position:sticky; top:64px; z-index:50; display:flex; justify-content:space-between; align-items:center; gap:10px;
@@ -112,23 +87,15 @@
   label.head{font-weight:800;color:#334155;margin-right:6px;white-space:nowrap}
   select,input[type=date]{padding:10px 12px;font-size:16px;border:1px solid var(--border);border-radius:var(--r-md);background:#fff;color:var(--text);transition:border-color .12s,box-shadow .12s}
   select:focus,input[type=date]:focus{outline:none;border-color:var(--accent);box-shadow:var(--focus)}
-  /* 고정폭 제거 → 카드 그리드 너비 100%로 맞춤 */
-#wardSelect{ width:100% !important; }
+  #wardSelect{ width:100% !important; }
 
-/* 폼 2열(입력영역)에서 내장 최소폭으로 삐져나오는 현상 방지 */
-.formRow{ grid-template-columns: var(--label-w) 1fr; }
-.formRow > *:nth-child(2){ min-width:0; }
-
-/* 두 컨트롤 공통 스타일(이미 있다면 유지) */
-.formRow select,
-.formRow input[type="date"]{
-  width:100%;
-  padding:10px 12px;
-  border:1px solid var(--border);
-  border-radius:12px;
-  transition:border-color .12s, box-shadow .12s;
-}
-
+  .formRow{ grid-template-columns: var(--label-w) 1fr; }
+  .formRow > *:nth-child(2){ min-width:0; }
+  .formRow select,
+  .formRow input[type="date"]{
+    width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:12px;
+    transition:border-color .12s, box-shadow .12s;
+  }
 
   button{border:0;border-radius:12px;padding:10px 14px;font-size:15px;font-weight:700;cursor:pointer;transition:transform .12s,filter .12s; position:relative; overflow:hidden}
   .btn{background:#eef2f7;color:#1f2a44;border:1px solid var(--border);box-shadow:var(--shadow-1)}
@@ -136,7 +103,6 @@
   .btn:active{transform:translateY(0)}
   .btn.acc{background:linear-gradient(180deg,#4f83ff,#2563eb);color:#fff;border:1px solid #2856c7;box-shadow:0 6px 22px rgba(37,99,235,.25)}
 
-  /* main spacing: 하단 sticky와 겹침 방지 */
   main{max-width:980px;margin:0 auto;padding:12px 16px calc(110px + env(safe-area-inset-bottom));}
 
   h1{font-size:20px;margin:6px 0 8px;color:#0f172a}
@@ -144,119 +110,47 @@
   .fieldRow .lab{flex:0 0 72px; font-weight:800; color:#334155}
   #issueDate{flex:1; min-width:0}
 
-  /* 프리미엄 섹션 카드 + 최소 높이(푸터 위까지 채우기) */
   .sectionCard{
-    padding:14px;
-    border-radius:20px;
-    background:#fff;
+    padding:14px; border-radius:20px; background:#fff;
     box-shadow: 0 16px 44px rgba(15,23,42,.10);
     border:1px solid rgba(15,23,42,.06);
     min-height: var(--fillH, auto);
   }
 
-  /* (입력 내부) 카테고리 탭 — 가시성 강화 */
-.tabs{
-  width:100%;
-  display:flex;
-  gap:10px;
-  margin:10px 0;
-  padding:6px;
-  background:#eef3ff; /* 더 밝은 블루 톤 배경 */
-  border:1px solid #cfe0ff; /* 테두리 대비 */
-  border-radius:14px;
-  box-shadow: var(--shadow-1);
-  position:relative;
-}
-
-/* 탭 버튼: 키우고 또렷하게 */
-.tab{
-  flex:1;
-  height:48px; /* ⬆ 세로 사이즈 업 */
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:10px 14px; /* ⬆ 내부 여백 업 */
-  font-weight:900; /* ⬆ 가독성 */
-  font-size:16px;
-  letter-spacing:.1px;
-  color:#1e3a8a; /* 짙은 파랑(비활성 텍스트) */
-  background:#ffffffcf; /* 살짝 반투명 화이트 배경 */
-  border:2px solid transparent; /* 포커스/활성에서 테두리만 교체 */
-  border-radius:12px;
-  cursor:pointer;
-  position:relative;
-  z-index:1;
-  transition:
-    background .15s ease,
-    color .15s ease,
-    border-color .15s ease,
-    transform .08s ease;
-}
-.tab:hover{ background:#f7faff; color:#0b2ea8; transform:translateY(-1px); }
-.tab:active{ transform:translateY(0); }
-
-/* 활성 탭: 색 대비 확실히 */
-.tab.active{
-  color:#fff;
-  background:linear-gradient(180deg,#4f83ff,#2563eb);
-  border-color:#1d4ed8;
-  box-shadow:0 10px 24px rgba(37,99,235,.25), inset 0 0 0 1px rgba(255,255,255,.14);
-}
-
-/* 키보드 포커스 접근성 */
-.tab:focus-visible{
-  outline:none;
-  border-color:#2563eb;
-  box-shadow:var(--focus);
-}
-
-/* 언더라인 슬라이더(보조 인디케이터) — 두껍게 & 더 눈에 띄게 */
-/* 언더라인 슬라이더 — 탭 아래쪽에 딱 붙게 */
-.tab-slider{
-  position:absolute;
-  left:0;
-  bottom:0; /* ← 항상 맨 아래 붙게 */
-  width:33.3333%;
-  height:5px; /* 두께 */
-  border-radius:999px;
-  background:linear-gradient(90deg,#93c5fd,#2563eb);
-  box-shadow:
-    0 0 0 1px rgba(37,99,235,.18),
-    0 8px 18px rgba(37,99,235,.28);
-  transition:transform .25s cubic-bezier(.2,.8,.2,1);
-  pointer-events:none;
-}
-
-/* 모바일에서도 크기 유지 */
-@media (max-width:430px){
-  .tabs{ padding:4px; gap:8px; }
+  /* (입력 내부) 카테고리 탭 */
+  .tabs{
+    width:100%; display:flex; gap:10px; margin:10px 0; padding:6px;
+    background:#eef3ff; border:1px solid #cfe0ff; border-radius:14px; box-shadow: var(--shadow-1);
+    position:relative;
+  }
   .tab{
-    height:44px; /* 모바일도 충분히 큼 */
-    padding:8px 10px;
-    font-size:15px;
+    flex:1; height:48px; display:flex; align-items:center; justify-content:center;
+    padding:10px 14px; font-weight:900; font-size:16px; letter-spacing:.1px;
+    color:#1e3a8a; background:#ffffffcf; border:2px solid transparent; border-radius:12px; cursor:pointer;
+    position:relative; z-index:1;
+    transition: background .15s ease, color .15s ease, border-color .15s ease, transform .08s ease;
   }
-  .tab-slider{ height:4px; bottom:0px; }
-}
+  .tab:hover{ background:#f7faff; color:#0b2ea8; transform:translateY(-1px); }
+  .tab:active{ transform:translateY(0); }
+  .tab.active{ color:#fff; background:linear-gradient(180deg,#4f83ff,#2563eb); border-color:#1d4ed8; box-shadow:0 10px 24px rgba(37,99,235,.25), inset 0 0 0 1px rgba(255,255,255,.14); }
+  .tab:focus-visible{ outline:none; border-color:#2563eb; box-shadow:var(--focus); }
 
-/* ── 품목 탭 밑줄(슬라이더) 항상 '아래쪽' 고정 ───────────────── */
-.tabs > .tab-slider{
-  position:absolute !important;
-  left:0 !important;
-  right:auto !important;
-  top:auto !important; /* 위 고정 방지 */
-  bottom:0 !important; /* 아래에 붙임 */
-  height:5px !important; /* 두께 유지 */
-  z-index:0 !important; /* 탭 버튼 아래 레이어 */
-}
-.tabs > .tab{ z-index:1; } /* 버튼이 항상 슬라이더 위에 보이게 */
-
-/* 모바일에서도 동일 적용 */
-@media (max-width:430px){
-  .tabs > .tab-slider{
-    bottom:0 !important;
-    height:4px !important;
+  .tab-slider{
+    position:absolute; left:0; bottom:0; width:33.3333%; height:5px; border-radius:999px;
+    background:linear-gradient(90deg,#93c5fd,#2563eb);
+    box-shadow:0 0 0 1px rgba(37,99,235,.18), 0 8px 18px rgba(37,99,235,.28);
+    transition:transform .25s cubic-bezier(.2,.8,.2,1); pointer-events:none;
   }
-}
+  @media (max-width:430px){
+    .tabs{ padding:4px; gap:8px; }
+    .tab{ height:44px; padding:8px 10px; font-size:15px; }
+    .tab-slider{ height:4px; bottom:0px; }
+  }
+  .tabs > .tab-slider{ position:absolute !important; left:0 !important; right:auto !important; top:auto !important; bottom:0 !important; height:5px !important; z-index:0 !important; }
+  .tabs > .tab{ z-index:1; }
+  @media (max-width:430px){
+    .tabs > .tab-slider{ bottom:0 !important; height:4px !important; }
+  }
 
   /* 표 */
   table{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-2)}
@@ -265,79 +159,42 @@
   td:first-child,th:first-child{text-align:left}
   .col-item{width:42%}.col-qty{width:58%}
 
-  /* 품목 셀: 텍스트 또렷 + 노란 사각형 박스 */
-#inputTable td.item-name{
-  position:relative;
-  font-size:16.5px;
-  font-weight:900;
-  color:#1f2937;
-  white-space:nowrap;
-  z-index:0;              /* 배경 레이어 뒤로 보냄 */
-}
-
-/* 사각형 박스(연한 노란색) – 카드 톤과 유사한 얕은 그림자+인셋 보더 */
-#inputTable td.item-name::before{
-  content:"";
-  position:absolute;
-  inset:4px 6px;                      /* 박스 여백 */
-  border-radius:12px;                 /* 카드와 유사한 라운드 */
-  background:linear-gradient(180deg,#fff8e1,#fff4c4); /* 연노랑 그라데 */
-  box-shadow:
-    inset 0 0 0 1px rgba(245,158,11,.22),  /* 얕은 인셋 보더(amber) */
-    0 4px 14px rgba(15,23,42,.06);         /* 카드 느낌의 소프트 그림자 */
-  z-index:-1;                        /* 텍스트 뒤, 셀 안쪽 */
-}
-
-/* 좌측 강조띠 제거 */
-#inputTable td.item-name::after{ content:none !important; }
-
-
-/* 모바일에서 박스 여백 살짝 타이트하게 */
-@media (max-width:430px){
-  #inputTable td.item-name::before{ inset:3px 5px; border-radius:10px; }
-  #inputTable td.item-name::after{ left:8px; height:56%; }
-}
-
+  /* 품목 셀 */
+  #inputTable td.item-name{
+    position:relative; font-size:16.5px; font-weight:900; color:#1f2937; white-space:nowrap; z-index:0;
+  }
+  #inputTable td.item-name::before{
+    content:""; position:absolute; inset:4px 6px; border-radius:12px;
+    background:linear-gradient(180deg,#fff8e1,#fff4c4);
+    box-shadow: inset 0 0 0 1px rgba(245,158,11,.22), 0 4px 14px rgba(15,23,42,.06);
+    z-index:-1;
+  }
+  #inputTable td.item-name::after{ content:none !important; }
+  @media (max-width:430px){
+    #inputTable td.item-name::before{ inset:3px 5px; border-radius:10px; }
+    #inputTable td.item-name::after{ left:8px; height:56%; }
+  }
   .item-name.k2::after{content:""; display:inline-block; width:.9em;}
   @media (max-width:430px){ .item-name.k2::after{ width:1.05em; } }
 
-  /* 정형 품목: 텍스트는 더 선명한 블루, 박스는 동일 노란색 유지 */
-tr.kind-ortho td.item-name{
-  color:#1d4ed8;
-  font-weight:900;
-}
-tr.kind-ortho td.item-name::after{
-  /* 좌측 띠만 블루 톤으로 조정해 가독성↑ */
-  background:linear-gradient(180deg,#bfdbfe,#3b82f6);
-  opacity:.75;
-}
-
+  /* 정형 품목 텍스트 색상 */
+  tr.kind-ortho td.item-name{ color:#1d4ed8; font-weight:900; }
+  tr.kind-ortho td.item-name::after{ background:linear-gradient(180deg,#bfdbfe,#3b82f6); opacity:.75; }
 
   .qtyCell{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap}
   .qtyInputWrap{ position:relative; display:inline-block; }
   .qtyCell input{
-  width:70px;          /* ⬆ 넓이 확장 */
-  height:42px;         /* ⬆ 높이 확장 */
-  font-size:16px;      /* 글씨 키움 */
-  text-align:center;
-  padding:0 8px;
-  border:1px solid var(--border);
-  border-radius:12px;
-  background:#fff;
-  color:#0f172a;
-}
-.chip{
-  height:42px;
-  min-width:54px;
-  font-size:15px;
-}
-.chip.spring{ animation:springy .18s cubic-bezier(.17,.89,.32,1.28); }
+    width:70px; height:42px; font-size:16px; text-align:center; padding:0 12px;
+    border:1px solid var(--border); border-radius:12px; background:#fff; color:#0f172a;
+  }
+  .chip{ height:42px; min-width:54px; font-size:15px; }
+  .chip.spring{ animation:springy .18s cubic-bezier(.17,.89,.32,1.28); }
   @keyframes springy{0%{transform:scale(1)}40%{transform:scale(.96)}70%{transform:scale(1.06)}100%{transform:scale(1)}}
 
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield}
 
-  .empty{margin-top:16px;padding:18px;border:1px dashed var(--border);border-radius:16px;text-align:center;color:var(--muted);background:#fff}
+  .empty{margin-top:16px;padding:18px;border:1px dashed var(--border);border-radius:16px;text-align:center;color:#var(--muted);background:#fff}
 
   .footerBar{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--border);padding:10px;display:flex;justify-content:center;z-index:50; padding-bottom: max(10px, env(safe-area-inset-bottom));}
   .footerCol{display:flex;flex-direction:column;gap:10px;align-items:stretch;max-width:980px;width:100%}
@@ -384,31 +241,21 @@ tr.kind-ortho td.item-name::after{
   #flashOverlay{position:fixed; inset:0; background:#ef4444; opacity:0; pointer-events:none; animation: flashOverlay3 .24s ease-in-out 3; z-index:9999}
   @keyframes flashOverlay3{0%{opacity:0}50%{opacity:.30}100%{opacity:0}}
 
-.modal-open { overflow:hidden; }
-.modalOverlay{
-  position:fixed; inset:0; display:none;
-  background:rgba(15,23,42,.5); z-index:10000;
-}
+  .modal-open { overflow:hidden; }
+  .modalOverlay{ position:fixed; inset:0; display:none; background:rgba(15,23,42,.5); z-index:10000; }
 
-/* === 카드 전체 레이아웃 === */
-.modalCard{
-  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-  width:min(92vw,520px);
-  max-height:88vh;
-  display:flex; flex-direction:column;
-  background:#fff; color:#0f172a;
-  border-radius:16px; box-shadow:0 20px 60px rgba(15,23,42,.25);
-  overflow:hidden;
-}
+  .modalCard{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:min(92vw,520px); max-height:88vh; display:flex; flex-direction:column;
+    background:#fff; color:#0f172a; border-radius:16px; box-shadow:0 20px 60px rgba(15,23,42,.25); overflow:hidden;
+  }
+  .modalHead{ padding:16px 18px; font-weight:800; font-size:18px; border-bottom:1px solid var(--border); flex:0 0 auto; }
+  .modalBody{ padding:16px 18px; font-size:14px; line-height:1.5; color:#475569; flex:1 1 auto; min-height:0; overflow:auto; max-height:50vh; }
+  .modalActions{ display:flex; gap:10px; padding:14px 16px; background:#f8fafc; border-top:1px solid var(--border); flex:0 0 auto; }
+  .modalActions .btn{ flex:1; }
+  .modalActions .btn.cancel{ background:#eef2f7; color:#1f2a44; border:1px solid var(--border); }
+  .modalActions .btn.primary{ background:linear-gradient(180deg,#4f83ff,#2563eb); color:#fff; border:1px solid #2856c7; }
 
-.modalHead{ padding:16px 18px; font-weight:800; font-size:18px; border-bottom:1px solid var(--border); flex:0 0 auto; }
-.modalBody{ padding:16px 18px; font-size:14px; line-height:1.5; color:#475569; flex:1 1 auto; min-height:0; overflow:auto; max-height:50vh; }
-.modalActions{ display:flex; gap:10px; padding:14px 16px; background:#f8fafc; border-top:1px solid var(--border); flex:0 0 auto; }
-.modalActions .btn{ flex:1; }
-.modalActions .btn.cancel{ background:#eef2f7; color:#1f2a44; border:1px solid var(--border); }
-.modalActions .btn.primary{ background:linear-gradient(180deg,#4f83ff,#2563eb); color:#fff; border:1px solid #2856c7; }
-
-  /* Toast */
   .toast{
     position:fixed; right:18px; bottom:90px; transform:translateY(20px);
     background:linear-gradient(180deg,#10b981,#059669); color:#fff; font-weight:900;
@@ -420,7 +267,6 @@ tr.kind-ortho td.item-name::after{
   .toast .sub{font-weight:600;opacity:.9;font-size:12px}
   .toast .check{width:18px; height:18px; border-radius:50%; background:#fff; color:#059669; display:inline-grid; place-items:center; font-weight:900}
 
-  /* Charts */
   #statsCharts{margin-top:14px}
   #statsCharts .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow-2); padding:12px; }
   #statsCharts h2{margin:10px 2px 8px; font-size:18px}
@@ -452,14 +298,12 @@ tr.kind-ortho td.item-name::after{
     .col-qty{ width:60%; }
     .qtyCell{ gap:4px; flex-wrap:nowrap; }
     .chip{ height:32px; min-width:40px; padding:0 8px; font-size:13px; white-space:nowrap; }
-    .qtyCell input{ width:44px; height:32px; font-size:14px; }
+    .qtyCell input{ width:44px; height:32px; font-size:14px; padding:0 10px; }
     .item-name{ font-size:14.5px; white-space:nowrap; }
   }
 
-  /* 안드 WebView 겹침 방지 */
   .tabs{ overflow:hidden; contain:layout paint; }
 
-  /* Confirm modal extras */
   .modalBody .confirmHeader{font-weight:800;color:#0f172a;margin:2px 0 8px}
   .modalBody .confirmHeader .date{font-size:15px}
   .modalBody .confirmHeader .ward{color:#0b3fb8}
@@ -477,199 +321,57 @@ tr.kind-ortho td.item-name::after{
 
   .modalCard{width:min(92vw,560px)}
 
-/* 기존 상단 header 숨김 */
-header{ display:none !important; }
+  header{ display:none !important; }
 
-/* 카드 상단 폼 헤더 → 독립 서브카드화 */
-.formHeader{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  /* 서브카드 외형 */
-  padding:12px;                              /* 내부 여백 */
-  margin-bottom:14px;                        /* ⬅ 탭과 자연스러운 간격 */
-  background:linear-gradient(180deg,#fafcff,#f6f9ff);
-  border:1px solid var(--border);
-  border-radius:16px;
-  box-shadow:
-    inset 0 1px 0 rgba(15,23,42,.03),
-    0 6px 20px rgba(15,23,42,.06);
-}
+  .formHeader{
+    display:flex; flex-direction:column; gap:10px;
+    padding:12px; margin-bottom:14px;
+    background:linear-gradient(180deg,#fafcff,#f6f9ff);
+    border:1px solid var(--border); border-radius:16px;
+    box-shadow: inset 0 1px 0 rgba(15,23,42,.03), 0 6px 20px rgba(15,23,42,.06);
+  }
+  .formRow{
+    --label-w: 76px;
+    display:grid; grid-template-columns: var(--label-w) 1fr; align-items:center; column-gap:10px;
+  }
+  .fLabel{ font-weight:800; color:#334155; white-space:nowrap; }
+  .formRow select, .formRow input[type="date"]{
+    width:100%; padding:10px 12px; font-size:16px; border:1px solid var(--border); border-radius:12px; background:#fff; color:var(--text);
+    transition:border-color .12s, box-shadow .12s;
+  }
+  .formRow select:focus, .formRow input[type="date"]:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); }
+  @media (max-width:430px){
+    .formHeader{ padding:10px; margin-bottom:12px; border-radius:14px; }
+    .formRow{ --label-w: 68px; }
+  }
 
-/* 라벨 고정폭 그리드 → 폼 시작선(gutter) 정렬 */
-.formRow{
-  --label-w: 76px; /* 라벨 폭 */
-  display:grid;
-  grid-template-columns: var(--label-w) 1fr;
-  align-items:center;
-  column-gap:10px;
-}
+  /* ===== 품목 탭 표: 행간/폰트/컨트롤 ===== */
+  #inputTable thead th{ padding:12px 10px; font-size:15.5px; }
+  #inputTable td, #inputTable th{ padding:12px 10px; font-size:16px; }
+  #inputTable .item-name{ font-size:16.5px; }
 
-/* 라벨 */
-.fLabel{
-  font-weight:800;
-  color:#334155;
-  white-space:nowrap;
-}
-
-/* 인풋/셀렉트(카드 분위기와 통일) */
-.formRow select,
-.formRow input[type="date"]{
-  width:100%;
-  padding:10px 12px;
-  font-size:16px;
-  border:1px solid var(--border);
-  border-radius:12px;
-  background:#fff;
-  color:var(--text);
-  transition:border-color .12s, box-shadow .12s;
-}
-.formRow select:focus,
-.formRow input[type="date"]:focus{
-  outline:none;
-  border-color:var(--accent);
-  box-shadow:var(--focus);
-}
-
-/* 모바일 라벨 살짝 축소 */
-@media (max-width:430px){
-  .formHeader{ padding:10px; margin-bottom:12px; border-radius:14px; }
-  .formRow{ --label-w: 68px; }
-}
-
-/* ===== 품목 탭 표: 행간/폰트/컨트롤 키우기 ===== */
-
-/* 표 행간(패딩) & 폰트 업 */
-#inputTable thead th{
-  padding: 12px 10px;    /* 기존 8~10 → 12로 업 */
-  font-size: 15.5px;     /* 헤더 글씨 조금 키움 */
-}
-#inputTable td,
-#inputTable th{
-  padding: 12px 10px;    /* 행간 체감 ↑ */
-  font-size: 16px;       /* 본문 폰트 ↑ */
-}
-#inputTable .item-name{
-  font-size: 16.5px;     /* 품목명 가독성 ↑ */
-}
-
-/* 수량 영역 레이아웃 */
-.qtyCell{
-  gap: 10px;             /* 버튼/입력칸 간격 조금 넓게 */
-}
-
-/* 입력칸 더 크게 + 우하단 연필 아이콘 */
-.qtyInputWrap{ position: relative; display:inline-block; }
-.qtyCell input{
-  width: 88px;           /* 입력칸 폭 ↑ (필요시 96px까지도 OK) */
-  height: 46px;          /* 입력칸 높이 ↑ */
-  font-size: 17px;       /* 숫자 크게 */
-  padding: 0 30px 0 12px;/* 오른쪽 아이콘 자리 확보 */
-  border-radius: 12px;
-}
-.qtyInputWrap::after{
-  content:"";
-  position:absolute;
-  right: 8px;            /* 우측 하단 아이콘 위치 */
-  bottom: 7px;
-  width: 16px; height: 16px;
-  opacity: .55;
-  pointer-events:none;
-  /* 연필 아이콘 (inline SVG) */
-  background-image: url("data:image/svg+xml;utf8,\
-  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b677a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>\
-    <path d='M12 20h9'/>\
-    <path d='M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z'/>\
-  </svg>");
-  background-size: 16px 16px;
-  background-repeat:no-repeat;
-}
-.qtyCell input:focus + /* nothing */ * ,
-.qtyCell input:focus ~ * {} /* (placeholder to avoid removing above rule) */
-.qtyCell input:focus{ border-color: var(--accent); box-shadow: var(--focus); }
-.qtyInputWrap:focus-within::after{ opacity: .9; }
-
-/* -1 / +1 버튼을 입력칸 크기에 맞춰 키우기 */
-.chip{
-  height: 46px;          /* 입력칸과 동일 높이 */
-  min-width: 56px;       /* 누르기 편한 폭 */
-  font-size: 16px;
-  border-radius: 12px;
-}
-
-/* 모바일 최적화 */
-@media (max-width:430px){
-  #inputTable thead th{ padding: 10px 8px; font-size: 15px; }
-  #inputTable td, #inputTable th{ padding: 10px 8px; font-size: 15.5px; }
-  #inputTable .item-name{ font-size: 16px; }
-
-  .qtyCell{ gap: 8px; }
+  /* 수량 영역 */
+  .qtyCell{ gap:10px }
+  .qtyInputWrap{ position:relative; display:inline-block }
   .qtyCell input{
-    width: 80px;
-    height: 44px;
-    font-size: 16.5px;
-    padding: 0 28px 0 10px;
+    width:92px; height:46px; font-size:17px; text-align:center;
+    padding:0 12px; border-radius:12px; line-height:46px;
   }
-  .qtyInputWrap::after{
-    right: 7px; bottom: 6px;
-    width: 15px; height: 15px;
-    background-size: 15px 15px;
+
+  /* -1 / +1 버튼 */
+  .chip{ height:46px; min-width:56px; font-size:16px; border-radius:12px; }
+  .chip.ctrl{ color:#fff; border:1px solid transparent; box-shadow:0 6px 16px rgba(0,0,0,.08) }
+  /* minus는 위에서 흰색으로 오버라이드됨 */
+  .chip.ctrl.plus { background:linear-gradient(180deg,#60a5fa,#2563eb); border-color:#1d4ed8 }
+  .chip.ctrl:hover{ filter:brightness(1.03); transform:translateY(-1px) }
+  .chip.ctrl:active{ transform:translateY(0) }
+
+  @media (max-width:430px){
+    #inputTable td, #inputTable th{ padding:10px 8px; font-size:15.5px }
+    #inputTable .item-name{ font-size:16px }
+    .qtyCell input{ width:86px; height:44px; font-size:16.5px; padding:0 10px; line-height:44px }
+    .chip{ height:44px; min-width:52px; font-size:15.5px }
   }
-  .chip{
-    height: 44px;
-    min-width: 52px;
-    font-size: 15.5px;
-  }
-}
-
-/* ── 표 행간/폰트 업 ── */
-#inputTable td, #inputTable th{ padding:12px 10px; font-size:16px; }
-#inputTable .item-name{ font-size:16.5px }
-
-/* ── 수량 칸 & 연필 아이콘 ── */
-.qtyCell{ gap:10px }
-.qtyInputWrap{ position:relative; display:inline-block }
-.qtyCell input{
-  width:92px;              /* 더 넓게 */
-  height:46px;             /* 더 높게 */
-  font-size:17px;
-  text-align:center;       /* 수평 중앙 */
-  padding:0 28px;          /* 좌우 동일 패딩 → '광학적 중앙' 유지 */
-  border-radius:12px;
-  line-height:46px;        /* iOS 숫자 세로 중앙 보정 */
-}
-.qtyInputWrap::after{
-  content:"";
-  position:absolute; right:8px; bottom:7px;
-  width:16px; height:16px; opacity:.6; pointer-events:none;
-  background-image:url("data:image/svg+xml;utf8,\
-  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b677a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>\
-  <path d='M12 20h9'/><path d='M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z'/>\
-  </svg>");
-  background-size:16px 16px; background-repeat:no-repeat;
-}
-.qtyInputWrap:focus-within::after{ opacity:.95 }
-
-/* ── -1 / +1 버튼을 선명하게 ── */
-.chip{ height:46px; min-width:56px; font-size:16px; border-radius:12px; }
-.chip.ctrl{ color:#fff; border:1px solid transparent; box-shadow:0 6px 16px rgba(0,0,0,.08) }
-.chip.ctrl.minus{ background:linear-gradient(180deg,#fb7185,#ef4444); border-color:#dc2626 }
-.chip.ctrl.plus { background:linear-gradient(180deg,#60a5fa,#2563eb); border-color:#1d4ed8 }
-.chip.ctrl:hover{ filter:brightness(1.03); transform:translateY(-1px) }
-.chip.ctrl:active{ transform:translateY(0) }
-
-/* ── 모바일 최적화 ── */
-@media (max-width:430px){
-  #inputTable td, #inputTable th{ padding:10px 8px; font-size:15.5px }
-  #inputTable .item-name{ font-size:16px }
-  .qtyCell input{ width:86px; height:44px; font-size:16.5px; padding:0 26px; line-height:44px }
-  .qtyInputWrap::after{ right:7px; bottom:6px; width:15px; height:15px; background-size:15px 15px }
-  .chip{ height:44px; min-width:52px; font-size:15.5px }
-}
-
-
-
-
 </style>
 </head>
 <body>
