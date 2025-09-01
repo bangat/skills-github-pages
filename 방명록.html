@@ -47,19 +47,17 @@
     linear-gradient(180deg,rgba(37,99,235,.06),rgba(37,99,235,0)) border-box;
   }
 
-  /* 날짜 그룹 리스트(최상단 = 최신 날짜) */
+  /* 날짜 그룹 리스트 */
   .list{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; }
 
-  .dayGroup{ }
   .dayGroup .daySep{ text-align:center; margin:6px 0 2px; }
   .dayGroup .daySep .badge{
     display:inline-block; font-size:12px; color:#475569; background:#eef2f7; border:1px solid var(--border);
     padding:4px 10px; border-radius:999px; box-shadow:var(--shadow-1);
   }
 
-  /* 각 날짜의 메시지 리스트(해당 날짜 내에서도 최신이 위) */
+  /* 메시지 */
   .msgs{ list-style:none; padding:0; margin:6px 0 0; display:flex; flex-direction:column; gap:10px; }
-
   .msg{
     background:#f8fafc; border:1px solid var(--border); border-radius:14px; padding:10px 12px;
     box-shadow:0 6px 20px rgba(15,23,42,.06);
@@ -69,11 +67,11 @@
   .msg .text{ white-space:pre-wrap; word-break:break-word; }
   .msg .meta{ margin-top:6px; font-size:12px; color:#64748b; }
 
-  /* 스크롤바 살짝 */
+  /* 스크롤바 */
   .chatScroll::-webkit-scrollbar{ width:10px; }
   .chatScroll::-webkit-scrollbar-thumb{ background:#e5eaf3; border-radius:999px; border:3px solid #fff; }
 
-  /* 입력 박스(하단 고정) */
+  /* 입력 박스 */
   .inputBar{
     position:fixed; left:0; right:0; bottom:0; z-index:60; background:#fff; border-top:1px solid var(--border);
     padding:10px 12px calc(10px + env(safe-area-inset-bottom));
@@ -89,11 +87,6 @@
     background:linear-gradient(180deg,#4f83ff,#2563eb); color:#fff; box-shadow:0 10px 28px rgba(37,99,235,.25);
   }
   .sendBtn:disabled{ opacity:.5; cursor:not-allowed; box-shadow:none; }
-
-  @media (max-width:430px){
-    .backBtn{ width:34px;height:34px; }
-    .sender{ display:none; } /* 모바일에선 숨김 */
-  }
 </style>
 </head>
 <body>
@@ -101,11 +94,7 @@
 <!-- 상단 바 -->
 <div class="topBar">
   <div class="wrap">
-    <button class="backBtn" id="goBack" title="뒤로">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M15 19L8 12L15 5" stroke="#1f2a44" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
+    <button class="backBtn" id="goBack" title="뒤로">←</button>
     <div class="title">실시간 방명록</div>
     <div class="sender" id="whoAmI" title="발신자 병동">
       발신자 <span class="chip" id="wardChip">-</span>
@@ -117,26 +106,24 @@
 <main>
   <section class="panel" aria-label="실시간 메시지">
     <div class="chatScroll" id="chatScroll">
-      <!-- 날짜 그룹들이 들어감(최신 날짜가 위) -->
       <ul class="list" id="chatList"></ul>
     </div>
   </section>
 </main>
 
-<!-- 하단 입력 바 -->
-<div class="inputBar" role="group" aria-label="메시지 입력">
+<!-- 하단 입력 -->
+<div class="inputBar">
   <div class="inputWrap">
     <textarea id="msgBox" class="textbox" placeholder="메시지를 입력하세요." rows="2" maxlength="500"></textarea>
     <button id="sendBtn" class="sendBtn" disabled>전송</button>
   </div>
 </div>
 
-<!-- Firebase RTDB -->
+<!-- Firebase -->
 <script type="module">
   import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getDatabase, ref, push, serverTimestamp, onChildAdded, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-  // === Firebase config (메인과 동일) ===
   const firebaseConfig = {
     apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
     authDomain: "hallymlinen.firebaseapp.com",
@@ -144,14 +131,12 @@
     projectId: "hallymlinen",
     storageBucket: "hallymlinen.appspot.com",
     messagingSenderId: "867775830688",
-    appId: "1:867775830688:web:cef3ed4e70ae9818f347c5",
-    measurementId: "G-T02ZFK18L3"
+    appId: "1:867775830688:web:cef3ed4e70ae9818f347c5"
   };
 
   const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
   const db  = getDatabase(app);
 
-  // === Helpers ===
   const el = s => document.querySelector(s);
 
   function getWard(){
@@ -164,17 +149,9 @@
     return str.replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
   }
 
-  // "2025.08.31 오후8시35분" 포맷
   function fmtTs(ts){
     const d = new Date(ts);
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,"0");
-    const dd= String(d.getDate()).padStart(2,"0");
-    let h  = d.getHours();
-    const ampm = (h>=12) ? "오후" : "오전";
-    h = (h%12) || 12;
-    const mm = String(d.getMinutes()).padStart(2,"0");
-    return `${y}.${m}.${dd} ${ampm}${h}시${mm}분`;
+    return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")} ${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}`;
   }
 
   function dayKey(ts){
@@ -182,154 +159,88 @@
     return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`;
   }
 
-  // === UI 바인딩 ===
   const ward = getWard();
   el("#wardChip").textContent = ward ? `${ward}병동` : "미지정";
-  el("#changeWard").addEventListener("click", (e)=>{
-    e.preventDefault();
-    const q = ward ? `?ward=${encodeURIComponent(ward)}` : "";
-    location.href = "./" + q;
-  });
-  el("#goBack").addEventListener("click", ()=> history.length>1 ? history.back() : location.href="./");
+  el("#changeWard").addEventListener("click", (e)=>{ e.preventDefault(); location.href="./"; });
 
-  // === 입력 상태 관리 ===
-const msgBox = el("#msgBox");
-const sendBtn = el("#sendBtn");
+  const msgBox = el("#msgBox");
+  const sendBtn = el("#sendBtn");
 
-// 방송 모드(전체 발송)이므로 '텍스트만' 있으면 활성화
-function refreshSendState(){
-  const hasText = (msgBox.value || "").trim().length > 0;
-  sendBtn.disabled = !hasText;
-}
-
-msgBox.addEventListener("input", refreshSendState);
-// 엔터 전송 / Shift+Enter 줄바꿈
-msgBox.addEventListener("keydown", (e)=>{
-  if (e.key === "Enter" && !e.shiftKey){
-    e.preventDefault();
-    sendBtn.click();
+  function refreshSendState(){
+    sendBtn.disabled = !(msgBox.value.trim().length > 0 && ward);
   }
-});
-refreshSendState(); // 초기 1회
 
-// === 메시지 쓰기 ===// === 메시지 쓰기 ===
-const roomRef = ref(db, "guestbook/messages");
+  msgBox.addEventListener("input", refreshSendState);
+  msgBox.addEventListener("keydown", (e)=>{
+    if (e.key === "Enter" && !e.shiftKey){
+      e.preventDefault();
+      sendBtn.click();
+    }
+  });
+  refreshSendState();
 
-async function sendMessage(){
-  const text = (msgBox.value || "").trim();
-  if (!text) return; // 방송 모드: 텍스트만 있으면 전송 허용
+  // ✅ 병동별 guestbook 경로
+  async function sendMessage(){
+    const text = msgBox.value.trim();
+    if (!text) return;
 
-  const payload = { ward, text, ts: Date.now() };
+    const roomRef = ref(db, `guestbook/${ward}`);
+    await push(roomRef, {
+      text,
+      author: ward+"병동",
+      ts: Date.now(),
+      ts_server: serverTimestamp(),
+      url: "/skills-github-pages/방명록.html"
+    });
 
-  try{
-    sendBtn.disabled = true;
-
-    // 1) RTDB 저장
-    await push(roomRef, { ...payload, ts_server: serverTimestamp() });
-
-    // 2) 워커로 푸시 요청(전체 브로드캐스트)
-    const myUid = localStorage.getItem('pushUid') || '';
-    const link  = location.origin + '/방명록.html' + (ward ? ('?ward=' + encodeURIComponent(ward)) : '');
-    const senderName = ward ? `${ward}병동` : '방명록';
-
-    fetch('https://YOUR_WORKER_SUBDOMAIN.workers.dev/notify-guest', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ward: '전체',        // 전체 사용자에게
-        broadcast: true,     // (워커가 지원하면) 명시 플래그
-        name: senderName,
-        text,
-        link,
-        excludeUid: myUid    // 본인 기기 제외(원하면 제거)
-      })
-    }).catch(console.warn);
-
-    // 3) UI 정리
     msgBox.value = "";
     refreshSendState();
-    scrollBox.scrollTop = 0;
-  }catch(err){
-    alert("전송에 실패했습니다. 네트워크를 확인해주세요.");
-    console.warn(err);
-    refreshSendState();
   }
-}
 
-sendBtn.addEventListener("click", sendMessage);
+  sendBtn.addEventListener("click", sendMessage);
 
-
-
-  // === 렌더링(날짜 그룹 단위, 최신이 항상 위) ===
+  // === 렌더링 ===
   const list = el("#chatList");
   const scrollBox = el("#chatScroll");
-  const groups = new Map(); // dayKey -> <li.dayGroup>
-
-  function isNearTop(){ return scrollBox.scrollTop <= 12; }
+  const groups = new Map();
 
   function withStableScroll(renderFn){
-    const nearTop = isNearTop();
     const prevH = scrollBox.scrollHeight;
     renderFn();
-    if(nearTop){
-      scrollBox.scrollTop = 0; // 맨 위 고정
-    }else{
-      // 사용자가 아래로 스크롤 중이면 현재 가시 위치 유지
-      const diff = scrollBox.scrollHeight - prevH;
-      scrollBox.scrollTop += diff;
-    }
+    const diff = scrollBox.scrollHeight - prevH;
+    if(scrollBox.scrollTop<5) scrollBox.scrollTop=0; else scrollBox.scrollTop+=diff;
   }
 
   function getOrCreateGroup(day){
     let g = groups.get(day);
     if(g) return g;
-
-    // 새 그룹(최신이 위로 쌓이도록 항상 최상단에 삽입)
     g = document.createElement("li");
     g.className = "dayGroup";
-    g.dataset.day = day;
-    g.innerHTML = `
-      <div class="daySep"><span class="badge">${day}</span></div>
-      <ul class="msgs"></ul>
-    `;
+    g.innerHTML = `<div class="daySep"><span class="badge">${day}</span></div><ul class="msgs"></ul>`;
     list.insertBefore(g, list.firstChild);
     groups.set(day, g);
     return g;
   }
 
-  function renderMessage({ward: w, text, ts}){
+  function renderMessage({ward:w,text,ts}){
     const day = dayKey(ts);
-    const group = getOrCreateGroup(day);
-    const ul = group.querySelector(".msgs");
-
+    const ul = getOrCreateGroup(day).querySelector(".msgs");
     const li = document.createElement("li");
     li.className = "msg";
-    const who = (w && String(w).trim()) ? `${w}병동` : "익명";
-    li.innerHTML = `
-      <div class="line"><span class="from">${who}</span> : <span class="text">${escapeHTML(text)}</span></div>
-      <div class="meta">${fmtTs(ts)}</div>
-    `;
-
-    // 날짜 내에서도 최신이 위(앞쪽에 삽입)
+    li.innerHTML = `<div class="line"><span class="from">${w||"익명"}</span> : <span class="text">${escapeHTML(text)}</span></div><div class="meta">${fmtTs(ts)}</div>`;
     ul.insertBefore(li, ul.firstChild);
   }
 
-  // === 실시간 구독(최근 200개) ===
-  const q = query(roomRef, limitToLast(200));
-  onChildAdded(q, snap => {
-    const v = snap.val()||{};
-    const ts = v.ts || Date.now();
-
-    withStableScroll(()=> renderMessage({ ward: v.ward, text: v.text||"", ts }));
+  const q = query(ref(db, `guestbook/${ward}`), limitToLast(200));
+  onChildAdded(q, snap=>{
+    const v=snap.val()||{};
+    withStableScroll(()=> renderMessage({ward:v.author,text:v.text,ts:v.ts||Date.now()}));
   });
 
-
-  // 최초 포커스
   msgBox.focus();
-  // 초기 위치를 최신(맨 위)로
-  scrollBox.scrollTop = 0;
 </script>
-<!-- 🔔 FCM Service Worker 등록: 여기 삽입 -->
+
+<!-- FCM SW 등록 -->
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/skills-github-pages/firebase-messaging-sw.js', {
@@ -339,13 +250,6 @@ if ('serviceWorker' in navigator) {
   .catch(err => console.warn('[FCM SW] register failed:', err));
 }
 </script>
-  
+
 </body>
 </html>
-
-
-
-
-
-
-
