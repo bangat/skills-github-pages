@@ -191,46 +191,46 @@
     location.href = "./" + q;
   });
   el("#goBack").addEventListener("click", ()=> history.length>1 ? history.back() : location.href="./");
+// === 메시지 쓰기 ===
+const roomRef = ref(db, "guestbook/messages");
 
-  // 입력 상태 관리
-  const msgBox = el("#msgBox");
-  const sendBtn = el("#sendBtn");
-  function refreshSendState(){
-    const hasText = (msgBox.value || "").trim().length > 0;
-    sendBtn.disabled = !(hasText && ward);
+async function sendMessage(){
+  const text = (msgBox.value||"").trim();
+  if(!text || !ward) return;
+
+  const payload = { ward, text, ts: Date.now() };
+  try{
+    sendBtn.disabled = true;
+
+    // 1) RTDB에 저장
+    await push(roomRef, { ...payload, ts_server: serverTimestamp() });
+
+    // 2) 🔔 저장 직후, 워커로 푸시 요청 (여기에 넣습니다)
+    const myUid = localStorage.getItem('pushUid') || '';
+    const link  = location.origin + '/방명록.html' + (ward ? ('?ward=' + encodeURIComponent(ward)) : '');
+    fetch('https://YOUR_WORKER_SUBDOMAIN.workers.dev/notify-guest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ward,
+        name: `${ward}병동`,   // 원하면 닉네임/이름으로 바꿔도 됨
+        text,
+        link,
+        excludeUid: myUid      // 본인 기기로는 알림 안 오게
+      })
+    }).catch(console.warn);
+
+    // 3) UI 정리
+    msgBox.value = "";
+    refreshSendState();
+    scrollBox.scrollTop = 0;
+  }catch(err){
+    alert("전송에 실패했습니다. 네트워크를 확인해주세요.");
+    console.warn(err);
+    refreshSendState();
   }
-  msgBox.addEventListener("input", refreshSendState);
-  refreshSendState();
+}
 
-  // Enter 전송 / Shift+Enter 줄바꿈
-  msgBox.addEventListener("keydown", (e)=>{
-    if(e.key==="Enter" && !e.shiftKey){
-      e.preventDefault();
-      sendBtn.click();
-    }
-  });
-
-  // === 메시지 쓰기 ===
-  const roomRef = ref(db, "guestbook/messages");
-
-  async function sendMessage(){
-    const text = (msgBox.value||"").trim();
-    if(!text || !ward) return;
-
-    const payload = { ward, text, ts: Date.now() };
-    try{
-      sendBtn.disabled = true;
-      await push(roomRef, { ...payload, ts_server: serverTimestamp() });
-      msgBox.value = "";
-      refreshSendState();
-      // 최상단 고정 유지
-      scrollBox.scrollTop = 0;
-    }catch(err){
-      alert("전송에 실패했습니다. 네트워크를 확인해주세요.");
-      console.warn(err);
-      refreshSendState();
-    }
-  }
   sendBtn.addEventListener("click", sendMessage);
 
   // === 렌더링(날짜 그룹 단위, 최신이 항상 위) ===
@@ -303,3 +303,4 @@
 </script>
 </body>
 </html>
+
