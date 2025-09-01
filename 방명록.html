@@ -18,91 +18,54 @@
   html,body{height:100%;-webkit-text-size-adjust:100%}
   body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
 
-  /* 상단바 */
-  .topBar{
-    position:sticky; top:0; z-index:80;
-    background:rgba(255,255,255,.86); backdrop-filter:saturate(180%) blur(10px);
-    border-bottom:1px solid var(--border);
-  }
-  .topBar .wrap{ max-width:980px; margin:0 auto; padding:10px 12px; display:flex; align-items:center; gap:8px; }
-  .backBtn{ display:inline-grid; place-items:center; width:36px; height:36px; border-radius:10px; border:1px solid var(--border); background:#fff; box-shadow:var(--shadow-1); cursor:pointer; }
-  .title{ font-weight:900; font-size:18px; letter-spacing:-.2px; }
-  .sender{
-    margin-left:auto; font-size:13px; color:#475569; display:flex; align-items:center; gap:6px;
-    background:#fff; border:1px solid var(--border); padding:6px 8px; border-radius:10px;
-  }
-  .sender .chip{ font-weight:800; color:#0b3fb8; }
-  .sender a{ color:#64748b; text-underline-offset:2px; }
+  .topBar{position:sticky; top:0; z-index:80; background:rgba(255,255,255,.86); backdrop-filter:saturate(180%) blur(10px); border-bottom:1px solid var(--border)}
+  .topBar .wrap{ max-width:980px; margin:0 auto; padding:10px 12px; display:flex; align-items:center; gap:8px }
+  .backBtn{ display:inline-grid; place-items:center; width:36px; height:36px; border-radius:10px; border:1px solid var(--border); background:#fff; box-shadow:var(--shadow-1); cursor:pointer }
+  .title{ font-weight:900; font-size:18px; letter-spacing:-.2px }
+  .sender{ margin-left:auto; font-size:13px; color:#475569; display:flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--border); padding:6px 8px; border-radius:10px }
+  .sender .chip{ font-weight:800; color:#0b3fb8 }
+  .sender a{ color:#64748b; text-underline-offset:2px }
 
-  /* 본문 */
-  main{ max-width:980px; margin:0 auto; padding:10px 12px calc(100px + env(safe-area-inset-bottom)); }
-  .panel{
-    background:#fff; border:1px solid rgba(15,23,42,.06); border-radius:18px; box-shadow:0 16px 44px rgba(15,23,42,.10);
-    min-height:50vh; display:flex; flex-direction:column; overflow:hidden;
-  }
+  main{ max-width:980px; margin:0 auto; padding:10px 12px calc(100px + env(safe-area-inset-bottom)) }
+  .panel{ background:#fff; border:1px solid rgba(15,23,42,.06); border-radius:18px; box-shadow:0 16px 44px rgba(15,23,42,.10); min-height:50vh; display:flex; flex-direction:column; overflow:hidden }
 
-  /* 스크롤 영역 */
   .chatScroll{
     flex:1; min-height:300px; overflow:auto; padding:12px;
-    background:
-      linear-gradient(#fff,#fff) padding-box,
-      linear-gradient(180deg,rgba(37,99,235,.06),rgba(37,99,235,0)) border-box;
-    overscroll-behavior: contain; /* iOS 튕김 방지 */
+    background:linear-gradient(#fff,#fff) padding-box, linear-gradient(180deg,rgba(37,99,235,.06),rgba(37,99,235,0)) border-box;
+    overscroll-behavior:contain;
   }
 
-  /* 날짜 구분선 */
-  .dayHeader{ text-align:center; margin:6px 0 10px; }
-  .dayHeader .badge{
-    display:inline-block; font-size:12px; color:#475569; background:#eef2f7; border:1px solid var(--border);
-    padding:4px 10px; border-radius:999px; box-shadow:var(--shadow-1);
-  }
+  .dayHeader{ text-align:center; margin:6px 0 10px }
+  .dayHeader .badge{ display:inline-block; font-size:12px; color:#475569; background:#eef2f7; border:1px solid var(--border); padding:4px 10px; border-radius:999px; box-shadow:var(--shadow-1) }
 
-  /* 메시지 리스트 */
-  .msgs{ list-style:none; padding:0; margin:6px 0 0; display:flex; flex-direction:column; gap:10px; }
+  .msgs{ list-style:none; padding:0; margin:6px 0 0; display:flex; flex-direction:column; gap:10px }
 
-  /* 좌/우 행 */
-  .msgRow{ display:flex; align-items:flex-end; gap:6px; }
-  .msgRow.left{ justify-content:flex-start; }
-  .msgRow.right{ justify-content:flex-end; }
+  .msgRow{ display:flex; align-items:flex-end; gap:6px }
+  .msgRow.left{ justify-content:flex-start }
+  .msgRow.right{ justify-content:flex-end }
 
-  /* 말풍선 */
-  .msg{ max-width:78%; padding:10px 12px; border-radius:14px; border:1px solid var(--border); box-shadow:0 6px 20px rgba(15,23,42,.06); }
-  .msg .line{ font-size:15px; line-height:1.35; }
-  .msg .from{ font-weight:900; color:#0b3fb8; white-space:nowrap; margin-right:4px; }
-  .msg .text{ white-space:pre-wrap; word-break:break-word; }
+  .msg{ max-width:78%; padding:10px 12px; border-radius:14px; border:1px solid var(--border); box-shadow:0 6px 20px rgba(15,23,42,.06) }
+  .msg .line{ font-size:15px; line-height:1.35 }
+  .msg .from{ font-weight:900; color:#0b3fb8; white-space:nowrap; margin-right:4px }
+  .msg .text{ white-space:pre-wrap; word-break:break-word }
 
-  /* 색상: mine(연노랑), theirs(하양) */
-  .msg.mine{ background:#fff9c2; border-color:#f5e58a; }
-  .msg.theirs{ background:#ffffff; border-color:#e6eaf2; }
-  .msg.mine .from{ display:none; }
+  .msg.mine{ background:#fff9c2; border-color:#f5e58a }
+  .msg.theirs{ background:#ffffff; border-color:#e6eaf2 }
+  .msg.mine .from{ display:none }
 
-  /* 말풍선 옆 시간 */
-  .msgTime{ font-size:12px; color:#64748b; line-height:1; white-space:nowrap; }
-  .msgRow.left  .msgTime{ margin-left:6px; }
-  .msgRow.right .msgTime{ margin-right:6px; order:-1; }
+  .msgTime{ font-size:12px; color:#64748b; white-space:nowrap; line-height:1 }
+  .msgRow.left  .msgTime{ margin-left:6px }
+  .msgRow.right .msgTime{ margin-right:6px; order:-1 }
 
-  /* 스크롤바 */
-  .chatScroll::-webkit-scrollbar{ width:10px; }
-  .chatScroll::-webkit-scrollbar-thumb{ background:#e5eaf3; border-radius:999px; border:3px solid #fff; }
+  .chatScroll::-webkit-scrollbar{ width:10px }
+  .chatScroll::-webkit-scrollbar-thumb{ background:#e5eaf3; border-radius:999px; border:3px solid #fff }
 
-  /* 입력 박스 */
-  .inputBar{
-    position:fixed; left:0; right:0; bottom:0; z-index:60; background:#fff; border-top:1px solid var(--border);
-    padding:10px 12px calc(10px + env(safe-area-inset-bottom));
-  }
-  .inputWrap{ max-width:980px; margin:0 auto; display:flex; gap:8px; }
-  .textbox{
-    flex:1; min-height:44px; max-height:140px; padding:10px 12px; border:1px solid var(--border); border-radius:12px;
-    font-size:15px; resize:vertical; outline:none; background:#fff; color:#var(--text);
-    /* ↑ 원래 오타였는데, 아래 줄이 진짜 값 */
-    color:#0f172a;
-  }
-  .textbox:focus{ border-color:var(--accent); box-shadow:var(--focus); }
-  .sendBtn{
-    flex:0 0 auto; padding:0 16px; border:none; border-radius:12px; font-weight:900; font-size:15px; cursor:pointer;
-    background:linear-gradient(180deg,#4f83ff,#2563eb); color:#fff; box-shadow:0 10px 28px rgba(37,99,235,.25);
-  }
-  .sendBtn:disabled{ opacity:.5; cursor:not-allowed; box-shadow:none; }
+  .inputBar{ position:fixed; left:0; right:0; bottom:0; z-index:60; background:#fff; border-top:1px solid var(--border); padding:10px 12px calc(10px + env(safe-area-inset-bottom)) }
+  .inputWrap{ max-width:980px; margin:0 auto; display:flex; gap:8px }
+  .textbox{ flex:1; min-height:44px; max-height:140px; padding:10px 12px; border:1px solid var(--border); border-radius:12px; font-size:15px; resize:vertical; outline:none; background:#fff; color:#0f172a }
+  .textbox:focus{ border-color:var(--accent); box-shadow:var(--focus) }
+  .sendBtn{ flex:0 0 auto; padding:0 16px; border:none; border-radius:12px; font-weight:900; font-size:15px; cursor:pointer; background:linear-gradient(180deg,#4f83ff,#2563eb); color:#fff; box-shadow:0 10px 28px rgba(37,99,235,.25) }
+  .sendBtn:disabled{ opacity:.5; cursor:not-allowed; box-shadow:none }
 </style>
 </head>
 <body>
@@ -123,6 +86,8 @@
   <section class="panel" aria-label="실시간 메시지">
     <div class="chatScroll" id="chatScroll">
       <ul class="msgs" id="msgList"></ul>
+      <!-- 항상 맨 아래를 가리키는 센티넬 -->
+      <div id="endSentinel" aria-hidden="true"></div>
     </div>
   </section>
 </main>
@@ -135,7 +100,7 @@
   </div>
 </div>
 
-<!-- Firebase: 메시지 렌더/송수신 + 하단고정 + 날짜헤더 + TTS -->
+<!-- Firebase + 하단고정 + 날짜헤더 + TTS(남이 보낸 것만) -->
 <script type="module">
   import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getDatabase, ref, push, serverTimestamp, onChildAdded, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -154,234 +119,165 @@
   const db  = getDatabase(app);
 
   const $ = s => document.querySelector(s);
-
-  /* 병동 가져오기 */
-  function getWard(){
+  const ward = (()=> {
     const qp = new URL(location.href).searchParams.get("ward");
-    const w  = qp && qp.trim() ? qp.trim() : (localStorage.getItem("linen/ward")||"").trim();
-    return w || "";
-  }
+    return (qp?.trim() || (localStorage.getItem("linen/ward")||"").trim() || "");
+  })();
 
-  /* 이스케이프 */
-  function escapeHTML(str=""){
-    return str.replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
-  }
-
-  /* 시간/날짜 포맷 */
-  function fmtAmPmTime(ts){
-    const d = new Date(ts);
-    let h = d.getHours(), m = d.getMinutes();
-    const ampm = h < 12 ? "오전" : "오후";
-    h = h % 12 || 12;
-    return `${ampm} ${h}:${String(m).padStart(2,"0")}`;
-  }
-  function fmtDateBadge(ts){
-    const d = new Date(ts);
-    return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`;
-  }
-  function dayKey(ts){
-    const d = new Date(ts);
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  }
-
-  /* 상태 */
-  const ward = getWard();
   $("#wardChip").textContent = ward ? `${ward}병동` : "미지정";
   $("#changeWard").addEventListener("click", (e)=>{ e.preventDefault(); location.href="./"; });
-  $("#goBack").addEventListener("click", (e) => {
+  $("#goBack").addEventListener("click", (e)=> {
     e.preventDefault();
     const base = "./";
-    const url = ward ? `${base}?ward=${encodeURIComponent(ward)}` : base;
-    location.href = url;
+    location.href = ward ? `${base}?ward=${encodeURIComponent(ward)}` : base;
   });
 
   const msgBox = $("#msgBox");
   const sendBtn = $("#sendBtn");
   const scrollBox = $("#chatScroll");
   const msgList = $("#msgList");
+  const endSentinel = $("#endSentinel");
 
-  /* ===== 항상 하단 고정 유틸 ===== */
-  function lockToBottom(){
-    // 여러 프레임/타이밍에서 연속 보정 (iOS 키보드/레이아웃 변동 대비)
-    let n = 0;
-    const snap = () => {
-      scrollBox.scrollTop = scrollBox.scrollHeight;
-      if (++n < 3) requestAnimationFrame(snap);
-      else setTimeout(()=>{ scrollBox.scrollTop = scrollBox.scrollHeight; }, 0);
-    };
-    requestAnimationFrame(snap);
-  }
+  const esc = s => (s||"").replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  const timeK = ts => { const d=new Date(ts); let h=d.getHours(),m=d.getMinutes(); const ap=h<12?"오전":"오후"; h=h%12||12; return `${ap} ${h}:${String(m).padStart(2,"0")}`; };
+  const dateBadge = ts => { const d=new Date(ts); return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`; };
+  const dayKey = ts => { const d=new Date(ts); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 
-  // DOM 변화 + 크기 변화에도 고정
-  new MutationObserver(lockToBottom).observe(msgList, { childList:true });
-  new ResizeObserver(lockToBottom).observe(scrollBox);
-  new ResizeObserver(lockToBottom).observe(msgList);
-  window.addEventListener('resize', lockToBottom);
+  /* ==== 항상 최하단 고정 ==== */
+  let stickToBottom = true; // 사용자가 위로 스크롤하면 false
+  const toBottom = () => endSentinel?.scrollIntoView({block:'end'});
+
+  const atBottom = () => (scrollBox.scrollHeight - scrollBox.scrollTop - scrollBox.clientHeight) < 40;
+  scrollBox.addEventListener('scroll', ()=>{ stickToBottom = atBottom(); });
+
+  // 레이아웃/키보드 변화에도 재고정
+  new ResizeObserver(()=>{ if (stickToBottom) { toBottom(); setTimeout(toBottom,80); setTimeout(toBottom,300); } }).observe(scrollBox);
+  new ResizeObserver(()=>{ if (stickToBottom) { toBottom(); } }).observe(msgList);
   if (window.visualViewport){
-    visualViewport.addEventListener('resize', lockToBottom);
-    visualViewport.addEventListener('scroll', lockToBottom);
+    visualViewport.addEventListener('resize', ()=>{ if (stickToBottom) { toBottom(); setTimeout(toBottom,120); setTimeout(toBottom,320); }});
   }
 
-  // 입력창이 포커스될 때도 하단 고정
-  msgBox.addEventListener('focus', lockToBottom);
+  // 입력 포커스 시에도 하단 고정(키보드 열려도 유지)
+  msgBox.addEventListener('focus', ()=>{ stickToBottom = true; toBottom(); });
 
-  function refreshSendState(){
-    sendBtn.disabled = !(msgBox.value.trim().length > 0 && ward);
-  }
-  msgBox.addEventListener("input", refreshSendState);
-
-  // Enter=전송, 키보드 유지
-  msgBox.addEventListener("keydown", (e)=>{
-    if (e.key === "Enter" && !e.shiftKey){
-      e.preventDefault();
-      sendBtn.click();
-    }
+  /* 전송 가능 상태 */
+  const refreshSend = () => sendBtn.disabled = !(msgBox.value.trim() && ward);
+  msgBox.addEventListener('input', refreshSend);
+  msgBox.addEventListener('keydown', e=>{
+    if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendBtn.click(); }
   });
+  // 버튼이 포커스를 훔치지 않게 해서 키보드 유지
+  sendBtn.addEventListener('mousedown', e=> e.preventDefault());
+  refreshSend();
 
-  // 버튼이 포커스를 훔치지 않게
-  sendBtn.addEventListener('mousedown', (e)=> e.preventDefault());
-
-  refreshSendState();
-
-  /* 날짜 헤더 */
-  let __lastDayKey = null;
+  /* 날짜 구분 */
+  let __lastDay = null;
   function ensureDayHeader(ts){
-    const key = dayKey(ts);
-    if (key !== __lastDayKey){
-      const sep = document.createElement('li');
-      sep.className = 'dayHeader';
-      sep.innerHTML = `<span class="badge">${fmtDateBadge(ts)}</span>`;
-      msgList.appendChild(sep);
-      __lastDayKey = key;
+    const k = dayKey(ts);
+    if (k !== __lastDay){
+      const li = document.createElement('li');
+      li.className = 'dayHeader';
+      li.innerHTML = `<span class="badge">${dateBadge(ts)}</span>`;
+      msgList.appendChild(li);
+      __lastDay = k;
     }
   }
 
-  /* 내가 보낸 메시지 판별 */
-  function isMineMessage(v){
-    const my = (ward||"").trim();
-    if (!my) return false;
+  /* 내 메시지? */
+  function isMine(v){
+    const me = ward.trim();
     const a = (v.author||"").replace(/병동$/,'').trim();
     const w = (v.ward||"").trim();
-    return (a === my) || (w === my);
+    return me && (a===me || w===me);
   }
 
-  /* 숫자 → 한자음(자리수 읽기) */
-  const DIG = { '0':'영','1':'일','2':'이','3':'삼','4':'사','5':'오','6':'육','7':'칠','8':'팔','9':'구' };
-  function readDigitsKorean(strDigits){
-    return String(strDigits).split('').map(ch => DIG[ch] ?? ch).join('');
-  }
-  function toSpokenWard(label){
-    // "62병동", "73 병동" 같은 패턴만 변환
+  /* 숫자 → 자리수 읽기(62→육이, 73→칠삼, 51→오일) */
+  const DIG = {'0':'영','1':'일','2':'이','3':'삼','4':'사','5':'오','6':'육','7':'칠','8':'팔','9':'구'};
+  const readDigits = s => String(s).split('').map(ch=>DIG[ch]??ch).join('');
+  const toSpokenWard = label => {
     const m = String(label).trim().match(/^(\d+)\s*병동$/);
-    if (m) return readDigitsKorean(m[1]) + '병동';
-    return label;
-  }
+    return m ? `${readDigits(m[1])}병동` : label;
+  };
 
-  /* 포그라운드 TTS (남이 보낸 것만) */
-  function speakArrival(senderWardLabel){
+  /* 포그라운드 TTS(남이 보낸 메시지만) */
+  function speakArrival(senderLabel){
     try{
-      if (document.hidden) return;                     // 탭이 뒤로 가면 X (푸시는 SW 담당)
+      if (document.hidden) return;              // 백그라운드에선 SW 알림만
       if (!('speechSynthesis' in window)) return;
-      const text = `${toSpokenWard(senderWardLabel)} 메시지 도착!`;
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'ko-KR';
-      u.rate = 1.0;
+      const u = new SpeechSynthesisUtterance(`${toSpokenWard(senderLabel)} 메세지!`);
+      u.lang='ko-KR'; u.rate=1.5;
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
-    }catch(_){}
+    }catch {}
   }
 
   /* 렌더 */
-  function renderMessage({ward:w, text, ts, isMine}){
-    const row = document.createElement("li");
-    row.className = `msgRow ${isMine ? 'right' : 'left'}`;
+  function renderMessage({who, text, ts, mine}){
+    const row = document.createElement('li');
+    row.className = `msgRow ${mine?'right':'left'}`;
 
-    const bubble = document.createElement("div");
-    bubble.className = `msg ${isMine ? 'mine' : 'theirs'}`;
-    bubble.innerHTML = `
-      <div class="line">
-        <span class="from">${w||"익명"}</span>
-        <span class="text">${escapeHTML(text)}</span>
-      </div>
-    `;
+    const bubble = document.createElement('div');
+    bubble.className = `msg ${mine?'mine':'theirs'}`;
+    bubble.innerHTML = `<div class="line"><span class="from">${who||'익명'}</span><span class="text">${esc(text)}</span></div>`;
 
-    const time = document.createElement("div");
-    time.className = "msgTime";
-    time.textContent = fmtAmPmTime(ts);
+    const time = document.createElement('div');
+    time.className = 'msgTime';
+    time.textContent = timeK(ts);
 
-    if (isMine){
-      row.appendChild(time);
-      row.appendChild(bubble);
-    } else {
-      row.appendChild(bubble);
-      row.appendChild(time);
-    }
+    if (mine){ row.appendChild(time); row.appendChild(bubble); }
+    else      { row.appendChild(bubble); row.appendChild(time); }
 
     msgList.appendChild(row);
   }
 
-  // 전송
+  /* 전송 */
   async function sendMessage(){
     const text = msgBox.value.trim();
     if (!text) return;
-
-    const roomRef = ref(db, `guestbook/messages`);
+    const roomRef = ref(db,'guestbook/messages');
     await push(roomRef, {
-      text,
-      author: `${ward}병동`,
-      ward,
-      ts: Date.now(),
-      ts_server: serverTimestamp(),
+      text, author:`${ward}병동`, ward,
+      ts: Date.now(), ts_server: serverTimestamp(),
       url: "/skills-github-pages/방명록.html"
     });
+    msgBox.value = ""; refreshSend();
 
-    msgBox.value = "";
-    refreshSendState();
-    lockToBottom();
-
-    // 키보드 유지: 전송 후 즉시 다시 포커스
-    setTimeout(()=>{
-      msgBox.focus({ preventScroll:true });
-    }, 0);
+    // 키보드 유지 + 바닥 고정
+    stickToBottom = true; toBottom();
+    setTimeout(()=> msgBox.focus({preventScroll:true}), 0);
   }
-  sendBtn.addEventListener("click", sendMessage);
+  sendBtn.addEventListener('click', sendMessage);
 
-  // 구독: 마지막 200개
-  const q = query(ref(db, `guestbook/messages`), limitToLast(200));
-  let initialLoaded = false;
+  /* 구독: 최신 200개, 항상 하단 고정 */
+  const q = query(ref(db,'guestbook/messages'), limitToLast(200));
+  let initialLoaded=false;
   onChildAdded(q, snap=>{
     const v = snap.val() || {};
-    const mine = isMineMessage(v);
-    const ts   = v.ts || Date.now();
+    const mine = isMine(v);
+    const ts = v.ts || Date.now();
 
     ensureDayHeader(ts);
+
     const displayWard = (v.author && v.author.trim())
-      ? v.author.trim()                       // "62병동" 등
+      ? v.author.trim()
       : (v.ward ? `${v.ward}병동` : '린넨실');
 
-    renderMessage({
-      ward: displayWard,
-      text: v.text || "",
-      ts,
-      isMine: mine
-    });
+    renderMessage({ who: displayWard, text: v.text || "", ts, mine });
 
     if (!initialLoaded){
       clearTimeout(onChildAdded._t);
-      onChildAdded._t = setTimeout(()=>{ initialLoaded = true; lockToBottom(); }, 0);
-    } else {
-      lockToBottom(); // 항상 바닥
+      onChildAdded._t = setTimeout(()=>{ initialLoaded=true; stickToBottom=true; toBottom(); }, 0);
+    } else if (stickToBottom || mine){
+      stickToBottom=true; toBottom();
     }
 
-    // 남이 보낸 메시지에만 진동 + TTS
     if (!mine){
       try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
       speakArrival(displayWard);
     }
   });
 
-  // 처음에도 바닥으로
-  window.addEventListener('load', lockToBottom);
+  window.addEventListener('load', ()=>{ stickToBottom=true; toBottom(); });
 </script>
 
 <!-- 서비스워커 등록 (푸시 수신용) -->
@@ -397,7 +293,7 @@
   }
 </script>
 
-<!-- FCM 포그라운드: 진동만 (TTS는 위 RTDB 이벤트에서 mine 체크 후 처리) -->
+<!-- FCM 포그라운드: 진동만. 음성안내는 RTDB 이벤트에서 처리 -->
 <script type="module">
   import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getMessaging, onMessage as onFcmMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
@@ -414,11 +310,9 @@
   const messaging = getMessaging(app);
 
   onFcmMessage(messaging, (payload) => {
-    const title = payload.notification?.title || '새 방명록';
-    const body  = payload.notification?.body  || '';
-    console.log('[FCM foreground]', title, body, payload);
+    console.log('[FCM foreground]', payload);
     try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
-    // 음성 안내는 RTDB 수신(onChildAdded)에서 발신 병동명으로 처리
+    // TTS는 위 onChildAdded에서 mine 체크 후 실행
   });
 </script>
 
