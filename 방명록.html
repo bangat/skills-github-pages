@@ -191,32 +191,58 @@
     location.href = "./" + q;
   });
   el("#goBack").addEventListener("click", ()=> history.length>1 ? history.back() : location.href="./");
+
+  // === 입력 상태 관리 ===
+const msgBox = el("#msgBox");
+const sendBtn = el("#sendBtn");
+
+// 방송 모드(전체 발송)이므로 '텍스트만' 있으면 활성화
+function refreshSendState(){
+  const hasText = (msgBox.value || "").trim().length > 0;
+  sendBtn.disabled = !hasText;
+}
+
+msgBox.addEventListener("input", refreshSendState);
+// 엔터 전송 / Shift+Enter 줄바꿈
+msgBox.addEventListener("keydown", (e)=>{
+  if (e.key === "Enter" && !e.shiftKey){
+    e.preventDefault();
+    sendBtn.click();
+  }
+});
+refreshSendState(); // 초기 1회
+
 // === 메시지 쓰기 ===
 const roomRef = ref(db, "guestbook/messages");
 
 async function sendMessage(){
   const text = (msgBox.value||"").trim();
-  if(!text || !ward) return;
+  if(!text || !ward) return;async function sendMessage(){
+  const text = (msgBox.value||"").trim();
+  if (!text) return;                // ⬅ ward 없이도 전송 허용
 
   const payload = { ward, text, ts: Date.now() };
   try{
     sendBtn.disabled = true;
 
-    // 1) RTDB에 저장
+    // 1) RTDB 저장
     await push(roomRef, { ...payload, ts_server: serverTimestamp() });
 
-    // 2) 🔔 저장 직후, 워커로 푸시 요청 (여기에 넣습니다)
+    // 2) 워커로 푸시 요청(전체 브로드캐스트)
     const myUid = localStorage.getItem('pushUid') || '';
     const link  = location.origin + '/방명록.html' + (ward ? ('?ward=' + encodeURIComponent(ward)) : '');
+    const senderName = ward ? `${ward}병동` : '방명록';
+
     fetch('https://YOUR_WORKER_SUBDOMAIN.workers.dev/notify-guest', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ward: '전체',
-        name: `${ward}병동`,   // 원하면 닉네임/이름으로 바꿔도 됨
+        ward: '전체',          // 전체 사용자에게 브로드캐스트
+        broadcast: true,       // (워커가 지원하면) 명시 플래그
+        name: senderName,
         text,
         link,
-        excludeUid: myUid      // 본인 기기로는 알림 안 오게
+        excludeUid: myUid      // 본인 기기 제외(원하면 제거)
       })
     }).catch(console.warn);
 
@@ -230,6 +256,7 @@ async function sendMessage(){
     refreshSendState();
   }
 }
+
 
   sendBtn.addEventListener("click", sendMessage);
 
@@ -303,5 +330,6 @@ async function sendMessage(){
 </script>
 </body>
 </html>
+
 
 
