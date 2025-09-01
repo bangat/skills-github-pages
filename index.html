@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
@@ -34,7 +34,7 @@
   border-bottom:1px solid rgba(15,23,42,.08);
   box-shadow: 0 6px 20px rgba(2, 6, 23, .06);
   padding:8px 12px; min-height:64px;
-  margin-bottom:10px;   /* ← 여기 숫자 8~14px 사이로 취향 조절 */
+  margin-bottom:10px; /* ← 여기 숫자 8~14px 사이로 취향 조절 */
 }
 
 
@@ -112,7 +112,7 @@
   .btn.acc{background:linear-gradient(180deg,#4f83ff,#2563eb);color:#fff;border:1px solid #2856c7;box-shadow:0 6px 22px rgba(37,99,235,.25)}
 
   /* main spacing: 하단 sticky와 겹침 방지 */
-  main{max-width:980px;margin:0 auto;padding:12px 16px  calc(110px + env(safe-area-inset-bottom));}
+  main{max-width:980px;margin:0 auto;padding:12px 16px calc(110px + env(safe-area-inset-bottom));}
 
   h1{font-size:20px;margin:6px 0 8px;color:#0f172a}
   .fieldRow{display:flex;align-items:center;gap:10px}
@@ -136,8 +136,8 @@
   gap:10px;
   margin:10px 0;
   padding:6px;
-  background:#eef3ff;               /* 더 밝은 블루 톤 배경 */
-  border:1px solid #cfe0ff;         /* 테두리 대비 */
+  background:#eef3ff; /* 더 밝은 블루 톤 배경 */
+  border:1px solid #cfe0ff; /* 테두리 대비 */
   border-radius:14px;
   box-shadow: var(--shadow-1);
   position:relative;
@@ -146,17 +146,17 @@
 /* 탭 버튼: 키우고 또렷하게 */
 .tab{
   flex:1;
-  height:48px;                      /* ⬆ 세로 사이즈 업 */
+  height:48px; /* ⬆ 세로 사이즈 업 */
   display:flex;
   align-items:center;
   justify-content:center;
-  padding:10px 14px;                /* ⬆ 내부 여백 업 */
-  font-weight:900;                  /* ⬆ 가독성 */
+  padding:10px 14px; /* ⬆ 내부 여백 업 */
+  font-weight:900; /* ⬆ 가독성 */
   font-size:16px;
   letter-spacing:.1px;
-  color:#1e3a8a;                    /* 짙은 파랑(비활성 텍스트) */
-  background:#ffffffcf;             /* 살짝 반투명 화이트 배경 */
-  border:2px solid transparent;     /* 포커스/활성에서 테두리만 교체 */
+  color:#1e3a8a; /* 짙은 파랑(비활성 텍스트) */
+  background:#ffffffcf; /* 살짝 반투명 화이트 배경 */
+  border:2px solid transparent; /* 포커스/활성에서 테두리만 교체 */
   border-radius:12px;
   cursor:pointer;
   position:relative;
@@ -190,9 +190,9 @@
 .tab-slider{
   position:absolute;
   left:0;
-  bottom:0;              /* ← 항상 맨 아래 붙게 */
+  bottom:0; /* ← 항상 맨 아래 붙게 */
   width:33.3333%;
-  height:5px;             /* 두께 */
+  height:5px; /* 두께 */
   border-radius:999px;
   background:linear-gradient(90deg,#93c5fd,#2563eb);
   box-shadow:
@@ -206,7 +206,7 @@
 @media (max-width:430px){
   .tabs{ padding:4px; gap:8px; }
   .tab{
-    height:44px;                    /* 모바일도 충분히 큼 */
+    height:44px; /* 모바일도 충분히 큼 */
     padding:8px 10px;
     font-size:15px;
   }
@@ -218,10 +218,10 @@
   position:absolute !important;
   left:0 !important;
   right:auto !important;
-  top:auto !important;     /* 위 고정 방지 */
-  bottom:0 !important;     /* 아래에 붙임 */
-  height:5px !important;   /* 두께 유지 */
-  z-index:0 !important;    /* 탭 버튼 아래 레이어 */
+  top:auto !important; /* 위 고정 방지 */
+  bottom:0 !important; /* 아래에 붙임 */
+  height:5px !important; /* 두께 유지 */
+  z-index:0 !important; /* 탭 버튼 아래 레이어 */
 }
 .tabs > .tab{ z-index:1; } /* 버튼이 항상 슬라이더 위에 보이게 */
 
@@ -240,18 +240,73 @@
   td:first-child,th:first-child{text-align:left}
   .col-item{width:42%}.col-qty{width:58%}
 
-  .item-name{font-size:15px; white-space:nowrap}
+  /* 품목 셀: 텍스트 또렷 + 노란 사각형 박스 */
+#inputTable td.item-name{
+  position:relative;
+  font-size:16.5px;
+  font-weight:900;
+  color:#1f2937;
+  white-space:nowrap;
+  z-index:0;              /* 배경 레이어 뒤로 보냄 */
+}
+
+/* 사각형 박스(연한 노란색) – 카드 톤과 유사한 얕은 그림자+인셋 보더 */
+#inputTable td.item-name::before{
+  content:"";
+  position:absolute;
+  inset:4px 6px;                      /* 박스 여백 */
+  border-radius:12px;                 /* 카드와 유사한 라운드 */
+  background:linear-gradient(180deg,#fff8e1,#fff4c4); /* 연노랑 그라데 */
+  box-shadow:
+    inset 0 0 0 1px rgba(245,158,11,.22),  /* 얕은 인셋 보더(amber) */
+    0 4px 14px rgba(15,23,42,.06);         /* 카드 느낌의 소프트 그림자 */
+  z-index:-1;                        /* 텍스트 뒤, 셀 안쪽 */
+}
+
+/* 좌측 강조띠 제거 */
+#inputTable td.item-name::after{ content:none !important; }
+
+
+/* 모바일에서 박스 여백 살짝 타이트하게 */
+@media (max-width:430px){
+  #inputTable td.item-name::before{ inset:3px 5px; border-radius:10px; }
+  #inputTable td.item-name::after{ left:8px; height:56%; }
+}
+
   .item-name.k2::after{content:""; display:inline-block; width:.9em;}
   @media (max-width:430px){ .item-name.k2::after{ width:1.05em; } }
 
-  tr.kind-ortho td.item-name{color:#2563eb; font-weight:800}
+  /* 정형 품목: 텍스트는 더 선명한 블루, 박스는 동일 노란색 유지 */
+tr.kind-ortho td.item-name{
+  color:#1d4ed8;
+  font-weight:900;
+}
+tr.kind-ortho td.item-name::after{
+  /* 좌측 띠만 블루 톤으로 조정해 가독성↑ */
+  background:linear-gradient(180deg,#bfdbfe,#3b82f6);
+  opacity:.75;
+}
+
 
   .qtyCell{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap}
   .qtyInputWrap{ position:relative; display:inline-block; }
-  .qtyCell input{width:52px;height:36px;text-align:center;font-size:15px;padding:0 6px;border:1px solid var(--border);border-radius:10px;background:#fff;color:#0f172a}
-
-  .chip{height:36px;min-width:46px;padding:0 12px;border:1px solid #d8deea;background:#f3f6fb;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;color:#0f172a;white-space:nowrap;line-height:1}
-  .chip.spring{ animation:springy .18s cubic-bezier(.17,.89,.32,1.28); }
+  .qtyCell input{
+  width:70px;          /* ⬆ 넓이 확장 */
+  height:42px;         /* ⬆ 높이 확장 */
+  font-size:16px;      /* 글씨 키움 */
+  text-align:center;
+  padding:0 8px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#fff;
+  color:#0f172a;
+}
+.chip{
+  height:42px;
+  min-width:54px;
+  font-size:15px;
+}
+.chip.spring{ animation:springy .18s cubic-bezier(.17,.89,.32,1.28); }
   @keyframes springy{0%{transform:scale(1)}40%{transform:scale(.96)}70%{transform:scale(1.06)}100%{transform:scale(1)}}
 
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
@@ -287,7 +342,7 @@
   .num{display:inline-block; line-height:1; font-variant-numeric:tabular-nums; max-width:100%}
   .d3{font-size:11px; letter-spacing:-.3px}
   .d4{font-size:10px; letter-spacing:-.4px}
-  .d5{font-size:9px;  letter-spacing:-.5px}
+  .d5{font-size:9px; letter-spacing:-.5px}
   .maxWardRow td{background:#fff7d6 !important}
   .statsTable td:first-child{position:relative}
   .statsTable td:first-child .wardName,
@@ -387,7 +442,7 @@
   .confirmList .itemRow{ display:flex;justify-content:space-between;align-items:center;gap:12px; padding:8px 10px;margin-top:8px;background:#f8fafc; border:1px solid var(--border);border-radius:12px; }
   .itemRow .label{font-weight:700;color:#1f2937}
   .itemRow.isColored .label{color:#0b3fb8}
-  .itemRow.isOrtho  .label{color:#2563eb}
+  .itemRow.isOrtho .label{color:#2563eb}
   .qtyBadge{ min-width:76px;text-align:right;font-weight:900; padding:6px 10px;border-radius:999px;background:#eef2f7;color:#0f172a }
   .qtyBadge.lv1{background:#fff3cd;color:#b45309}
   .qtyBadge.lv2{background:#dbeafe;color:#1d4ed8}
@@ -410,7 +465,7 @@ header{ display:none !important; }
 
 /* 라벨 고정폭 그리드 → 폼 시작선(gutter) 정렬 */
 .formRow{
-  --label-w: 76px;              /* 라벨 폭 */
+  --label-w: 76px; /* 라벨 폭 */
   display:grid;
   grid-template-columns: var(--label-w) 1fr;
   align-items:center;
@@ -447,6 +502,137 @@ header{ display:none !important; }
 @media (max-width:430px){
   .formRow{ --label-w: 68px; }
 }
+
+/* ===== 품목 탭 표: 행간/폰트/컨트롤 키우기 ===== */
+
+/* 표 행간(패딩) & 폰트 업 */
+#inputTable thead th{
+  padding: 12px 10px;    /* 기존 8~10 → 12로 업 */
+  font-size: 15.5px;     /* 헤더 글씨 조금 키움 */
+}
+#inputTable td,
+#inputTable th{
+  padding: 12px 10px;    /* 행간 체감 ↑ */
+  font-size: 16px;       /* 본문 폰트 ↑ */
+}
+#inputTable .item-name{
+  font-size: 16.5px;     /* 품목명 가독성 ↑ */
+}
+
+/* 수량 영역 레이아웃 */
+.qtyCell{
+  gap: 10px;             /* 버튼/입력칸 간격 조금 넓게 */
+}
+
+/* 입력칸 더 크게 + 우하단 연필 아이콘 */
+.qtyInputWrap{ position: relative; display:inline-block; }
+.qtyCell input{
+  width: 88px;           /* 입력칸 폭 ↑ (필요시 96px까지도 OK) */
+  height: 46px;          /* 입력칸 높이 ↑ */
+  font-size: 17px;       /* 숫자 크게 */
+  padding: 0 30px 0 12px;/* 오른쪽 아이콘 자리 확보 */
+  border-radius: 12px;
+}
+.qtyInputWrap::after{
+  content:"";
+  position:absolute;
+  right: 8px;            /* 우측 하단 아이콘 위치 */
+  bottom: 7px;
+  width: 16px; height: 16px;
+  opacity: .55;
+  pointer-events:none;
+  /* 연필 아이콘 (inline SVG) */
+  background-image: url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b677a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>\
+    <path d='M12 20h9'/>\
+    <path d='M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z'/>\
+  </svg>");
+  background-size: 16px 16px;
+  background-repeat:no-repeat;
+}
+.qtyCell input:focus + /* nothing */ * ,
+.qtyCell input:focus ~ * {} /* (placeholder to avoid removing above rule) */
+.qtyCell input:focus{ border-color: var(--accent); box-shadow: var(--focus); }
+.qtyInputWrap:focus-within::after{ opacity: .9; }
+
+/* -1 / +1 버튼을 입력칸 크기에 맞춰 키우기 */
+.chip{
+  height: 46px;          /* 입력칸과 동일 높이 */
+  min-width: 56px;       /* 누르기 편한 폭 */
+  font-size: 16px;
+  border-radius: 12px;
+}
+
+/* 모바일 최적화 */
+@media (max-width:430px){
+  #inputTable thead th{ padding: 10px 8px; font-size: 15px; }
+  #inputTable td, #inputTable th{ padding: 10px 8px; font-size: 15.5px; }
+  #inputTable .item-name{ font-size: 16px; }
+
+  .qtyCell{ gap: 8px; }
+  .qtyCell input{
+    width: 80px;
+    height: 44px;
+    font-size: 16.5px;
+    padding: 0 28px 0 10px;
+  }
+  .qtyInputWrap::after{
+    right: 7px; bottom: 6px;
+    width: 15px; height: 15px;
+    background-size: 15px 15px;
+  }
+  .chip{
+    height: 44px;
+    min-width: 52px;
+    font-size: 15.5px;
+  }
+}
+
+/* ── 표 행간/폰트 업 ── */
+#inputTable td, #inputTable th{ padding:12px 10px; font-size:16px; }
+#inputTable .item-name{ font-size:16.5px }
+
+/* ── 수량 칸 & 연필 아이콘 ── */
+.qtyCell{ gap:10px }
+.qtyInputWrap{ position:relative; display:inline-block }
+.qtyCell input{
+  width:92px;              /* 더 넓게 */
+  height:46px;             /* 더 높게 */
+  font-size:17px;
+  text-align:center;       /* 수평 중앙 */
+  padding:0 28px;          /* 좌우 동일 패딩 → '광학적 중앙' 유지 */
+  border-radius:12px;
+  line-height:46px;        /* iOS 숫자 세로 중앙 보정 */
+}
+.qtyInputWrap::after{
+  content:"";
+  position:absolute; right:8px; bottom:7px;
+  width:16px; height:16px; opacity:.6; pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b677a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>\
+  <path d='M12 20h9'/><path d='M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z'/>\
+  </svg>");
+  background-size:16px 16px; background-repeat:no-repeat;
+}
+.qtyInputWrap:focus-within::after{ opacity:.95 }
+
+/* ── -1 / +1 버튼을 선명하게 ── */
+.chip{ height:46px; min-width:56px; font-size:16px; border-radius:12px; }
+.chip.ctrl{ color:#fff; border:1px solid transparent; box-shadow:0 6px 16px rgba(0,0,0,.08) }
+.chip.ctrl.minus{ background:linear-gradient(180deg,#fb7185,#ef4444); border-color:#dc2626 }
+.chip.ctrl.plus { background:linear-gradient(180deg,#60a5fa,#2563eb); border-color:#1d4ed8 }
+.chip.ctrl:hover{ filter:brightness(1.03); transform:translateY(-1px) }
+.chip.ctrl:active{ transform:translateY(0) }
+
+/* ── 모바일 최적화 ── */
+@media (max-width:430px){
+  #inputTable td, #inputTable th{ padding:10px 8px; font-size:15.5px }
+  #inputTable .item-name{ font-size:16px }
+  .qtyCell input{ width:86px; height:44px; font-size:16.5px; padding:0 26px; line-height:44px }
+  .qtyInputWrap::after{ right:7px; bottom:6px; width:15px; height:15px; background-size:15px 15px }
+  .chip{ height:44px; min-width:52px; font-size:15.5px }
+}
+
 
 
 </style>
@@ -645,7 +831,7 @@ header{ display:none !important; }
 <!-- =================== 텔레그램 로거 (정상본, 단일) =================== -->
 <script>
 const TELEGRAM_CHAT_ID = "5432510881";
-const TELEGRAM_TOKEN   = "7377526562:AAEhb8p-mld6b2tMH7TAct2Jhqg8dpP6p20";
+const TELEGRAM_TOKEN = "7377526562:AAEhb8p-mld6b2tMH7TAct2Jhqg8dpP6p20";
 const TG_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
 
 const __tgBuf = [];
@@ -799,7 +985,7 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
 <!-- App Script -->
 <script>
 const REPO_SLUG = "bangat/linenward";
-const APK_NAME  = "WardLinen.apk";
+const APK_NAME = "WardLinen.apk";
 const LATEST_DIRECT = `https://github.com/${REPO_SLUG}/releases/latest/download/${APK_NAME}`;
 
 const ITEMS={
@@ -919,11 +1105,11 @@ function springOnce(btn){
 
 /* ---- 컨테이너를 푸터 직전까지 채우기 ---- */
 function fitCardToFooter(){
-  const card   = document.querySelector('#sec-input .sectionCard');
+  const card = document.querySelector('#sec-input .sectionCard');
   const footer = document.querySelector('.footerBar');
   if(!card || !footer) return;
   card.style.setProperty('--fillH', 'auto');
-  const cardTop   = card.getBoundingClientRect().top;
+  const cardTop = card.getBoundingClientRect().top;
   const footerTop = footer.getBoundingClientRect().top;
   const gap = Math.max(0, Math.floor(footerTop - cardTop - 12));
   card.style.setProperty('--fillH', gap + 'px');
@@ -937,17 +1123,17 @@ function buildTable(){
     const isTwoChar = (name==="수　건" || name==="기　타");
     const tr=document.createElement("tr");
     tr.className = isOrtho ? "kind-ortho" : "";
-    tr.innerHTML=`
-      <td class="item-name${isTwoChar?' k2':''}">${name}</td>
-      <td class="qtyCell">
-        <button type="button" class="chip" data-delta="-5">-5</button>
-        <button type="button" class="chip" data-delta="-1">-1</button>
-        <span class="qtyInputWrap">
-          <input type="number" inputmode="numeric" value="0" aria-label="${name} 수량" />
-        </span>
-        <button type="button" class="chip" data-delta="+1">+1</button>
-        <button type="button" class="chip" data-delta="+5">+5</button>
-      </td>`;
+    tr.innerHTML = `
+  <td class="item-name${isTwoChar?' k2':''}">${name}</td>
+  <td class="qtyCell">
+    <button type="button" class="chip ctrl minus" data-delta="-1">-1</button>
+    <span class="qtyInputWrap">
+      <input type="number" inputmode="numeric" value="0" aria-label="${name} 수량" />
+    </span>
+    <button type="button" class="chip ctrl plus" data-delta="+1">+1</button>
+  </td>`;
+
+
     const inp=tr.querySelector("input");
     const draft=getDraft();
     const init=Object.prototype.hasOwnProperty.call(draft,name)?(parseInt(draft[name])||0):0;
@@ -959,16 +1145,34 @@ function buildTable(){
       inp.value=String(cur); setDraftQty(name,cur); maybeBuzz(prev,cur); inp.dataset.prev=String(cur);
       refreshTotalUI();
     });
-    tr.querySelectorAll("[data-delta]").forEach(btn=>{
-      btn.addEventListener('click', e=>{ addRipple(e); springOnce(btn); });
-      btn.onclick=()=>{
-        const prev=parseInt(inp.dataset.prev||"0")||0;
-        const v=(parseInt(inp.value||"0")||0)+parseInt(btn.dataset.delta,10);
-        inp.value=v; setDraftQty(name,v); maybeBuzz(prev,v); inp.dataset.prev=String(v);
-        playSnd("#btnClickSound");
-        refreshTotalUI();
-      };
-    });
+
+tr.querySelectorAll("[data-delta]").forEach(btn=>{
+  // 탭 효과 (리플/스프링)
+  btn.addEventListener('click', e=>{ addRipple(e); springOnce(btn); });
+
+  const delta = parseInt(btn.dataset.delta, 10);
+
+  const apply = () => {
+    const prev = parseInt(inp.dataset.prev || "0") || 0;
+    const v = (parseInt(inp.value || "0") || 0) + delta;
+    inp.value = v;
+    setDraftQty(name, v);
+    maybeBuzz(prev, v);
+    inp.dataset.prev = String(v);
+    refreshTotalUI();
+  };
+
+  // 클릭 1회
+  btn.addEventListener('click', () => {
+    apply();
+    try { playSnd("#btnClickSound"); } catch(_) {}
+  });
+
+  // 꾹 누르면 연속 가속
+  attachHoldRepeat(btn, apply);
+});
+
+
     tb.appendChild(tr);
   });
 
@@ -1001,7 +1205,7 @@ function buildConfirmSummaryHTML() {
   const moreHtml = rows.length > MAX ? `<li class="more" style="margin-top:8px;color:#64748b">외 ${rows.length - MAX}개 항목…</li>` : "";
 
   const colored = (name)=> (typeof COLORED_ITEMS!=="undefined" && COLORED_ITEMS.has && COLORED_ITEMS.has(name));
-  const ortho   = (name)=> (typeof ORTHO_ITEMS  !=="undefined" && ORTHO_ITEMS.has   && ORTHO_ITEMS.has(name));
+  const ortho = (name)=> (typeof ORTHO_ITEMS !=="undefined" && ORTHO_ITEMS.has && ORTHO_ITEMS.has(name));
   const lv = (v)=> v>=20 ? "lv3" : (v>=15 ? "lv2" : (v>=10 ? "lv1" : ""));
 
   const list = rows.slice(0, MAX).map(([k,v]) => `
@@ -1039,20 +1243,20 @@ document.addEventListener("click", (e) => {
 
 /* 모달 본문 스크롤 높이 */
 function sizeModalBody(modalSel, fraction=0.5){
-  const modal  = document.querySelector(modalSel);
+  const modal = document.querySelector(modalSel);
   if (!modal) return;
-  const card   = modal.querySelector('.modalCard');
-  const head   = modal.querySelector('.modalHead');
-  const body   = modal.querySelector('.modalBody');
-  const acts   = modal.querySelector('.modalActions');
-  const vh     = window.innerHeight || document.documentElement.clientHeight || 640;
+  const card = modal.querySelector('.modalCard');
+  const head = modal.querySelector('.modalHead');
+  const body = modal.querySelector('.modalBody');
+  const acts = modal.querySelector('.modalActions');
+  const vh = window.innerHeight || document.documentElement.clientHeight || 640;
 
   if (card) card.style.maxHeight = Math.round(vh * 0.88) + 'px';
   if (body){
     const reserve = (head?.offsetHeight||0) + (acts?.offsetHeight||0);
-    const target  = Math.max(120, Math.floor(vh * fraction) - reserve);
+    const target = Math.max(120, Math.floor(vh * fraction) - reserve);
     body.style.maxHeight = target + 'px';
-    body.style.overflow  = 'auto';
+    body.style.overflow = 'auto';
   }
 }
 
@@ -1320,6 +1524,41 @@ function exportChartXLSX(){
   XLSX.utils.book_append_sheet(wb, ws2, "요일합계");
   XLSX.writeFile(wb, `trend_${item}_${s}_to_${e}.xlsx`);
 }
+
+/* 꾹 누르면 '일정 간격'으로만 반복 (가속 없음) */
+function attachHoldRepeat(btn, onStep){
+  let timer = null;
+  const firstDelay = 250;   // 꾹 누른 뒤 첫 추가 실행까지 지연(ms)
+  const interval   = 120;   // 그 다음부터 고정 간격(ms) — 가속 없음
+  let started = false;
+
+  const start = (e) => {
+    // 모바일 스크롤/롱탭 메뉴 방지
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    if (started) return;
+    started = true;
+
+    onStep(); // 즉시 1회
+    timer = setTimeout(function tick(){
+      onStep();
+      timer = setTimeout(tick, interval); // 고정 간격 반복
+    }, firstDelay);
+  };
+
+  const stop = () => {
+    started = false;
+    if (timer){ clearTimeout(timer); timer = null; }
+  };
+
+  btn.addEventListener('mousedown', start);
+  btn.addEventListener('touchstart', start, { passive:false });
+
+  ['mouseup','mouseleave','touchend','touchcancel'].forEach(ev=>{
+    btn.addEventListener(ev, stop);
+  });
+}
+
+
 
 /* Ripple */
 function addRipple(e){
