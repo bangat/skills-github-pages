@@ -24,13 +24,6 @@
   html,body{height:100%;-webkit-text-size-adjust:100%}
   body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
 
-  <!-- head나 body 어디든 상관없지만, 로드 후 1회만 실행되면 됨 -->
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/firebase-messaging-sw.js')
-      .catch(err => console.warn('[FCM SW] register failed:', err));
-  }
-</script>
 
   
   /* === 요청 반영: -버튼 흰색 + 품목 탭 밑줄 제거 =================== */
@@ -87,6 +80,7 @@
     border-bottom-color: rgba(15,23,42,.12);
   }
 
+  
   header{
     position:sticky; top:64px; z-index:50; display:flex; justify-content:space-between; align-items:center; gap:10px;
     padding:10px 16px; background:var(--card); border-bottom:1px solid var(--border);
@@ -568,6 +562,14 @@
 <audio id="warnSound" preload="auto">
   <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/경고.mp3" type="audio/mpeg" />
 </audio>
+
+    <!-- head나 body 어디든 상관없지만, 로드 후 1회만 실행되면 됨 -->
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/firebase-messaging-sw.js')
+      .catch(err => console.warn('[FCM SW] register failed:', err));
+  }
+</script>
 
 <!-- XLSX -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -1620,6 +1622,7 @@ document.addEventListener("click", (e) => {
 
 </body>
 </html>
+
 
 
 
