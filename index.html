@@ -778,7 +778,11 @@ function playSnd(sel){
 
 /* Warn flash */
 function flashWarn(){ try{ if(navigator.vibrate){ navigator.vibrate([120,80,120,80,120]); } }catch(e){} const ov=document.createElement('div'); ov.id='flashOverlay'; document.body.appendChild(ov); ov.addEventListener('animationend', ()=>{ ov.parentNode && ov.parentNode.removeChild(ov); }); }
+
 function maybeBuzz(prev,next){
+  // 🔹 시트 탭에서만 경고/점멸 작동
+  if (state.cat !== "시트") return;
+
   const p = Number(prev)||0, n = Number(next)||0;
   if (p < 16 && n >= 16) { flashWarn(); }
   if (p < 20 && n >= 20) {
@@ -1131,13 +1135,20 @@ async function renderStats(){
 
       const {p,wards,items}=renderPivot(merged,s,e,wardFilter);
 
-      const wardTotals = wards.map(w => items.reduce((a,i)=>a+(p[w]?.[i]||0),0));
-      const maxTotal = Math.max(...wardTotals, 0);
-      const maxWardIdx = wardTotals.findIndex(v=>v===maxTotal && v>0);
+      // 🔹 왕관 후보: '린넨실', '기타' 제외
+const crownExcludes = new Set(["린넨실","기타"]);
+const wardTotals = wards.map(w => items.reduce((a,i)=>a+(p[w]?.[i]||0),0));
 
+// 후보들만 대상으로 최대값 계산
+let maxTotal = 0, maxWardName = null;
+wards.forEach((w, idx) => {
+  if (crownExcludes.has(w)) return;
+  const tot = wardTotals[idx] || 0;
+  if (tot > maxTotal) { maxTotal = tot; maxWardName = w; }
+});
       let html=`<table class="statsTable"><thead><tr><th><span class="wardName">병동</span></th>${items.map(i=>`<th class="rot">${i}</th>`).join("")}</tr></thead><tbody>`;
       wards.forEach((w,rowIdx)=>{
-        const isMax = (wardFilter==="전체" && rowIdx===maxWardIdx);
+        const isMax = (wardFilter==="전체" && w === maxWardName && !crownExcludes.has(w) && maxTotal > 0);
         html+=`<tr class="${isMax?'maxWardRow':''}">
           <td><span class="wardName">${w}</span></td>${
           items.map(i=>{
