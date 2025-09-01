@@ -24,8 +24,6 @@
   html,body{height:100%;-webkit-text-size-adjust:100%}
   body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
 
-
-  
   /* === 요청 반영: -버튼 흰색 + 품목 탭 밑줄 제거 =================== */
 
   /* 1) -버튼(감소) 흰색 스타일 */
@@ -80,7 +78,6 @@
     border-bottom-color: rgba(15,23,42,.12);
   }
 
-  
   header{
     position:sticky; top:64px; z-index:50; display:flex; justify-content:space-between; align-items:center; gap:10px;
     padding:10px 16px; background:var(--card); border-bottom:1px solid var(--border);
@@ -622,12 +619,55 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
 <!-- =================== /텔레그램 로거 =================== -->
 
 <!-- Firebase (RTDB) -->
-  <script type="module">
-  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getMessaging, getToken, onMessage as onFcmMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
-  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, push, query, orderByChild, startAt, endAt, onValue, off } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
   const firebaseConfig = {
+    apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
+    authDomain: "hallymlinen.firebaseapp.com",
+    databaseURL: "https://hallymlinen-default-rtdb.firebaseio.com",
+    projectId: "hallymlinen",
+    storageBucket: "hallymlinen.appspot.com",
+    messagingSenderId: "867775830688",
+    appId: "1:867775830688:web:cef3ed4e70ae9818f347c5",
+    measurementId: "G-T02ZFK18L3"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const rtdb = getDatabase(app);
+
+  function dayStart(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
+  function dayEndInclusiveMs(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59,999).getTime(); }
+
+  async function saveLogsToRTDB(batchArray){
+    const baseRef = ref(rtdb, "logs");
+    await Promise.all(batchArray.map(d => push(baseRef, d)));
+  }
+
+
+
+  let _liveRef = null, _liveCb = null;
+  function startStatsLiveWatcher(startDate, endDateInclusive, onData){
+    if (_liveRef && _liveCb){ off(_liveRef, "value", _liveCb); _liveRef = null; _liveCb = null; }
+    const sMs = dayStart(startDate);
+    const eMs = dayEndInclusiveMs(endDateInclusive);
+    const qy = query(ref(rtdb, "logs"), orderByChild("ts"), startAt(sMs), endAt(eMs));
+    const cb = (snap)=>{
+      const val = snap.val() || {};
+      const arr = Object.keys(val).map(k => ({ id:k, ...val[k] }));
+      onData(arr);
+    };
+    onValue(qy, cb);
+    _liveRef = qy; _liveCb = cb;
+  }
+
+  window.__fb = { saveLogsToRTDB, startStatsLiveWatcher };
+</script>
+
+<!-- (이미 있는) Firebase (RTDB) 모듈 스크립트 바로 아래에 추가 -->
+
+const firebaseConfig = {
     apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
     authDomain: "hallymlinen.firebaseapp.com",
     projectId: "hallymlinen",
@@ -639,19 +679,16 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
   const messaging = getMessaging(app);
   const db = getDatabase(app);
 
-  // 이미 등록된 SW 재사용 (index에서 register한 후 라우팅되면 ready 상태)
-  const swReg = await navigator.serviceWorker.ready;
+  const swReg =
+    (await navigator.serviceWorker.getRegistration('sw.js')) ||
+    (await navigator.serviceWorker.register('sw.js'));
 
-  // 권한 요청
   let perm = 'denied';
   try {
     perm = (typeof Notification !== 'undefined' && Notification.requestPermission)
       ? await Notification.requestPermission()
       : 'denied';
-  } catch {
-    perm = 'denied';
-  }
-
+  } catch { perm = 'denied'; }
   if (perm === 'granted') {
     const vapidKey = "BDUJY48GaGacu_zkXXSFXAtPRQGn20A1-MqRUDtjgXqEnSi_XCpJo8x3ykmeOpeD76zzvFh_vO-xUgeP4c5S-iw";
     const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: swReg });
@@ -665,15 +702,9 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
       const prev = localStorage.getItem('pushToken');
 
       if (token !== prev) {
-        // 병동별 그룹
         await set(ref(db, `pushTokens/${ward}/${uid}`), {
           token, ward, ts: Date.now(), ua: navigator.userAgent
         });
-        // ✅ 전체 브로드캐스트 그룹
-        await set(ref(db, `pushTokens/_ALL/${uid}`), {
-          token, ward, ts: Date.now(), ua: navigator.userAgent
-        });
-
         localStorage.setItem('pushToken', token);
       }
     }
@@ -681,16 +712,11 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
     console.warn('알림 권한 상태:', perm);
   }
 
-  // 포그라운드 수신 → 토스트/진동 등
-  onFcmMessage(messaging, (payload) => {
-    const title = payload.notification?.title || '새 방명록';
-    const body  = payload.notification?.body  || '';
-    // showToast가 있으면 사용
-    try { window.showToast ? window.showToast(title, body) : console.log('[FCM]', title, body); } catch {}
-    try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
+
+  onMessage(messaging, (payload) => {
+    console.log('foreground push:', payload);
   });
 </script>
-
 
 <!-- App Script -->
 <script>
@@ -813,6 +839,8 @@ function springOnce(btn){
   try{ btn.classList.remove('spring'); void btn.offsetWidth; btn.classList.add('spring'); }catch(_){}
 }
 
+
+
 /* ---- 컨테이너를 푸터 직전까지 채우기 ---- */
 function fitCardToFooter(){
   const card = document.querySelector('#sec-input .sectionCard');
@@ -868,6 +896,7 @@ function buildTable(){
     </span>
     <button type="button" class="chip ctrl plus" data-delta="+1">+1</button>
   </td>`;
+
 
 
     const inp=tr.querySelector("input");
@@ -1459,33 +1488,34 @@ window.addEventListener("DOMContentLoaded",()=>{
 });
 </script>
 
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/firebase-messaging-sw.js')
+      .catch(err => console.warn('[FCM SW] register failed:', err));
+  }
+</script>
+
 <script>
 /** ================= 통합 설치 제어 스크립트 ================= */
 let deferredPrompt = null;
 let canInstall = false;
 
-const SCOPE = '/skills-github-pages/';     // ← GitHub Pages 프로젝트 루트
-const SW_URL = `${SCOPE}sw.js`;            // ← 서비스워커 파일 위치 고정
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").then(reg => {
+      reg.addEventListener("updatefound", () => {
+        console.log("[SW] update found");
+      });
+    }).catch(err => console.warn("[SW] register failed:", err));
+  });
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register(SW_URL, { scope: SCOPE })
-      .then(reg => {
-        console.log('[SW] registered:', reg.scope);
-        // 업데이트 시 한 번만 새로고침 (세션당 1회)
-        let reloaded = false;
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (reloaded) return;
-          reloaded = true;
-          try { typeof closeModal === "function" && closeModal("#pwaInstallModal"); } catch(_) {}
-          // 세션 스토리지로 다중 탭/중복 보호
-          if (!sessionStorage.getItem('sw-reloaded')) {
-            sessionStorage.setItem('sw-reloaded', '1');
-            location.reload();
-          }
-        });
-      })
-      .catch(err => console.warn('[SW] register failed:', err));
+  let refreshed = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (refreshed) return;
+    refreshed = true;
+    try { typeof closeModal === "function" && closeModal("#pwaInstallModal"); } catch(_) {}
+    location.reload();
   });
 }
 
@@ -1570,8 +1600,6 @@ document.addEventListener("click", (e) => {
   if (id === "dlConfirm") { closeModalIfExists('#downloadModal'); location.href = APK_URL; }
 });
 
-  
-
 (function wireInstallButton(){
   const btn = document.getElementById("appDownloadBtn");
   if (!btn) return;
@@ -1583,14 +1611,6 @@ document.addEventListener("click", (e) => {
   };
 })();
 </script>
+
 </body>
 </html>
-
-
-
-
-
-
-
-
-
