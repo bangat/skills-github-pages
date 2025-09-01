@@ -1619,9 +1619,16 @@ document.addEventListener("click", (e) => {
   };
 })();
 </script>
-
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('firebase-messaging-sw.js') // 상대경로
+    .then(reg => console.log('[FCM SW] registered:', reg.scope))
+    .catch(err => console.warn('[FCM SW] register failed:', err));
+}
+</script>
 </body>
 </html>
+
 
 
 
