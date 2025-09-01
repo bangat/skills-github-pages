@@ -119,6 +119,7 @@
     <div class="chatScroll" id="chatScroll">
       <!-- 날짜 구분선은 JS가 li.dayHeader로 자동 삽입 -->
       <ul class="msgs" id="msgList"></ul>
+      <div id="bottomSentinel" aria-hidden="true" style="height:1px"></div>
     </div>
   </section>
 </main>
@@ -193,11 +194,11 @@
   const sendBtn = el("#sendBtn");
   const scrollBox = el("#chatScroll");
   const msgList = el("#msgList");
+  const bottomSentinel = el("#bottomSentinel");
 
   function refreshSendState(){
     sendBtn.disabled = !(msgBox.value.trim().length > 0 && ward);
   }
-
   msgBox.addEventListener("input", refreshSendState);
   msgBox.addEventListener("keydown", (e)=>{
     if (e.key === "Enter" && !e.shiftKey){
@@ -207,16 +208,20 @@
   });
   refreshSendState();
 
-  /* 스크롤 유틸 */
-  function isAtBottom(){
-    const dist = scrollBox.scrollHeight - scrollBox.scrollTop - scrollBox.clientHeight;
-    return dist < 4;
-  }
+  /* ===== 바닥 고정(스틱) 감지 ===== */
+  let stickBottom = true; // 처음엔 바닥에 붙어있다고 가정
+  const io = new IntersectionObserver((entries)=>{
+    // sentinel이 보이면 바닥
+    stickBottom = entries.some(en => en.isIntersecting);
+  }, { root: scrollBox, threshold: 1.0 });
+  io.observe(bottomSentinel);
+
   function scrollToBottom(){
-    requestAnimationFrame(()=>{ scrollBox.scrollTop = scrollBox.scrollHeight; });
+    // sentinel로 스크롤 (레이아웃 변화에도 튼튼)
+    bottomSentinel.scrollIntoView({ block: 'end' });
   }
 
-  /* 날짜 구분선 삽입 */
+  /* ===== 날짜 헤더 ===== */
   let __lastDayKey = null;
   function dayKey(ts){
     const d = new Date(ts);
@@ -240,6 +245,19 @@
     const a = (v.author||"").replace(/병동$/,'').trim();
     const w = (v.ward||"").trim();
     return (a === my) || (w === my);
+  }
+
+  /* TTS (포그라운드 전용) */
+  function speak(text){
+    try{
+      if (document.hidden) return;              // 백그라운드는 X
+      if (!('speechSynthesis' in window)) return;
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'ko-KR';
+      u.rate = 1.0;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    }catch(_){}
   }
 
   /* 렌더 */
@@ -288,6 +306,8 @@
 
     msgBox.value = "";
     refreshSendState();
+    // 내가 방금 보냈으면 하단에 붙여두기
+    scrollToBottom();
   }
   sendBtn.addEventListener("click", sendMessage);
 
@@ -297,83 +317,37 @@
   onChildAdded(q, snap=>{
     const v = snap.val() || {};
     const mine = isMineMessage(v);
+    const ts   = v.ts || Date.now();
 
-    // append 전 바닥 여부
-    const stick = isAtBottom();
-
-    // 날짜 구분선 보장
-    ensureDayHeader(v.ts || Date.now());
-
+    // 날짜 헤더 -> 메시지
+    ensureDayHeader(ts);
     renderMessage({
       ward: v.author || v.ward || "익명",
       text: v.text || "",
-      ts: v.ts || Date.now(),
+      ts,
       isMine: mine
     });
 
+    // 첫 로딩은 전체 그린 뒤 한 번만 내리기
     if (!initialLoaded){
       clearTimeout(onChildAdded._t);
       onChildAdded._t = setTimeout(()=>{ initialLoaded = true; scrollToBottom(); }, 0);
-    } else if (stick){
+    } else if (stickBottom){
+      // 사용자가 바닥에 붙어 있으면 계속 따라감
       scrollToBottom();
+    }
+
+    // 🔊 포그라운드 TTS/진동: "남이 보낸 것"만
+    if (!mine){
+      try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
+      speak('린넨실 메세지 도착!');
     }
   });
 
   msgBox.focus();
 </script>
 
-<!-- 서비스워커 등록 (푸시 수신용) -->
-<script>
-  const SCOPE = '/skills-github-pages/';
-  const SW_URL = `${SCOPE}sw.js`;
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register(SW_URL, { scope: SCOPE })
-        .then(reg => console.log('[SW] ready:', reg.scope))
-        .catch(err => console.warn('[SW] register fail:', err));
-    });
-  }
-</script>
-
-<!-- FCM 포그라운드 수신 + TTS 알림 -->
-<script type="module">
-  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getMessaging, onMessage as onFcmMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
-    authDomain: "hallymlinen.firebaseapp.com",
-    projectId: "hallymlinen",
-    messagingSenderId: "867775830688",
-    appId: "1:867775830688:web:cef3ed4e70ae9818f347c5"
-  };
-
-  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-  const messaging = getMessaging(app);
-
-  function speak(text){
-    try{
-      if (!('speechSynthesis' in window)) return;
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'ko-KR';
-      u.rate = 1.0;
-      window.speechSynthesis.cancel(); // 겹치기 방지
-      window.speechSynthesis.speak(u);
-    }catch(_){}
-  }
-
-  onFcmMessage(messaging, (payload) => {
-    const title = payload.notification?.title || '새 방명록';
-    const body  = payload.notification?.body  || '';
-    console.log('[FCM foreground]', title, body, payload);
-
-    // 진동
-    try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
-
-    // ★ 포그라운드 TTS
-    speak('린넨실 메세지 도착!');
-  });
-</script>
 
 </body>
 </html>
+
