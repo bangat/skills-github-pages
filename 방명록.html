@@ -184,14 +184,16 @@
     const text = msgBox.value.trim();
     if (!text) return;
 
-    const roomRef = ref(db, `guestbook/${ward}`);
-    await push(roomRef, {
-      text,
-      author: ward+"병동",
-      ts: Date.now(),
-      ts_server: serverTimestamp(),
-      url: "/skills-github-pages/방명록.html"
-    });
+const roomRef = ref(db, `guestbook/messages/${ward}`);
+await push(roomRef, {
+  text,
+  author: `${ward}병동`,
+  ward, // ✅ 추가: 함수에서 참고 가능
+  ts: Date.now(),
+  ts_server: serverTimestamp(),
+  url: "/skills-github-pages/방명록.html"
+});
+
 
     msgBox.value = "";
     refreshSendState();
@@ -231,15 +233,16 @@
     ul.insertBefore(li, ul.firstChild);
   }
 
-  const q = query(ref(db, `guestbook/${ward}`), limitToLast(200));
+  const q = query(ref(db, `guestbook/messages/${ward}`), limitToLast(200));
   onChildAdded(q, snap=>{
     const v=snap.val()||{};
-    withStableScroll(()=> renderMessage({ward:v.author,text:v.text,ts:v.ts||Date.now()}));
+    withStableScroll(()=> renderMessage({ ward: (v.author || v.ward), text: v.text, ts: v.ts || Date.now() }));
   });
 
   msgBox.focus();
 </script>
 </body>
 </html>
+
 
 
