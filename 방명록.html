@@ -246,8 +246,47 @@ onChildAdded(q, snap=>{
 
   msgBox.focus();
 </script>
+
+<!-- ✅ 서비스워커 등록 -->
+<script>
+  const SCOPE = '/skills-github-pages/';
+  const SW_URL = `${SCOPE}sw.js`;
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register(SW_URL, { scope: SCOPE })
+        .then(reg => console.log('[SW] ready:', reg.scope))
+        .catch(err => console.warn('[SW] register fail:', err));
+    });
+  }
+</script>
+
+<!-- ✅ FCM 포그라운드 수신 -->
+<script type="module">
+  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getMessaging, onMessage as onFcmMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
+    authDomain: "hallymlinen.firebaseapp.com",
+    projectId: "hallymlinen",
+    messagingSenderId: "867775830688",
+    appId: "1:867775830688:web:cef3ed4e70ae9818f347c5"
+  };
+
+  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+  const messaging = getMessaging(app);
+
+  onFcmMessage(messaging, (payload) => {
+    const title = payload.notification?.title || '새 방명록';
+    const body  = payload.notification?.body  || '';
+    console.log('[FCM foreground]', title, body, payload);
+    try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
+  });
+</script>
+
 </body>
 </html>
+
 
 
 
