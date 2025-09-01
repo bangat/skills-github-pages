@@ -723,9 +723,16 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
     console.warn('알림 권한 상태:', perm);
   }
 
-  onMessage(messaging, (payload) => {
-    console.log('foreground push:', payload);
-  });
+import { onMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+
+onMessage(messaging, (payload) => {
+  // 기존 console.log 대신:
+  const title = payload.notification?.title || '새 방명록';
+  const body  = payload.notification?.body  || '';
+  showToast(title, body);
+  try{ navigator.vibrate && navigator.vibrate([60,40,60]); }catch(_){}
+});
+
 </script>
 
 <!-- App Script -->
@@ -1613,4 +1620,5 @@ document.addEventListener("click", (e) => {
 
 </body>
 </html>
+
 
