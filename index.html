@@ -622,52 +622,7 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
 <!-- =================== /텔레그램 로거 =================== -->
 
 <!-- Firebase (RTDB) -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, push, query, orderByChild, startAt, endAt, onValue, off } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
-    authDomain: "hallymlinen.firebaseapp.com",
-    databaseURL: "https://hallymlinen-default-rtdb.firebaseio.com",
-    projectId: "hallymlinen",
-    storageBucket: "hallymlinen.appspot.com",
-    messagingSenderId: "867775830688",
-    appId: "1:867775830688:web:cef3ed4e70ae9818f347c5",
-    measurementId: "G-T02ZFK18L3"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const rtdb = getDatabase(app);
-
-  function dayStart(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
-  function dayEndInclusiveMs(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59,999).getTime(); }
-
-  async function saveLogsToRTDB(batchArray){
-    const baseRef = ref(rtdb, "logs");
-    await Promise.all(batchArray.map(d => push(baseRef, d)));
-  }
-
-  let _liveRef = null, _liveCb = null;
-  function startStatsLiveWatcher(startDate, endDateInclusive, onData){
-    if (_liveRef && _liveCb){ off(_liveRef, "value", _liveCb); _liveRef = null; _liveCb = null; }
-    const sMs = dayStart(startDate);
-    const eMs = dayEndInclusiveMs(endDateInclusive);
-    const qy = query(ref(rtdb, "logs"), orderByChild("ts"), startAt(sMs), endAt(eMs));
-    const cb = (snap)=>{
-      const val = snap.val() || {};
-      const arr = Object.keys(val).map(k => ({ id:k, ...val[k] }));
-      onData(arr);
-    };
-    onValue(qy, cb);
-    _liveRef = qy; _liveCb = cb;
-  }
-
-  window.__fb = { saveLogsToRTDB, startStatsLiveWatcher };
-</script>
-
-<!-- (이미 있는) Firebase (RTDB) 모듈 스크립트 바로 아래에 추가 -->
-<script type="module">
+  <script type="module">
   import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getMessaging, getToken, onMessage as onFcmMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
   import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -684,57 +639,58 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
   const messaging = getMessaging(app);
   const db = getDatabase(app);
 
-const swReg = await navigator.serviceWorker.ready; // 이미 등록된 SW 재사용
+  // 이미 등록된 SW 재사용 (index에서 register한 후 라우팅되면 ready 상태)
+  const swReg = await navigator.serviceWorker.ready;
 
-
+  // 권한 요청
   let perm = 'denied';
   try {
     perm = (typeof Notification !== 'undefined' && Notification.requestPermission)
       ? await Notification.requestPermission()
       : 'denied';
-  } catch { perm = 'denied'; }
+  } catch {
+    perm = 'denied';
+  }
+
   if (perm === 'granted') {
     const vapidKey = "BDUJY48GaGacu_zkXXSFXAtPRQGn20A1-MqRUDtjgXqEnSi_XCpJo8x3ykmeOpeD76zzvFh_vO-xUgeP4c5S-iw";
     const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration: swReg });
     console.log('FCM token:', token);
 
-if (token) {
-  const uid = localStorage.getItem('pushUid') || (crypto.randomUUID?.() || String(Date.now()));
-  localStorage.setItem('pushUid', uid);
+    if (token) {
+      const uid = localStorage.getItem('pushUid') || (crypto.randomUUID?.() || String(Date.now()));
+      localStorage.setItem('pushUid', uid);
 
-  const ward = localStorage.getItem('linen/ward') || 'unknown';
-  const prev = localStorage.getItem('pushToken');
+      const ward = localStorage.getItem('linen/ward') || 'unknown';
+      const prev = localStorage.getItem('pushToken');
 
-  // 토큰이 새로 발급되었을 때만 DB 업데이트(중복쓰기 방지)
-  if (token !== prev) {
-    // 1) 병동 그룹 저장
-    await set(ref(db, `pushTokens/${ward}/${uid}`), {
-      token, ward, ts: Date.now(), ua: navigator.userAgent
-    });
+      if (token !== prev) {
+        // 병동별 그룹
+        await set(ref(db, `pushTokens/${ward}/${uid}`), {
+          token, ward, ts: Date.now(), ua: navigator.userAgent
+        });
+        // ✅ 전체 브로드캐스트 그룹
+        await set(ref(db, `pushTokens/_ALL/${uid}`), {
+          token, ward, ts: Date.now(), ua: navigator.userAgent
+        });
 
-    // 2) 전체 방송 그룹 저장(카톡처럼 모두에게 쏘기 위함)
-    await set(ref(db, `pushTokens/_ALL/${uid}`), {
-      token, ward, ts: Date.now(), ua: navigator.userAgent
-    });
-
-    localStorage.setItem('pushToken', token);
+        localStorage.setItem('pushToken', token);
+      }
+    }
+  } else {
+    console.warn('알림 권한 상태:', perm);
   }
-} else {
-  console.warn('알림 권한 상태:', perm);
-}
 
-
-import { onMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
-
-onFcmMessage(messaging, (payload) => {
-  // 기존 console.log 대신:
-  const title = payload.notification?.title || '새 방명록';
-  const body  = payload.notification?.body  || '';
-  showToast(title, body);
-  try{ navigator.vibrate && navigator.vibrate([60,40,60]); }catch(_){}
-});
-
+  // 포그라운드 수신 → 토스트/진동 등
+  onFcmMessage(messaging, (payload) => {
+    const title = payload.notification?.title || '새 방명록';
+    const body  = payload.notification?.body  || '';
+    // showToast가 있으면 사용
+    try { window.showToast ? window.showToast(title, body) : console.log('[FCM]', title, body); } catch {}
+    try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
+  });
 </script>
+
 
 <!-- App Script -->
 <script>
@@ -1629,6 +1585,7 @@ document.addEventListener("click", (e) => {
 </script>
 </body>
 </html>
+
 
 
 
