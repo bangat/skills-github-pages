@@ -21,14 +21,8 @@ const BASE_PATH = SCOPE_URL.pathname.endsWith('/')
 
 /* ===== 3) FCM 백그라운드 알림: 아이콘/열URL도 BASE 기준으로 ===== */
 messaging.onBackgroundMessage((payload) => {
-  const n = payload.notification || {};
-  // 아이콘: 스코프 기준
-  const iconUrl = `${BASE_PATH}icons/icon-192.png`;
-  self.registration.showNotification(n.title || "알림", {
-    body: n.body || "",
-    icon: iconUrl,
-    data: payload.data || {}
-  });
+ // FCM이 webpush.notification으로 자동 표시하므로 여기서는 표시하지 않음
+  try { console.log("[SW] bg message", payload); } catch {}
 });
 
 self.addEventListener('notificationclick', (event) => {
@@ -118,4 +112,5 @@ self.addEventListener('fetch', (event) => {
   }
   event.respondWith(handleAsset(req));
 });
+
 
