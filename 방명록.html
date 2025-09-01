@@ -212,7 +212,7 @@ async function sendMessage(){
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ward,
+        ward: '전체',
         name: `${ward}병동`,   // 원하면 닉네임/이름으로 바꿔도 됨
         text,
         link,
@@ -303,4 +303,5 @@ async function sendMessage(){
 </script>
 </body>
 </html>
+
 
