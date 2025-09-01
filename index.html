@@ -455,12 +455,20 @@ tr.kind-ortho td.item-name::after{
 /* 기존 상단 header 숨김 */
 header{ display:none !important; }
 
-/* 카드 상단 폼 헤더 */
+/* 카드 상단 폼 헤더 → 독립 서브카드화 */
 .formHeader{
   display:flex;
   flex-direction:column;
   gap:10px;
-  margin-bottom:10px; /* 탭과 간격 */
+  /* 서브카드 외형 */
+  padding:12px;                              /* 내부 여백 */
+  margin-bottom:14px;                        /* ⬅ 탭과 자연스러운 간격 */
+  background:linear-gradient(180deg,#fafcff,#f6f9ff);
+  border:1px solid var(--border);
+  border-radius:16px;
+  box-shadow:
+    inset 0 1px 0 rgba(15,23,42,.03),
+    0 6px 20px rgba(15,23,42,.06);
 }
 
 /* 라벨 고정폭 그리드 → 폼 시작선(gutter) 정렬 */
@@ -498,8 +506,9 @@ header{ display:none !important; }
   box-shadow:var(--focus);
 }
 
-/* 모바일 라벨 폭 살짝 축소 */
+/* 모바일 라벨 살짝 축소 */
 @media (max-width:430px){
+  .formHeader{ padding:10px; margin-bottom:12px; border-radius:14px; }
   .formRow{ --label-w: 68px; }
 }
 
@@ -1115,6 +1124,35 @@ function fitCardToFooter(){
   card.style.setProperty('--fillH', gap + 'px');
 }
 
+  // 첫 숫자 입력 시 0을 교체해주는 보정
+function wireZeroReplace(inp, onChange){
+  // 포커스되면 전체 선택(바로 덮어쓰기 편하게)
+  inp.addEventListener('focus', () => {
+    try { if (inp.value === "0") inp.select(); } catch(_) {}
+  });
+
+  // 키다운에서 첫 숫자 입력 시 0을 교체
+  inp.addEventListener('keydown', (e) => {
+    if (e.key.length === 1 && /\d/.test(e.key)) {
+      if (inp.value === "0" && inp.selectionStart === 0 && inp.selectionEnd === 0) {
+        e.preventDefault();             // 기본 입력 막고
+        inp.value = e.key;              // 0을 새 숫자로 교체
+        onChange();                     // 이후 저장/합계 갱신
+      }
+    }
+  });
+
+  // 붙여넣기 보정: 00012 → 12
+  inp.addEventListener('paste', () => {
+    setTimeout(() => {
+      const v = parseInt(inp.value || "0", 10) || 0;
+      inp.value = String(v);
+      onChange();
+    }, 0);
+  });
+}
+
+  
 /* Input table */
 function buildTable(){
   const tb=el("#inputTable tbody"); tb.innerHTML="";
@@ -1138,6 +1176,17 @@ function buildTable(){
     const draft=getDraft();
     const init=Object.prototype.hasOwnProperty.call(draft,name)?(parseInt(draft[name])||0):0;
     inp.value=String(init); inp.dataset.prev=String(init);
+
+    // 👇 추가: 첫 입력 시 0 교체 로직 연결
+wireZeroReplace(inp, () => {
+  const prev = parseInt(inp.dataset.prev || "0") || 0;
+  const cur  = parseInt(inp.value || "0") || 0;
+  inp.value = String(cur);
+  setDraftQty(name, cur);
+  maybeBuzz(prev, cur);
+  inp.dataset.prev = String(cur);
+  refreshTotalUI();
+});
 
     inp.addEventListener("input",()=>{
       const prev=parseInt(inp.dataset.prev||"0")||0;
