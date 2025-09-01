@@ -41,31 +41,42 @@
     min-height:50vh; display:flex; flex-direction:column; overflow:hidden;
   }
 
-  /* 메시지 스크롤 박스 */
+  /* 스크롤 영역 */
   .chatScroll{ flex:1; min-height:300px; overflow:auto; padding:12px; background:
     linear-gradient(#fff,#fff) padding-box,
     linear-gradient(180deg,rgba(37,99,235,.06),rgba(37,99,235,0)) border-box;
   }
 
-  /* 날짜 그룹 리스트 */
-  .list{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; }
-
-  .dayGroup .daySep{ text-align:center; margin:6px 0 2px; }
-  .dayGroup .daySep .badge{
+  /* 상단 날짜 1줄 */
+  .dayHeader{ text-align:center; margin:6px 0 10px; }
+  .dayHeader .badge{
     display:inline-block; font-size:12px; color:#475569; background:#eef2f7; border:1px solid var(--border);
     padding:4px 10px; border-radius:999px; box-shadow:var(--shadow-1);
   }
 
-  /* 메시지 */
+  /* 메시지 리스트 */
   .msgs{ list-style:none; padding:0; margin:6px 0 0; display:flex; flex-direction:column; gap:10px; }
-  .msg{
-    background:#f8fafc; border:1px solid var(--border); border-radius:14px; padding:10px 12px;
-    box-shadow:0 6px 20px rgba(15,23,42,.06);
-  }
+
+  /* 좌/우 행 */
+  .msgRow{ display:flex; align-items:flex-end; gap:6px; }
+  .msgRow.left{ justify-content:flex-start; }
+  .msgRow.right{ justify-content:flex-end; }
+
+  /* 말풍선 */
+  .msg{ max-width:78%; padding:10px 12px; border-radius:14px; border:1px solid var(--border); box-shadow:0 6px 20px rgba(15,23,42,.06); }
   .msg .line{ font-size:15px; line-height:1.35; }
-  .msg .from{ font-weight:900; color:#0b3fb8; white-space:nowrap; }
+  .msg .from{ font-weight:900; color:#0b3fb8; white-space:nowrap; margin-right:4px; }
   .msg .text{ white-space:pre-wrap; word-break:break-word; }
-  .msg .meta{ margin-top:6px; font-size:12px; color:#64748b; }
+
+  /* 색상: mine(연노랑), theirs(하양) */
+  .msg.mine{ background:#fff9c2; border-color:#f5e58a; }
+  .msg.theirs{ background:#ffffff; border-color:#e6eaf2; }
+  .msg.mine .from{ display:none; }
+
+  /* 말풍선 옆 시간 */
+  .msgTime{ font-size:12px; color:#64748b; line-height:1; white-space:nowrap; }
+  .msgRow.left  .msgTime{ margin-left:6px; }
+  .msgRow.right .msgTime{ margin-right:6px; order:-1; }
 
   /* 스크롤바 */
   .chatScroll::-webkit-scrollbar{ width:10px; }
@@ -106,7 +117,8 @@
 <main>
   <section class="panel" aria-label="실시간 메시지">
     <div class="chatScroll" id="chatScroll">
-      <ul class="list" id="chatList"></ul>
+      <div class="dayHeader"><span class="badge" id="dayBadge">-</span></div>
+      <ul class="msgs" id="msgList"></ul>
     </div>
   </section>
 </main>
@@ -139,32 +151,49 @@
 
   const el = s => document.querySelector(s);
 
+  /* 병동 가져오기 */
   function getWard(){
     const qp = new URL(location.href).searchParams.get("ward");
     const w  = qp && qp.trim() ? qp.trim() : (localStorage.getItem("linen/ward")||"").trim();
     return w || "";
   }
 
+  /* 이스케이프 */
   function escapeHTML(str=""){
     return str.replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
   }
 
-  function fmtTs(ts){
+  /* 시간/날짜 포맷 */
+  function fmtAmPmTime(ts){
     const d = new Date(ts);
-    return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")} ${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}`;
+    let h = d.getHours(), m = d.getMinutes();
+    const ampm = h < 12 ? "오전" : "오후";
+    h = h % 12 || 12;
+    return `${ampm} ${h}:${String(m).padStart(2,"0")}`;
   }
-
-  function dayKey(ts){
+  function fmtDateBadge(ts){
     const d = new Date(ts);
     return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`;
   }
 
+  /* 전역 상태 */
   const ward = getWard();
   el("#wardChip").textContent = ward ? `${ward}병동` : "미지정";
   el("#changeWard").addEventListener("click", (e)=>{ e.preventDefault(); location.href="./"; });
 
+  /* 뒤로가기 → 입력화면(현재 ward 유지) */
+  el("#goBack").addEventListener("click", (e) => {
+    e.preventDefault();
+    const base = "./";
+    const url = ward ? `${base}?ward=${encodeURIComponent(ward)}` : base;
+    location.href = url;
+  });
+
   const msgBox = el("#msgBox");
   const sendBtn = el("#sendBtn");
+  const scrollBox = el("#chatScroll");
+  const msgList = el("#msgList");
+  const dayBadge = el("#dayBadge");
 
   function refreshSendState(){
     sendBtn.disabled = !(msgBox.value.trim().length > 0 && ward);
@@ -179,75 +208,102 @@
   });
   refreshSendState();
 
-  // ✅ 병동별 guestbook 경로
+  /* 최신으로 스크롤 */
+  function scrollToBottom(){
+    try { scrollBox.scrollTop = scrollBox.scrollHeight; } catch {}
+  }
+
+  /* 내가 보낸 메시지 판별 */
+  function isMineMessage(v){
+    const my = (ward||"").trim();
+    if (!my) return false;
+    const a = (v.author||"").replace(/병동$/,'').trim();
+    const w = (v.ward||"").trim();
+    return (a === my) || (w === my);
+  }
+
+  /* 렌더 */
+  function renderMessage({ward:w, text, ts, isMine}){
+    // 상단 날짜 1줄 갱신 (마지막 메시지 날짜 기준)
+    dayBadge.textContent = fmtDateBadge(ts);
+
+    const row = document.createElement("li");
+    row.className = `msgRow ${isMine ? 'right' : 'left'}`;
+
+    const bubble = document.createElement("div");
+    bubble.className = `msg ${isMine ? 'mine' : 'theirs'}`;
+    bubble.innerHTML = `
+      <div class="line">
+        <span class="from">${w||"익명"}</span>
+        <span class="text">${escapeHTML(text)}</span>
+      </div>
+    `;
+
+    const time = document.createElement("div");
+    time.className = "msgTime";
+    time.textContent = fmtAmPmTime(ts);
+
+    // 좌/우에 맞춰 배치
+    if (isMine){
+      row.appendChild(time);
+      row.appendChild(bubble);
+    } else {
+      row.appendChild(bubble);
+      row.appendChild(time);
+    }
+
+    // ▶ 최신이 맨 아래: appendChild
+    msgList.appendChild(row);
+  }
+
+  // 전송
   async function sendMessage(){
     const text = msgBox.value.trim();
     if (!text) return;
 
-const roomRef = ref(db, `guestbook/messages`);   // ✅ 공용 경로(ward 제거)
-await push(roomRef, {
-  text,
-  author: `${ward}병동`,
-  ward,                                // 표시/푸시에 쓰려고 필드는 남겨둠
-  ts: Date.now(),
-  ts_server: serverTimestamp(),
-  url: "/skills-github-pages/방명록.html"
-});
-
+    const roomRef = ref(db, `guestbook/messages`);
+    await push(roomRef, {
+      text,
+      author: `${ward}병동`,
+      ward,
+      ts: Date.now(),
+      ts_server: serverTimestamp(),
+      url: "/skills-github-pages/방명록.html"
+    });
 
     msgBox.value = "";
     refreshSendState();
   }
-
   sendBtn.addEventListener("click", sendMessage);
 
-  // === 렌더링 ===
-  const list = el("#chatList");
-  const scrollBox = el("#chatScroll");
-  const groups = new Map();
+  // 구독: 마지막 200개, 추가될수록 아래로 쌓임
+  const q = query(ref(db, `guestbook/messages`), limitToLast(200));
+  let initialLoaded = false;
+  onChildAdded(q, snap=>{
+    const v = snap.val() || {};
+    const mine = isMineMessage(v);
 
-  function withStableScroll(renderFn){
-    const prevH = scrollBox.scrollHeight;
-    renderFn();
-    const diff = scrollBox.scrollHeight - prevH;
-    if(scrollBox.scrollTop<5) scrollBox.scrollTop=0; else scrollBox.scrollTop+=diff;
-  }
+    renderMessage({
+      ward: v.author || v.ward || "익명",
+      text: v.text || "",
+      ts: v.ts || Date.now(),
+      isMine: mine
+    });
 
-  function getOrCreateGroup(day){
-    let g = groups.get(day);
-    if(g) return g;
-    g = document.createElement("li");
-    g.className = "dayGroup";
-    g.innerHTML = `<div class="daySep"><span class="badge">${day}</span></div><ul class="msgs"></ul>`;
-    list.insertBefore(g, list.firstChild);
-    groups.set(day, g);
-    return g;
-  }
-
-  function renderMessage({ward:w,text,ts}){
-    const day = dayKey(ts);
-    const ul = getOrCreateGroup(day).querySelector(".msgs");
-    const li = document.createElement("li");
-    li.className = "msg";
-    li.innerHTML = `<div class="line"><span class="from">${w||"익명"}</span> : <span class="text">${escapeHTML(text)}</span></div><div class="meta">${fmtTs(ts)}</div>`;
-    ul.insertBefore(li, ul.firstChild);
-  }
-
- const q = query(ref(db, `guestbook/messages`), limitToLast(200));   // ✅ 공용 경로
-onChildAdded(q, snap=>{
-  const v = snap.val() || {};
-  withStableScroll(()=> renderMessage({
-    ward: v.author || v.ward || "익명",
-    text: v.text || "",
-    ts: v.ts || Date.now()
-  }));
-});
-
+    // 초기 로딩 중엔 전체 렌더 후 한 번, 이후엔 새 메시지마다 하단으로
+    if (!initialLoaded){
+      // 지연으로 초기 배치 후 스크롤 하단
+      clearTimeout(onChildAdded._t);
+      onChildAdded._t = setTimeout(()=>{ initialLoaded = true; scrollToBottom(); }, 0);
+    } else {
+      scrollToBottom();
+    }
+  });
 
   msgBox.focus();
 </script>
 
-<!-- ✅ 서비스워커 등록 -->
+<!-- 서비스워커 등록 (푸시 수신용) -->
 <script>
   const SCOPE = '/skills-github-pages/';
   const SW_URL = `${SCOPE}sw.js`;
@@ -260,7 +316,7 @@ onChildAdded(q, snap=>{
   }
 </script>
 
-<!-- ✅ FCM 포그라운드 수신 -->
+<!-- FCM 포그라운드 수신 -->
 <script type="module">
   import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getMessaging, onMessage as onFcmMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
@@ -286,8 +342,3 @@ onChildAdded(q, snap=>{
 
 </body>
 </html>
-
-
-
-
-
