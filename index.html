@@ -1490,13 +1490,6 @@ window.addEventListener("DOMContentLoaded",()=>{
 
 
 <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/firebase-messaging-sw.js')
-      .catch(err => console.warn('[FCM SW] register failed:', err));
-  }
-</script>
-
-<script>
 /** ================= 통합 설치 제어 스크립트 ================= */
 let deferredPrompt = null;
 let canInstall = false;
@@ -1614,3 +1607,4 @@ document.addEventListener("click", (e) => {
 
 </body>
 </html>
+
