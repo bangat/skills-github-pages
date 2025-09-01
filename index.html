@@ -1608,6 +1608,8 @@ document.addEventListener("click", (e) => {
   if (id === "dlConfirm") { closeModalIfExists('#downloadModal'); location.href = APK_URL; }
 });
 
+  
+
 (function wireInstallButton(){
   const btn = document.getElementById("appDownloadBtn");
   if (!btn) return;
@@ -1619,15 +1621,19 @@ document.addEventListener("click", (e) => {
   };
 })();
 </script>
+  <!-- 🔔 FCM Service Worker 등록: 여기 삽입 -->
 <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('firebase-messaging-sw.js') // 상대경로
-    .then(reg => console.log('[FCM SW] registered:', reg.scope))
-    .catch(err => console.warn('[FCM SW] register failed:', err));
+  navigator.serviceWorker.register('/skills-github-pages/firebase-messaging-sw.js', {
+    scope: '/skills-github-pages/'
+  })
+  .then(reg => console.log('[FCM SW] registered:', reg.scope))
+  .catch(err => console.warn('[FCM SW] register failed:', err));
 }
 </script>
 </body>
 </html>
+
 
 
 
