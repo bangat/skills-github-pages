@@ -1,4 +1,5 @@
-// sw.js (기존 캐시 로직 위쪽에 추가)
+// sw.js
+/* ===== 1) FCM (변경 없음) ===== */
 importScripts('https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.6.11/firebase-messaging-compat.js');
 
@@ -12,68 +13,80 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// 백그라운드(탭 닫힘/백그라운드) 수신
+/* ===== 2) 스코프-상대 BASE 경로 계산 (핵심) ===== */
+const SCOPE_URL = new URL(self.registration.scope);
+const BASE_PATH = SCOPE_URL.pathname.endsWith('/')
+  ? SCOPE_URL.pathname
+  : SCOPE_URL.pathname + '/';    // ex) '/skills-github-pages/'
+
+/* ===== 3) FCM 백그라운드 알림: 아이콘/열URL도 BASE 기준으로 ===== */
 messaging.onBackgroundMessage((payload) => {
   const n = payload.notification || {};
+  // 아이콘: 스코프 기준
+  const iconUrl = `${BASE_PATH}icons/icon-192.png`;
   self.registration.showNotification(n.title || "알림", {
     body: n.body || "",
-    icon: "/icons/icon-192.png",
+    icon: iconUrl,
     data: payload.data || {}
   });
 });
 
-// 알림 클릭 시 열 URL
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = event.notification?.data?.url || '/';
+  const rel = event.notification?.data?.url || ''; // 상대 경로면 BASE 뒤에 붙음
+  const url = rel.startsWith('http') ? rel : (BASE_PATH + rel);
   event.waitUntil(clients.openWindow(url));
 });
 
-
-// sw.js
-const SW_VERSION   = 'v2025-08-31-04';     // ✅ 배포마다 이 문자열만 바꿔줘
+/* ===== 4) 캐시 버전 ===== */
+const SW_VERSION   = 'v2025-08-31-04';      // 배포 때만 변경
 const STATIC_CACHE = `static-${SW_VERSION}`;
 
-// 필요하면 여기에 선캐시할 파일 추가
+/* ===== 5) 프리캐시: 전부 BASE 기준 경로로 ===== */
 const PRECACHE = [
-  '/',                // 루트
-  '/index.html',
-  '/manifest.json',
-  '/icons/apple-touch-icon.png',
+  `${BASE_PATH}`,                   // 앱 루트
+  `${BASE_PATH}index.html`,
+  `${BASE_PATH}manifest.json`,
+  `${BASE_PATH}icons/apple-touch-icon.png`,
 ];
 
-// --- 설치: 즉시 대기 없이 새 SW 준비
+/* ===== 6) 설치/활성화 ===== */
 self.addEventListener('install', (event) => {
-  self.skipWaiting(); // ✅ old SW 있어도 바로 이 SW로 전환 준비
+  self.skipWaiting();
   event.waitUntil(
     caches.open(STATIC_CACHE).then(c => c.addAll(PRECACHE)).catch(()=>{})
   );
 });
 
-// --- 활성화: 모든 클라이언트 장악 + 오래된 캐시 정리
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
     await Promise.all(keys.map(k => (k !== STATIC_CACHE ? caches.delete(k) : Promise.resolve())));
-    await self.clients.claim(); // ✅ 페이지 새로고침 없이도 새 SW 적용
+    await self.clients.claim();
   })());
 });
 
-// --- HTML 네비게이션은 "네트워크 우선" (최신 코드 즉시 로드)
+/* ===== 7) 네비게이션: 네트워크 우선, 폴백도 BASE 기준 ===== */
 async function handleNavigation(request) {
   try {
     const fresh = await fetch(request, { cache: 'no-store' });
     return fresh;
   } catch {
     const cache = await caches.open(STATIC_CACHE);
-    // 루트 또는 캐시된 index.html로 폴백
-    return (await cache.match('/index.html')) || (await cache.match('/')) ||
-           new Response('Offline', { status: 503 });
+    return (await cache.match(`${BASE_PATH}index.html`))
+        || (await cache.match(`${BASE_PATH}`))
+        || new Response('Offline', { status: 503 });
   }
 }
 
-// --- 정적 파일은 Stale-While-Revalidate (체감 빠르게 + 백그라운드 갱신)
+/* ===== 8) 정적 에셋: S-W-R, 동일 출처만 캐시 ===== */
+function isSameOrigin(req) {
+  try { return new URL(req.url).origin === self.location.origin; }
+  catch { return false; }
+}
+
 async function handleAsset(request) {
+  if (!isSameOrigin(request)) return fetch(request); // 외부 리소스는 캐시X
   const cache = await caches.open(STATIC_CACHE);
   const cached = await cache.match(request);
   const fetchPromise = fetch(request).then(res => {
@@ -86,6 +99,9 @@ async function handleAsset(request) {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
+  // 확장 스킴/범위 밖 요청은 패스
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
 
   if (req.mode === 'navigate') {
     event.respondWith(handleNavigation(req));
@@ -93,9 +109,3 @@ self.addEventListener('fetch', (event) => {
   }
   event.respondWith(handleAsset(req));
 });
-
-
-
-
-
-
