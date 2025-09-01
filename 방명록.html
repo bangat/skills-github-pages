@@ -239,18 +239,7 @@
 
   msgBox.focus();
 </script>
-
-<!-- FCM SW 등록 -->
-<script>
-if ('serviceWorker' in navigator) {
- navigator.serviceWorker.register('/skills-github-pages/sw.js', {
-   scope: '/skills-github-pages/'
- })
-  .then(reg => console.log('[FCM SW] registered:', reg.scope))
-  .catch(err => console.warn('[FCM SW] register failed:', err));
-}
-</script>
-
 </body>
 </html>
+
 
