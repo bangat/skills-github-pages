@@ -90,7 +90,7 @@
   .inputWrap{ max-width:980px; margin:0 auto; display:flex; gap:8px; }
   .textbox{
     flex:1; min-height:44px; max-height:140px; padding:10px 12px; border:1px solid var(--border); border-radius:12px;
-    font-size:15px; resize:vertical; outline:none; background:#fff; color:#var(--text);
+    font-size:15px; resize:vertical; outline:none; background:#fff; color:var(--text); /* ← 오타 수정 */
   }
   .textbox:focus{ border-color:var(--accent); box-shadow:var(--focus); }
   .sendBtn{
@@ -117,8 +117,8 @@
 <main>
   <section class="panel" aria-label="실시간 메시지">
     <div class="chatScroll" id="chatScroll">
-      <!-- 날짜 구분선은 JS가 li.dayHeader로 자동 삽입 -->
       <ul class="msgs" id="msgList"></ul>
+      <!-- 항상 최하단 고정을 위한 센티널 -->
       <div id="bottomSentinel" aria-hidden="true" style="height:1px"></div>
     </div>
   </section>
@@ -132,7 +132,7 @@
   </div>
 </div>
 
-<!-- Firebase -->
+<!-- Firebase: 메시지 렌더/송수신 + 자동스크롤 + 날짜헤더 + TTS -->
 <script type="module">
   import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getDatabase, ref, push, serverTimestamp, onChildAdded, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -150,7 +150,7 @@
   const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
   const db  = getDatabase(app);
 
-  const el = s => document.querySelector(s);
+  const $ = s => document.querySelector(s);
 
   /* 병동 가져오기 */
   function getWard(){
@@ -176,25 +176,27 @@
     const d = new Date(ts);
     return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`;
   }
+  function dayKey(ts){
+    const d = new Date(ts);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
 
-  /* 전역 상태 */
+  /* 상태 */
   const ward = getWard();
-  el("#wardChip").textContent = ward ? `${ward}병동` : "미지정";
-  el("#changeWard").addEventListener("click", (e)=>{ e.preventDefault(); location.href="./"; });
-
-  /* 뒤로가기 → 입력화면(현재 ward 유지) */
-  el("#goBack").addEventListener("click", (e) => {
+  $("#wardChip").textContent = ward ? `${ward}병동` : "미지정";
+  $("#changeWard").addEventListener("click", (e)=>{ e.preventDefault(); location.href="./"; });
+  $("#goBack").addEventListener("click", (e) => {
     e.preventDefault();
     const base = "./";
     const url = ward ? `${base}?ward=${encodeURIComponent(ward)}` : base;
     location.href = url;
   });
 
-  const msgBox = el("#msgBox");
-  const sendBtn = el("#sendBtn");
-  const scrollBox = el("#chatScroll");
-  const msgList = el("#msgList");
-  const bottomSentinel = el("#bottomSentinel");
+  const msgBox = $("#msgBox");
+  const sendBtn = $("#sendBtn");
+  const scrollBox = $("#chatScroll");
+  const msgList = $("#msgList");
+  const bottomSentinel = $("#bottomSentinel");
 
   function refreshSendState(){
     sendBtn.disabled = !(msgBox.value.trim().length > 0 && ward);
@@ -208,25 +210,19 @@
   });
   refreshSendState();
 
-  /* ===== 바닥 고정(스틱) 감지 ===== */
-  let stickBottom = true; // 처음엔 바닥에 붙어있다고 가정
-  const io = new IntersectionObserver((entries)=>{
-    // sentinel이 보이면 바닥
-    stickBottom = entries.some(en => en.isIntersecting);
-  }, { root: scrollBox, threshold: 1.0 });
-  io.observe(bottomSentinel);
-
+  /* ===== 항상 하단 고정 ===== */
   function scrollToBottom(){
-    // sentinel로 스크롤 (레이아웃 변화에도 튼튼)
-    bottomSentinel.scrollIntoView({ block: 'end' });
+    // 레이아웃 갱신 뒤 2프레임 연속으로 보정 (모바일 브라우저 대비)
+    requestAnimationFrame(() => {
+      bottomSentinel.scrollIntoView({ block: 'end' });
+      requestAnimationFrame(() => {
+        bottomSentinel.scrollIntoView({ block: 'end' });
+      });
+    });
   }
 
   /* ===== 날짜 헤더 ===== */
   let __lastDayKey = null;
-  function dayKey(ts){
-    const d = new Date(ts);
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  }
   function ensureDayHeader(ts){
     const key = dayKey(ts);
     if (key !== __lastDayKey){
@@ -247,11 +243,12 @@
     return (a === my) || (w === my);
   }
 
-  /* TTS (포그라운드 전용) */
-  function speak(text){
+  /* 포그라운드 TTS (남이 보낸 것만) */
+  function speakArrival(senderWardLabel){
     try{
-      if (document.hidden) return;              // 백그라운드는 X
+      if (document.hidden) return;                // 탭이 백그라운드면 X (푸시는 SW가 처리)
       if (!('speechSynthesis' in window)) return;
+      const text = `${senderWardLabel} 메시지 도착!`;
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'ko-KR';
       u.rate = 1.0;
@@ -306,8 +303,7 @@
 
     msgBox.value = "";
     refreshSendState();
-    // 내가 방금 보냈으면 하단에 붙여두기
-    scrollToBottom();
+    scrollToBottom(); // 내가 보낸 직후에도 고정
   }
   sendBtn.addEventListener("click", sendMessage);
 
@@ -319,35 +315,72 @@
     const mine = isMineMessage(v);
     const ts   = v.ts || Date.now();
 
-    // 날짜 헤더 -> 메시지
     ensureDayHeader(ts);
+    const displayWard = (v.author && v.author.trim())
+      ? v.author.trim()                       // 예: "61병동"
+      : (v.ward ? `${v.ward}병동` : '린넨실');
+
     renderMessage({
-      ward: v.author || v.ward || "익명",
+      ward: displayWard,
       text: v.text || "",
       ts,
       isMine: mine
     });
 
-    // 첫 로딩은 전체 그린 뒤 한 번만 내리기
     if (!initialLoaded){
       clearTimeout(onChildAdded._t);
       onChildAdded._t = setTimeout(()=>{ initialLoaded = true; scrollToBottom(); }, 0);
-    } else if (stickBottom){
-      // 사용자가 바닥에 붙어 있으면 계속 따라감
-      scrollToBottom();
+    } else {
+      scrollToBottom(); // 항상 하단 유지
     }
 
-    // 🔊 포그라운드 TTS/진동: "남이 보낸 것"만
+    // 남이 보낸 메시지에만 진동 + TTS(발신 병동명)
     if (!mine){
       try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
-      speak('린넨실 메세지 도착!');
+      speakArrival(displayWard);
     }
   });
 
   msgBox.focus();
 </script>
 
+<!-- 서비스워커 등록 (푸시 수신용) -->
+<script>
+  const SCOPE = '/skills-github-pages/';
+  const SW_URL = `${SCOPE}sw.js`;
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register(SW_URL, { scope: SCOPE })
+        .then(reg => console.log('[SW] ready:', reg.scope))
+        .catch(err => console.warn('[SW] register fail:', err));
+    });
+  }
+</script>
+
+<!-- FCM 포그라운드: 진동만 (TTS는 위 RTDB에서 mine 체크 후 처리) -->
+<script type="module">
+  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getMessaging, onMessage as onFcmMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
+    authDomain: "hallymlinen.firebaseapp.com",
+    projectId: "hallymlinen",
+    messagingSenderId: "867775830688",
+    appId: "1:867775830688:web:cef3ed4e70ae9818f347c5"
+  };
+
+  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+  const messaging = getMessaging(app);
+
+  onFcmMessage(messaging, (payload) => {
+    const title = payload.notification?.title || '새 방명록';
+    const body  = payload.notification?.body  || '';
+    console.log('[FCM foreground]', title, body, payload);
+    try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
+    // ※ 실제 음성 안내는 위 onChildAdded에서 발신 병동명으로 수행
+  });
+</script>
 
 </body>
 </html>
-
