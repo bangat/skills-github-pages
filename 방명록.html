@@ -184,11 +184,11 @@
     const text = msgBox.value.trim();
     if (!text) return;
 
-const roomRef = ref(db, `guestbook/messages/${ward}`);
+const roomRef = ref(db, `guestbook/messages`);   // ✅ 공용 경로(ward 제거)
 await push(roomRef, {
   text,
   author: `${ward}병동`,
-  ward, // ✅ 추가: 함수에서 참고 가능
+  ward,                                // 표시/푸시에 쓰려고 필드는 남겨둠
   ts: Date.now(),
   ts_server: serverTimestamp(),
   url: "/skills-github-pages/방명록.html"
@@ -233,16 +233,22 @@ await push(roomRef, {
     ul.insertBefore(li, ul.firstChild);
   }
 
-  const q = query(ref(db, `guestbook/messages/${ward}`), limitToLast(200));
-  onChildAdded(q, snap=>{
-    const v=snap.val()||{};
-    withStableScroll(()=> renderMessage({ ward: (v.author || v.ward), text: v.text, ts: v.ts || Date.now() }));
-  });
+ const q = query(ref(db, `guestbook/messages`), limitToLast(200));   // ✅ 공용 경로
+onChildAdded(q, snap=>{
+  const v = snap.val() || {};
+  withStableScroll(()=> renderMessage({
+    ward: v.author || v.ward || "익명",
+    text: v.text || "",
+    ts: v.ts || Date.now()
+  }));
+});
+
 
   msgBox.focus();
 </script>
 </body>
 </html>
+
 
 
 
