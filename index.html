@@ -1183,18 +1183,50 @@ wards.forEach((w, idx) => {
       html+=`</tbody></table>`;
       el("#statsWrap").innerHTML=html;
 
-      const daysCount = Math.max(1, Math.round((new Date(e) - new Date(s)) / (1000*60*60*24)) + 1);
-      let sumHtml = `<table class="summaryTable">
-        <thead><tr><th>품목</th><th>일평균 사용량</th><th>기간합계</th></tr></thead><tbody>`;
-      items.forEach((it,idx)=>{
-        const psum=periodTotals[idx]||0;
-        const avg=Math.round(psum/daysCount);
-        sumHtml+=`<tr><td>${it}</td>
-          <td${colorStyle(it,avg)}>${avg}</td>
-          <td${colorStyle(it,psum)}>${psum}</td></tr>`;
-      });
-      sumHtml+=`</tbody></table>`;
-      el("#statsSummary").innerHTML = sumHtml;
+      // ... (위는 그대로)
+
+const daysCount = Math.max(1, Math.round((new Date(e) - new Date(s)) / (1000*60*60*24)) + 1);
+let sumHtml = `<table class="summaryTable">
+  <thead><tr>
+    <th>품목</th>
+    <th>전일 사용량</th>
+    <th>일평균 사용량</th>
+    <th>기간합계</th>
+  </tr></thead><tbody>`;
+
+// ▼ 전일(끝날짜 e의 전날) 구간 계산
+const prevDateObj = new Date(e + "T00:00:00");
+prevDateObj.setDate(prevDateObj.getDate() - 1);
+const prevDateStr = `${prevDateObj.getFullYear()}-${String(prevDateObj.getMonth()+1).padStart(2,"0")}-${String(prevDateObj.getDate()).padStart(2,"0")}`;
+const [pS, pE] = rangeMsByDates(prevDateStr, prevDateStr);
+
+// ▼ 전일 데이터(병동 필터 포함) 집계
+const prevByItem = Object.fromEntries(items.map(it => [it, 0]));
+__mergedCache.forEach(L => {
+  if (L.ts >= pS && L.ts < pE && (wardFilter === "전체" || (L.ward||"").toString().trim() === wardFilter)) {
+    if (prevByItem[L.item] == null) prevByItem[L.item] = 0;
+    prevByItem[L.item] += Number(L.qty) || 0;
+  }
+});
+
+// ▼ 기간합계/평균은 기존 계산 사용
+items.forEach((it, idx) => {
+  const psum = periodTotals[idx] || 0;
+  const avg  = Math.round(psum / daysCount);
+  const prev = prevByItem[it] || 0;
+
+  sumHtml += `<tr>
+    <td>${it}</td>
+    <td${colorStyle(it, prev)}>${prev}</td>
+    <td${colorStyle(it, avg)}>${avg}</td>
+    <td${colorStyle(it, psum)}>${psum}</td>
+  </tr>`;
+});
+
+sumHtml += `</tbody></table>`;
+el("#statsSummary").innerHTML = sumHtml;
+
+// ... (아래는 그대로)
 
       shrinkBigNumbers(el("#statsWrap").querySelector("table"));
 
@@ -1253,7 +1285,7 @@ function exportChartXLSX(){
 function attachHoldRepeat(btn, onStep){
   let timer = null;
   const firstDelay = 450;   // 꾹 누른 뒤 첫 추가 실행까지 지연(ms)
-  const interval   = 120;   // 그 다음부터 고정 간격(ms) — 가속 없음
+  const interval   = 180;   // 그 다음부터 고정 간격(ms) — 가속 없음
   let started = false;
 
   const start = (e) => {
