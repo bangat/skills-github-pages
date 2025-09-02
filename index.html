@@ -1,6 +1,8 @@
 <!DOCTYPE html>
+<!-- -----주석 문서 루트 시작 ----- -->
 <html lang="ko">
 <head>
+<!-- -----주석 head 메타/매니페스트 시작 ----- -->
 <meta charset="utf-8" />
 <meta http-equiv="Cache-Control" content="no-store" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -13,6 +15,9 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
 
 <title>린넨실 출고관리</title>
+<!-- -----주석 head 메타/매니페스트 종료 ----- -->
+
+<!-- -----주석 전역 스타일 시작 ----- -->
 <style>
   :root{
     --bg:#f4f7fb; --card:#ffffff; --accent:#2563eb; --muted:#5b677a; --text:#0f172a; --border:#e6eaf2;
@@ -117,40 +122,47 @@
     min-height: var(--fillH, auto);
   }
 
-  /* (입력 내부) 카테고리 탭 */
-  .tabs{
-    width:100%; display:flex; gap:10px; margin:10px 0; padding:6px;
-    background:#eef3ff; border:1px solid #cfe0ff; border-radius:14px; box-shadow: var(--shadow-1);
-    position:relative;
-  }
-  .tab{
-    flex:1; height:48px; display:flex; align-items:center; justify-content:center;
-    padding:10px 14px; font-weight:900; font-size:16px; letter-spacing:.1px;
-    color:#1e3a8a; background:#ffffffcf; border:2px solid transparent; border-radius:12px; cursor:pointer;
-    position:relative; z-index:1;
-    transition: background .15s ease, color .15s ease, border-color .15s ease, transform .08s ease;
-  }
-  .tab:hover{ background:#f7faff; color:#0b2ea8; transform:translateY(-1px); }
-  .tab:active{ transform:translateY(0); }
-  .tab.active{ color:#fff; background:linear-gradient(180deg,#4f83ff,#2563eb); border-color:#1d4ed8; box-shadow:0 10px 24px rgba(37,99,235,.25), inset 0 0 0 1px rgba(255,255,255,.14); }
-  .tab:focus-visible{ outline:none; border-color:#2563eb; box-shadow:var(--focus); }
+ /* (입력 내부) 카테고리 탭 — 카드 너비 꽉 채우기 */
+.tabs{
+  width:100%;
+  display:grid;
+  grid-template-columns: repeat(3, 1fr); /* 3개 탭 동일 너비 */
+  gap:8px;                 /* 탭 사이 간격만 남김 */
+  margin:10px 0;
+  padding:0;               /* 내부 패딩 제거 → 꽉 차게 */
+  background:transparent;  /* 바탕 상자 제거 */
+  border:0;
+}
+.tab{
+  height:48px;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:900; font-size:16px; letter-spacing:.1px;
+  color:#1e3a8a;
+  background:#fff;
+  border:1px solid #cfe0ff;
+  border-radius:12px;
+  cursor:pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease, transform .08s ease, box-shadow .15s ease;
+  box-shadow:0 4px 12px rgba(2,6,23,.06);
+}
+.tab:hover{ background:#f7faff; color:#0b2ea8; transform:translateY(-1px); }
+.tab:active{ transform:translateY(0); }
+.tab.active{
+  color:#fff;
+  background:linear-gradient(180deg,#4f83ff,#2563eb);
+  border-color:#1d4ed8;
+  box-shadow:0 10px 24px rgba(37,99,235,.25), inset 0 0 0 1px rgba(255,255,255,.14);
+}
+.tab:focus-visible{ outline:none; border-color:#2563eb; box-shadow:var(--focus); }
 
-  .tab-slider{
-    position:absolute; left:0; bottom:0; width:33.3333%; height:5px; border-radius:999px;
-    background:linear-gradient(90deg,#93c5fd,#2563eb);
-    box-shadow:0 0 0 1px rgba(37,99,235,.18), 0 8px 18px rgba(37,99,235,.28);
-    transition:transform .25s cubic-bezier(.2,.8,.2,1); pointer-events:none;
-  }
-  @media (max-width:430px){
-    .tabs{ padding:4px; gap:8px; }
-    .tab{ height:44px; padding:8px 10px; font-size:15px; }
-    .tab-slider{ height:4px; bottom:0px; }
-  }
-  .tabs > .tab-slider{ position:absolute !important; left:0 !important; right:auto !important; top:auto !important; bottom:0 !important; height:5px !important; z-index:0 !important; }
-  .tabs > .tab{ z-index:1; }
-  @media (max-width:430px){
-    .tabs > .tab-slider{ bottom:0 !important; height:4px !important; }
-  }
+/* 탭 밑줄(슬라이더) 완전 제거 */
+.tabs .tab-slider{ display:none !important; }
+
+@media (max-width:430px){
+  .tabs{ gap:6px; }
+  .tab{ height:44px; font-size:15px; }
+}
+
 
   /* 표 */
   table{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-2)}
@@ -336,7 +348,7 @@
   }
   .fLabel{ font-weight:800; color:#334155; white-space:nowrap; }
   .formRow select, .formRow input[type="date"]{
-    width:100%; padding:10px 12px; font-size:16px; border:1px solid var(--border); border-radius:12px; background:#fff; color:var(--text);
+    width:100%; padding:10px 12px; font-size:16px; border:1px solid var(--border); border-radius:12px; background:#fff; color:#var(--text);
     transition:border-color .12s, box-shadow .12s;
   }
   .formRow select:focus, .formRow input[type="date"]:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); }
@@ -372,26 +384,69 @@
     .qtyCell input{ width:86px; height:44px; font-size:16.5px; padding:0 10px; line-height:44px }
     .chip{ height:44px; min-width:52px; font-size:15.5px }
   }
+
+/* 간소화 헤더 */
+.miniHeader{ margin:6px 0 10px; }
+.miniBtn{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 12px; border:1px solid var(--border); border-radius:12px;
+  background:#fff; font-weight:800; color:#1f2937;
+  box-shadow:var(--shadow-1); cursor:pointer;
+}
+.miniBtn:hover{ filter:brightness(1.02); transform:translateY(-1px); }
+.miniBtn:active{ transform:translateY(0); }
+.miniBtn #curWard{ color:#0b3fb8; }
+
 </style>
+<!-- -----주석 전역 스타일 종료 ----- -->
 </head>
 <body>
-
+<!-- -----주석 상단 네비게이션 시작 ----- -->
 <!-- 상단 3탭 네비게이션 -->
 <div class="topNav">
   <div class="nav">
     <button class="navTab active" data-section="input">입력</button>
     <button class="navTab" data-section="stats">통계</button>
-    <button class="navTab" data-section="guest">방명록</button>
+    <button class="navTab" data-section="guest">소통방</button>
     <div class="nav-slider" id="navSlider" aria-hidden="true"></div>
   </div>
 </div>
+<!-- -----주석 상단 네비게이션 종료 ----- -->
 
+<!-- -----주석 메인 컨테이너 시작 ----- -->
   <main>
 <section id="sec-input">
   <div class="sectionCard">
 
-    <!-- 폼 헤더: 병동명 → 출고일 (같은 시작선에 정렬) -->
-    <div class="formHeader">
+   <!-- 간소화: 요약 1줄 + 편집 모달 -->
+<div class="miniHeader">
+  <button type="button" class="miniBtn" id="editHeaderBtn" aria-haspopup="dialog" title="병동/출고일 편집">
+    <span id="curWard">미선택</span> · <span id="curDate">0000-00-00</span>
+  </button>
+</div>
+
+
+<div id="wardPromptModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="wpTitle" style="display:none">
+  <div class="modalCard" role="document">
+    <div class="modalHead" id="wpTitle">🚨 병동 선택 필요</div>
+    <div class="modalBody">
+      <p style="margin-bottom:8px;"><b>병동을 먼저 선택해주세요.</b></p>
+      <small style="color:#5b677a;">※ ICU, ER, HR, 내시경, 낮병동, 외래는<br>'기타' 병동으로 선택해주세요.</small>
+    </div>
+    <div class="modalActions">
+      <button type="button" class="btn primary" id="wpOk">확인</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- 병동/출고일 편집 모달 -->
+<div id="headerEditModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="heTitle" style="display:none">
+  <div class="modalCard" role="document">
+    <div class="modalHead" id="heTitle">설정</div>
+    <div class="modalBody">
       <div class="formRow">
         <label class="fLabel" for="wardSelect">병동명</label>
         <select id="wardSelect">
@@ -402,12 +457,18 @@
           <option>기타</option><option>린넨실</option>
         </select>
       </div>
-
-      <div class="formRow">
+      <div class="formRow" style="margin-top:8px">
         <label class="fLabel" for="issueDate">출고일</label>
         <input type="date" id="issueDate" />
       </div>
     </div>
+    <div class="modalActions">
+      <button type="button" class="btn cancel" id="heCancel">취소</button>
+      <button type="button" class="btn primary" id="heSave">저장</button>
+    </div>
+  </div>
+</div>
+
 
     <!-- (기존 h1.fieldRow 블록은 삭제) -->
     <!-- ↓ 기존 탭/테이블 그대로 유지 -->
@@ -468,8 +529,9 @@
     <div id="statsEmpty" class="empty" style="display:none">해당 기간 데이터가 없습니다.</div>
   </section>
 </main>
+<!-- -----주석 메인 컨테이너 종료 ----- -->
 
-  <!-- PWA 설치 안내 모달 -->
+<!-- -----주석 PWA 설치 안내 모달 시작 ----- -->
 <div id="pwaInstallModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="piTitle" style="display:none">
   <div class="modalCard" role="document">
     <div class="modalHead" id="piTitle">린넨실 앱 설치안내</div>
@@ -485,8 +547,9 @@
     </div>
   </div>
 </div>
+<!-- -----주석 PWA 설치 안내 모달 종료 ----- -->
 
-<!-- 제출 완료 모달 -->
+<!-- -----주석 제출 완료 모달 시작 ----- -->
 <div id="submitModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="smTitle">
   <div class="modalCard" role="document">
     <div class="modalHead" id="smTitle">제출 완료</div>
@@ -496,8 +559,9 @@
     </div>
   </div>
 </div>
+<!-- -----주석 제출 완료 모달 종료 ----- -->
 
-<!-- 제출 확인 모달 -->
+<!-- -----주석 제출 확인 모달 시작 ----- -->
 <div id="confirmModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="csTitle" style="display:none">
   <div class="modalCard" role="document">
     <div class="modalHead" id="csTitle">제출 확인</div>
@@ -512,8 +576,9 @@
     </div>
   </div>
 </div>
+<!-- -----주석 제출 확인 모달 종료 ----- -->
 
-<!-- 다운로드 안내 모달 -->
+<!-- -----주석 다운로드 안내 모달 시작 ----- -->
 <div id="downloadModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="dlTitle">
   <div class="modalCard" role="document">
     <div class="modalHead" id="dlTitle">다운로드 안내</div>
@@ -528,8 +593,9 @@
     </div>
   </div>
 </div>
+<!-- -----주석 다운로드 안내 모달 종료 ----- -->
 
-<!-- Toast -->
+<!-- -----주석 토스트 UI 시작 ----- -->
 <div class="toast" id="toast">
   <span class="check">✓</span>
   <div>
@@ -537,7 +603,9 @@
     <div class="sub">RTDB 동기화 & 로컬 백업</div>
   </div>
 </div>
+<!-- -----주석 토스트 UI 종료 ----- -->
 
+<!-- -----주석 푸터 액션바 시작 ----- -->
 <div class="footerBar">
   <div class="footerCol">
     <button class="btn acc" id="saveAll" disabled>제출하기</button>
@@ -545,8 +613,9 @@
     <button class="btn" id="exportXLSXBtn">엑셀로 내려받기</button>
   </div>
 </div>
+<!-- -----주석 푸터 액션바 종료 ----- -->
 
-<!-- 사운드 -->
+<!-- -----주석 사운드 리소스 시작 ----- -->
 <audio id="submitSound" preload="auto">
   <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/제출하기.mp3" type="audio/mpeg" />
 </audio>
@@ -559,13 +628,17 @@
 <audio id="warnSound" preload="auto">
   <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/경고.mp3" type="audio/mpeg" />
 </audio>
+<!-- -----주석 사운드 리소스 종료 ----- -->
 
+<!-- -----주석 외부 라이브러리(XLSX/Chart.js) 시작 ----- -->
 <!-- XLSX -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<!-- -----주석 외부 라이브러리(XLSX/Chart.js) 종료 ----- -->
 
 <!-- =================== 텔레그램 로거 (정상본, 단일) =================== -->
+<!-- -----주석 텔레그램 로거 스크립트 시작 ----- -->
 <script>
 const TELEGRAM_CHAT_ID = "5432510881";
 const TELEGRAM_TOKEN = "7377526562:AAEhb8p-mld6b2tMH7TAct2Jhqg8dpP6p20";
@@ -616,7 +689,8 @@ window.tgLog = (...args)=> tgSendNow(`[LOG] ` + args.map(asLine).join(" "));
 window.addEventListener("error", e=> tgSendNow(`[ONERROR] ${e.message} @ ${e.filename}:${e.lineno}:${e.colno}\n${e.error?.stack||''}`));
 window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.reason && (e.reason.stack||e.reason.message)) || asLine(e.reason)}`));
 </script>
-<!-- =================== /텔레그램 로거 =================== -->
+
+<!-- =================== /텔레그램 로거 종료 =================== -->
 
 <!-- Firebase (RTDB) -->
 <script type="module">
@@ -1321,7 +1395,7 @@ function exportChartXLSX(){
 function attachHoldRepeat(btn, onStep){
   let timer = null;
   const firstDelay = 450;   // 꾹 누른 뒤 첫 추가 실행까지 지연(ms)
-  const interval   = 180;   // 그 다음부터 고정 간격(ms) — 가속 없음
+  const interval   = 150;   // 그 다음부터 고정 간격(ms) — 가속 없음
   let started = false;
 
   const start = (e) => {
@@ -1411,9 +1485,85 @@ function goSection(section){
   }
 }
 
+function todayYmd(){
+  const d=new Date(), yyyy=d.getFullYear(), mm=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function syncMiniHeader(){
+  const wardTxt = (state.ward||"").toString().trim() || "미선택";
+  const dateTxt = el("#issueDate")?.value || todayYmd();
+  const cw = el("#curWard"), cd = el("#curDate");
+  if (cw) cw.textContent = wardTxt;
+  if (cd) cd.textContent = dateTxt;
+}
+
+function wireMiniHeader(){
+  const btn = el("#editHeaderBtn");
+  if (btn){
+    btn.onclick = (e)=>{ try{ addRipple && addRipple(e); }catch(_){} openModal("#headerEditModal", "#wardSelect"); };
+  }
+  const cancel = el("#heCancel");
+  if (cancel){ cancel.onclick = ()=> closeModal("#headerEditModal"); }
+  const save = el("#heSave");
+  if (save){
+    save.onclick = ()=>{
+      // 기존 onchange 로직이 알아서 테이블 재빌드/합계 갱신하므로 여기선 닫고 요약 동기화만
+      closeModal("#headerEditModal");
+      syncMiniHeader();
+    };
+  }
+
+  // 값 바뀔 때마다 요약 즉시 반영
+  const wSel = el("#wardSelect");
+  const dInp = el("#issueDate");
+  if (wSel) wSel.addEventListener("change", syncMiniHeader);
+  if (dInp) dInp.addEventListener("change", syncMiniHeader);
+}
+
+
 /* Init */
 function debounce(fn,delay=200){ let t; return(...a)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,a),delay); }; }
+
+// ================== ▼▼▼ 아래부터가 교체/추가될 부분입니다 ▼▼▼ ==================
+
+// [추가] 병동이 선택되었는지 확인하는 함수
+function isWardSelected(){
+  return (state.ward || "").toString().trim() !== "";
+}
+
+// [추가] 새로 만든 '병동 선택 안내' 모달을 여는 함수
+function showWardPromptModal(){
+  openModal('#wardPromptModal', '#wpOk');
+  playSnd("#warnSound"); // 경고음 재생
+}
+
 window.addEventListener("DOMContentLoaded",()=>{
+// [추가] 새로 만든 모달의 '확인' 버튼 기능 연결
+el('#wpOk').onclick = () => {
+  // 1. 안내 모달을 닫고,
+  closeModal('#wardPromptModal');
+  // 2. 병동 선택 모달을 바로 열어줍니다.
+  openModal('#headerEditModal', '#wardSelect');
+};
+
+  // [추가] 페이지 전역 클릭 감지 리스너 (가장 중요한 부분)
+  // 병동이 선택되지 않았을 때 특정 요소 클릭을 가로채서 모달을 띄웁니다.
+  document.body.addEventListener('click', (e) => {
+    // 병동이 이미 선택되었다면 아무것도 하지 않음
+    if (isWardSelected()) return;
+
+    // 병동 선택을 유도해야 하는 대상 요소들
+    const restrictedTargets = '#inputTable input, #inputTable button, .tabs .tab, #saveAll';
+
+    // 클릭한 요소가 대상에 포함되고, 병동 선택 버튼 자체는 아닌 경우
+    if (e.target.closest(restrictedTargets) && !e.target.closest('#editHeaderBtn')) {
+      e.preventDefault();       // 기본 동작(입력, 버튼 클릭 등)을 막고
+      e.stopPropagation();      // 다른 클릭 이벤트 전파를 중단
+      showWardPromptModal();  // 안내 모달을 보여줌
+    }
+  }, true); // true 옵션으로 다른 클릭 리스너보다 먼저 실행
+
   const urlApp=new URL(location.href).searchParams.get("app"); if(urlApp==="1"){localStorage.setItem("appMode","1");} if(urlApp==="0"){localStorage.removeItem("appMode");}
   const ua=(navigator.userAgent||"")+" "+(navigator.vendor||"");
   if((window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||/\b; wv\b/i.test(ua)||/\bMyLinenApp\b/i.test(ua)||localStorage.getItem('appMode')==='1'){ document.body.classList.add("app"); const b=el("#appDownloadBtn"); if(b) b.style.display="none"; }
@@ -1428,6 +1578,9 @@ window.addEventListener("DOMContentLoaded",()=>{
   el("#dateStart").value=`${yyyy}-${mm}-${dd}`;
   el("#dateEnd").value=`${yyyy}-${mm}-${dd}`;
 
+  syncMiniHeader();
+  wireMiniHeader();
+
   buildTable();
   refreshTotalUI();
   fitCardToFooter();
@@ -1439,7 +1592,14 @@ window.addEventListener("DOMContentLoaded",()=>{
   if (window.visualViewport) window.visualViewport.addEventListener('resize', ()=> sizeModalBody('#confirmModal', 0.5));
 
   el("#saveAll").addEventListener('click', addRipple);
-  el("#saveAll").onclick = (e) => { try { addRipple && addRipple(e); } catch(_) {} openConfirmSubmit(); };
+  
+  // [수정] #saveAll.onclick에서 병동 미선택 시 alert을 띄우는 로직은
+  // 위의 전역 클릭 리스너가 처리하므로 openConfirmSubmit()만 남깁니다.
+  el("#saveAll").onclick = (e) => { 
+      if (!isWardSelected()) return; // 혹시 모를 경우를 대비한 방어 코드
+      try { addRipple && addRipple(e); } catch(_) {} 
+      openConfirmSubmit(); 
+  };
 
   el("#exportXLSXBtn").addEventListener('click', addRipple);
   el("#exportXLSXBtn").onclick=exportXLSX;
@@ -1453,52 +1613,47 @@ window.addEventListener("DOMContentLoaded",()=>{
   el('#submitModal').addEventListener('click', (e)=>{ if(e.target===e.currentTarget) closeModal('#submitModal'); });
   el('#smOk').onclick = ()=> closeModal('#submitModal');
 
-  // 입력 화면 내부 카테고리 탭
   const tabs = Array.from(document.querySelectorAll(".tab"));
   const slider = document.getElementById('tabSlider');
   function moveSlider(){ const idx = ["시트","환자복","기타"].indexOf(state.cat); slider.style.transform = `translateX(${idx*100}%)`; }
   tabs.forEach(t=>{
-  // 초기 aria 상태
-  t.setAttribute('role','tab');
-  t.setAttribute('aria-selected', t.classList.contains('active') ? 'true' : 'false');
-  t.setAttribute('tabindex', t.classList.contains('active') ? '0' : '-1');
+    t.setAttribute('role','tab');
+    t.setAttribute('aria-selected', t.classList.contains('active') ? 'true' : 'false');
+    t.setAttribute('tabindex', t.classList.contains('active') ? '0' : '-1');
 
-  t.onclick=()=>{
-    state.cat=t.dataset.cat;
+    t.onclick=()=>{
+      // 클릭 시 병동이 선택되었는지 먼저 확인
+      if (!isWardSelected()) return;
+      state.cat=t.dataset.cat;
 
-    // 활성/비활성 토글 + aria 갱신
-    tabs.forEach(x=>{
-      const isActive = (x === t);
-      x.classList.toggle("active", isActive);
-      x.setAttribute('aria-selected', isActive ? 'true' : 'false');
-      x.setAttribute('tabindex', isActive ? '0' : '-1');
-    });
+      tabs.forEach(x=>{
+        const isActive = (x === t);
+        x.classList.toggle("active", isActive);
+        x.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        x.setAttribute('tabindex', isActive ? '0' : '-1');
+      });
 
-    moveSlider();
-    buildTable();
-    fitCardToFooter();
-    playSnd("#tabSound");
-  };
-});
+      moveSlider();
+      buildTable();
+      fitCardToFooter();
+      playSnd("#tabSound");
+    };
+  });
   moveSlider();
 
-  // 통계 watchers
   const rerender=debounce(()=>{ renderStats(); },200);
   ["#dateStart","#dateEnd","#wardFilter"].forEach(sel=>{
     const n=el(sel); n&&n.addEventListener("change",rerender); n&&n.addEventListener("input",rerender);
   });
 
-  // 차트 컨트롤
   ensureChartItemOptions();
   el("#chartItem").addEventListener("change", ()=> renderCharts());
   el("#exportChartXLSXBtn").addEventListener("click", (event)=>{ addRipple(event); exportChartXLSX(); });
 
-  // 상단 3탭 연결
   document.querySelectorAll('.navTab').forEach(btn=>{
     btn.addEventListener('click', ()=> goSection(btn.dataset.section));
   });
 
-  // URL로 초기 탭 선택 (?tab=stats | guest)
   const urlTab = new URL(location.href).searchParams.get("tab");
   goSection(urlTab === "stats" ? "stats" : "input");
 });
