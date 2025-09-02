@@ -1276,21 +1276,40 @@ async function renderStats(){
   if(!s||!e) return;
 
   if(window.__fb && typeof window.__fb.startStatsLiveWatcher==="function"){
+    // 기존: s의 전날부터만 → 월요일 값이 빠질 수 있음
     const prevDayStart = new Date(s + "T00:00:00");
     prevDayStart.setDate(prevDayStart.getDate() - 1);
 
-    window.__fb.startStatsLiveWatcher(prevDayStart, new Date(e+"T00:00:00"), (logsRT)=>{
-      const [sMs,eMs]=rangeMsByDates(s,e);
-      const prevStartMs = sMs - 24*60*60*1000;
-      let logsLS=[]; 
-      try{ logsLS=getLogs().filter(L=>L.ts>=prevStartMs && L.ts<eMs);}catch(_){}
-      const uniq=new Map(); 
-      [...logsRT,...logsLS].forEach(L=>{
-        const k=[L.ts,L.ward,L.item,L.qty].join("|"); 
-        if(!uniq.has(k)) uniq.set(k,L); 
-      });
-      const merged=Array.from(uniq.values());
-      __mergedCache = merged;
+    // e가 속한 주의 월요일 계산
+    const anchor = new Date((e || new Date().toISOString().slice(0,10)) + "T00:00:00");
+    const weekMon = new Date(anchor);
+    weekMon.setDate(anchor.getDate() - ((anchor.getDay() + 6) % 7)); // 월요일
+
+    // 과도한 확장을 방지: s의 전날에서 최대 7일만 앞당김
+    const sevenDaysBeforeS = new Date(prevDayStart);
+    sevenDaysBeforeS.setDate(prevDayStart.getDate() - 7);
+
+    // 최종 시작점 = min(주월요일, s-1), 단 s-8일 이전으로는 안 감
+    const watchStart = new Date(Math.max(sevenDaysBeforeS.getTime(), Math.min(weekMon.getTime(), prevDayStart.getTime())));
+
+    window.__fb.startStatsLiveWatcher(watchStart, new Date(e+"T00:00:00"), (logsRT)=>{
+      const [sMs,eMs]=rangeMsByDates(s,e);
+
+      // LS도 동일 기준으로 맞춰 병합
+      const prevStartMs = Math.max(sevenDaysBeforeS.getTime(), Math.min(weekMon.getTime(), sMs - 24*60*60*1000));
+      let logsLS=[]; 
+      try{ logsLS=getLogs().filter(L=>L.ts>=prevStartMs && L.ts<eMs);}catch(_){}
+
+      const uniq=new Map(); 
+      [...logsRT,...logsLS].forEach(L=>{
+        const k=[L.ts,L.ward,L.item,L.qty].join("|"); 
+        if(!uniq.has(k)) uniq.set(k,L); 
+      });
+      const merged=Array.from(uniq.values());
+      __mergedCache = merged;
+      // ...(이하 동일)
+  }
+  // 기존코드 마지막끝줄: __mergedCache = merged; 이후 원문 로직 계속
 
       let html = '';
       const items = ALL_ITEMS;
