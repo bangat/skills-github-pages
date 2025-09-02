@@ -1307,10 +1307,7 @@ async function renderStats(){
       });
       const merged=Array.from(uniq.values());
       __mergedCache = merged;
-      // ...(이하 동일)
-  }
-  // 기존코드 마지막끝줄: __mergedCache = merged; 이후 원문 로직 계속
-
+      
       let html = '';
       const items = ALL_ITEMS;
       let periodTotals; // 분기 처리 후 요약 테이블에서 사용할 합계 변수
