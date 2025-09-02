@@ -397,6 +397,35 @@
 .miniBtn:active{ transform:translateY(0); }
 .miniBtn #curWard{ color:#0b3fb8; }
 
+/* ===== 통계 요약 테이블 폰트/줄바꿈 수정 ===== */
+#statsSummary .summaryTable {
+  table-layout: fixed; /* 테이블 레이아웃 고정 */
+}
+#statsSummary .summaryTable th {
+  font-size: 13.5px;   /* 헤더 폰트 크기 줄이기 */
+  white-space: nowrap; /* 헤더 줄바꿈 방지 */
+  padding: 8px 2px;
+}
+#statsSummary .summaryTable td:first-child {
+  font-size: 15px;     /* 품목명 폰트 크기 살짝 조정 */
+  white-space: nowrap; /* 품목명 줄바꿈 방지 */
+}
+
+/* ===== 통계 요약 테이블 품목 정렬 및 자간 수정 (Flexbox 방식) ===== */
+#statsSummary .summaryTable td:first-child {
+  font-weight: 700;
+  font-size: 16px;
+  /* 4글자 품목(예: 일반상의)을 위한 중앙 정렬 */
+  text-align: center;
+}
+
+/* 자간을 조절할 품목의 컨테이너(<td>) */
+#statsSummary .summaryTable td.item-name-justify {
+  display: flex;
+  /* 핵심: 내부 아이템(<span>)들의 간격을 양쪽 끝에 맞춰 균등하게 배분 */
+  justify-content: space-between;
+}
+
 </style>
 <!-- -----주석 전역 스타일 종료 ----- -->
 </head>
@@ -1235,119 +1264,159 @@ function renderCharts(){
 
 /* === Stats render === */
 async function renderStats(){
-  const today=new Date().toISOString().slice(0,10);
-  const s=el("#dateStart").value||today;
-  const e=el("#dateEnd").value||today;
-  const wardFilter=el("#wardFilter").value||"전체";
-  if(!s||!e) return;
+  const today=new Date().toISOString().slice(0,10);
+  const s=el("#dateStart").value||today;
+  const e=el("#dateEnd").value||today;
+  const wardFilter=el("#wardFilter").value||"전체";
+  if(!s||!e) return;
 
-  if(window.__fb && typeof window.__fb.startStatsLiveWatcher==="function"){
-// ▼ 시작일을 하루 당겨서 전날 포함
-const prevDayStart = new Date(s + "T00:00:00");
-prevDayStart.setDate(prevDayStart.getDate() - 1);
+  if(window.__fb && typeof window.__fb.startStatsLiveWatcher==="function"){
+    const prevDayStart = new Date(s + "T00:00:00");
+    prevDayStart.setDate(prevDayStart.getDate() - 1);
 
-window.__fb.startStatsLiveWatcher(prevDayStart, new Date(e+"T00:00:00"), (logsRT)=>{
-  const [sMs,eMs]=rangeMsByDates(s,e);
+    window.__fb.startStatsLiveWatcher(prevDayStart, new Date(e+"T00:00:00"), (logsRT)=>{
+      const [sMs,eMs]=rangeMsByDates(s,e);
+      const prevStartMs = sMs - 24*60*60*1000;
+      let logsLS=[]; 
+      try{ logsLS=getLogs().filter(L=>L.ts>=prevStartMs && L.ts<eMs);}catch(_){}
+      const uniq=new Map(); 
+      [...logsRT,...logsLS].forEach(L=>{
+        const k=[L.ts,L.ward,L.item,L.qty].join("|"); 
+        if(!uniq.has(k)) uniq.set(k,L); 
+      });
+      const merged=Array.from(uniq.values());
+      __mergedCache = merged;
 
-  // ▼ 로컬 로그도 전날부터 포함
-  const prevStartMs = sMs - 24*60*60*1000;
-  let logsLS=[]; 
-  try{ logsLS=getLogs().filter(L=>L.ts>=prevStartMs && L.ts<eMs);}catch(_){}
+      let html = '';
+      const items = ALL_ITEMS;
+      let periodTotals; // 분기 처리 후 요약 테이블에서 사용할 합계 변수
 
-  const uniq=new Map(); 
-  [...logsRT,...logsLS].forEach(L=>{
-    const k=[L.ts,L.ward,L.item,L.qty].join("|"); 
-    if(!uniq.has(k)) uniq.set(k,L); 
-  });
-  const merged=Array.from(uniq.values());
-  __mergedCache = merged;
+      // ===== ▼▼▼ '전체' 병동과 '특정' 병동 선택 시 분기 처리 ▼▼▼ =====
 
+      if (wardFilter === "전체") {
+        // ===== 1. '전체' 병동 선택 시: 기존의 병동별 목록 표시 =====
+        const {p,wards,items}=renderPivot(merged,s,e,wardFilter);
 
-      const {p,wards,items}=renderPivot(merged,s,e,wardFilter);
+        const crownExcludes = new Set(["린넨실","기타"]);
+        const wardTotals = wards.map(w => items.reduce((a,i)=>a+(p[w]?.[i]||0),0));
 
-      // 🔹 왕관 후보: '린넨실', '기타' 제외
-const crownExcludes = new Set(["린넨실","기타"]);
-const wardTotals = wards.map(w => items.reduce((a,i)=>a+(p[w]?.[i]||0),0));
-
-// 후보들만 대상으로 최대값 계산
-let maxTotal = 0, maxWardName = null;
-wards.forEach((w, idx) => {
-  if (crownExcludes.has(w)) return;
-  const tot = wardTotals[idx] || 0;
-  if (tot > maxTotal) { maxTotal = tot; maxWardName = w; }
-});
-      let html=`<table class="statsTable"><thead><tr><th><span class="wardName">병동</span></th>${items.map(i=>`<th class="rot">${i}</th>`).join("")}</tr></thead><tbody>`;
-      wards.forEach((w,rowIdx)=>{
-        const isMax = (wardFilter==="전체" && w === maxWardName && !crownExcludes.has(w) && maxTotal > 0);
-        html+=`<tr class="${isMax?'maxWardRow':''}">
-          <td><span class="wardName">${w}</span></td>${
-          items.map(i=>{
-            const v=(p[w]?.[i]||0);
-            return `<td data-num="1"><span class="num"${colorStyle(i,v)}>${v}</span></td>`;
-          }).join("")
+        let maxTotal = 0, maxWardName = null;
+        wards.forEach((w, idx) => {
+          if (crownExcludes.has(w)) return;
+          const tot = wardTotals[idx] || 0;
+          if (tot > maxTotal) { maxTotal = tot; maxWardName = w; }
+        });
+        
+        html=`<table class="statsTable"><thead><tr><th><span class="wardName">병동</span></th>${items.map(i=>`<th class="rot">${i}</th>`).join("")}</tr></thead><tbody>`;
+        wards.forEach((w,rowIdx)=>{
+          const isMax = (wardFilter==="전체" && w === maxWardName && !crownExcludes.has(w) && maxTotal > 0);
+          html+=`<tr class="${isMax?'maxWardRow':''}">
+            <td><span class="wardName">${w}</span></td>${
+            items.map(i=>{
+              const v=(p[w]?.[i]||0);
+              return `<td data-num="1"><span class="num"${colorStyle(i,v)}>${v}</span></td>`;
+            }).join("")
+          }</tr>`;
+        });
+        
+        periodTotals=items.map(i=>wards.reduce((a,w)=>a+(p[w]?.[i]||0),0));
+        html+=`<tr class="total-row"><th><span class="wardName">합계</span></th>${
+          periodTotals.map((v,idx)=>`<th data-num="1"><span class="num"${colorStyle(items[idx],v)}>${v}</span></th>`).join("")
         }</tr>`;
-      });
-      const periodTotals=items.map(i=>wards.reduce((a,w)=>a+(p[w]?.[i]||0),0));
-      html+=`<tr class="total-row"><th><span class="wardName">합계</span></th>${
-        periodTotals.map((v,idx)=>`<th data-num="1"><span class="num"${colorStyle(items[idx],v)}>${v}</span></th>`).join("")
-      }</tr>`;
-      html+=`</tbody></table>`;
-      el("#statsWrap").innerHTML=html;
+        html+=`</tbody></table>`;
 
-      // ... (위는 그대로)
+      } else {
+        // ===== 2. '특정' 병동 선택 시: 날짜별 상세 내역 표시 =====
+        const datesInRange = dateRangeArray(s, e);
+        const dailyData = {};
 
-const daysCount = Math.max(1, Math.round((new Date(e) - new Date(s)) / (1000*60*60*24)) + 1);
-let sumHtml = `<table class="summaryTable">
-  <thead><tr>
-    <th>품목</th>
-    <th>전일 사용량</th>
-    <th>일평균 사용량</th>
-    <th>기간합계</th>
-  </tr></thead><tbody>`;
+        rangeSelect(merged, s, e, wardFilter).forEach(L => {
+            const dateStr = fmtYYYYMMDD(new Date(L.ts));
+            if (!dailyData[dateStr]) {
+                dailyData[dateStr] = Object.fromEntries(items.map(it => [it, 0]));
+            }
+            dailyData[dateStr][L.item] += (Number(L.qty) || 0);
+        });
 
-// ▼ 전일(끝날짜 e의 전날) 구간 계산
-const prevDate = new Date(e + "T00:00:00");
-prevDate.setDate(prevDate.getDate() - 1);
-const prevYmd = `${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,"0")}-${String(prevDate.getDate()).padStart(2,"0")}`;
-const [pS, pE] = rangeMsByDates(prevYmd, prevYmd);
+        html = `<table class="statsTable"><thead><tr><th>날짜</th>${items.map(i => `<th class="rot">${i}</th>`).join("")}</tr></thead><tbody>`;
+        const periodTotalsByItem = Object.fromEntries(items.map(it => [it, 0]));
 
-const prevByItem = Object.fromEntries(items.map(it => [it, 0]));
-for (const L of __mergedCache) {
-  if (L.ts >= pS && L.ts < pE && (wardFilter === "전체" || String(L.ward||"").trim() === wardFilter)) {
-    prevByItem[L.item] = (prevByItem[L.item] || 0) + (Number(L.qty) || 0);
-  }
-}
+        datesInRange.forEach(dateObj => {
+            const dateStr = fmtYYYYMMDD(dateObj);
+            const dayData = dailyData[dateStr] || Object.fromEntries(items.map(it => [it, 0]));
+            
+            html += `<tr><td>${dateStr.slice(5).replace('-', '/')}</td>`;
+            items.forEach(item => {
+                const v = dayData[item] || 0;
+                html += `<td data-num="1"><span class="num"${colorStyle(item, v)}>${v}</span></td>`;
+                periodTotalsByItem[item] += v;
+            });
+            html += `</tr>`;
+        });
+        
+        periodTotals = items.map(item => periodTotalsByItem[item]);
+        html += `<tr class="total-row"><th>합계</th>${
+          periodTotals.map((v, idx) => `<th data-num="1"><span class="num"${colorStyle(items[idx], v)}>${v}</span></th>`).join("")
+        }</tr>`;
+        html += `</tbody></table>`;
+      }
 
+      el("#statsWrap").innerHTML = html;
+      // ===== ▲▲▲ 분기 처리 종료 ▲▲▲ =====
+
+
+      const daysCount = Math.max(1, Math.round((new Date(e) - new Date(s)) / (1000 * 60 * 60 * 24)) + 1);
+      let sumHtml = `<table class="summaryTable">
+        <thead><tr>
+          <th>품목</th><th>전일 사용량</th><th>일평균 사용량</th><th>기간합계</th>
+        </tr></thead><tbody>`;
+
+      const prevDate = new Date(e + "T00:00:00");
+      prevDate.setDate(prevDate.getDate() - 1);
+      const prevYmd = `${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,"0")}-${String(prevDate.getDate()).padStart(2,"0")}`;
+      const [pS, pE] = rangeMsByDates(prevYmd, prevYmd);
+
+      const prevByItem = Object.fromEntries(items.map(it => [it, 0]));
+      for (const L of __mergedCache) {
+        if (L.ts >= pS && L.ts < pE && (wardFilter === "전체" || String(L.ward||"").trim() === wardFilter)) {
+          prevByItem[L.item] = (prevByItem[L.item] || 0) + (Number(L.qty) || 0);
+        }
+      }
 
 // ▼ 기간합계/평균은 기존 계산 사용
-items.forEach((it, idx) => {
-  const psum = periodTotals[idx] || 0;
-  const avg  = Math.round(psum / daysCount);
-  const prev = prevByItem[it] || 0;
+      items.forEach((it, idx) => {
+        const psum = periodTotals[idx] || 0;
+        const avg  = Math.round(psum / daysCount);
+        const prev = prevByItem[it] || 0;
 
-  sumHtml += `<tr>
-    <td>${it}</td>
-    <td${colorStyle(it, prev)}>${prev}</td>
-    <td${colorStyle(it, avg)}>${avg}</td>
-    <td${colorStyle(it, psum)}>${psum}</td>
-  </tr>`;
-});
+        // ===== ▼▼▼ 이 부분이 Flexbox를 사용하도록 수정되었습니다 ▼▼▼ =====
+        const cleanText = it.replace(/　/g, ''); // 전각 공백 제거
+        const len = cleanText.length;
+        // 4글자 미만인 경우에만 자간 조절 클래스 적용
+        const itemClass = len < 4 ? 'item-name-justify' : '';
+        // 각 글자를 <span>으로 감싸줌
+        const charsHtml = cleanText.split('').map(c => `<span>${c}</span>`).join('');
+        // ===== ▲▲▲ 여기까지 입니다 ▲▲▲ =====
 
-sumHtml += `</tbody></table>`;
-el("#statsSummary").innerHTML = sumHtml;
+        sumHtml += `<tr>
 
-// ... (아래는 그대로)
+          <td class="${itemClass}">${charsHtml}</td>
+          <td${colorStyle(it, prev)}>${prev}</td>
+          <td${colorStyle(it, avg)}>${avg}</td>
+          <td${colorStyle(it, psum)}>${psum}</td>
+        </tr>`;
+      });
+
+      sumHtml += `</tbody></table>`;
+      el("#statsSummary").innerHTML = sumHtml;
 
       shrinkBigNumbers(el("#statsWrap").querySelector("table"));
-
       el("#statsEmpty").style.display = "none";
-
       ensureChartItemOptions();
       renderCharts();
     });
-  }
+  }
 }
-
 /* Export stats table to XLSX */
 function exportXLSX(){
   const table=document.querySelector("#statsWrap table"); if(!table){ alert("통계 표가 없습니다."); return; }
@@ -1547,23 +1616,27 @@ el('#wpOk').onclick = () => {
   openModal('#headerEditModal', '#wardSelect');
 };
 
-  // [추가] 페이지 전역 클릭 감지 리스너 (가장 중요한 부분)
-  // 병동이 선택되지 않았을 때 특정 요소 클릭을 가로채서 모달을 띄웁니다.
-  document.body.addEventListener('click', (e) => {
-    // 병동이 이미 선택되었다면 아무것도 하지 않음
-    if (isWardSelected()) return;
+// [수정] 페이지 전역 이벤트 감지 리스너 ('mousedown' 추가)
+  // 병동 미선택 시 클릭하거나 '꾹 누르는' 동작 모두를 감지합니다.
+  ['click', 'mousedown'].forEach(eventType => {
+    document.body.addEventListener(eventType, (e) => {
+      // 병동이 이미 선택되었다면 아무것도 하지 않음
+      if (isWardSelected()) return;
 
-    // 병동 선택을 유도해야 하는 대상 요소들
-    const restrictedTargets = '#inputTable input, #inputTable button, .tabs .tab, #saveAll';
+      // 병동 선택을 유도해야 하는 대상 요소들
+      const restrictedTargets = '#inputTable input, #inputTable button, .tabs .tab, #saveAll';
 
-    // 클릭한 요소가 대상에 포함되고, 병동 선택 버튼 자체는 아닌 경우
-    if (e.target.closest(restrictedTargets) && !e.target.closest('#editHeaderBtn')) {
-      e.preventDefault();       // 기본 동작(입력, 버튼 클릭 등)을 막고
-      e.stopPropagation();      // 다른 클릭 이벤트 전파를 중단
-      showWardPromptModal();  // 안내 모달을 보여줌
-    }
-  }, true); // true 옵션으로 다른 클릭 리스너보다 먼저 실행
-
+      // 클릭한 요소가 대상에 포함되고, 병동 선택 버튼 자체는 아닌 경우
+      if (e.target.closest(restrictedTargets) && !e.target.closest('#editHeaderBtn')) {
+        e.preventDefault();       // 기본 동작(입력, 버튼 클릭 등)을 막고
+        e.stopPropagation();      // 다른 클릭 이벤트 전파를 중단
+        // mousedown 이벤트가 계속 발생해도 모달은 한 번만 뜨도록 처리
+        if (!document.querySelector('#wardPromptModal[style*="display: block"]')) {
+          showWardPromptModal();  // 안내 모달을 보여줌
+        }
+      }
+    }, true); // true 옵션으로 다른 클릭 리스너보다 먼저 실행
+  });
   const urlApp=new URL(location.href).searchParams.get("app"); if(urlApp==="1"){localStorage.setItem("appMode","1");} if(urlApp==="0"){localStorage.removeItem("appMode");}
   const ua=(navigator.userAgent||"")+" "+(navigator.vendor||"");
   if((window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||/\b; wv\b/i.test(ua)||/\bMyLinenApp\b/i.test(ua)||localStorage.getItem('appMode')==='1'){ document.body.classList.add("app"); const b=el("#appDownloadBtn"); if(b) b.style.display="none"; }
