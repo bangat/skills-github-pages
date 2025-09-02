@@ -1616,27 +1616,32 @@ el('#wpOk').onclick = () => {
   openModal('#headerEditModal', '#wardSelect');
 };
 
-// [수정] 페이지 전역 이벤트 감지 리스너 ('mousedown' 추가)
-  // 병동 미선택 시 클릭하거나 '꾹 누르는' 동작 모두를 감지합니다.
-  ['click', 'mousedown'].forEach(eventType => {
-    document.body.addEventListener(eventType, (e) => {
-      // 병동이 이미 선택되었다면 아무것도 하지 않음
-      if (isWardSelected()) return;
+// [수정] 전역 이벤트 감지: 모바일 버튼도 잡히도록 touchstart 추가 (+ 캡처·passive:false)
+['click', 'mousedown', 'touchstart'].forEach(eventType => {
+  document.body.addEventListener(eventType, (e) => {
+    if (isWardSelected()) return;
 
-      // 병동 선택을 유도해야 하는 대상 요소들
-      const restrictedTargets = '#inputTable input, #inputTable button, .tabs .tab, #saveAll';
-
-      // 클릭한 요소가 대상에 포함되고, 병동 선택 버튼 자체는 아닌 경우
-      if (e.target.closest(restrictedTargets) && !e.target.closest('#editHeaderBtn')) {
-        e.preventDefault();       // 기본 동작(입력, 버튼 클릭 등)을 막고
-        e.stopPropagation();      // 다른 클릭 이벤트 전파를 중단
-        // mousedown 이벤트가 계속 발생해도 모달은 한 번만 뜨도록 처리
-        if (!document.querySelector('#wardPromptModal[style*="display: block"]')) {
-          showWardPromptModal();  // 안내 모달을 보여줌
-        }
+    const restrictedTargets = '#inputTable input, #inputTable button, .tabs .tab, #saveAll';
+    if (e.target.closest(restrictedTargets) && !e.target.closest('#editHeaderBtn')) {
+      // 모바일에서 버튼의 자체 touchstart 핸들러(hold-repeat)가 먼저 preventDefault()를 걸어
+      // 전역 mousedown/click이 막히는 문제를 방지: 우리가 먼저 막고 모달을 띄운다.
+      if (eventType === 'touchstart') {
+        if (e.cancelable) e.preventDefault();
+      } else {
+        e.preventDefault();
       }
-    }, true); // true 옵션으로 다른 클릭 리스너보다 먼저 실행
-  });
+      e.stopPropagation();
+
+      // 중복 모달 방지용 락
+      if (!window.__wardPromptOpen) {
+        window.__wardPromptOpen = true;
+        showWardPromptModal();
+        setTimeout(() => { window.__wardPromptOpen = false; }, 400);
+      }
+    }
+  }, { capture: true, passive: false }); // ← 캡처 단계 + touch에서 preventDefault 가능
+});
+
   const urlApp=new URL(location.href).searchParams.get("app"); if(urlApp==="1"){localStorage.setItem("appMode","1");} if(urlApp==="0"){localStorage.removeItem("appMode");}
   const ua=(navigator.userAgent||"")+" "+(navigator.vendor||"");
   if((window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||/\b; wv\b/i.test(ua)||/\bMyLinenApp\b/i.test(ua)||localStorage.getItem('appMode')==='1'){ document.body.classList.add("app"); const b=el("#appDownloadBtn"); if(b) b.style.display="none"; }
