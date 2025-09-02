@@ -1085,16 +1085,18 @@ function buildDailySeries(item, sStr, eStr, wardFilter){
   return { labels, values };
 }
 function buildDowSeries(values, labels){
-  const dnames = ["일","월","화","수","목","금","토"];
-  const sums = [0,0,0,0,0,0,0];
+  // 월(1)~토(6)만 고정 노출, 데이터 없으면 0
+  const dnames = ["월","화","수","목","금","토"];
+  const sums = {1:0,2:0,3:0,4:0,5:0,6:0}; // 1=월 ... 6=토
   labels.forEach((dstr, i)=>{
-    const d = new Date(dstr+"T00:00:00");
-    const w = d.getDay();
-    sums[w] += values[i];
+    const w = new Date(dstr + "T00:00:00").getDay(); // 0=일 ... 6=토
+    if (w === 0) return; // 일요일 제외
+    sums[w] = (sums[w] || 0) + (values[i] || 0);
   });
-  const order = [1,2,3,4,5,6,0];
-  return { labels: order.map(i=>dnames[i]), values: order.map(i=>sums[i]) };
+  return { labels: dnames, values: [1,2,3,4,5,6].map(i => sums[i] || 0) };
 }
+
+
 function ensureChartItemOptions(){
   const sel = el("#chartItem");
   if(sel.options.length) return;
@@ -1103,16 +1105,17 @@ function ensureChartItemOptions(){
 }
 
 /* Render charts */
+
 function renderCharts(){
   ensureChartItemOptions();
   const item = el("#chartItem").value || "모든 품목 합계";
   const s = el("#dateStart").value, e = el("#dateEnd").value, ward = el("#wardFilter").value||"전체";
 
   const {labels,values} = buildDailySeries(item, s, e, ward);
-  const {labels: dowLabels, values: dowValues} = buildDowSeries(values, labels);
 
+  // 라인 차트
   const lc = el("#lineChart").getContext("2d");
-  if(lineChart) lineChart.destroy();
+  if (lineChart) lineChart.destroy();
   lineChart = new Chart(lc, {
     type:"line",
     data:{ labels, datasets:[{ label:`${item} 일자별`, data:values, tension:.25, fill:false }]},
@@ -1123,18 +1126,38 @@ function renderCharts(){
     }
   });
 
+  // ▼ 요일(bar) 차트: '끝날짜(e)'가 포함된 주의 월~토 고정
+  const anchorStr = e || new Date().toISOString().slice(0,10);
+  const anchor = new Date(anchorStr + "T00:00:00");     // 끝날짜 기준
+  const day = anchor.getDay();                          // 0=일, 1=월 ... 6=토
+  const mon = new Date(anchor);
+  mon.setDate(anchor.getDate() - ((day + 6) % 7));      // 그 주의 월요일
+  const sat = new Date(mon);
+  sat.setDate(mon.getDate() + 5);                       // 그 주의 토요일
+
+  // 이번 주 진행 중이면 토요일 대신 오늘까지
+  const today = new Date(); today.setHours(0,0,0,0);
+  const end = sat > today ? today : sat;
+
+  const ymd = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+
+  // 주간(월~토) 데이터를 일자별로 만든 뒤 요일 합계로 변환
+  const { labels: weekLabels, values: weekValues } = buildDailySeries(item, ymd(mon), ymd(end), ward);
+  const { labels: dowLabels, values: dowValues } = buildDowSeries(weekValues, weekLabels);
+
   const bc = el("#dowChart").getContext("2d");
-  if(dowChart) dowChart.destroy();
+  if (dowChart) dowChart.destroy();
   dowChart = new Chart(bc, {
     type:"bar",
-    data:{ labels:dowLabels, datasets:[{ label:`${item} 요일별 합계`, data:dowValues }]},
+    data:{ labels:dowLabels, datasets:[{ label:`${item} 요일별 합계(주간)`, data:dowValues }]},
     options:{
       responsive:true,
       plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:(ctx)=>` ${ctx.parsed.y.toLocaleString()} 개` } } },
       scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
     }
   });
-}
+} // ✅ 여기서 renderCharts 함수가 제대로 닫힙니다.
+
 
 /* === Stats render === */
 async function renderStats(){
@@ -1145,12 +1168,26 @@ async function renderStats(){
   if(!s||!e) return;
 
   if(window.__fb && typeof window.__fb.startStatsLiveWatcher==="function"){
-    window.__fb.startStatsLiveWatcher(new Date(s+"T00:00:00"), new Date(e+"T00:00:00"), (logsRT)=>{
-      const [sMs,eMs]=rangeMsByDates(s,e);
-      let logsLS=[]; try{ logsLS=getLogs().filter(L=>L.ts>=sMs&&L.ts<eMs);}catch(_){}
-      const uniq=new Map(); [...logsRT,...logsLS].forEach(L=>{ const k=[L.ts,L.ward,L.item,L.qty].join("|"); if(!uniq.has(k)) uniq.set(k,L); });
-      const merged=Array.from(uniq.values());
-      __mergedCache = merged;
+// ▼ 시작일을 하루 당겨서 전날 포함
+const prevDayStart = new Date(s + "T00:00:00");
+prevDayStart.setDate(prevDayStart.getDate() - 1);
+
+window.__fb.startStatsLiveWatcher(prevDayStart, new Date(e+"T00:00:00"), (logsRT)=>{
+  const [sMs,eMs]=rangeMsByDates(s,e);
+
+  // ▼ 로컬 로그도 전날부터 포함
+  const prevStartMs = sMs - 24*60*60*1000;
+  let logsLS=[]; 
+  try{ logsLS=getLogs().filter(L=>L.ts>=prevStartMs && L.ts<eMs);}catch(_){}
+
+  const uniq=new Map(); 
+  [...logsRT,...logsLS].forEach(L=>{
+    const k=[L.ts,L.ward,L.item,L.qty].join("|"); 
+    if(!uniq.has(k)) uniq.set(k,L); 
+  });
+  const merged=Array.from(uniq.values());
+  __mergedCache = merged;
+
 
       const {p,wards,items}=renderPivot(merged,s,e,wardFilter);
 
@@ -1195,19 +1232,18 @@ let sumHtml = `<table class="summaryTable">
   </tr></thead><tbody>`;
 
 // ▼ 전일(끝날짜 e의 전날) 구간 계산
-const prevDateObj = new Date(e + "T00:00:00");
-prevDateObj.setDate(prevDateObj.getDate() - 1);
-const prevDateStr = `${prevDateObj.getFullYear()}-${String(prevDateObj.getMonth()+1).padStart(2,"0")}-${String(prevDateObj.getDate()).padStart(2,"0")}`;
-const [pS, pE] = rangeMsByDates(prevDateStr, prevDateStr);
+const prevDate = new Date(e + "T00:00:00");
+prevDate.setDate(prevDate.getDate() - 1);
+const prevYmd = `${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,"0")}-${String(prevDate.getDate()).padStart(2,"0")}`;
+const [pS, pE] = rangeMsByDates(prevYmd, prevYmd);
 
-// ▼ 전일 데이터(병동 필터 포함) 집계
 const prevByItem = Object.fromEntries(items.map(it => [it, 0]));
-__mergedCache.forEach(L => {
-  if (L.ts >= pS && L.ts < pE && (wardFilter === "전체" || (L.ward||"").toString().trim() === wardFilter)) {
-    if (prevByItem[L.item] == null) prevByItem[L.item] = 0;
-    prevByItem[L.item] += Number(L.qty) || 0;
+for (const L of __mergedCache) {
+  if (L.ts >= pS && L.ts < pE && (wardFilter === "전체" || String(L.ward||"").trim() === wardFilter)) {
+    prevByItem[L.item] = (prevByItem[L.item] || 0) + (Number(L.qty) || 0);
   }
-});
+}
+
 
 // ▼ 기간합계/평균은 기존 계산 사용
 items.forEach((it, idx) => {
@@ -1587,3 +1623,4 @@ document.addEventListener("click", (e) => {
 
 </body>
 </html>
+
