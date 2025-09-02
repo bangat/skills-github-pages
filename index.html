@@ -902,7 +902,7 @@ tr.querySelectorAll("[data-delta]").forEach(btn=>{
 
   if(state.cat==="기타"){
     const noteRow=document.createElement("tr");
-    noteRow.innerHTML=`<td colspan="2" style="text-align:left;padding:12px;font-size:14px;color:#64748b;">기타 : 중환의, 고관절, 양쪽끈, 양쪽고무줄</td>`;
+    noteRow.innerHTML=`<td colspan="2" style="text-align:left;padding:12px;font-size:14px;color:#64748b;">기타품목 : 중환의, 고관절, 양쪽끈, 양쪽고무줄</td>`;
     tb.appendChild(noteRow);
   }
 
@@ -1252,7 +1252,7 @@ function exportChartXLSX(){
 /* 꾹 누르면 '일정 간격'으로만 반복 (가속 없음) */
 function attachHoldRepeat(btn, onStep){
   let timer = null;
-  const firstDelay = 250;   // 꾹 누른 뒤 첫 추가 실행까지 지연(ms)
+  const firstDelay = 450;   // 꾹 누른 뒤 첫 추가 실행까지 지연(ms)
   const interval   = 120;   // 그 다음부터 고정 간격(ms) — 가속 없음
   let started = false;
 
