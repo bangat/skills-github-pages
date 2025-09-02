@@ -1229,23 +1229,25 @@ function renderCharts(){
     }
   });
 
-  // ▼ 요일(bar) 차트: '끝날짜(e)'가 포함된 주의 월~토 고정
+  // ▼ 요일(bar) 차트: 선택한 '끝날짜(e)'가 속한 주의 월요일 ~ e(오늘이면 오늘까지) 범위로 고정 집계
   const anchorStr = e || new Date().toISOString().slice(0,10);
-  const anchor = new Date(anchorStr + "T00:00:00");     // 끝날짜 기준
-  const day = anchor.getDay();                          // 0=일, 1=월 ... 6=토
+  const anchor = new Date(anchorStr + "T00:00:00");               // 선택한 끝날짜 기준
+  const day = anchor.getDay();                                    // 0=일, 1=월 ... 6=토
   const mon = new Date(anchor);
-  mon.setDate(anchor.getDate() - ((day + 6) % 7));      // 그 주의 월요일
-  const sat = new Date(mon);
-  sat.setDate(mon.getDate() + 5);                       // 그 주의 토요일
+  mon.setDate(anchor.getDate() - ((day + 6) % 7));                // 그 주의 월요일
 
-  // 이번 주 진행 중이면 토요일 대신 오늘까지
+  // 주 상한은 토요일, 단 오늘/끝날짜보다 미래면 잘라냄
+  const sat = new Date(mon);
+  sat.setDate(mon.getDate() + 5);
   const today = new Date(); today.setHours(0,0,0,0);
-  const end = sat > today ? today : sat;
+
+  // 사용자 e(=anchor), 오늘, 토 중 가장 이른 날짜를 하한으로 사용
+  const realEnd = new Date(Math.min(sat.getTime(), today.getTime(), anchor.getTime()));
 
   const ymd = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 
-  // 주간(월~토) 데이터를 일자별로 만든 뒤 요일 합계로 변환
-  const { labels: weekLabels, values: weekValues } = buildDailySeries(item, ymd(mon), ymd(end), ward);
+  // 월요일 ~ realEnd까지 일자 시리즈 생성 후 요일 합계로 변환 (일요일은 buildDowSeries에서 제외)
+  const { labels: weekLabels, values: weekValues } = buildDailySeries(item, ymd(mon), ymd(realEnd), ward);
   const { labels: dowLabels, values: dowValues } = buildDowSeries(weekValues, weekLabels);
 
   const bc = el("#dowChart").getContext("2d");
@@ -1255,7 +1257,10 @@ function renderCharts(){
     data:{ labels:dowLabels, datasets:[{ label:`${item} 요일별 합계(주간)`, data:dowValues }]},
     options:{
       responsive:true,
-      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:(ctx)=>` ${ctx.parsed.y.toLocaleString()} 개` } } },
+      plugins:{ 
+        legend:{ display:false }, 
+        tooltip:{ callbacks:{ label:(ctx)=>` ${ctx.parsed.y.toLocaleString()} 개` } } 
+      },
       scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
     }
   });
