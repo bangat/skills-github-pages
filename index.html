@@ -451,6 +451,7 @@
 .qcPad{
   display:grid;
   grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: 48px; /* 각 행 높이 고정 → 세로 span 시 정확히 2배 높이 */
   gap:8px;
   user-select:none;
 }
@@ -463,10 +464,16 @@
 .qcPad button.accent{ background:linear-gradient(180deg,#4f83ff,#2563eb); color:#fff; border:1px solid #2856c7; }
 .qcPad button.wide{ grid-column: span 2; }
 
+/* ➕를 3열에서 3~4행까지 세로로 */
+.qcPad .pos-plus{ grid-column: 3; grid-row: 3 / span 2; }
+/* ＝(확인)을 4열에서 3~4행까지 세로로 */
+.qcPad .pos-eq{ grid-column: 4; grid-row: 3 / span 2; }
+
 @media (max-width:430px){
-  .qcEntry{ font-size:16px; }
+  .qcPad{ grid-auto-rows: 44px; }
   .qcPad button{ height:44px; font-size:17px; }
 }
+
 
 
 
@@ -667,17 +674,21 @@
        placeholder="숫자 입력" class="qcEntry">
       </div>
 
-                <!-- 키패드: 숫자 + 연산자(-, +, =) + 편집(del) -->
+                  <!-- 키패드: 숫자 + 연산자(-, +, =) + 편집(del) -->
       <div class="qcPad">
+        <!-- 1행 -->
         <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
         <button data-act="del">←</button>
+        <!-- 2행 -->
         <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
         <button data-op="-">−</button>
-        <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
-        <button data-op="+">+</button>
+        <!-- 3행: 1,2, (여기서 +는 세로로 2행(span)) (=도 세로로 2행 span) -->
+        <button data-k="1">1</button><button data-k="2">2</button><button data-op="+" class="pos-plus">+</button>
+        <button data-eq="=" class="accent pos-eq">확인</button>
+        <!-- 4행: 0은 가로로 2칸 span, +/=/은 위에서 세로 span으로 내려옴 -->
         <button data-k="0" class="wide">0</button>
-        <button data-eq="=" class="accent">확인</button>
       </div>
+
 
     </div>
     <div class="modalActions">
