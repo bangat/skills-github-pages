@@ -426,6 +426,50 @@
   justify-content: space-between;
 }
 
+/* === 수량 계산기 === */
+.qcExpr{
+  margin:6px 0 10px;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#fff;
+  font-size:14px;
+  line-height:1.35;
+  color:#334155;
+  white-space:nowrap;
+  overflow:auto;
+}
+.qcRow{
+  display:flex; gap:8px; align-items:center; margin-bottom:10px;
+}
+.qcEntry{
+  flex:1; padding:10px 12px; font-size:18px; text-align:center;
+  border:1px solid var(--border); border-radius:12px; background:#fff;
+}
+
+/* 키패드 */
+.qcPad{
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap:8px;
+  user-select:none;
+}
+.qcPad button{
+  height:48px; font-size:18px; font-weight:800; border-radius:12px;
+  border:1px solid var(--border); background:#fff; box-shadow:var(--shadow-1);
+}
+.qcPad button:hover{ filter:brightness(1.02); transform:translateY(-1px); }
+.qcPad button:active{ transform:translateY(0); }
+.qcPad button.accent{ background:linear-gradient(180deg,#4f83ff,#2563eb); color:#fff; border:1px solid #2856c7; }
+.qcPad button.wide{ grid-column: span 2; }
+
+@media (max-width:430px){
+  .qcEntry{ font-size:16px; }
+  .qcPad button{ height:44px; font-size:17px; }
+}
+
+
+
 </style>
 <!-- -----주석 전역 스타일 종료 ----- -->
 </head>
@@ -606,6 +650,46 @@
   </div>
 </div>
 <!-- -----주석 제출 확인 모달 종료 ----- -->
+
+<!-- -----주석 수량 계산기 모달 시작 ----- -->
+<div id="qtyCalcModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="qcTitle" style="display:none">
+  <div class="modalCard" role="document">
+    <div class="modalHead" id="qcTitle">수량 입력</div>
+    <div class="modalBody">
+      <div id="qcItem" style="font-weight:800;color:#0b3fb8;margin-bottom:6px;">품목</div>
+
+      <!-- 계산식 라인 -->
+      <div id="qcExpr" class="qcExpr">—</div>
+
+      <!-- 입력창 (직접 타이핑 가능) -->
+      <div class="qcRow">
+        <input id="qcEntry" type="text" inputmode="none" readonly aria-readonly="true"
+       placeholder="숫자 입력" class="qcEntry">
+      </div>
+
+                <!-- 키패드: 숫자 + 연산자(-, +, =) + 편집(del) -->
+      <div class="qcPad">
+        <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+        <button data-act="del">←</button>
+        <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+        <button data-op="-">−</button>
+        <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+        <button data-op="+">+</button>
+        <button data-k="0" class="wide">0</button>
+        <button data-eq="=" class="accent">확인</button>
+      </div>
+
+    </div>
+    <div class="modalActions">
+      <button type="button" class="btn cancel" id="qcCancel">취소</button>
+    </div>
+  </div>
+</div>
+<!-- -----주석 수량 계산기 모달 종료 ----- -->
+
+
+
+
 
 <!-- -----주석 다운로드 안내 모달 시작 ----- -->
 <div id="downloadModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="dlTitle">
@@ -818,6 +902,215 @@ function unlockAudioOnce(){
 function openModal(sel, focusSel){ document.body.classList.add('modal-open'); const ov=el(sel); ov.style.display='block'; setTimeout(()=>{ focusSel && el(focusSel)?.focus(); },0); }
 function closeModal(sel){ document.body.classList.remove('modal-open'); el(sel).style.display='none'; }
 
+/* ====== 수량 계산기 모달 로직 — 실시간 합계 미리보기 (+, −, =) ====== */
+let __qc = {
+  exprParts: [],   // ["4", "+", "5", "−", "6"]
+  terms: [],       // [+4, +5, -6 ...]
+  entry: "",       // 현재 숫자 입력
+  lastOp: "+",     // 다음 입력에 적용할 연산자
+  onConfirm: null,
+  title: ""
+};
+
+function qcReset(initOp = "+"){
+  __qc.exprParts = [];
+  __qc.terms = [];
+  __qc.entry = "";
+  __qc.lastOp = initOp;
+}
+
+function qcPushEntryIfAny(){
+  if (__qc.entry === "") return false;
+  const n = parseInt(__qc.entry, 10);
+  if (isNaN(n)) { __qc.entry = ""; return false; }
+  // 부호 판단은 내부 표준("-") 기준
+  const signed = (__qc.lastOp === "-") ? -n : n;
+  __qc.terms.push(signed);
+  __qc.exprParts.push(String(n));
+  __qc.entry = "";
+  return true;
+}
+
+
+function qcPreviewSum(){
+  const base = __qc.terms.reduce((a,b)=>a+b, 0);
+  const curN = parseInt(__qc.entry || "0", 10);
+  if (!__qc.entry) return base;
+  return base + ((__qc.lastOp === "-") ? -curN : curN);
+}
+
+
+function qcApplyOperator(opRaw){ // opRaw could be "+", "-", "−"
+  // 1) 내부 연산자는 ASCII로 통일: "-" 또는 "−" => "-"
+  const op = (opRaw === "-" || opRaw === "−") ? "-" : "+";
+  const disp = op === "-" ? "−" : "+"; // 화면 표시용은 예쁘게
+
+  // 2) 현재 entry를 먼저 확정
+  const pushed = qcPushEntryIfAny();
+  const lastTok = __qc.exprParts[__qc.exprParts.length - 1];
+
+  // 3) 숫자 없이 연산자만 연속으로 눌렸다면, 마지막 연산자 교체
+  if (!pushed){
+    if (__qc.exprParts.length === 0){
+      __qc.lastOp = op;                 // 식 앞 부호만 갱신
+      qcRender();
+      return;
+    }
+    if (lastTok === "+" || lastTok === "−"){
+      __qc.exprParts[__qc.exprParts.length - 1] = disp;  // 교체
+      __qc.lastOp = op;
+      qcRender();
+      return;
+    }
+  }
+
+  // 4) 일반 케이스: 새 연산자 토큰 추가
+  __qc.exprParts.push(disp);
+  __qc.lastOp = op;
+  try{ playSnd("#btnClickSound"); }catch(_){}
+  qcRender();
+}
+
+
+function qcComputeFinal(){
+  // 남은 entry 반영 후 최종 합계
+  qcPushEntryIfAny();
+  return __qc.terms.reduce((a,b)=>a+b, 0);
+}
+
+function qcRender(){
+  const box = document.getElementById("qcExpr");
+  if (!box) return;
+  // 미리보기: 현재 entry까지 포함한 수식 + = 합계
+  const expr = __qc.entry ? [...__qc.exprParts, __qc.entry].join(" ") : __qc.exprParts.join(" ");
+  const sumPreview = qcPreviewSum();
+  box.textContent = (expr ? `${expr} = ${sumPreview}` : "—");
+}
+
+function openQtyKeypad({ title="수량", onConfirm } = {}){
+  __qc.onConfirm = (typeof onConfirm === "function") ? onConfirm : null;
+  __qc.title = title;
+  qcReset("+"); // 상태값 초기화
+
+  const titleEl = document.getElementById("qcItem");
+  if (titleEl) titleEl.textContent = title;
+
+  const box = document.getElementById("qcExpr");
+  if (box) box.textContent = "—"; // 표현식 UI 클리어
+
+  const ent = document.getElementById("qcEntry");
+  if (ent){
+    // 시스템 키보드 완전 차단 + 값 클리어
+    ent.value = "";
+    ent.setAttribute("readonly", "readonly");
+    ent.setAttribute("inputmode", "none");
+    ["pointerdown","touchstart","focus"].forEach(ev=>{
+      ent.addEventListener(ev, (e)=>{ e.preventDefault(); ent.blur(); }, { passive:false });
+    });
+
+    // 직접 타이핑 방지, 단 키보드(Enter/+/−/Esc)만 핸들
+    ent.oninput = ()=>{};
+    ent.onkeydown = (e)=>{
+      if (e.key==="Escape"){ e.preventDefault(); closeModal("#qtyCalcModal"); }
+      if (e.key==="Enter" || e.key==="NumpadEnter"){
+        e.preventDefault();
+        const result = qcComputeFinal();
+        const b = document.getElementById("qcExpr");
+        if (b){
+          const shown = __qc.exprParts.join(" ");
+          b.textContent = shown ? `${shown} = ${result}` : String(result);
+        }
+        try{ playSnd("#submitSound"); }catch(_){}
+        setTimeout(()=>{
+          __qc.onConfirm && __qc.onConfirm(result);
+          // 닫기 전에 다음 오픈을 위해 상태/UI 초기화
+          qcReset("+");
+          if (b) b.textContent = "—";
+          ent.value = "";
+          closeModal("#qtyCalcModal");
+        }, 120);
+      }
+    if (e.key==="+" || e.key==="-"){
+  e.preventDefault();
+  qcApplyOperator(e.key==="+" ? "+" : "-");
+}
+
+    };
+  }
+
+  // 키패드 이벤트(최초 1회만)
+  if (!openQtyKeypad._wired){
+    const pad = document.querySelector("#qtyCalcModal .qcPad");
+    pad.addEventListener("click", (e)=>{
+      const b = e.target.closest("button");
+      if (!b) return;
+
+      const k  = b.getAttribute("data-k");
+      const del= b.getAttribute("data-act")==="del";
+      const op = b.getAttribute("data-op");     // "+" 또는 "−"
+      const eq = b.getAttribute("data-eq");     // "="
+
+      if (k !== null){ // 숫자
+        if (__qc.entry.length < 6){
+          __qc.entry = (__qc.entry==="0") ? k : (__qc.entry + k);
+          if (ent) ent.value = __qc.entry;
+          qcRender(); // ← 입력마다 실시간 합계 업데이트
+        }
+        return;
+      }
+      if (del){
+        __qc.entry = __qc.entry.slice(0,-1);
+        if (ent) ent.value = __qc.entry;
+        qcRender();
+        return;
+      }
+      if (op){
+        qcApplyOperator(op);
+        return;
+      }
+      if (eq){
+        const result = qcComputeFinal();
+        const b = document.getElementById("qcExpr");
+        if (b){
+          const shown = __qc.exprParts.join(" ");
+          b.textContent = shown ? `${shown} = ${result}` : String(result);
+        }
+        try{ playSnd("#submitSound"); }catch(_){}
+        setTimeout(()=>{
+          __qc.onConfirm && __qc.onConfirm(result);
+          // 닫기 전에 다음 오픈을 위해 상태/UI 초기화
+          qcReset("+");
+          if (b) b.textContent = "—";
+          if (ent) ent.value = "";
+          closeModal("#qtyCalcModal");
+        }, 120);
+        return;
+      }
+    });
+
+    document.getElementById("qcCancel").onclick = ()=>{
+      // 취소 시에도 상태/UI 초기화
+      const b = document.getElementById("qcExpr");
+      const ent = document.getElementById("qcEntry");
+      qcReset("+");
+      if (b) b.textContent = "—";
+      if (ent) ent.value = "";
+      closeModal("#qtyCalcModal");
+    };
+
+    openQtyKeypad._wired = true;
+  }
+
+  // 오픈 시점에도 한 번 렌더(빈 표현식 보장)
+  qcRender();
+  openModal("#qtyCalcModal", "#qcEntry");
+} 
+
+
+
+
+
+
 /* Sound */
 function playSnd(sel){
   const freqMap = { "#btnClickSound": 880, "#tabSound": 659, "#submitSound": 523, "#warnSound": 988 };
@@ -950,28 +1243,53 @@ function buildTable(){
 
 
 
-    const inp=tr.querySelector("input");
+          const inp=tr.querySelector("input");
     const draft=getDraft();
     const init=Object.prototype.hasOwnProperty.call(draft,name)?(parseInt(draft[name])||0):0;
     inp.value=String(init); inp.dataset.prev=String(init);
 
-    // 👇 추가: 첫 입력 시 0 교체 로직 연결
-wireZeroReplace(inp, () => {
-  const prev = parseInt(inp.dataset.prev || "0") || 0;
-  const cur  = parseInt(inp.value || "0") || 0;
-  inp.value = String(cur);
-  setDraftQty(name, cur);
-  maybeBuzz(prev, cur);
-  inp.dataset.prev = String(cur);
-  refreshTotalUI();
-});
+       // ▼ 모바일 키보드 대신 '모달 계산기' 사용 (기본 계산기: +, −, =)
+    try{
+      inp.setAttribute('readonly','readonly');
+      inp.setAttribute('inputmode','none');
+      inp.style.caretColor = 'transparent';
 
-    inp.addEventListener("input",()=>{
-      const prev=parseInt(inp.dataset.prev||"0")||0;
-      const cur=parseInt(inp.value||"0")||0;
-      inp.value=String(cur); setDraftQty(name,cur); maybeBuzz(prev,cur); inp.dataset.prev=String(cur);
-      refreshTotalUI();
-    });
+      const openCalc = (e)=>{
+        e.preventDefault();
+        openQtyKeypad({
+          title: name,
+          onConfirm: (result)=>{
+            const prev = parseInt(inp.dataset.prev || "0") || 0;
+            const cur  = parseInt(result || "0") || 0;
+            inp.value = String(cur);
+            setDraftQty(name, cur);
+            maybeBuzz(prev, cur);
+            inp.dataset.prev = String(cur);
+            refreshTotalUI();
+          }
+        });
+      };
+
+      inp.addEventListener('click', openCalc);
+      inp.addEventListener('focus', openCalc);
+      inp.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); openCalc(e); } });
+    }catch(_){}
+
+// closeModal 래퍼가 있다면, qtyCalcModal 닫힐 때 초기화 보강
+const _closeModalOrig = window.closeModal;
+window.closeModal = function(sel){
+  _closeModalOrig && _closeModalOrig(sel);
+  if (sel === '#qtyCalcModal'){
+    try{
+      qcReset("+");
+      const b = document.getElementById("qcExpr");
+      const ent = document.getElementById("qcEntry");
+      if (b) b.textContent = "—";
+      if (ent) ent.value = "";
+    }catch(_){}
+  }
+};
+
 
 tr.querySelectorAll("[data-delta]").forEach(btn=>{
   // 탭 효과 (리플/스프링)
@@ -1877,4 +2195,3 @@ document.addEventListener("click", (e) => {
 
 </body>
 </html>
-
