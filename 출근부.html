@@ -62,10 +62,11 @@
     .hidden{display:none!important}
   </style>
 
-  <!-- ExcelJS / FileSaver / EmailJS -->
+  <!-- ExcelJS / FileSaver -->
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <!-- EmailJS 제거 -->
+
 </head>
 <body>
   <div class="wrap">
@@ -184,11 +185,11 @@
     const emailBtn   = qs('#emailBtn');
     const tbody      = qs('#tbody');
 
-    // EmailJS 설정 (네가 준 값)
-    const EMAILJS_SERVICE_ID  = 'service_zxiijul';
-    const EMAILJS_TEMPLATE_ID = 'template_ww2z28g';
-    const EMAILJS_PUBLIC_KEY  = 'TLFlbdO0Txf4U1QVWX';
-    emailjs.init(EMAILJS_PUBLIC_KEY);
+    // ------------주석(GAS endpoint) 시작 ----
+    const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzanS_KtIeSgBunl9spblSt_nF4y3Z5LuZZYBEKDz3b7iuMlLWKChvUK7BQTv-RBX4/exec';
+    // ------------주석(GAS endpoint) 끝 ----
+
+
 
     (function initMonth(){
       const d=new Date();
@@ -456,31 +457,48 @@ const h2 = ws.getCell('H2'); h2.value='';
       return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob); });
     }
 
-    emailSend.addEventListener('click', async ()=>{
+      emailSend.addEventListener('click', async ()=>{
       const to = (emailTo.value||'').trim();
       if(!to){ alert('받는 메일을 입력하세요.'); return; }
+
+      const spinner = qs('#loadingSpinner');
+      spinner.style.display = 'flex';  // ← 전송 시작 시 스피너 보이기
+
       try{
         const {wb,fileName} = await makeWorkbook();
         const buf = await wb.xlsx.writeBuffer();
         const blob = new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
         const dataUrl = await blobToDataUrl(blob);
         const monthTxt = Number(monthInput.value.split('-')[1]);
-        const subject = `한림 ${monthTxt}월 출근부`;
+        const subject = `한림병원 ${monthTxt}월 출근부 첨부합니다.`;
+// 변경코드 마지막끝줄: const subject = `한림병원 ${monthTxt}월 출근부 첨부합니다.`;
 
-        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-          to_email: to,
-          subject,
-          message: '출근부 파일을 첨부합니다.',
-          filename: fileName,
-          attachment: dataUrl
+
+        const res = await fetch(GAS_WEBAPP_URL, {
+          method: 'POST',
+          headers: {'Content-Type':'text/plain;charset=UTF-8'},
+          body: JSON.stringify({
+            to: to,
+            subject: subject,
+            message: '출근부 파일을 첨부합니다.',
+            filename: fileName,
+            attachment: dataUrl
+          })
         });
-        alert('메일을 전송했습니다.');
+
+        const json = await res.json();
+        if(!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
+
+        alert('성공적으로 전송했습니다 ✅');
         emailBackdrop.style.display='none';
       }catch(err){
         console.error(err);
         alert('메일 전송에 실패했어요. 엑셀 저장 후 메일 앱에서 첨부로 전송해 주세요.');
+      }finally{
+        spinner.style.display = 'none'; // ← 성공/실패 후 무조건 숨기기
       }
     });
+
 
     // 버튼
     genBtn.addEventListener('click', ()=> buildTable(monthInput.value, nameInput.value.trim()));
@@ -489,5 +507,22 @@ const h2 = ws.getCell('H2'); h2.value='';
     // 최초 렌더
     buildTable(monthInput.value, nameInput.value.trim());
   </script>
+
+<!-- -----주석(로딩 스피너) 시작 ----- -->
+<div id="loadingSpinner" class="modal-backdrop" style="z-index:200; background:rgba(255,255,255,0.7)">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+    <div class="spinner" style="width:48px;height:48px;border:5px solid #ccc;border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite"></div>
+    <div style="font-weight:600;color:#2563eb">메일 전송중...</div>
+  </div>
+</div>
+<style>
+@keyframes spin { 
+  from { transform:rotate(0deg);} 
+  to { transform:rotate(360deg);} 
+}
+</style>
+<!-- -----주석(로딩 스피너) 끝 ----- -->
+
+
 </body>
 </html>
