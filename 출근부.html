@@ -19,12 +19,11 @@
     .wrap{max-width:980px;margin:10px auto;padding:10px}
     .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-1)}
 
-    /* 헤더 구성 */
+    /* 헤더 구성 (요청한 순서) */
     .card-head{padding:12px;display:grid;gap:10px}
-    .title{font-size:20px;font-weight:800;display:flex;align-items:center;gap:10px}
-    .muted{color:var(--muted);font-weight:600;font-size:13px}
+    .title{font-size:20px;font-weight:800}
 
-    /* 2열 그리드 */
+    /* 2열 그리드: 작은 폰에서도 같은 줄에 들어가도록(옆스크롤 없음) */
     .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
     .grid-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
     .row{display:flex;gap:8px;align-items:center}
@@ -37,7 +36,7 @@
     .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
     .btn:active{transform:translateY(1px)}
 
-    /* 표 */
+    /* 표: 4칼럼만 보이게, 한 화면에 맞춤 */
     .table-wrap{border-radius:12px;border:1px solid var(--border);margin:8px 12px;overflow:hidden}
     table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}
     thead th{position:sticky;top:0;background:#f8fafc;border-bottom:1px solid var(--border);font-size:12.5px;height:32px}
@@ -50,9 +49,9 @@
     .sat{color:#2563eb}
     .app-hide{display:none}
 
-    .card-foot{display:none}
+    .card-foot{display:none} /* 로컬저장/불러오기 제거 */
 
-    /* 모달 */
+    /* 모달(중앙 고정, 크게) */
     .modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:12px;z-index:100;background:rgba(15,23,42,.5)}
     .modal{width:min(560px, 94vw);background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:0 10px 30px rgba(15,23,42,.12);overflow:hidden}
     .modal-hd{padding:14px 18px;border-bottom:1px solid var(--border);font-weight:800;font-size:18px}
@@ -61,27 +60,20 @@
     .row-inline{display:grid;grid-template-columns:98px 1fr;gap:10px;align-items:center}
     .row-inline .wfit{width:140px}
     .hidden{display:none!important}
-
-    /* 작은 로딩 배지 */
-    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#fff}
-    .spin{width:14px;height:14px;border:2px solid #cbd5e1;border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite}
-    @keyframes spin {from{transform:rotate(0deg)} to{transform:rotate(360deg)}}
   </style>
 
   <!-- ExcelJS / FileSaver -->
-  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+
 </head>
 <body>
   <div class="wrap">
     <div class="card">
       <div class="card-head">
-        <div class="title">
-          출근부
-          <span id="holidayStatus" class="pill hidden"><i class="spin"></i><span class="muted">공휴일 불러오는 중…</span></span>
-        </div>
+        <div class="title">출근부</div>
 
-        <!-- 1) 입력 -->
+        <!-- 1) 입력 박스 줄: 이름(placeholder로 '이름'), 월 선택(자동 디폴트) -->
         <div class="grid-2">
           <input id="nameInput" type="text" placeholder="이름" />
           <input id="monthInput" type="month" />
@@ -159,7 +151,7 @@
     </div>
   </div>
 
-  <!-- 이메일 입력 모달 -->
+  <!-- 이메일 입력 모달 (가로 튐 방지) -->
   <div id="emailBackdrop" class="modal-backdrop">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="emailTitle" style="width:min(420px,92vw)">
       <div class="modal-hd" id="emailTitle">메일로 전송</div>
@@ -191,64 +183,166 @@
     const xlsxBtn    = qs('#xlsxBtn');
     const emailBtn   = qs('#emailBtn');
     const tbody      = qs('#tbody');
-    const holidayStatus = qs('#holidayStatus');
 
     // ------------주석(GAS endpoint) 시작 ----
     const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxLS7c2bcl50k5LMOqC8Axx7PUZN-h5mN-MuNQddNcjc9P2BhWPxmaSPAWWbzhDRK8/exec';
     // ------------주석(GAS endpoint) 끝 ----
 
-    // 공휴일 캐시(연도별)
-    const HOLIDAY_CACHE = new Map(); // year -> Map('YYYY-MM-DD' -> '이벤트명/...')
-    function getHolidayMap(year){ return HOLIDAY_CACHE.get(year) || new Map(); }
+// ------------주석(bootSpinner 제어) 시작 ----
+function showBootSpinner(){
+  const el = document.getElementById('bootSpinner');
+  if (el) el.style.display = 'flex';
+}
+function hideBootSpinner(){
+  const el = document.getElementById('bootSpinner');
+  if (el) el.style.display = 'none';
+}
+// ------------주석(bootSpinner 제어) 끝 ----
 
-    async function loadHolidays(year){
-      if (HOLIDAY_CACHE.has(year)) return; // 이미 로드됨
 
-      holidayStatus.classList.remove('hidden');
+// ------------주석(GAS warmup) 시작 ----
+// 앱 로드 직후, 짧은 POST로 서버 깨우기 (사용자 액션 전에 컨테이너 기동)
+fetch(GAS_WEBAPP_URL, {
+  method: 'POST',
+  headers: {'Content-Type':'text/plain;charset=UTF-8'},
+  body: JSON.stringify({ ping: true })
+}).catch(()=>{ /* 무시 */ });
+// ------------주석(GAS warmup) 끝 ----
+
+
+// ------------주석(공휴일 데이터) 시작 ----
+const HOLIDAY_MAP = new Map(); // 'YYYY-MM-DD' -> '공휴일명(정리된 문자열)'
+
+// ✦ 요약 정규화: 불필요 접두어/공백 정리, 대표명 유지
+function normalizeHolidayName(s){
+  if(!s) return '';
+  s = String(s).replace(/\s+/g, ' ').trim();  // 다중 공백 정리
+  s = s.replace(/^쉬는 날\s*/i, '');          // "쉬는 날 " 접두어 제거
+  s = s.replace(/^\(대체\)\s*/i, '');         // 혹시 모를 "(대체)" 제거
+  s = s.replace(/대체공휴일(?:\s*\(.+?\))?/g, '대체공휴일'); // "대체공휴일(추석)" -> "대체공휴일"
+  return s;
+}
+
+// ✦ 같은 날 여러 이벤트 → 중복 제거(더 긴 대표명 우선)
+function consolidateNames(arr){
+  const uniq = Array.from(new Set(arr.map(normalizeHolidayName).filter(Boolean)));
+  // 길이 긴 순으로 정렬 후 부분포함 제거
+  uniq.sort((a,b)=>b.length-a.length);
+  const kept = [];
+  uniq.forEach(n=>{
+    if(!kept.some(k=>k.includes(n) && k!==n)) kept.push(n);
+  });
+  return kept.join(' / ');
+}
+
+async function loadHolidays(year){
+  try{
+    const url = `${GAS_WEBAPP_URL}?fn=holidays&year=${year}`;
+    const res = await fetch(url, { method:'GET' });
+    const json = await res.json();
+    if(json.ok && Array.isArray(json.items)){
+      HOLIDAY_MAP.clear();
+      // 날짜별로 이름들을 배열로 모았다가, 마지막에 정리해서 넣기
+      const bucket = new Map(); // date -> [names...]
+      json.items.forEach(({date,name})=>{
+        const arr = bucket.get(date) || [];
+        arr.push(name);
+        bucket.set(date, arr);
+      });
+
+      bucket.forEach((names, date)=>{
+        HOLIDAY_MAP.set(date, consolidateNames(names));
+      });
+// ------------주석(alt-holiday-postprocess) 시작 ----
+// 규칙: '추석' 또는 '설날'을 포함한 연휴 묶음 중 일요일이 하나라도 포함되면,
+// 그 묶음의 '마지막 날짜' 라벨을 '대체공휴일'로 강제 치환한다.
+// (GAS가 '쉬는 날 추석 연휴' 같은 라벨만 주는 경우 대응)
+
+(function applyAltForLunarHolidays(){
+  // 1) HOLIDAY_MAP에서 '추석'/'설날' 관련 날짜만 추출
+  const entries = Array.from(HOLIDAY_MAP.entries()) // [dateStr, name]
+    .filter(([dateStr, name]) => /추석|설날/.test(name));
+
+  if (!entries.length) return;
+
+  // 2) 날짜 오름차순 정렬
+  entries.sort((a,b)=> a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0);
+
+  // 3) 연속 날짜 기준으로 묶음(cluster) 나누기
+  const clusters = [];
+  let curr = [];
+  const toDate = s => { const [y,m,d]=s.split('-').map(Number); return new Date(y, m-1, d); };
+  const isNextDay = (a,b)=> {
+    const da = toDate(a), db = toDate(b);
+    return (db - da) === 24*60*60*1000;
+  };
+
+  entries.forEach(([dateStr, name], i)=>{
+    if (i===0) { curr.push([dateStr, name]); return; }
+    const prev = entries[i-1][0];
+    if (isNextDay(prev, dateStr)) curr.push([dateStr, name]);
+    else { clusters.push(curr); curr = [[dateStr, name]]; }
+  });
+  if (curr.length) clusters.push(curr);
+
+  // 4) 각 묶음에 일요일이 포함되어 있으면 마지막 날을 '대체공휴일'로 치환
+  clusters.forEach(cluster=>{
+    const hasSunday = cluster.some(([dateStr])=>{
+      const dt = toDate(dateStr);
+      return dt.getDay() === 0; // 0 = Sun
+    });
+    if (hasSunday) {
+      const [lastDate] = cluster[cluster.length - 1];
+      HOLIDAY_MAP.set(lastDate, '대체공휴일'); // 강제 치환
+    }
+  });
+})();
+// ------------주석(holiday-repaint) 시작 ----
+      // 화면에 표시된 monthInput이 로드한 연도와 같다면 표의 라벨을 즉시 갱신
       try{
-        const url = `${GAS_WEBAPP_URL}?fn=holidays&year=${year}`;
-        const res = await fetch(url, { method:'GET' });
-        const json = await res.json();
-        if(json.ok && Array.isArray(json.items)){
-          const map = new Map();
-          json.items.forEach(({date,name})=>{
-            if(map.has(date)){
-              const prev = map.get(date);
-              if(!prev.includes(name)) map.set(date, prev + ' / ' + name);
-            }else{
-              map.set(date, name);
+        const [currY, currM] = (monthInput.value||'').split('-').map(Number);
+        if (currY === year) {
+          qsa('#tbody tr').forEach((tr, idx)=>{
+            const day = idx+1;
+            const [dateCell, , , , , noteCell] = tr.children;
+            const hlabel = dynamicHolidayLabel(currY, currM, day);
+            if (hlabel) {
+              noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel);
+              dateCell.classList.add('sun');
             }
           });
-          HOLIDAY_CACHE.set(year, map);
-        }else{
-          console.warn('공휴일 응답 비정상:', json);
         }
-      }catch(e){
-        console.warn('공휴일 로드 실패:', e);
-      }finally{
-        holidayStatus.classList.add('hidden');
-      }
-    }
+      }catch(_e){ /* 무시 */ }
+      // ------------주석(holiday-repaint) 끝 ----
 
-    function dynamicHolidayLabel(y, m, d){
-      const key = `${y}-${pad2(m)}-${pad2(d)}`;
-      const map = getHolidayMap(String(y));
-      if (map.has(key)) return map.get(key);
-
-      // 백업: 고정 공휴일
-      const md = `${pad2(m)}-${pad2(d)}`;
-      const fixed = {'01-01':'신정','03-01':'삼일절','05-05':'어린이날','06-06':'현충일','08-15':'광복절','10-03':'개천절','10-09':'한글날','12-25':'성탄절'};
-      return fixed[md] || '';
     }
+  }catch(e){ console.warn('공휴일 로드 실패:', e); }
+}
+function dynamicHolidayLabel(y, m, d){
+  const key = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  if(HOLIDAY_MAP.has(key)) return HOLIDAY_MAP.get(key);
+
+  // 백업: 고정 공휴일
+  const md = `${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const fixed = {'01-01':'신정','03-01':'삼일절','05-05':'어린이날','06-06':'현충일','08-15':'광복절','10-03':'개천절','10-09':'한글날','12-25':'성탄절'};
+  return fixed[md] || '';
+}
+// ------------주석(공휴일 데이터) 끝 ----
+// 변경코드 마지막끝줄: // ------------주석(공휴일 데이터) 끝 ----
+
 
     (function initMonth(){
       const d=new Date();
       monthInput.value = `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
     })();
 
+    // 공휴일(동적: 구글 캘린더 + 백업 고정) + 라벨 중복 방지
+    // -----주석(holiday-label) 시작 ----
     const addLabelOnce = (note, label) => !label ? (note||'') : !note ? label : (note.includes(label) ? note : `${note} / ${label}`);
+    // -----주석(holiday-label) 끝 ----
 
-    /* ===== 표 생성 ===== */
+
+    /* ===== 표 생성 (옆스크롤 금지 폭으로) ===== */
     function buildTable(ym, name){
       tbody.innerHTML='';
       if(!ym){ alert('월을 선택하세요.'); return; }
@@ -262,7 +356,7 @@
         const tr = document.createElement('tr');
 
         const dateCell = document.createElement('td');
-        dateCell.className = 'date-col ' + (isSun?'sun':isSat?'sat':'' );
+        dateCell.className = 'date-col ' + (isSun?'sun':isSat?'sat':'');
         dateCell.style.textAlign='center'; dateCell.textContent = day;
 
         const nameCell = document.createElement('td');
@@ -276,9 +370,9 @@
         const noteCell = document.createElement('td'); noteCell.className='app-hide';
         const apprCell = document.createElement('td'); apprCell.className='app-hide';
 
-        // 공휴일 라벨(동적)
         const hlabel = dynamicHolidayLabel(y,m,day);
         if(hlabel){ noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel); dateCell.classList.add('sun'); }
+
 
         tr.addEventListener('click', ()=> openEditModal({y,m,day,dow,isSun,isSat}, tr));
         tr.append(dateCell, nameCell, inCell, outCell, signCell, noteCell, apprCell);
@@ -294,11 +388,11 @@
     const otTime    = qs('#otTime');
     const editNote  = qs('#editNote');
 
-    let currentRow=null;
+    let currentRow=null, currentMeta=null;
 
     function openEditModal(meta, tr){
-      currentRow = tr;
-      const [ , , inCell, outCell, , noteCell] = tr.children;
+      currentRow = tr; currentMeta=meta;
+      const [ , nameCell, inCell, outCell, , noteCell] = tr.children;
 
       editDate.value = `${meta.y}-${pad2(meta.m)}-${pad2(meta.day)}`;
       editNote.value = noteCell.textContent || '';
@@ -313,7 +407,7 @@
       const isOT = (!!outVal && !['', '차', DEFAULT_OUT].includes(outVal));
       otCheck.checked = isOT;
       otTime.classList.toggle('hidden', !isOT);
-      otTime.value = isOT ? outVal.replace(/\s+/g,'') : '';
+      otTime.value = isOT ? outVal.replace(/\s+/g,'') : ''; // "16:30" 형태 기대
       editBackdrop.style.display='flex';
     }
     function closeEditModal(){ editBackdrop.style.display='none'; }
@@ -326,7 +420,7 @@
     qs('#editCancel').addEventListener('click', closeEditModal);
     qs('#editApply').addEventListener('click', ()=>{
       if(!currentRow) return;
-      const [dateCell, , inCell, outCell, , noteCell] = currentRow.children;
+      const [dateCell, nameCell, inCell, outCell, , noteCell] = currentRow.children;
       const isSunday = /sun/.test(dateCell.className);
 
       if(leaveSel.value==='annual'){ inCell.textContent='연'; outCell.textContent='차'; }
@@ -343,18 +437,23 @@
           else{ inCell.textContent=DEFAULT_IN; outCell.textContent=DEFAULT_OUT; }
         }
       }
-      const [y,m,day] = editDate.value.split('-').map(Number);
-      const hlabel = dynamicHolidayLabel(y,m,day);
-      noteCell.textContent = addLabelOnce(editNote.value.trim(), hlabel);
+// ------------주석(editApply-holiday) 시작 ----
+const [y,m,day] = editDate.value.split('-').map(Number);
+const hlabel = dynamicHolidayLabel(y,m,day);
+noteCell.textContent = addLabelOnce(editNote.value.trim(), hlabel);
+// ------------주석(editApply-holiday) 끝 ----
+
+
 
       closeEditModal();
     });
 
-    /* ===== 엑셀 생성 ===== */
+    /* ===== 엑셀 생성 (얇은 기본 테두리 / 결재란 세로 / 비고 F–G 병합) ===== */
     async function makeWorkbook(){
       const ym = monthInput.value;
       if(!ym){ alert('월을 선택하세요.'); throw new Error('no-month'); }
       const [y,m] = ym.split('-').map(Number);
+      const nm = (nameInput.value||'').trim();
 
       const wb = new ExcelJS.Workbook();
       const ws = wb.addWorksheet('출근표', {
@@ -368,32 +467,44 @@
       const baseFont = {name:'맑은 고딕', size:12};
 
       // 열 너비
-      ws.getColumn(1).width = 6.25;
-      ws.getColumn(2).width = 9.75;
-      ws.getColumn(3).width = 12.88;
-      ws.getColumn(4).width = 12.88;
-      ws.getColumn(5).width = 12.88;
-      ws.getColumn(6).width = 9.75;
-      ws.getColumn(7).width = 5.35;
-      ws.getColumn(8).width = 11;
+      ws.getColumn(1).width = 6.25;   // 날짜
+      ws.getColumn(2).width = 9.75;   // 이름
+      ws.getColumn(3).width = 12.88;  // 출근
+      ws.getColumn(4).width = 12.88;  // 퇴근
+      ws.getColumn(5).width = 12.88;  // 서명
+      ws.getColumn(6).width = 9.75;   // 비고-F
+      ws.getColumn(7).width = 5.35;   // 비고-G
+      ws.getColumn(8).width = 11;     // 담당자확인
 
       // 행 높이
       ws.getRow(1).height = 14.25; ws.getRow(2).height = 36.75;
       ws.getRow(3).height = 29.25; ws.getRow(4).height = 25;
 
-      // 결재란(세로 효과)
-      ws.mergeCells('G1:G2');
-      const g1 = ws.getCell('G1'); const g2 = ws.getCell('G2');
-      g1.value = '결\n재\n란';
-      g1.font  = {name:'맑은 고딕', size:11, bold:true};
-      g1.alignment = { vertical:'middle', horizontal:'center', wrapText:true };
-      g2.alignment = g1.alignment;
-      ['G1','G2'].forEach(a=>{ ws.getCell(a).border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; });
-      const h1 = ws.getCell('H1'); h1.value='팀장';
-      h1.font={name:'맑은 고딕',size:11};
-      h1.alignment={vertical:'middle',horizontal:'center'};
-      const h2 = ws.getCell('H2'); h2.value='';
-      ['H1','H2'].forEach(a=>{ ws.getCell(a).border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; });
+      // 결재란(세로 텍스트)
+     // 결재란(호환 100% 세로 표시: 줄바꿈 + 랩) --------
+ws.mergeCells('G1:G2');
+const g1 = ws.getCell('G1');
+const g2 = ws.getCell('G2');
+
+// 글자를 세 줄로 쪼개서 넣고 줄바꿈 랩을 켬
+g1.value = '결\n재\n란';
+g1.font  = {name:'맑은 고딕', size:11, bold:true};
+g1.alignment = { vertical:'middle', horizontal:'center', wrapText:true };
+g2.alignment = g1.alignment; // 병합 보조셀에도 동일 정렬 적용
+
+['G1','G2'].forEach(a=>{
+  ws.getCell(a).border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
+});
+
+const h1 = ws.getCell('H1'); h1.value='팀장';
+h1.font={name:'맑은 고딕',size:11};
+h1.alignment={vertical:'middle',horizontal:'center'};
+const h2 = ws.getCell('H2'); h2.value='';
+['H1','H2'].forEach(a=>{
+  ws.getCell(a).border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
+});
+// 변경코드 마지막끝줄: ['H1','H2'] 보더 설정 라인
+
 
       // 타이틀
       ws.mergeCells('A3:H3');
@@ -452,12 +563,17 @@
         ws.getCell(rIdx,8).value='';
 
         for(let c=1;c<=8;c++){
-          if(c===7) continue;
-          const cell=ws.getCell(rIdx,c);
-          cell.font=baseFont;
-          cell.alignment={vertical:'middle',horizontal:(c===6?'left':'center')};
-          cell.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
-        }
+  if(c===7) continue;
+  const cell=ws.getCell(rIdx,c);
+  cell.font=baseFont;
+  cell.alignment={vertical:'middle',horizontal:(c===6?'left':'center')};
+  cell.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
+}
+// ------------주석(엑셀 노트줄바꿈 방지) 시작 ----
+ws.getCell(rIdx,6).alignment = { vertical:'middle', horizontal:'left', wrapText:false };
+// ------------주석(엑셀 노트줄바꿈 방지) 끝 ----
+// 변경코드 마지막끝줄: // ------------주석(엑셀 노트줄바꿈 방지) 끝 ----
+
         if(isSat){ ws.getCell(rIdx,1).font={...baseFont,color:{argb:'FF2563EB'}}; }
         if(isSun || hlabel){ ws.getCell(rIdx,1).font={...baseFont,color:{argb:'FFEF4444'}}; }
       }
@@ -476,7 +592,7 @@
       }catch(e){ if(e.message!=='no-month') console.error(e); }
     });
 
-    // 메일 전송
+    // 메일 전송(EmailJS) - 템플릿에 attachment/filename/to_email/subject 필드 매핑 필요
     const emailBackdrop = qs('#emailBackdrop');
     const emailTo = qs('#emailTo');
     const emailSend = qs('#emailSend');
@@ -489,12 +605,12 @@
       return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob); });
     }
 
-    emailSend.addEventListener('click', async ()=>{
+      emailSend.addEventListener('click', async ()=>{
       const to = (emailTo.value||'').trim();
       if(!to){ alert('받는 메일을 입력하세요.'); return; }
 
       const spinner = qs('#loadingSpinner');
-      spinner.style.display = 'flex';
+      spinner.style.display = 'flex';  // ← 전송 시작 시 스피너 보이기
 
       try{
         const {wb,fileName} = await makeWorkbook();
@@ -503,13 +619,15 @@
         const dataUrl = await blobToDataUrl(blob);
         const monthTxt = Number(monthInput.value.split('-')[1]);
         const subject = `한림병원 ${monthTxt}월 출근부 첨부합니다.`;
+// 변경코드 마지막끝줄: const subject = `한림병원 ${monthTxt}월 출근부 첨부합니다.`;
+
 
         const res = await fetch(GAS_WEBAPP_URL, {
           method: 'POST',
           headers: {'Content-Type':'text/plain;charset=UTF-8'},
           body: JSON.stringify({
-            to,
-            subject,
+            to: to,
+            subject: subject,
             message: '출근부 파일을 첨부합니다.',
             filename: fileName,
             attachment: dataUrl
@@ -525,25 +643,37 @@
         console.error(err);
         alert('메일 전송에 실패했어요. 엑셀 저장 후 메일 앱에서 첨부로 전송해 주세요.');
       }finally{
-        spinner.style.display = 'none';
+        spinner.style.display = 'none'; // ← 성공/실패 후 무조건 숨기기
       }
     });
 
+
     // 버튼
-    genBtn.addEventListener('click', async ()=>{
-      const [y] = (monthInput.value || '').split('-').map(Number);
-      if (y) await loadHolidays(String(y));
-      buildTable(monthInput.value, nameInput.value.trim());
-    });
+      genBtn.addEventListener('click', async ()=>{
+  showBootSpinner();
+  try{
+    const [y] = (monthInput.value || '').split('-').map(Number);
+    if (y) await loadHolidays(y);
+    buildTable(monthInput.value, nameInput.value.trim());
+  }finally{
+    hideBootSpinner();
+  }
+});
+// 변경코드 마지막끝줄: hideBootSpinner();
+
 
     clearBtn.addEventListener('click', ()=> tbody.innerHTML='');
 
-    // 초기: 표 그리고 공휴일 로드 후 라벨 반영
-    (async ()=>{
-      buildTable(monthInput.value, nameInput.value.trim());
-      const [y,mm] = (monthInput.value || '').split('-').map(Number);
-      if (y) await loadHolidays(String(y));
-      // 로드 후 라벨 재적용
+// -----주석(init-holidays) 시작 ----
+// 표는 즉시 그리고, 공휴일 로딩 동안 스피너 표시 → 완료 후 라벨 반영
+(async ()=>{
+  showBootSpinner();
+  try{
+    buildTable(monthInput.value, nameInput.value.trim());
+
+    const [y,mm] = (monthInput.value || '').split('-').map(Number);
+    if (y) {
+      await loadHolidays(y);
       qsa('#tbody tr').forEach((tr, idx)=>{
         const day = idx+1;
         const [dateCell, , , , , noteCell] = tr.children;
@@ -553,22 +683,35 @@
           dateCell.classList.add('sun');
         }
       });
-    })();
+    }
+  } finally {
+    hideBootSpinner();
+  }
+})();
+// -----주석(init-holidays) 끝 ----
+ </script>
 
-    // 월 변경 시 바로 반영
-    monthInput.addEventListener('change', async ()=>{
-      const [y] = (monthInput.value || '').split('-').map(Number);
-      if (y) await loadHolidays(String(y));
-      buildTable(monthInput.value, nameInput.value.trim());
-    });
-  </script>
-
-  <!-- 메일 전송용 로딩 스피너(오버레이) -->
-  <div id="loadingSpinner" class="modal-backdrop" style="z-index:200; background:rgba(255,255,255,0.7)">
-    <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
-      <div class="spin" style="width:48px;height:48px;border-width:5px"></div>
-      <div style="font-weight:600;color:#2563eb">메일 전송중...</div>
-    </div>
+<!-- ------------주석(데이터 로딩 스피너) 시작 ---- -->
+<div id="bootSpinner" class="modal-backdrop" style="z-index:190; background:rgba(255,255,255,0.7); display:none">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+    <div class="spinner" style="width:44px;height:44px;border:5px solid #ccc;border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite"></div>
+    <div style="font-weight:600;color:#2563eb">데이터 생성중...</div>
   </div>
-</body>
-</html>
+</div>
+<!-- ------------주석(데이터 로딩 스피너) 끝 ---- -->
+
+<!-- -----주석(로딩 스피너) 시작 ----- -->
+<div id="loadingSpinner" class="modal-backdrop" style="z-index:200; background:rgba(255,255,255,0.7)">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+    <div class="spinner" style="width:48px;height:48px;border:5px solid #ccc;border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite"></div>
+    <div style="font-weight:600;color:#2563eb">메일 전송중...</div>
+  </div>
+</div>
+
+<style>
+@keyframes spin { 
+  from { transform:rotate(0deg);} 
+  to { transform:rotate(360deg);} 
+}
+</style>
+<!-- -----주석(로딩 스피너) 끝 ----- -->
