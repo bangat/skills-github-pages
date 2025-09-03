@@ -969,6 +969,7 @@ const REPO_SLUG = "bangat/linenward";
 const APK_NAME = "WardLinen.apk";
 const LATEST_DIRECT = `https://github.com/${REPO_SLUG}/releases/latest/download/${APK_NAME}`;
 
+<script>
 /* === 관리자 게이트 === */
 const ADMIN_PASS = "2398";
 
@@ -1015,18 +1016,21 @@ function openAdminGate(){
     }
   }
 
-  // 키패드 이벤트
-  if (pad && !openAdminGate._wired){
-    pad.addEventListener("click", (e)=>{
+  // ------------주석(admin-pin-fix) 시작 ----
+  // (핵심 변경) 숫자패드 핸들러를 매번 새로 바인딩하여
+  // 항상 '현재 openAdminGate 호출의 pin'을 참조하게 만든다.
+  if (pad){
+    pad.onclick = (e)=>{
       const b = e.target.closest("button");
       if (!b) return;
       const n = b.getAttribute("data-n");
       const del = b.hasAttribute("data-del");
       if (n !== null){ push(n); return; }
       if (del){ backspace(); return; }
-    });
-    openAdminGate._wired = true;
+    };
   }
+  // 기존의 openAdminGate._wired 플래그와 addEventListener는 제거
+  // ------------주석(admin-pin-fix) 끝 ----
 
   $ok.onclick = tryLogin;
   $can.onclick = ()=>{ closeModal("#adminModal"); clearPin(); };
@@ -1038,7 +1042,7 @@ function openAdminGate(){
 
   render();
 }
-
+</script>
 
 const ITEMS={
   "시트":["대시트","반시트","베갯잇","수　건"],
