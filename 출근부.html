@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>출근부 · 관리자</title>
+
+  <!-- 스타일: 한 화면에 꽉 차게 / 옆스크롤 금지 -->
+  <style>
+    :root{
+      --bg:#f4f7fb; --card:#ffffff; --accent:#2563eb; --muted:#5b677a; --text:#0f172a; --border:#e6eaf2;
+      --r-lg:16px; --shadow-1:0 4px 16px rgba(15,23,42,.08);
+      --focus:0 0 0 2px rgba(37,99,235,.22),0 0 0 6px rgba(37,99,235,.1);
+    }
+    *{box-sizing:border-box}
+    html,body{-webkit-text-size-adjust:100%; overflow-x:hidden;}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;}
+    .wrap{max-width:980px;margin:10px auto;padding:10px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-1)}
+
+    /* 헤더 구성 (요청한 순서) */
+    .card-head{padding:12px;display:grid;gap:10px}
+    .title{font-size:20px;font-weight:800}
+
+    /* 2열 그리드: 작은 폰에서도 같은 줄에 들어가도록(옆스크롤 없음) */
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .grid-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .row{display:flex;gap:8px;align-items:center}
+
+    input[type="text"], input[type="month"], input[type="email"], select{
+      border:1px solid var(--border);border-radius:12px;padding:0 12px;height:42px;font-size:15px;background:#fff;outline:none;min-width:0;width:100%;
+    }
+    input:focus, select:focus{box-shadow:var(--focus);border-color:transparent}
+    .btn{border:1px solid var(--border);background:#fff;border-radius:12px;padding:0 12px;height:42px;font-weight:700;cursor:pointer;font-size:15px}
+    .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .btn:active{transform:translateY(1px)}
+
+    /* 표: 4칼럼만 보이게, 한 화면에 맞춤 */
+    .table-wrap{border-radius:12px;border:1px solid var(--border);margin:8px 12px;overflow:hidden}
+    table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}
+    thead th{position:sticky;top:0;background:#f8fafc;border-bottom:1px solid var(--border);font-size:12.5px;height:32px}
+    td,th{border-bottom:1px solid var(--border);padding:6px;text-align:center;font-size:12.5px;white-space:nowrap}
+    tbody tr:hover{background:#f7fbff}
+    .date-col{width:38px;font-weight:700}
+    .name-col{width:88px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .time-col{width:64px}
+    .sun{color:#ef4444}
+    .sat{color:#2563eb}
+    .app-hide{display:none}
+
+    .card-foot{display:none} /* 로컬저장/불러오기 제거 */
+
+    /* 모달(중앙 고정, 크게) */
+    .modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:12px;z-index:100;background:rgba(15,23,42,.5)}
+    .modal{width:min(560px, 94vw);background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:0 10px 30px rgba(15,23,42,.12);overflow:hidden}
+    .modal-hd{padding:14px 18px;border-bottom:1px solid var(--border);font-weight:800;font-size:18px}
+    .modal-bd{padding:16px 18px;display:grid;gap:12px}
+    .modal-ft{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+    .row-inline{display:grid;grid-template-columns:98px 1fr;gap:10px;align-items:center}
+    .row-inline .wfit{width:140px}
+    .hidden{display:none!important}
+  </style>
+
+  <!-- ExcelJS / FileSaver / EmailJS -->
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="card-head">
+        <div class="title">출근부</div>
+
+        <!-- 1) 입력 박스 줄: 이름(placeholder로 '이름'), 월 선택(자동 디폴트) -->
+        <div class="grid-2">
+          <input id="nameInput" type="text" placeholder="이름" />
+          <input id="monthInput" type="month" />
+        </div>
+
+        <!-- 2) 생성 / 초기화 -->
+        <div class="grid-btns">
+          <button id="genBtn" class="btn primary">출근표 생성</button>
+          <button id="clearBtn" class="btn">초기화</button>
+        </div>
+
+        <!-- 3) 내보내기 / 메일 전송 -->
+        <div class="grid-btns">
+          <button id="xlsxBtn" class="btn">엑셀로 내려받기</button>
+          <button id="emailBtn" class="btn">메일로 전송</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th class="date-col">날짜</th>
+              <th class="name-col">이름</th>
+              <th class="time-col">출근</th>
+              <th class="time-col">퇴근</th>
+              <th class="app-hide">본인서명</th>
+              <th class="app-hide">비고</th>
+              <th class="app-hide">담당자확인</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 근무 상태 편집 모달 -->
+  <div id="editBackdrop" class="modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+      <div class="modal-hd" id="editTitle">근무 상태 편집</div>
+      <div class="modal-bd">
+        <div class="row-inline">
+          <label>대상 날짜</label>
+          <input id="editDate" type="text" readonly />
+        </div>
+
+        <div class="row-inline">
+          <label>휴가 사용</label>
+          <select id="leaveSel">
+            <option value="">선택 안 함</option>
+            <option value="annual">연차</option>
+            <option value="half">반차</option>
+            <option value="family">조가</option>
+          </select>
+        </div>
+
+        <div class="row-inline">
+          <label>연장근무</label>
+          <div class="row" style="gap:10px">
+            <label><input id="otCheck" type="checkbox" /> 사용</label>
+            <input id="otTime" type="time" step="300" class="hidden wfit" />
+          </div>
+        </div>
+
+        <div class="row-inline">
+          <label>비고</label>
+          <input id="editNote" type="text" placeholder="엑셀 비고란에 들어갑니다" />
+        </div>
+      </div>
+      <div class="modal-ft">
+        <button class="btn" id="editCancel">닫기</button>
+        <button class="btn primary" id="editApply">적용</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 이메일 입력 모달 (가로 튐 방지) -->
+  <div id="emailBackdrop" class="modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="emailTitle" style="width:min(420px,92vw)">
+      <div class="modal-hd" id="emailTitle">메일로 전송</div>
+      <div class="modal-bd">
+        <div class="row-inline">
+          <label>받는 메일</label>
+          <input id="emailTo" type="email" placeholder="example@domain.com" />
+        </div>
+      </div>
+      <div class="modal-ft">
+        <button class="btn" id="emailCancel">취소</button>
+        <button class="btn primary" id="emailSend">전송</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ===== 기본 ===== */
+    const pad2 = n => String(n).padStart(2,'0');
+    const DEFAULT_IN  = '06 : 00';
+    const DEFAULT_OUT = '15 : 30';
+    const qs  = s => document.querySelector(s);
+    const qsa = s => Array.from(document.querySelectorAll(s));
+
+    const nameInput  = qs('#nameInput');
+    const monthInput = qs('#monthInput');
+    const genBtn     = qs('#genBtn');
+    const clearBtn   = qs('#clearBtn');
+    const xlsxBtn    = qs('#xlsxBtn');
+    const emailBtn   = qs('#emailBtn');
+    const tbody      = qs('#tbody');
+
+    // EmailJS 설정 (네가 준 값)
+    const EMAILJS_SERVICE_ID  = 'service_zxiijul';
+    const EMAILJS_TEMPLATE_ID = 'template_ww2z28g';
+    const EMAILJS_PUBLIC_KEY  = 'TLFlbdO0Txf4U1QVWX';
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+
+    (function initMonth(){
+      const d=new Date();
+      monthInput.value = `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+    })();
+
+    // 공휴일(고정) + 라벨 중복 방지
+    function fixedHolidaysLabel(y, m, d){
+      const md = `${pad2(m)}-${pad2(d)}`;
+      const map = {'01-01':'신정','03-01':'삼일절','05-05':'어린이날','06-06':'현충일','08-15':'광복절','10-03':'개천절','10-09':'한글날','12-25':'성탄절'};
+      return map[md] || '';
+    }
+    const addLabelOnce = (note, label) => !label ? (note||'') : !note ? label : (note.includes(label) ? note : `${note} / ${label}`);
+
+    /* ===== 표 생성 (옆스크롤 금지 폭으로) ===== */
+    function buildTable(ym, name){
+      tbody.innerHTML='';
+      if(!ym){ alert('월을 선택하세요.'); return; }
+      const [y,m] = ym.split('-').map(Number);
+      const lastDay = new Date(y, m, 0).getDate();
+
+      for(let day=1; day<=lastDay; day++){
+        const dt = new Date(y, m-1, day);
+        const dow = dt.getDay(); const isSun=dow===0, isSat=dow===6;
+
+        const tr = document.createElement('tr');
+
+        const dateCell = document.createElement('td');
+        dateCell.className = 'date-col ' + (isSun?'sun':isSat?'sat':'');
+        dateCell.style.textAlign='center'; dateCell.textContent = day;
+
+        const nameCell = document.createElement('td');
+        nameCell.className='name-col'; nameCell.textContent = name || '';
+
+        const inCell  = document.createElement('td'); inCell.className='time-col';
+        const outCell = document.createElement('td'); outCell.className='time-col';
+        if(!isSun){ inCell.textContent=DEFAULT_IN; outCell.textContent=DEFAULT_OUT; }
+
+        const signCell = document.createElement('td'); signCell.className='app-hide';
+        const noteCell = document.createElement('td'); noteCell.className='app-hide';
+        const apprCell = document.createElement('td'); apprCell.className='app-hide';
+
+        const hlabel = fixedHolidaysLabel(y,m,day);
+        if(hlabel){ noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel); dateCell.classList.add('sun'); }
+
+        tr.addEventListener('click', ()=> openEditModal({y,m,day,dow,isSun,isSat}, tr));
+        tr.append(dateCell, nameCell, inCell, outCell, signCell, noteCell, apprCell);
+        tbody.appendChild(tr);
+      }
+    }
+
+    /* ===== 편집 모달 ===== */
+    const editBackdrop = qs('#editBackdrop');
+    const editDate  = qs('#editDate');
+    const leaveSel  = qs('#leaveSel');
+    const otCheck   = qs('#otCheck');
+    const otTime    = qs('#otTime');
+    const editNote  = qs('#editNote');
+
+    let currentRow=null, currentMeta=null;
+
+    function openEditModal(meta, tr){
+      currentRow = tr; currentMeta=meta;
+      const [ , nameCell, inCell, outCell, , noteCell] = tr.children;
+
+      editDate.value = `${meta.y}-${pad2(meta.m)}-${pad2(meta.day)}`;
+      editNote.value = noteCell.textContent || '';
+
+      const inVal  = (inCell.textContent||'').trim();
+      const outVal = (outCell.textContent||'').trim();
+      leaveSel.value =
+        (inVal==='연'&&outVal==='차') ? 'annual' :
+        (inVal==='반'&&outVal==='차') ? 'half'   :
+        (inVal==='조'&&outVal==='가') ? 'family' : '';
+
+      const isOT = (!!outVal && !['', '차', DEFAULT_OUT].includes(outVal));
+      otCheck.checked = isOT;
+      otTime.classList.toggle('hidden', !isOT);
+      otTime.value = isOT ? outVal.replace(/\s+/g,'') : ''; // "16:30" 형태 기대
+      editBackdrop.style.display='flex';
+    }
+    function closeEditModal(){ editBackdrop.style.display='none'; }
+
+    otCheck.addEventListener('change', ()=>{
+      otTime.classList.toggle('hidden', !otCheck.checked);
+      if(otCheck.checked && !otTime.value) otTime.value='16:30';
+    });
+
+    qs('#editCancel').addEventListener('click', closeEditModal);
+    qs('#editApply').addEventListener('click', ()=>{
+      if(!currentRow) return;
+      const [dateCell, nameCell, inCell, outCell, , noteCell] = currentRow.children;
+      const isSunday = /sun/.test(dateCell.className);
+
+      if(leaveSel.value==='annual'){ inCell.textContent='연'; outCell.textContent='차'; }
+      else if(leaveSel.value==='half'){ inCell.textContent='반'; outCell.textContent='차'; }
+      else if(leaveSel.value==='family'){ inCell.textContent='조'; outCell.textContent='가'; }
+      else{
+        if(otCheck.checked){
+          const v = otTime.value || '15:30';
+          const [hh, mm] = v.split(':');
+          outCell.textContent = `${hh.padStart(2,'0')} : ${mm.padStart(2,'0')}`;
+          inCell.textContent  = DEFAULT_IN;
+        }else{
+          if(isSunday){ inCell.textContent=''; outCell.textContent=''; }
+          else{ inCell.textContent=DEFAULT_IN; outCell.textContent=DEFAULT_OUT; }
+        }
+      }
+      const [y,m,day] = editDate.value.split('-').map(Number);
+      const hlabel = fixedHolidaysLabel(y,m,day);
+      noteCell.textContent = addLabelOnce(editNote.value.trim(), hlabel);
+
+      closeEditModal();
+    });
+
+    /* ===== 엑셀 생성 (얇은 기본 테두리 / 결재란 세로 / 비고 F–G 병합) ===== */
+    async function makeWorkbook(){
+      const ym = monthInput.value;
+      if(!ym){ alert('월을 선택하세요.'); throw new Error('no-month'); }
+      const [y,m] = ym.split('-').map(Number);
+      const nm = (nameInput.value||'').trim();
+
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet('출근표', {
+        pageSetup:{
+          paperSize:9, orientation:'portrait',
+          margins:{left:0,right:0,top:0,bottom:0.1,header:0,footer:0},
+          horizontalCentered:true, verticalCentered:true,
+          fitToPage:true, fitToWidth:1, fitToHeight:0
+        }
+      });
+      const baseFont = {name:'맑은 고딕', size:12};
+
+      // 열 너비
+      ws.getColumn(1).width = 6.25;   // 날짜
+      ws.getColumn(2).width = 9.75;   // 이름
+      ws.getColumn(3).width = 12.88;  // 출근
+      ws.getColumn(4).width = 12.88;  // 퇴근
+      ws.getColumn(5).width = 12.88;  // 서명
+      ws.getColumn(6).width = 9.75;   // 비고-F
+      ws.getColumn(7).width = 5.35;   // 비고-G
+      ws.getColumn(8).width = 11;     // 담당자확인
+
+      // 행 높이
+      ws.getRow(1).height = 14.25; ws.getRow(2).height = 36.75;
+      ws.getRow(3).height = 29.25; ws.getRow(4).height = 25;
+
+      // 결재란(세로 텍스트)
+     // 결재란(호환 100% 세로 표시: 줄바꿈 + 랩) --------
+ws.mergeCells('G1:G2');
+const g1 = ws.getCell('G1');
+const g2 = ws.getCell('G2');
+
+// 글자를 세 줄로 쪼개서 넣고 줄바꿈 랩을 켬
+g1.value = '결\n재\n란';
+g1.font  = {name:'맑은 고딕', size:11, bold:true};
+g1.alignment = { vertical:'middle', horizontal:'center', wrapText:true };
+g2.alignment = g1.alignment; // 병합 보조셀에도 동일 정렬 적용
+
+['G1','G2'].forEach(a=>{
+  ws.getCell(a).border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
+});
+
+const h1 = ws.getCell('H1'); h1.value='팀장';
+h1.font={name:'맑은 고딕',size:11};
+h1.alignment={vertical:'middle',horizontal:'center'};
+const h2 = ws.getCell('H2'); h2.value='';
+['H1','H2'].forEach(a=>{
+  ws.getCell(a).border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
+});
+// 변경코드 마지막끝줄: ['H1','H2'] 보더 설정 라인
+
+
+      // 타이틀
+      ws.mergeCells('A3:H3');
+      const t = ws.getCell('A3');
+      t.value = `${y}년 ${m}월 린넨실(직원) 출근표`;
+      t.font  = {name:'맑은 고딕', size:18, bold:true};
+      t.alignment = {vertical:'middle', horizontal:'center'};
+
+      // 헤더
+      ws.getCell('A4').value='날짜';
+      ws.getCell('B4').value='이름';
+      ws.getCell('C4').value='출근시각';
+      ws.getCell('D4').value='퇴근시각';
+      ws.getCell('E4').value='본인서명';
+      ws.getCell('F4').value='비고';
+      ws.mergeCells('F4:G4');
+      ws.getCell('H4').value='담당자확인';
+      ['A4','B4','C4','D4','E4','F4','H4'].forEach(a=>{
+        const c=ws.getCell(a);
+        c.font={...baseFont, bold:true};
+        c.alignment={vertical:'middle',horizontal:'center'};
+        c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF1F5F9'}};
+        c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
+      });
+
+      // 데이터
+      const lastDay = new Date(y, m, 0).getDate();
+      const startRow = 5;
+      for(let d=1; d<=lastDay; d++){
+        const rIdx = startRow + d - 1;
+        const r = ws.getRow(rIdx); r.height = 22;
+
+        const dateObj = new Date(y, m-1, d);
+        const dow = dateObj.getDay(); const isSun=dow===0, isSat=dow===6;
+
+        const tr = qsa('#tbody tr')[d-1];
+        let [ , , inT, outT, , noteText] = tr
+              ? Array.from(tr.children).map(td=> (td.textContent||'').trim())
+              : [null,null,'','','',''];
+
+        if(isSun){ inT='휴'; outT='무'; }
+        else{
+          if(!inT)  inT=DEFAULT_IN;
+          if(!outT) outT=DEFAULT_OUT;
+        }
+        const hlabel = fixedHolidaysLabel(y,m,d);
+        noteText = addLabelOnce(noteText, hlabel);
+
+        ws.getCell(rIdx,1).value=d;
+        ws.getCell(rIdx,2).value=(nameInput.value||'').trim();
+        ws.getCell(rIdx,3).value=inT;
+        ws.getCell(rIdx,4).value=outT;
+        ws.getCell(rIdx,5).value='';
+        ws.getCell(rIdx,6).value=noteText||'';
+        ws.mergeCells(`F${rIdx}:G${rIdx}`);
+        ws.getCell(rIdx,8).value='';
+
+        for(let c=1;c<=8;c++){
+          if(c===7) continue;
+          const cell=ws.getCell(rIdx,c);
+          cell.font=baseFont;
+          cell.alignment={vertical:'middle',horizontal:(c===6?'left':'center')};
+          cell.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
+        }
+        if(isSat){ ws.getCell(rIdx,1).font={...baseFont,color:{argb:'FF2563EB'}}; }
+        if(isSun || hlabel){ ws.getCell(rIdx,1).font={...baseFont,color:{argb:'FFEF4444'}}; }
+      }
+
+      ws.eachRow(row=> row.eachCell(cell=>{ cell.font = cell.font || baseFont; }));
+      const fileName = `${y}-${pad2(m)}-출근부.xlsx`;
+      return {wb, fileName};
+    }
+
+    // 엑셀 저장
+    xlsxBtn.addEventListener('click', async ()=>{
+      try{
+        const {wb,fileName} = await makeWorkbook();
+        const buf = await wb.xlsx.writeBuffer();
+        saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), fileName);
+      }catch(e){ if(e.message!=='no-month') console.error(e); }
+    });
+
+    // 메일 전송(EmailJS) - 템플릿에 attachment/filename/to_email/subject 필드 매핑 필요
+    const emailBackdrop = qs('#emailBackdrop');
+    const emailTo = qs('#emailTo');
+    const emailSend = qs('#emailSend');
+    const emailCancel = qs('#emailCancel');
+
+    emailBtn.addEventListener('click', ()=>{ emailBackdrop.style.display='flex'; setTimeout(()=> emailTo.focus(), 0); });
+    emailCancel.addEventListener('click', ()=> emailBackdrop.style.display='none');
+
+    function blobToDataUrl(blob){
+      return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob); });
+    }
+
+    emailSend.addEventListener('click', async ()=>{
+      const to = (emailTo.value||'').trim();
+      if(!to){ alert('받는 메일을 입력하세요.'); return; }
+      try{
+        const {wb,fileName} = await makeWorkbook();
+        const buf = await wb.xlsx.writeBuffer();
+        const blob = new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+        const dataUrl = await blobToDataUrl(blob);
+        const monthTxt = Number(monthInput.value.split('-')[1]);
+        const subject = `한림 ${monthTxt}월 출근부`;
+
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+          to_email: to,
+          subject,
+          message: '출근부 파일을 첨부합니다.',
+          filename: fileName,
+          attachment: dataUrl
+        });
+        alert('메일을 전송했습니다.');
+        emailBackdrop.style.display='none';
+      }catch(err){
+        console.error(err);
+        alert('메일 전송에 실패했어요. 엑셀 저장 후 메일 앱에서 첨부로 전송해 주세요.');
+      }
+    });
+
+    // 버튼
+    genBtn.addEventListener('click', ()=> buildTable(monthInput.value, nameInput.value.trim()));
+    clearBtn.addEventListener('click', ()=> tbody.innerHTML='');
+
+    // 최초 렌더
+    buildTable(monthInput.value, nameInput.value.trim());
+  </script>
+</body>
+</html>
