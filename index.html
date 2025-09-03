@@ -5,7 +5,7 @@
 <!-- -----주석 head 메타/매니페스트 시작 ----- -->
 <meta charset="utf-8" />
 <meta http-equiv="Cache-Control" content="no-store" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#2563eb" />
 
@@ -261,6 +261,36 @@
     width:min(92vw,520px); max-height:88vh; display:flex; flex-direction:column;
     background:#fff; color:#0f172a; border-radius:16px; box-shadow:0 20px 60px rgba(15,23,42,.25); overflow:hidden;
   }
+
+/* === 관리자 PIN 입력 전용 === */
+.adminPin .pinLabel{ display:block; font-weight:800; color:#334155; margin:2px 0 8px; }
+.adminPin .pinInput{
+  width:100%; height:56px; line-height:56px;
+  font-size:22px; font-weight:900; text-align:center;
+  letter-spacing:6px; border:1px solid var(--border);
+  border-radius:12px; background:#fff; color:#0f172a;
+  padding:0 12px; caret-color:transparent; /* 커서 숨김 */
+}
+.adminPin .pinInput:focus{ outline:none; border-color:#2563eb; box-shadow:var(--focus); }
+
+/* 숫자 키패드 (시스템 키보드 대신) */
+.pinPad{
+  margin-top:12px;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:8px;
+}
+.pinPad button{
+  height:54px; font-size:20px; font-weight:900;
+  border-radius:12px; border:1px solid var(--border);
+  background:#fff; box-shadow:var(--shadow-1);
+}
+.pinPad button.wide{ grid-column:1 / span 2; }    /* 0 키를 넓게 */
+.pinPad button[aria-label="지움"]{ background:#f8fafc; }
+@media (max-width:430px){
+  .adminPin .pinInput{ height:52px; font-size:20px; }
+  .pinPad button{ height:52px; font-size:19px; }
+}
+
+
   .modalHead{ padding:16px 18px; font-weight:800; font-size:18px; border-bottom:1px solid var(--border); flex:0 0 auto; }
   .modalBody{ padding:16px 18px; font-size:14px; line-height:1.5; color:#475569; flex:1 1 auto; min-height:0; overflow:auto; max-height:50vh; }
   .modalActions{ display:flex; gap:10px; padding:14px 16px; background:#f8fafc; border-top:1px solid var(--border); flex:0 0 auto; }
@@ -509,6 +539,10 @@
   margin-bottom: 10px !important;
 }
 
+/* === iOS 자동 줌 방지: 모든 폼컨트롤 최소 16px 유지 === */
+input, select, textarea, button { font-size: 16px; }
+/* 탭/버튼의 더블탭 확대 방지(사파리 13+ 지원) */
+button, .navTab, .tab, .chip, .miniBtn { touch-action: manipulation; }
 
 
 </style>
@@ -695,12 +729,22 @@
 
 <!-- -----주석 관리자 로그인 모달 시작 ----- -->
 <div id="adminModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="amTitle" style="display:none">
-  <div class="modalCard" role="document">
+  <div class="modalCard adminPin" role="document">
     <div class="modalHead" id="amTitle">관리자 로그인</div>
     <div class="modalBody">
-      <div class="row-inline">
-        <label style="font-weight:800;width:98px">비밀번호</label>
-        <input id="adminPass" type="password" placeholder="비밀번호" inputmode="numeric" />
+      <!-- 큰 입력칸(시스템 키보드 차단) -->
+      <label class="pinLabel">관리자 비밀번호</label>
+      <input id="adminPass" class="pinInput"
+             type="password" placeholder=""
+             inputmode="none" readonly />
+
+      <!-- 숫자 키패드 -->
+      <div class="pinPad" id="pinPad">
+        <button data-n="1">1</button><button data-n="2">2</button><button data-n="3">3</button>
+        <button data-n="4">4</button><button data-n="5">5</button><button data-n="6">6</button>
+        <button data-n="7">7</button><button data-n="8">8</button><button data-n="9">9</button>
+        <button data-n="0" class="wide">0</button>
+        <button data-del="1" aria-label="지움">←</button>
       </div>
     </div>
     <div class="modalActions">
@@ -929,31 +973,71 @@ const LATEST_DIRECT = `https://github.com/${REPO_SLUG}/releases/latest/download/
 const ADMIN_PASS = "2398";
 
 function openAdminGate(){
-  openModal("#adminModal", "#adminPass");
+  openModal("#adminModal", "#adminOk"); // 입력칸 포커스 금지(키보드 안뜸)
 
   const $in  = el("#adminPass");
   const $ok  = el("#adminOk");
   const $can = el("#adminCancel");
+  const pad  = el("#pinPad");
+  let pin = "";
 
+  // 시스템 키보드 완전 차단
+  $in.setAttribute("readonly","readonly");
+  $in.setAttribute("inputmode","none");
+  ["focus","pointerdown","touchstart","click"].forEach(ev=>{
+    $in.addEventListener(ev, (e)=>{ e.preventDefault(); $ok.focus(); }, { passive:false });
+  });
+
+  function render(){
+    $in.value = pin; // type=password라 점(•) 표시
+  }
+  function push(n){
+    if (pin.length >= 6) return; // 길이 제한(여유)
+    pin += String(n);
+    render();
+  }
+  function backspace(){
+    pin = pin.slice(0,-1);
+    render();
+  }
+  function clearPin(){
+    pin = ""; render();
+  }
   function tryLogin(){
-    const v = ($in.value||"").trim();
-    if(v === ADMIN_PASS){
+    if (pin === ADMIN_PASS){
       closeModal("#adminModal");
-      // 출근부.html로 이동 (뒤로가기 버튼 사용을 위해 back=1 전달)
       location.href = "출근부.html?back=1";
     }else{
-      $in.value = "";
-      $in.placeholder = "틀렸어요. 다시 입력";
+      clearPin();
+      $in.placeholder = "틀린 비밀번호 인데요?";
       try{ playSnd("#warnSound"); }catch(_){}
-      $in.focus();
+      $ok.focus();
     }
   }
 
+  // 키패드 이벤트
+  if (pad && !openAdminGate._wired){
+    pad.addEventListener("click", (e)=>{
+      const b = e.target.closest("button");
+      if (!b) return;
+      const n = b.getAttribute("data-n");
+      const del = b.hasAttribute("data-del");
+      if (n !== null){ push(n); return; }
+      if (del){ backspace(); return; }
+    });
+    openAdminGate._wired = true;
+  }
+
   $ok.onclick = tryLogin;
-  $can.onclick = ()=> closeModal("#adminModal");
-  $in.onkeydown = (e)=>{ if(e.key==="Enter") tryLogin(); };
+  $can.onclick = ()=>{ closeModal("#adminModal"); clearPin(); };
+  // 엔터키로 확인 (하드웨어 키보드 대비)
+  document.addEventListener("keydown", function onKey(e){
+    if (el("#adminModal").style.display !== "block") { document.removeEventListener("keydown", onKey); return; }
+    if (e.key === "Enter") { e.preventDefault(); tryLogin(); }
+  });
+
+  render();
 }
-/* 추가코드 마지막끝줄: } */
 
 
 const ITEMS={
@@ -2193,6 +2277,30 @@ el('#wpOk').onclick = () => {
   goSection(urlTab === "stats" ? "stats" : "input");
 });
 </script>
+
+<script>
+/* === iOS 줌 차단 보강 === */
+(function blockIOSZoom(){
+  const ua = navigator.userAgent || "";
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (/\bMacintosh\b/.test(ua) && navigator.maxTouchPoints > 1);
+  if (!isIOS) return;
+
+  // 더블탭 줌 방지
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', function (e) {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) { e.preventDefault(); }
+    lastTouchEnd = now;
+  }, { passive:false });
+
+  // 핀치(gesture) 줌 방지
+  ['gesturestart','gesturechange','gestureend'].forEach(evt=>{
+    document.addEventListener(evt, function(e){ e.preventDefault(); }, { passive:false });
+  });
+})();
+</script>
+<!-- 추가코드 마지막끝줄: </script> -->
+
 
 
 <script>
