@@ -55,12 +55,12 @@
     padding:8px 12px; min-height:64px;
     margin-bottom:10px;
   }
-  .topNav .nav{
+.topNav .nav{
     max-width:980px; margin:0 auto; position:relative;
-    display:grid; grid-template-columns:repeat(3,1fr);
+    display:grid; grid-template-columns:repeat(4,1fr);
     align-items:center; height:48px; padding:0 8px;
     background:transparent; border:none; box-shadow:none;
-  }
+}
   .navTab{
     appearance:none; background:transparent; border:0;
     height:100%; display:flex; align-items:center; justify-content:center;
@@ -70,14 +70,14 @@
   }
   .navTab:hover{ color:#1e40af; }
   .navTab.active{ color:#0b3fb8; }
-  .nav-slider{
+.nav-slider{
     position:absolute; left:8px; right:8px; bottom:6px;
-    width:calc(33.3333% - 16px); height:3px; border-radius:999px;
+    width:calc(25% - 16px); height:3px; border-radius:999px;
     background:linear-gradient(90deg,#93c5fd,#2563eb);
     box-shadow:0 0 0 1px rgba(37,99,235,.15), 0 6px 14px rgba(37,99,235,.25);
     transition:transform .25s cubic-bezier(.2,.8,.2,1);
     pointer-events:none;
-  }
+}
   .topNav.elevated{
     box-shadow:0 10px 28px rgba(2, 6, 23, .10);
     border-bottom-color: rgba(15,23,42,.12);
@@ -522,6 +522,7 @@
     <button class="navTab active" data-section="input">입력</button>
     <button class="navTab" data-section="stats">통계</button>
     <button class="navTab" data-section="guest">소통</button>
+ <button class="navTab" data-section="admin">관리자</button>
     <div class="nav-slider" id="navSlider" aria-hidden="true"></div>
   </div>
 </div>
@@ -691,6 +692,25 @@
   </div>
 </div>
 <!-- -----주석 제출 확인 모달 종료 ----- -->
+
+<!-- -----주석 관리자 로그인 모달 시작 ----- -->
+<div id="adminModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="amTitle" style="display:none">
+  <div class="modalCard" role="document">
+    <div class="modalHead" id="amTitle">관리자 로그인</div>
+    <div class="modalBody">
+      <div class="row-inline">
+        <label style="font-weight:800;width:98px">비밀번호</label>
+        <input id="adminPass" type="password" placeholder="비밀번호" inputmode="numeric" />
+      </div>
+    </div>
+    <div class="modalActions">
+      <button type="button" class="btn cancel" id="adminCancel">취소</button>
+      <button type="button" class="btn primary" id="adminOk">확인</button>
+    </div>
+  </div>
+</div>
+<!-- -----주석 관리자 로그인 모달 종료 ----- -->
+
 
 <!-- -----주석 수량 계산기 모달 시작 ----- -->
 <div id="qtyCalcModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="qcTitle" style="display:none">
@@ -904,6 +924,37 @@ window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.re
 const REPO_SLUG = "bangat/linenward";
 const APK_NAME = "WardLinen.apk";
 const LATEST_DIRECT = `https://github.com/${REPO_SLUG}/releases/latest/download/${APK_NAME}`;
+
+/* === 관리자 게이트 === */
+const ADMIN_PASS = "2398";
+
+function openAdminGate(){
+  openModal("#adminModal", "#adminPass");
+
+  const $in  = el("#adminPass");
+  const $ok  = el("#adminOk");
+  const $can = el("#adminCancel");
+
+  function tryLogin(){
+    const v = ($in.value||"").trim();
+    if(v === ADMIN_PASS){
+      closeModal("#adminModal");
+      // 출근부.html로 이동 (뒤로가기 버튼 사용을 위해 back=1 전달)
+      location.href = "출근부.html?back=1";
+    }else{
+      $in.value = "";
+      $in.placeholder = "틀렸어요. 다시 입력";
+      try{ playSnd("#warnSound"); }catch(_){}
+      $in.focus();
+    }
+  }
+
+  $ok.onclick = tryLogin;
+  $can.onclick = ()=> closeModal("#adminModal");
+  $in.onkeydown = (e)=>{ if(e.key==="Enter") tryLogin(); };
+}
+/* 추가코드 마지막끝줄: } */
+
 
 const ITEMS={
   "시트":["대시트","반시트","베갯잇","수　건"],
@@ -1922,7 +1973,7 @@ function showToast(msg, sub){
 
 /* === 상단 3탭 제어 === */
 function moveTopSlider(section){
-  const idx = ["input","stats","guest"].indexOf(section);
+  const idx = ["input","stats","guest","admin"].indexOf(section);
   const slider = document.getElementById('navSlider');
   if (slider && idx >= 0) slider.style.transform = `translateX(${idx*100}%)`;
 }
@@ -1934,9 +1985,12 @@ function setTopActive(section){
 }
 function goSection(section){
   if (section === 'guest'){
-    // 방명록 별도 페이지로 이동 (병동명 전달)
     const url = `방명록.html${state.ward ? ('?ward=' + encodeURIComponent(state.ward)) : ''}`;
     location.href = url;
+    return;
+  }
+  if (section === 'admin'){
+    openAdminGate(); // ▼ 관리자 비번 모달 열기
     return;
   }
   state.section = section;
@@ -1955,6 +2009,7 @@ function goSection(section){
     fitCardToFooter();
   }
 }
+// 변경코드 마지막끝줄: fitCardToFooter();
 
 function todayYmd(){
   const d=new Date(), yyyy=d.getFullYear(), mm=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0");
@@ -2255,6 +2310,34 @@ document.addEventListener("click", (e) => {
   };
 })();
 </script>
+
+<script>
+(function(){
+  const p = new URLSearchParams(location.search);
+  if(p.get("back")!=="1") return;
+
+  const style = document.createElement("style");
+  style.textContent = `
+  .backFab{
+    position:fixed; top:10px; right:10px; z-index:9999;
+    height:36px; padding:0 12px; border-radius:10px;
+    background:#ffffff; color:#1f2937; font-weight:800; border:1px solid #e5e7eb;
+    box-shadow:0 6px 16px rgba(0,0,0,.08);
+  }
+  .backFab:active{ transform:translateY(1px); }
+  `;
+  document.head.appendChild(style);
+
+  const btn = document.createElement("button");
+  btn.className = "backFab";
+  btn.textContent = "← 뒤로가기";
+  btn.onclick = ()=> history.back();
+
+  document.body.appendChild(btn);
+})();
+</script>
+<!-- 추가코드 마지막끝줄: </script> -->
+
 
 </body>
 </html>
