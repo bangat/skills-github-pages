@@ -64,6 +64,29 @@
     .row-inline{display:grid;grid-template-columns:98px 1fr;gap:10px;align-items:center}
     .row-inline .wfit{width:140px}
     .hidden{display:none!important}
+/* ------------주석(modal-mobile-tuning) 시작 ---- */
+@media (max-width: 480px){
+  .modal{width:96vw;border-radius:16px}
+  .modal-bd{gap:10px}
+  .row-inline{grid-template-columns:1fr;gap:6px}
+  .row-inline .wfit{width:100%}
+  input[type="text"], input[type="month"], input[type="email"], select, input[type="time"]{
+    height:48px;font-size:16px
+  }
+  .modal-ft{position:sticky;bottom:0;background:#fff}
+}
+
+/* ------------주석(modal-mobile-tuning) 끝 ---- */
+
+/* ------------주석(toast-style) 시작 ---- */
+#toast{
+  position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+  background:#16a34a;color:#fff;padding:10px 14px;border-radius:12px;
+  box-shadow:var(--shadow-1);display:none;z-index:250;font-weight:700
+}
+/* ------------주석(toast-style) 끝 ---- */
+
+
   </style>
 
   <!-- ExcelJS / FileSaver -->
@@ -160,7 +183,7 @@
 
         <!-- 2) 생성 / 초기화 -->
         <div class="grid-btns">
-          <button id="genBtn" class="btn primary">출근표 생성</button>
+          <button id="genBtn" class="btn primary">출근표 불러오기</button>
           <button id="clearBtn" class="btn">초기화</button>
         </div>
 
@@ -210,16 +233,17 @@
           </select>
         </div>
 
-       <!-- ------------주석(edit-ui-time-range) 시작 ---- -->
+     <!-- ------------주석(edit-ui-time-range) 시작 ---- -->
 <div class="row-inline">
   <label>시간 조정</label>
   <div class="row" style="gap:10px">
-    <input id="timeIn"  type="time" step="300" class="wfit" />
+    <input id="timeIn"  type="text" inputmode="numeric" pattern="\\d{2}:\\d{2}" placeholder="예: 06:00" class="wfit" />
     <span>~</span>
-    <input id="timeOut" type="time" step="300" class="wfit" />
+    <input id="timeOut" type="text" inputmode="numeric" pattern="\\d{2}:\\d{2}" placeholder="예: 15:30" class="wfit" />
   </div>
 </div>
 <!-- ------------주석(edit-ui-time-range) 끝 ---- -->
+
 
 <!-- ------------주석(edit-ui-dayoff) 시작 ---- -->
 <div class="row-inline">
@@ -227,7 +251,7 @@
   <div class="row" style="gap:10px">
     <label style="display:flex;align-items:center;gap:8px">
       <input id="dayOffCheck" type="checkbox" />
-      <span>휴무로 표시 (출근=휴 / 퇴근=무)</span>
+      <span>휴무로 표시</span>
     </label>
   </div>
 </div>
@@ -279,6 +303,25 @@
     const xlsxBtn    = qs('#xlsxBtn');
     const emailBtn   = qs('#emailBtn');
     const tbody      = qs('#tbody');
+
+// ------------주석(name-cache-utils) 시작 ----
+const LS_KEY_LAST_NAME = 'att:lastName';
+function setLastNameCache(v){
+  try{ localStorage.setItem(LS_KEY_LAST_NAME, String(v||'').trim()); }catch(_e){}
+}
+function getLastNameCache(){
+  try{ return localStorage.getItem(LS_KEY_LAST_NAME) || ''; }catch(_e){ return ''; }
+}
+// ------------주석(name-cache-utils) 끝 ----
+
+// ------------주석(name-cache-bind) 시작 ----
+nameInput.addEventListener('change', ()=> setLastNameCache(nameInput.value));
+nameInput.addEventListener('blur',   ()=> setLastNameCache(nameInput.value));
+// 생성 버튼 눌러도 최신값을 확실히 저장
+genBtn.addEventListener('click',     ()=> setLastNameCache(nameInput.value));
+// ------------주석(name-cache-bind) 끝 ----
+
+
 
     // ------------주석(GAS endpoint) 시작 ----
     const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxLS7c2bcl50k5LMOqC8Axx7PUZN-h5mN-MuNQddNcjc9P2BhWPxmaSPAWWbzhDRK8/exec';
@@ -498,19 +541,91 @@ if(hlabel){
 // ------------주석(edit-vars-time-range) 시작 ----
 const timeIn  = qs('#timeIn');
 const timeOut = qs('#timeOut');
-const toTimeValue = s => {
-  // "06 : 00" -> "06:00", "06:00" 유지
-  s = String(s||'').trim();
+
+// "6"->"06:00", "630"->"06:30", "7:5"->"07:05" 같은 입력을 자동 정규화
+function normalizeHHMM(raw){
+  let s = String(raw||'').trim();
   if(!s) return '';
+  // 콜론/공백 제거 후 숫자만
+  s = s.replace(/[^\d]/g,'');
+  if(s.length===1) s = '0'+s+'00';
+  else if(s.length===2) s = s + '00';
+  else if(s.length===3) s = '0' + s; // 630 -> 0630
+  else if(s.length>4) s = s.slice(0,4);
+  const hh = Math.min(parseInt(s.slice(0,2),10)||0, 23);
+  const mm = Math.min(parseInt(s.slice(2,4),10)||0, 59);
+  return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+}
+
+// 셀 표시값 ↔ 입력값 변환
+const toTimeValue = (s) => { // "06 : 00" -> "06:00"
+  s = String(s||'').trim();
   const m = s.match(/(\d{1,2})\s*:\s*(\d{2})/);
   return m ? `${m[1].padStart(2,'0')}:${m[2]}` : '';
 };
-const toCellValue = s => {
-  // "06:00" -> "06 : 00"
+const toCellValue = (s) => { // "06:00" -> "06 : 00"
   const m = String(s||'').match(/(\d{1,2}):(\d{2})/);
   return m ? `${m[1].padStart(2,'0')} : ${m[2]}` : '';
 };
+
+// 입력 UX: 입력 중/포커스아웃 시 자동 포맷
+function bindTimeAutoFormat(el){
+  if(!el) return;
+  el.addEventListener('input', ()=>{
+    // 입력 중에는 자리수 2/4에서 자동으로 콜론 들어가도록 가볍게 지원
+    const v = el.value.replace(/[^\d]/g,'');
+    if(v.length===0){ el.value=''; return; }
+    if(v.length<=2){ el.value = v; return; } // 0~2자리: 시만
+    el.value = v.slice(0,2) + ':' + v.slice(2,4);
+  });
+  el.addEventListener('blur', ()=>{
+    el.value = normalizeHHMM(el.value);
+  });
+}
+bindTimeAutoFormat(timeIn);
+bindTimeAutoFormat(timeOut);
 // ------------주석(edit-vars-time-range) 끝 ----
+
+
+// ------------주석(time-chips-and-toast) 시작 ----
+const chipsWrap = qs('#timeChips');
+function addMinutesToHHMM(hhmm, addMin){
+  const m = String(hhmm||'').match(/(\d{1,2}):(\d{2})/);
+  if(!m) return '';
+  let h = parseInt(m[1],10), mm = parseInt(m[2],10);
+  let total = h*60 + mm + (addMin|0);
+  if (total < 0) total = 0;
+  h = Math.floor(total/60); mm = total%60;
+  return `${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+}
+chipsWrap?.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.chip'); if(!btn) return;
+  // 칩을 클릭하면 휴무 체크 해제하고 시간입력 활성화
+  if (typeof dayOffCheck !== 'undefined' && dayOffCheck){ dayOffCheck.checked = false; }
+  if (timeIn)  timeIn.disabled = false;
+  if (timeOut) timeOut.disabled = false;
+
+  if(btn.dataset.set){
+    const [which, val] = btn.dataset.set.split(':');
+    if(which==='in' && timeIn) timeIn.value = val;
+    if(which==='out'&& timeOut) timeOut.value = val;
+  }else if(btn.dataset.inc){
+    const [which, mins] = btn.dataset.inc.split(':');
+    if(which==='out' && timeOut){
+      const cur = timeOut.value || '15:30';
+      timeOut.value = addMinutesToHHMM(cur, parseInt(mins,10));
+    }
+  }
+});
+
+function showToast(msg='저장 완료'){
+  const t = qs('#toast'); if(!t) return;
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(()=> t.style.display='none', 1500);
+}
+// ------------주석(time-chips-and-toast) 끝 ----
+
 
 // ------------주석(edit-vars-dayoff) 시작 ----
 const dayOffCheck = qs('#dayOffCheck');
@@ -613,15 +728,17 @@ noteCell.textContent = addLabelOnce(editNote.value.trim(), hlabel);
   const nm = (nameInput.value||'').trim();
   const [ , , inCell, outCell, , noteCell] = currentRow.children;
 
- await saveDayToFirebase({
-  y, m, day,
-  name: nm,
-  inT: (inCell.textContent||'').trim(),
-  outT: (outCell.textContent||'').trim(),
-  note: (noteCell.textContent||'').trim(),
-  leave: (leaveSel.value||'')
-  // ot 필드 사용 안 함
-});
+  await saveDayToFirebase({
+    y, m, day,
+    name: nm,
+    inT: (inCell.textContent||'').trim(),
+    outT: (outCell.textContent||'').trim(),
+    note: (noteCell.textContent||'').trim(),
+    leave: (leaveSel.value||'')
+  });
+
+  // 저장 성공 토스트
+  showToast('저장 완료');
 })().catch(console.warn);
 /* ------------주석(editApply-save-firebase-v10) 끝 ---- */
 
@@ -830,25 +947,32 @@ ws.getCell(rIdx,6).alignment = { vertical:'middle', horizontal:'left', wrapText:
     });
 
 
-    genBtn.addEventListener('click', async ()=>{
+   genBtn.addEventListener('click', async ()=>{
   showBootSpinner();
   try{
     const [y,mm] = (monthInput.value || '').split('-').map(Number);
     if (y) await loadHolidays(y);
+
+    // 이름 캐시가 있고 입력이 비어있으면 채움
+    const cached = getLastNameCache();
+    if (cached && !String(nameInput.value||'').trim()){
+      nameInput.value = cached;
+    }
+
+    // 표 1회 렌더
     buildTable(monthInput.value, nameInput.value.trim());
 
-    /* ------------주석(genBtn-load-firebase-v10) 시작 ---- */
+    // Firebase 월데이터 반영
     const nm = (nameInput.value||'').trim();
     if (y && mm && nm){
       const data = await loadMonthFromFirebase(y, mm, nm);
       applyMonthDataToTable(y, mm, data);
     }
-    /* ------------주석(genBtn-load-firebase-v10) 끝 ---- */
-
-  }finally{
+  } finally {
     hideBootSpinner();
   }
 });
+
 
 
 
@@ -856,12 +980,16 @@ ws.getCell(rIdx,6).alignment = { vertical:'middle', horizontal:'left', wrapText:
 
 // -----주석(init-holidays) 시작 ----
 // 표는 즉시 그리고, 공휴일 로딩 동안 스피너 표시 → 완료 후 라벨 반영
+
 (async ()=>{
   showBootSpinner();
   try{
+    // 이름 캐시 적용(처음 들어왔을 때 자동 채움)
+    const cached0 = getLastNameCache();
+    if (cached0) nameInput.value = cached0;
     buildTable(monthInput.value, nameInput.value.trim());
-
     const [y,mm] = (monthInput.value || '').split('-').map(Number);
+
     if (y) {
       await loadHolidays(y);
       qsa('#tbody tr').forEach((tr, idx)=>{
@@ -913,3 +1041,10 @@ ws.getCell(rIdx,6).alignment = { vertical:'middle', horizontal:'left', wrapText:
 }
 </style>
 <!-- -----주석(로딩 스피너) 끝 ----- -->
+<!-- ------------주석(toast-dom) 시작 ---- -->
+<div id="toast" role="status" aria-live="polite"></div>
+<!-- ------------주석(toast-dom) 끝 ---- -->
+
+</body>
+</html>
+
