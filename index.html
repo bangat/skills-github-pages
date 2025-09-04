@@ -6,6 +6,7 @@
 <meta charset="utf-8" />
 <meta http-equiv="Cache-Control" content="no-store" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="color-scheme" content="light">
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#2563eb" />
 
@@ -543,6 +544,13 @@
 input, select, textarea, button { font-size: 16px; }
 /* 탭/버튼의 더블탭 확대 방지(사파리 13+ 지원) */
 button, .navTab, .tab, .chip, .miniBtn { touch-action: manipulation; }
+
+#adminPass::placeholder {
+  font-family: sans-serif;   /* 기본체 */
+  font-size: 14px;           /* 크기 조절 (원하는 값) */
+  font-style: normal;        /* 기울임 해제 */
+  color: #999;               /* 글자색 */
+}
 
 
 </style>
@@ -1824,13 +1832,30 @@ async function renderStats(){
       let logsLS=[]; 
       try{ logsLS=getLogs().filter(L=>L.ts>=prevStartMs && L.ts<eMs);}catch(_){}
 
-      const uniq=new Map(); 
-      [...logsRT,...logsLS].forEach(L=>{
-        const k=[L.ts,L.ward,L.item,L.qty].join("|"); 
-        if(!uniq.has(k)) uniq.set(k,L); 
-      });
-      const merged=Array.from(uniq.values());
-      __mergedCache = merged;
+     // ------------주석(stats-merge-dup-fix) 시작 ----
+// RTDB 레코드는 '모두' 유지하고,
+// 로컬(LS) 항목은 RTDB에 동일(ts|ward|item|qty) 이 있으면 제외한다.
+// 이렇게 해야 같은 날 동일 수량으로 여러 번 제출해도 합산이 빠지지 않음.
+const merged = [];
+const rtSeenComposite = new Set();
+
+// 1) RTDB에서 온 것: 전부 유지
+for (const L of logsRT) {
+  merged.push(L);
+  // RTDB에 존재하는 합성키를 기록(LS 중복 제거용)
+  const key = [L.ts, L.ward, L.item, L.qty].join("|");
+  rtSeenComposite.add(key);
+}
+
+// 2) 로컬에서 온 것: RTDB에 동일키가 없을 때만 포함
+for (const L of logsLS) {
+  const key = [L.ts, L.ward, L.item, L.qty].join("|");
+  if (!rtSeenComposite.has(key)) merged.push(L);
+}
+
+__mergedCache = merged;
+// ------------주석(stats-merge-dup-fix) 끝 ----
+
       
       let html = '';
       const items = ALL_ITEMS;
@@ -2457,3 +2482,4 @@ document.addEventListener("click", (e) => {
 
 </body>
 </html>
+
