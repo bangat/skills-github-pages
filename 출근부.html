@@ -86,6 +86,17 @@
 }
 /* ------------주석(toast-style) 끝 ---- */
 
+/* 키보드 안전 바텀시트 모드 */
+#emailBackdrop.kb-safe{
+  align-items:flex-end;                 /* 하단 정렬 */
+  padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px);
+}
+#emailBackdrop.kb-safe .modal{
+  width:100%;
+  max-width:640px;
+  border-radius:14px 14px 0 0;         /* 위만 둥글게 */
+}
+
 
   </style>
 
@@ -322,8 +333,18 @@ genBtn.addEventListener('click',     ()=> setLastNameCache(nameInput.value));
 // ------------주석(name-cache-bind) 끝 ----
 
 
+// ⬇⬇ 여기 붙여넣기 ⬇⬇
+const LS_KEY_LAST_EMAIL = 'att:lastEmail';
+function setLastEmailCache(v){
+  try{ localStorage.setItem(LS_KEY_LAST_EMAIL, String(v||'').trim()); }catch(_e){}
+}
+function getLastEmailCache(){
+  try{ return localStorage.getItem(LS_KEY_LAST_EMAIL) || ''; }catch(_e){ return ''; }
+}
+// ------------주석(email-cache-utils) 끝 ----
 
-    // ------------주석(GAS endpoint) 시작 ----
+// ------------주석(GAS endpoint) 시작 ----
+
     const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxLS7c2bcl50k5LMOqC8Axx7PUZN-h5mN-MuNQddNcjc9P2BhWPxmaSPAWWbzhDRK8/exec';
     // ------------주석(GAS endpoint) 끝 ----
 
@@ -897,8 +918,47 @@ ws.getCell(rIdx,6).alignment = { vertical:'middle', horizontal:'left', wrapText:
     const emailSend = qs('#emailSend');
     const emailCancel = qs('#emailCancel');
 
-    emailBtn.addEventListener('click', ()=>{ emailBackdrop.style.display='flex'; setTimeout(()=> emailTo.focus(), 0); });
+    // 기존 emailBtn 리스너 교체
+emailBtn.addEventListener('click', ()=>{
+  // 캐시된 이메일 자동 주입
+  const cachedEmail = getLastEmailCache();
+  if (cachedEmail && !String(emailTo.value||'').trim()){
+    emailTo.value = cachedEmail;
+  }
+  emailBackdrop.style.display='flex';
+  setTimeout(()=>{
+    emailTo.focus();
+    // 포커스 때 바텀시트 모드
+    emailBackdrop.classList.add('kb-safe');
+    emailTo.scrollIntoView({block:'center'});
+  }, 0);
+});
+
     emailCancel.addEventListener('click', ()=> emailBackdrop.style.display='none');
+
+// 키보드 포커스/블러에 따라 바텀시트 모드 토글
+emailTo.addEventListener('focus', ()=>{
+  emailBackdrop.classList.add('kb-safe');
+});
+emailTo.addEventListener('blur', ()=>{
+  emailBackdrop.classList.remove('kb-safe');
+});
+
+// visualViewport로 키보드 높이에 맞게 패딩 보정 (지원 브라우저 한정)
+(function attachViewportHook(){
+  const vv = window.visualViewport;
+  if(!vv) return;
+  const onResize = ()=>{
+    const gap = Math.max(0, window.innerHeight - vv.height);
+    if (gap > 80) emailBackdrop.classList.add('kb-safe');
+    emailBackdrop.style.paddingBottom = (gap>0 ? (gap + 16) : 0) + 'px';
+  };
+  vv.addEventListener('resize', onResize);
+  vv.addEventListener('scroll', onResize);
+})();
+
+
+
 
     function blobToDataUrl(blob){
       return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob); });
@@ -1021,7 +1081,7 @@ ws.getCell(rIdx,6).alignment = { vertical:'middle', horizontal:'left', wrapText:
 <div id="bootSpinner" class="modal-backdrop" style="z-index:190; background:rgba(255,255,255,0.7); display:none">
   <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
     <div class="spinner" style="width:44px;height:44px;border:5px solid #ccc;border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite"></div>
-    <div style="font-weight:600;color:#2563eb">데이터 생성중...</div>
+    <div style="font-weight:600;color:#2563eb">데이터 불러오는중...</div>
   </div>
 </div>
 <!-- ------------주석(데이터 로딩 스피너) 끝 ---- -->
