@@ -5,8 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-store" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>출근부 · 관리자</title>
-
-  <!-- 스타일: 한 화면에 꽉 차게 / 옆스크롤 금지 -->
+<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
   <style>
     :root{
       --bg:#f4f7fb; --card:#ffffff; --accent:#2563eb; --muted:#5b677a; --text:#0f172a; --border:#e6eaf2;
@@ -32,10 +31,17 @@
       border:1px solid var(--border);border-radius:12px;padding:0 12px;height:42px;font-size:15px;background:#fff;outline:none;min-width:0;width:100%;
     }
     input:focus, select:focus{box-shadow:var(--focus);border-color:transparent}
-    .btn{border:1px solid var(--border);background:#fff;border-radius:12px;padding:0 12px;height:42px;font-weight:700;cursor:pointer;font-size:15px}
+.btn{
+  border:1px solid var(--border);background:#fff;border-radius:12px;
+  padding:0 12px;height:42px;font-weight:700;cursor:pointer;font-size:15px;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px; /* 아이콘과 텍스트 간격 */
+}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn:active{transform:translateY(1px)}
+
     .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
     .btn:active{transform:translateY(1px)}
-
+.icon{ width:1em; height:1em; stroke-width:2.5; vertical-align:-0.15em; }
     /* 표: 5칼럼(비고 포함) 한 화면에 맞춤 */
     .table-wrap{border-radius:12px;border:1px solid var(--border);margin:8px 12px;overflow:hidden}
     table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}
@@ -208,14 +214,14 @@
 
         <!-- 2) 생성 / 초기화 -->
         <div class="grid-btns">
-          <button id="genBtn" class="btn primary">출근표 불러오기</button>
-          <button id="clearBtn" class="btn">초기화</button>
+<button id="genBtn" class="btn primary"><i class="icon" data-feather="download-cloud"></i>출근표 불러오기</button>
+<button id="clearBtn" class="btn"><i class="icon" data-feather="trash-2"></i>초기화</button>
         </div>
 
         <!-- 3) 내보내기 / 메일 전송 -->
         <div class="grid-btns">
-          <button id="xlsxBtn" class="btn">엑셀로 내려받기</button>
-          <button id="emailBtn" class="btn">메일로 전송</button>
+<button id="xlsxBtn" class="btn"><i class="icon" data-feather="file-text"></i>엑셀로 내려받기</button>
+<button id="emailBtn" class="btn"><i class="icon" data-feather="send"></i>메일로 전송</button>
         </div>
       </div>
 
@@ -290,8 +296,8 @@
         </div>
       </div>
       <div class="modal-ft">
-        <button class="btn" id="editCancel">닫기</button>
-        <button class="btn primary" id="editApply">적용</button>
+<button class="btn" id="editCancel"><i class="icon" data-feather="x"></i>닫기</button>
+<button class="btn primary" id="editApply"><i class="icon" data-feather="check-circle"></i>적용</button>
       </div>
     </div>
   </div>
@@ -307,8 +313,8 @@
         </div>
       </div>
       <div class="modal-ft">
-        <button class="btn" id="emailCancel">취소</button>
-        <button class="btn primary" id="emailSend">전송</button>
+<button class="btn" id="emailCancel"><i class="icon" data-feather="x"></i>취소</button>
+<button class="btn primary" id="emailSend"><i class="icon" data-feather="send"></i>전송</button>
       </div>
     </div>
   </div>
@@ -1145,7 +1151,15 @@ closeEmailModal();
 <!-- ------------주석(toast-dom) 시작 ---- -->
 <div id="toast" role="status" aria-live="polite"></div>
 <!-- ------------주석(toast-dom) 끝 ---- -->
+<!-- --------주석(feather-activate) 시작 -------- -->
+<script>
+  (function() {
+    if (window.feather && typeof feather.replace === 'function') {
+      feather.replace({ width:'1em', height:'1em' });
+    }
+  })();
+</script>
+<!-- --------주석(feather-activate) 종료 -------- -->
 
 </body>
 </html>
-
