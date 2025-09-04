@@ -24,6 +24,24 @@
   html,body{height:100%;-webkit-text-size-adjust:100%}
   body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
 
+/* ----- 로딩 오버레이 시작 ----- */
+#loadingOverlay{
+  position:fixed; inset:0;
+  background:rgba(255,255,255,.8);
+  display:none; align-items:center; justify-content:center;
+  z-index:20000; flex-direction:column;
+  font-weight:800; color:#1f2937;
+}
+#loadingOverlay .spinner{
+  width:48px; height:48px;
+  border:5px solid #dbeafe; border-top:5px solid #2563eb;
+  border-radius:50%; animation:spin 1s linear infinite;
+  margin-bottom:16px;
+}
+@keyframes spin{ from{transform:rotate(0)} to{transform:rotate(360deg)} }
+/* ----- 로딩 오버레이 종료 ----- */
+
+  
   /* --- 특정 요청 반영 스타일 --- */
   .chip.ctrl.minus{
     background:#fff !important;
@@ -1333,10 +1351,32 @@ function openConfirmSubmit() {
   }
 }
 
-document.addEventListener("click", (e) => {
+
+document.addEventListener("click", async (e) => {
   const id = (e.target && e.target.id) || "";
-  if (id === "csCancel") { if (typeof closeModal === "function") closeModal("#confirmModal"); }
-  if (id === "csOk") { if (typeof closeModal === "function") closeModal("#confirmModal"); saveAll(); }
+
+  if (id === "csCancel") {
+    if (typeof closeModal === "function") closeModal("#confirmModal");
+    return;
+  }
+
+  if (id === "csOk") {
+    // 확인 모달 닫기
+    if (typeof closeModal === "function") closeModal("#confirmModal");
+
+    // 로딩 오버레이 표시
+    const ov = document.getElementById("loadingOverlay");
+    if (ov) ov.style.display = "flex";
+
+    try {
+      // 실제 저장 진행
+      await saveAll();
+    } finally {
+      // 저장 끝나면 로딩 숨김 (성공/실패 모두)
+      if (ov) ov.style.display = "none";
+    }
+    return;
+  }
 });
 
 async function saveAll(){
@@ -1968,7 +2008,13 @@ document.addEventListener("click", (e) => {
 <script>
   feather.replace();
 </script>
+<div id="loadingOverlay" style="display:none">
+  <div class="spinner"></div>
+  <div>잠시만 기다려주세요…</div>
+</div>
+
 </body>
 </html>
+
 
 
