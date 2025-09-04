@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-
+<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 <title>린넨실 출고관리</title>
 <style>
   :root{
@@ -52,13 +52,22 @@
     align-items:center; height:48px; padding:0 8px;
     background:transparent; border:none; box-shadow:none;
 }
-  .navTab{
+/* --------주석(navTab-style) 시작 -------- */
+.navTab{
     appearance:none; background:transparent; border:0;
     height:100%; display:flex; align-items:center; justify-content:center;
     font-weight:800; letter-spacing:.1px; color:#334155; cursor:pointer;
     border-radius:10px; padding:0 4px; position:relative; z-index:1;
     transition: color .15s ease;
-  }
+
+    /* 줄바꿈 방지 & 아이콘-텍스트 간격 */
+    white-space: nowrap;          /* 한 줄 고정 */
+    word-break: keep-all;         /* 한국어 단어 쪼개지지 않게 */
+    gap: 6px;                     /* 아이콘과 텍스트 간격 */
+}
+/* --------주석(navTab-style) 종료 -------- */
+
+
   .navTab:hover{ color:#1e40af; }
   .navTab.active{ color:#0b3fb8; }
 .nav-slider{
@@ -499,16 +508,66 @@
     font-style: normal;
     color: #999;
   }
+/* --- 상단 네비게이션 탭 아이콘 스타일 --- */
+.navTab .icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 6px;
+  vertical-align: -4px;
+  transition: transform 0.2s ease;
+}
+
+.navTab:hover .icon {
+  transform: scale(1.1);
+}
+
+/* --- 아이콘 컬러 지정 --- */
+.navTab[data-section="input"] .icon { color: #3b82f6; } /* 입력: 파란색 */
+.navTab[data-section="stats"] .icon { color: #10b981; } /* 통계: 녹색 */
+.navTab[data-section="guest"] .icon { color: #f59e0b; } /* 소통: 주황색 */
+.navTab[data-section="admin"] .icon { color: #6366f1; } /* 관리자: 보라색 */
+
+/* --- 활성화된 탭 아이콘 스타일 --- */
+.navTab.active {
+  color: #0b3fb8;
+  font-weight: 900;
+}
+.navTab.active .icon {
+  color: #1d4ed8;
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em; /* Adjusts space between icon and text */
+}
+
+.icon {
+  width: 1em; /* Makes icon size relative to font size */
+  height: 1em;
+  stroke-width: 2.5;
+  vertical-align: -0.15em; /* Fine-tunes vertical alignment */
+}
+
+/* Optional: Specifically for the footer buttons if needed */
+.footerBar button .icon {
+  margin-right: 8px;
+}
+
+#saveAll { /* '제출하기' 버튼의 ID */
+  gap: 8px; 
+}
 </style>
 </head>
 <body>
 
 <div class="topNav">
   <div class="nav">
-    <button class="navTab active" data-section="input">입력</button>
-    <button class="navTab" data-section="stats">통계</button>
-    <button class="navTab" data-section="guest">소통</button>
-    <button class="navTab" data-section="admin">관리자</button>
+    <button class="navTab active" data-section="input"><i class="icon" data-feather="edit-3"></i>입력</button>
+    <button class="navTab" data-section="stats"><i class="icon" data-feather="bar-chart-2"></i>통계</button>
+    <button class="navTab" data-section="guest"><i class="icon" data-feather="message-square"></i>소통</button>
+    <button class="navTab" data-section="admin"><i class="icon" data-feather="user-check"></i>관리자</button>
     <div class="nav-slider" id="navSlider" aria-hidden="true"></div>
   </div>
 </div>
@@ -714,9 +773,11 @@
 </div>
 <div class="footerBar">
   <div class="footerCol">
-    <button class="btn acc" id="saveAll" disabled>제출하기</button>
-    <button class="btn" id="appDownloadBtn">어플리케이션 다운로드</button>
-    <button class="btn" id="exportXLSXBtn">엑셀로 내려받기</button>
+<button class="btn acc" id="saveAll" disabled><i class="icon" data-feather="check-circle"></i>제출하기</button>
+    
+    <button class="btn" id="appDownloadBtn"><i class="icon" data-feather="download"></i>어플리케이션 다운로드</button>
+    
+    <button class="btn" id="exportXLSXBtn"><i class="icon" data-feather="file-text"></i>엑셀로 내려받기</button>
   </div>
 </div>
 <audio id="submitSound" preload="auto">
@@ -1113,7 +1174,11 @@ function refreshTotalUI(){
   if (save){
     save.disabled = total===0;
     save.style.opacity = total===0 ? .6 : 1;
-    save.textContent = total===0 ? "제출하기" : `제출하기 · 총 ${total.toLocaleString()}개`;
+        const totalStr = total > 0 ? ` · 총 <span class="mono">${total.toLocaleString()}</span>개` : '';
+  save.innerHTML = `<i class="icon" data-feather="check-circle"></i>제출하기${totalStr}`;
+
+    // [중요] 아이콘을 다시 그려주는 명령어를 꼭 추가해야 합니다.
+    feather.replace({ width: '1em', height: '1em' });
   }
 }
 function springOnce(btn){ try{ btn.classList.remove('spring'); void btn.offsetWidth; btn.classList.add('spring'); }catch(_){} }
@@ -1897,6 +1962,10 @@ document.addEventListener("click", (e) => {
 
   document.body.appendChild(btn);
 })();
+</script>
+
+<script>
+  feather.replace();
 </script>
 </body>
 </html>
