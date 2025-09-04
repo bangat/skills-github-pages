@@ -36,18 +36,22 @@
     .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
     .btn:active{transform:translateY(1px)}
 
-    /* 표: 4칼럼만 보이게, 한 화면에 맞춤 */
+    /* 표: 5칼럼(비고 포함) 한 화면에 맞춤 */
     .table-wrap{border-radius:12px;border:1px solid var(--border);margin:8px 12px;overflow:hidden}
     table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}
     thead th{position:sticky;top:0;background:#f8fafc;border-bottom:1px solid var(--border);font-size:12.5px;height:32px}
     td,th{border-bottom:1px solid var(--border);padding:6px;text-align:center;font-size:12.5px;white-space:nowrap}
     tbody tr:hover{background:#f7fbff}
-    .date-col{width:38px;font-weight:700}
-    .name-col{width:88px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .time-col{width:64px}
+    .date-col{width:36px;font-weight:700}
+    .name-col{width:76px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .time-col{width:60px}
+    /* ------------주석(note-col-visible) 시작 ---- */
+    .note-col{width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    /* ------------주석(note-col-visible) 끝 ---- */
     .sun{color:#ef4444}
     .sat{color:#2563eb}
     .app-hide{display:none}
+
 
     .card-foot{display:none} /* 로컬저장/불러오기 제거 */
 
@@ -101,7 +105,7 @@
               <th class="time-col">출근</th>
               <th class="time-col">퇴근</th>
               <th class="app-hide">본인서명</th>
-              <th class="app-hide">비고</th>
+              <th class="note-col">비고</th>
               <th class="app-hide">담당자확인</th>
             </tr>
           </thead>
@@ -366,12 +370,16 @@ function dynamicHolidayLabel(y, m, d){
         const outCell = document.createElement('td'); outCell.className='time-col';
         if(!isSun){ inCell.textContent=DEFAULT_IN; outCell.textContent=DEFAULT_OUT; }
 
-        const signCell = document.createElement('td'); signCell.className='app-hide';
-        const noteCell = document.createElement('td'); noteCell.className='app-hide';
-        const apprCell = document.createElement('td'); apprCell.className='app-hide';
+const signCell = document.createElement('td'); signCell.className='app-hide';
+const noteCell = document.createElement('td'); noteCell.className='note-col';
+const apprCell = document.createElement('td'); apprCell.className='app-hide';
 
-        const hlabel = dynamicHolidayLabel(y,m,day);
-        if(hlabel){ noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel); dateCell.classList.add('sun'); }
+
+const hlabel = dynamicHolidayLabel(y,m,day);
+if(hlabel){ noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel); dateCell.classList.add('sun'); }
+
+
+
 
 
         tr.addEventListener('click', ()=> openEditModal({y,m,day,dow,isSun,isSat}, tr));
