@@ -97,6 +97,20 @@
   border-radius:14px 14px 0 0;         /* 위만 둥글게 */
 }
 
+#toast {
+  position:fixed;
+  left:50%; bottom:18px;
+  transform:translateX(-50%);
+  background:#16a34a;
+  color:#fff;
+  padding:10px 14px;
+  border-radius:12px;
+  box-shadow:var(--shadow-1);
+  display:none;
+  z-index:250;
+  font-weight:700;
+}
+
 
   </style>
 
@@ -641,10 +655,12 @@ chipsWrap?.addEventListener('click', (e)=>{
 
 function showToast(msg='저장 완료'){
   const t = qs('#toast'); if(!t) return;
-  t.textContent = msg; t.style.display = 'block';
+  t.textContent = msg;
+  t.style.display = 'block';
   clearTimeout(window.__toastTimer);
   window.__toastTimer = setTimeout(()=> t.style.display='none', 1500);
 }
+
 // ------------주석(time-chips-and-toast) 끝 ----
 
 
@@ -913,10 +929,19 @@ ws.getCell(rIdx,6).alignment = { vertical:'middle', horizontal:'left', wrapText:
     });
 
     // 메일 전송(EmailJS) - 템플릿에 attachment/filename/to_email/subject 필드 매핑 필요
-    const emailBackdrop = qs('#emailBackdrop');
-    const emailTo = qs('#emailTo');
-    const emailSend = qs('#emailSend');
-    const emailCancel = qs('#emailCancel');
+const emailBackdrop = qs('#emailBackdrop');
+const emailTo = qs('#emailTo');
+const emailSend = qs('#emailSend');
+const emailCancel = qs('#emailCancel');
+
+// ------------주석(email-modal-close-fn) 시작 ----
+function closeEmailModal(){
+  emailBackdrop.style.display = 'none';
+  emailBackdrop.classList.remove('kb-safe');
+  emailBackdrop.style.paddingBottom = '0px';
+}
+// ------------주석(email-modal-close-fn) 끝 ----
+
 
     // 기존 emailBtn 리스너 교체
 emailBtn.addEventListener('click', ()=>{
@@ -934,15 +959,19 @@ emailBtn.addEventListener('click', ()=>{
   }, 0);
 });
 
-    emailCancel.addEventListener('click', ()=> emailBackdrop.style.display='none');
+ emailCancel.addEventListener('click', closeEmailModal);
+
 
 // 키보드 포커스/블러에 따라 바텀시트 모드 토글
 emailTo.addEventListener('focus', ()=>{
   emailBackdrop.classList.add('kb-safe');
 });
+// 모달이 열려있는 동안엔 kb-safe 유지해서 버튼 위치가 안 튀게 함
 emailTo.addEventListener('blur', ()=>{
-  emailBackdrop.classList.remove('kb-safe');
+  if (emailBackdrop.style.display === 'flex') return; // 열려있으면 유지
+  emailBackdrop.classList.remove('kb-safe');          // 닫힐 때만 해제
 });
+
 
 // visualViewport로 키보드 높이에 맞게 패딩 보정 (지원 브라우저 한정)
 (function attachViewportHook(){
@@ -996,8 +1025,10 @@ emailTo.addEventListener('blur', ()=>{
         const json = await res.json();
         if(!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
 
-        alert('성공적으로 전송했습니다 ✅');
-        emailBackdrop.style.display='none';
+showToast('메일 전송 성공 ✅');
+closeEmailModal();
+
+
       }catch(err){
         console.error(err);
         alert('메일 전송에 실패했어요. 엑셀 저장 후 메일 앱에서 첨부로 전송해 주세요.');
