@@ -545,16 +545,26 @@ const apprCell = document.createElement('td'); apprCell.className='app-hide';
 
 /* ------------주석(holiday-default-blank) 시작 ---- */
 const hlabel = dynamicHolidayLabel(y,m,day);
-// 공휴일(대체공휴일 포함) 또는 일요일이면 기본 공란, 아니면 기본 근무시간
-if(!(hlabel || isSun)){
+
+// ✅ 일요일은 앱 표에서 즉시 '휴' / '무'로 표시
+if (isSun) {
+  inCell.textContent  = '휴';
+  outCell.textContent = '무';
+}
+// 공휴일(대체/설·추석 등) ‘일요일이 아닌’ 날은 기본 공란 유지
+// 평일(공휴일 아님)이면 기본 근무시간 채움
+else if (!hlabel) {
   inCell.textContent  = DEFAULT_IN;
   outCell.textContent = DEFAULT_OUT;
 }
-if(hlabel){
+
+// 공휴일 라벨은 비고에 병합 + 날짜 빨간색
+if (hlabel) {
   noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel);
   dateCell.classList.add('sun');
 }
 /* ------------주석(holiday-default-blank) 끝 ---- */
+
 
 
 
