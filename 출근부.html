@@ -210,13 +210,30 @@
           </select>
         </div>
 
-        <div class="row-inline">
-          <label>연장근무</label>
-          <div class="row" style="gap:10px">
-            <label><input id="otCheck" type="checkbox" /> 사용</label>
-            <input id="otTime" type="time" step="300" class="hidden wfit" />
-          </div>
-        </div>
+       <!-- ------------주석(edit-ui-time-range) 시작 ---- -->
+<div class="row-inline">
+  <label>시간 조정</label>
+  <div class="row" style="gap:10px">
+    <input id="timeIn"  type="time" step="300" class="wfit" />
+    <span>~</span>
+    <input id="timeOut" type="time" step="300" class="wfit" />
+  </div>
+</div>
+<!-- ------------주석(edit-ui-time-range) 끝 ---- -->
+
+<!-- ------------주석(edit-ui-dayoff) 시작 ---- -->
+<div class="row-inline">
+  <label>휴무</label>
+  <div class="row" style="gap:10px">
+    <label style="display:flex;align-items:center;gap:8px">
+      <input id="dayOffCheck" type="checkbox" />
+      <span>휴무로 표시 (출근=휴 / 퇴근=무)</span>
+    </label>
+  </div>
+</div>
+<!-- ------------주석(edit-ui-dayoff) 끝 ---- -->
+
+
 
         <div class="row-inline">
           <label>비고</label>
@@ -442,16 +459,25 @@ function dynamicHolidayLabel(y, m, d){
         nameCell.className='name-col'; nameCell.textContent = name || '';
 
         const inCell  = document.createElement('td'); inCell.className='time-col';
-        const outCell = document.createElement('td'); outCell.className='time-col';
-        if(!isSun){ inCell.textContent=DEFAULT_IN; outCell.textContent=DEFAULT_OUT; }
+const outCell = document.createElement('td'); outCell.className='time-col';
 
 const signCell = document.createElement('td'); signCell.className='app-hide';
 const noteCell = document.createElement('td'); noteCell.className='note-col';
 const apprCell = document.createElement('td'); apprCell.className='app-hide';
 
-
+/* ------------주석(holiday-default-blank) 시작 ---- */
 const hlabel = dynamicHolidayLabel(y,m,day);
-if(hlabel){ noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel); dateCell.classList.add('sun'); }
+// 공휴일(대체공휴일 포함) 또는 일요일이면 기본 공란, 아니면 기본 근무시간
+if(!(hlabel || isSun)){
+  inCell.textContent  = DEFAULT_IN;
+  outCell.textContent = DEFAULT_OUT;
+}
+if(hlabel){
+  noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel);
+  dateCell.classList.add('sun');
+}
+/* ------------주석(holiday-default-blank) 끝 ---- */
+
 
 
 
@@ -467,9 +493,39 @@ if(hlabel){ noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel); d
     const editBackdrop = qs('#editBackdrop');
     const editDate  = qs('#editDate');
     const leaveSel  = qs('#leaveSel');
-    const otCheck   = qs('#otCheck');
-    const otTime    = qs('#otTime');
     const editNote  = qs('#editNote');
+
+// ------------주석(edit-vars-time-range) 시작 ----
+const timeIn  = qs('#timeIn');
+const timeOut = qs('#timeOut');
+const toTimeValue = s => {
+  // "06 : 00" -> "06:00", "06:00" 유지
+  s = String(s||'').trim();
+  if(!s) return '';
+  const m = s.match(/(\d{1,2})\s*:\s*(\d{2})/);
+  return m ? `${m[1].padStart(2,'0')}:${m[2]}` : '';
+};
+const toCellValue = s => {
+  // "06:00" -> "06 : 00"
+  const m = String(s||'').match(/(\d{1,2}):(\d{2})/);
+  return m ? `${m[1].padStart(2,'0')} : ${m[2]}` : '';
+};
+// ------------주석(edit-vars-time-range) 끝 ----
+
+// ------------주석(edit-vars-dayoff) 시작 ----
+const dayOffCheck = qs('#dayOffCheck');
+
+function isCellHolidayMark(inVal, outVal){
+  return inVal === '휴' && outVal === '무';
+}
+// 사용자 편의: 휴무 체크 시 시간 입력 비활성화
+dayOffCheck?.addEventListener('change', ()=>{
+  const disabled = dayOffCheck.checked;
+  if (timeIn)  timeIn.disabled  = disabled;
+  if (timeOut) timeOut.disabled = disabled;
+});
+// ------------주석(edit-vars-dayoff) 끝 ----
+
 
     let currentRow=null, currentMeta=null;
 
@@ -487,18 +543,24 @@ if(hlabel){ noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel); d
         (inVal==='반'&&outVal==='차') ? 'half'   :
         (inVal==='조'&&outVal==='가') ? 'family' : '';
 
-      const isOT = (!!outVal && !['', '차', DEFAULT_OUT].includes(outVal));
-      otCheck.checked = isOT;
-      otTime.classList.toggle('hidden', !isOT);
-      otTime.value = isOT ? outVal.replace(/\s+/g,'') : ''; // "16:30" 형태 기대
-      editBackdrop.style.display='flex';
+/* ------------주석(open-fill-time-range) 시작 ---- */
+timeIn.value  = toTimeValue(inVal);
+timeOut.value = toTimeValue(outVal);
+/* ------------주석(open-fill-time-range) 끝 ---- */
+
+/* ------------주석(open-fill-dayoff) 시작 ---- */
+if (dayOffCheck){
+  dayOffCheck.checked = isCellHolidayMark(inVal, outVal);
+  const disabled = dayOffCheck.checked;
+  if (timeIn)  timeIn.disabled  = disabled;
+  if (timeOut) timeOut.disabled = disabled;
+}
+/* ------------주석(open-fill-dayoff) 끝 ---- */
+
+editBackdrop.style.display='flex';
+
     }
     function closeEditModal(){ editBackdrop.style.display='none'; }
-
-    otCheck.addEventListener('change', ()=>{
-      otTime.classList.toggle('hidden', !otCheck.checked);
-      if(otCheck.checked && !otTime.value) otTime.value='16:30';
-    });
 
     qs('#editCancel').addEventListener('click', closeEditModal);
     qs('#editApply').addEventListener('click', ()=>{
@@ -506,20 +568,39 @@ if(hlabel){ noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel); d
       const [dateCell, nameCell, inCell, outCell, , noteCell] = currentRow.children;
       const isSunday = /sun/.test(dateCell.className);
 
-      if(leaveSel.value==='annual'){ inCell.textContent='연'; outCell.textContent='차'; }
-      else if(leaveSel.value==='half'){ inCell.textContent='반'; outCell.textContent='차'; }
-      else if(leaveSel.value==='family'){ inCell.textContent='조'; outCell.textContent='가'; }
-      else{
-        if(otCheck.checked){
-          const v = otTime.value || '15:30';
-          const [hh, mm] = v.split(':');
-          outCell.textContent = `${hh.padStart(2,'0')} : ${mm.padStart(2,'0')}`;
-          inCell.textContent  = DEFAULT_IN;
-        }else{
-          if(isSunday){ inCell.textContent=''; outCell.textContent=''; }
-          else{ inCell.textContent=DEFAULT_IN; outCell.textContent=DEFAULT_OUT; }
-        }
+     /* ------------주석(edit-apply-time-range-and-holiday) 시작 ---- */
+const [yy,mm2,dd] = editDate.value.split('-').map(Number);
+const isHoliday = !!dynamicHolidayLabel(yy,mm2,dd);
+
+// 1) 휴가 우선 적용(기존 유지)
+if(leaveSel.value==='annual'){ inCell.textContent='연'; outCell.textContent='차'; }
+else if(leaveSel.value==='half'){ inCell.textContent='반'; outCell.textContent='차'; }
+else if(leaveSel.value==='family'){ inCell.textContent='조'; outCell.textContent='가'; }
+else{
+  // 2) 휴무 체크가 켜져 있으면 '휴' / '무'
+  if (dayOffCheck && dayOffCheck.checked){
+    inCell.textContent  = '휴';
+    outCell.textContent = '무';
+  }else{
+    // 3) 시간 조정 입력 우선
+    const tIn  = toCellValue(timeIn?.value);
+    const tOut = toCellValue(timeOut?.value);
+    if(tIn || tOut){
+      inCell.textContent  = tIn || '';
+      outCell.textContent = tOut || '';
+    }else{
+      // 4) 시간 조정이 없을 때: 공휴일/대체/일요일이면 공란, 아니면 기본시간
+      if(isHoliday || isSunday){
+        inCell.textContent=''; outCell.textContent='';
+      }else{
+        inCell.textContent=DEFAULT_IN; outCell.textContent=DEFAULT_OUT;
       }
+    }
+  }
+}
+/* ------------주석(edit-apply-time-range-and-holiday) 끝 ---- */
+
+
 // ------------주석(editApply-holiday) 시작 ----
 const [y,m,day] = editDate.value.split('-').map(Number);
 const hlabel = dynamicHolidayLabel(y,m,day);
@@ -532,15 +613,15 @@ noteCell.textContent = addLabelOnce(editNote.value.trim(), hlabel);
   const nm = (nameInput.value||'').trim();
   const [ , , inCell, outCell, , noteCell] = currentRow.children;
 
-  await saveDayToFirebase({
-    y, m, day,
-    name: nm,
-    inT: (inCell.textContent||'').trim(),
-    outT: (outCell.textContent||'').trim(),
-    note: (noteCell.textContent||'').trim(),
-    leave: (leaveSel.value||''),
-    ot:  (otCheck.checked ? (otTime.value||'') : '')
-  });
+ await saveDayToFirebase({
+  y, m, day,
+  name: nm,
+  inT: (inCell.textContent||'').trim(),
+  outT: (outCell.textContent||'').trim(),
+  note: (noteCell.textContent||'').trim(),
+  leave: (leaveSel.value||'')
+  // ot 필드 사용 안 함
+});
 })().catch(console.warn);
 /* ------------주석(editApply-save-firebase-v10) 끝 ---- */
 
