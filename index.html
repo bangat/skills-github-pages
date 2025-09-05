@@ -264,11 +264,28 @@ border-top:5px solid #2563eb; /* 진한 파랑 */
   .d3{font-size:11px; letter-spacing:-.3px}
   .d4{font-size:10px; letter-spacing:-.4px}
   .d5{font-size:9px; letter-spacing:-.5px}
-  .maxWardRow td{background:#fff7d6 !important}
-  .statsTable td:first-child{position:relative}
-  .statsTable td:first-child .wardName,
-  .statsTable th:first-child .wardName{display:inline-block; padding-left:20px; position:relative}
-  .maxWardRow td:first-child .wardName::before{ content:"👑"; position:absolute; left:2px; top:50%; transform:translateY(-50%); }
+  /* ----- [교체] 순위 표시 스타일 시작 ----- */
+/* 1, 2, 3등 행에 하이라이트 배경색 적용 */
+tr[data-rank="1"] td { background: #fffbe6 !important; }
+tr[data-rank="2"] td { background: #f7f7f7 !important; }
+tr[data-rank="3"] td { background: #fff3e6 !important; }
+
+.statsTable td:first-child{position:relative}
+.statsTable td:first-child .wardName,
+.statsTable th:first-child .wardName{display:inline-block; padding-left:24px; position:relative}
+
+/* data-rank 속성값에 따라 다른 아이콘 표시 */
+[data-rank] td:first-child .wardName::before {
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px; /* 아이콘 크기 조절 */
+}
+tr[data-rank="1"] td:first-child .wardName::before { content: "🥇"; }
+tr[data-rank="2"] td:first-child .wardName::before { content: "🥈"; }
+tr[data-rank="3"] td:first-child .wardName::before { content: "🥉"; }
+/* ----- [교체] 순위 표시 스타일 종료 ----- */
 
   /* --- 모바일 화면 반응형 스타일 (Compact) --- */
   @media (max-width:420px){
@@ -1572,36 +1589,42 @@ async function renderStats(){
       const items = ALL_ITEMS;
       let periodTotals;
 
-      if (wardFilter === "전체") {
-  // 1) 피벗 가져오기
-  const { p, wards, items } = renderPivot(merged, s, e, wardFilter);
+            if (wardFilter === "전체") {
+        // 1) 피벗 가져오기
+        const { p, wards, items } = renderPivot(merged, s, e, wardFilter);
 
-  // 2) 왕관에서 제외할 병동
-  const crownExcludes = new Set(["린넨실", "기타"]);
+        // 2) 순위에서 제외할 병동
+        const rankExcludes = new Set(["린넨실", "기타"]);
 
-  // 3) '수건' 항목 제외 함수 (공백/전각공백 제거 후 비교)
-  const isTowel = (name) => name.replace(/\s+/g, "") === "수건";
+        // 3) '수건' 항목 제외 함수
+        const isTowel = (name) => name.replace(/\s+/g, "") === "수건";
 
-  // 4) 병동별 합계 계산할 때 수건은 0으로 처리
-  const wardTotals = wards.map(w =>
-    items.reduce((a, i) => a + (isTowel(i) ? 0 : (p[w]?.[i] || 0)), 0)
-  );
+        // 4) 병동별 합계를 계산 (수건 제외)
+        const wardTotals = wards.map(w => ({
+            ward: w,
+            total: items.reduce((a, i) => a + (isTowel(i) ? 0 : (p[w]?.[i] || 0)), 0)
+        }));
 
-  // 5) 최대 병동 찾기
-  let maxTotal = 0, maxWardName = null;
-  wards.forEach((w, idx) => {
-    if (crownExcludes.has(w)) return;
-    const tot = wardTotals[idx] || 0;
-    if (tot > maxTotal) { maxTotal = tot; maxWardName = w; }
-  });
+        // 5) 병동별 합계를 구해 순위 매기기
+        const rankedWards = wardTotals
+            .filter(item => !rankExcludes.has(item.ward) && item.total > 0) // 제외 병동 및 합계 0 필터링
+            .sort((a, b) => b.total - a.total); // 내림차순 정렬
 
-  // ... (이 아래로 기존 html 테이블 생성 코드 계속)
-        html=`<table class="statsTable"><thead><tr><th><span class="wardName">병동</span></th>${items.map(i=>`<th class="rot">${i}</th>`).join("")}</tr></thead><tbody>`;
-        wards.forEach((w,rowIdx)=>{
-          const isMax = (wardFilter==="전체" && w === maxWardName && !crownExcludes.has(w) && maxTotal > 0);
-          html+=`<tr class="${isMax?'maxWardRow':''}"><td><span class="wardName">${w}</span></td>${items.map(i=>{ const v=(p[w]?.[i]||0); return `<td data-num="1"><span class="num"${colorStyle(i,v)}>${v}</span></td>`; }).join("")}</tr>`;
+        // 6) 상위 3개 병동의 순위를 Map으로 저장 (빠른 조회를 위해)
+        const rankMap = new Map();
+        rankedWards.slice(0, 3).forEach((item, index) => {
+            rankMap.set(item.ward, index + 1); // 1, 2, 3등 저장
         });
-        periodTotals=items.map(i=>wards.reduce((a,w)=>a+(p[w]?.[i]||0),0));
+
+        html = `<table class="statsTable"><thead><tr><th><span class="wardName">병동</span></th>${items.map(i => `<th class="rot">${i}</th>`).join("")}</tr></thead><tbody>`;
+        wards.forEach((w, rowIdx) => {
+            // 7) 현재 병동의 등수를 가져옴
+            const rank = rankMap.get(w);
+            // 8) 등수(rank)에 따라 data-rank 속성 추가
+            const rankAttr = rank ? `data-rank="${rank}"` : '';
+            html += `<tr ${rankAttr}><td><span class="wardName">${w}</span></td>${items.map(i => { const v = (p[w]?.[i] || 0); return `<td data-num="1"><span class="num"${colorStyle(i, v)}>${v}</span></td>`; }).join("")}</tr>`;
+        });
+ periodTotals=items.map(i=>wards.reduce((a,w)=>a+(p[w]?.[i]||0),0));
         html+=`<tr class="total-row"><th><span class="wardName">합계</span></th>${periodTotals.map((v,idx)=>`<th data-num="1"><span class="num"${colorStyle(items[idx],v)}>${v}</span></th>`).join("")}</tr>`;
         html+=`</tbody></table>`;
       } else {
