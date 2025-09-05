@@ -1578,10 +1578,11 @@ async function renderStats(){
         const wardTotals = wards.map(w => items.reduce((a,i)=>a+(p[w]?.[i]||0),0));
         let maxTotal = 0, maxWardName = null;
         wards.forEach((w, idx) => {
-          if (crownExcludes.has(w)) return;
-          const tot = wardTotals[idx] || 0;
-          if (tot > maxTotal) { maxTotal = tot; maxWardName = w; }
-        });
+  if (crownExcludes.has(w)) return;
+  if (items.includes("수　건")) return; // ✅ 수건 제외
+  const tot = wardTotals[idx] || 0;
+  if (tot > maxTotal) { maxTotal = tot; maxWardName = w; }
+});
         html=`<table class="statsTable"><thead><tr><th><span class="wardName">병동</span></th>${items.map(i=>`<th class="rot">${i}</th>`).join("")}</tr></thead><tbody>`;
         wards.forEach((w,rowIdx)=>{
           const isMax = (wardFilter==="전체" && w === maxWardName && !crownExcludes.has(w) && maxTotal > 0);
