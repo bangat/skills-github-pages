@@ -1573,19 +1573,29 @@ async function renderStats(){
       let periodTotals;
 
       if (wardFilter === "전체") {
-        const {p,wards,items}=renderPivot(merged,s,e,wardFilter);
-        const crownExcludes = new Set(["린넨실","기타"]);
-const isTowel = (name)=> name.replace(/\s+/g,'') === '수건';
-const wardTotals = wards.map(w =>
-  items.reduce((a,i)=>a + (isTowel(i) ? 0 : (p[w]?.[i]||0)), 0)
-);
-        const wardTotals = wards.map(w => items.reduce((a,i)=>a+(p[w]?.[i]||0),0));
-        let maxTotal = 0, maxWardName = null;
-        wards.forEach((w, idx) => {
-  if (crownExcludes.has(w)) return;
-  const tot = wardTotals[idx] || 0;
-  if (tot > maxTotal) { maxTotal = tot; maxWardName = w; }
-});
+  // 1) 피벗 가져오기
+  const { p, wards, items } = renderPivot(merged, s, e, wardFilter);
+
+  // 2) 왕관에서 제외할 병동
+  const crownExcludes = new Set(["린넨실", "기타"]);
+
+  // 3) '수건' 항목 제외 함수 (공백/전각공백 제거 후 비교)
+  const isTowel = (name) => name.replace(/\s+/g, "") === "수건";
+
+  // 4) 병동별 합계 계산할 때 수건은 0으로 처리
+  const wardTotals = wards.map(w =>
+    items.reduce((a, i) => a + (isTowel(i) ? 0 : (p[w]?.[i] || 0)), 0)
+  );
+
+  // 5) 최대 병동 찾기
+  let maxTotal = 0, maxWardName = null;
+  wards.forEach((w, idx) => {
+    if (crownExcludes.has(w)) return;
+    const tot = wardTotals[idx] || 0;
+    if (tot > maxTotal) { maxTotal = tot; maxWardName = w; }
+  });
+
+  // ... (이 아래로 기존 html 테이블 생성 코드 계속)
         html=`<table class="statsTable"><thead><tr><th><span class="wardName">병동</span></th>${items.map(i=>`<th class="rot">${i}</th>`).join("")}</tr></thead><tbody>`;
         wards.forEach((w,rowIdx)=>{
           const isMax = (wardFilter==="전체" && w === maxWardName && !crownExcludes.has(w) && maxTotal > 0);
