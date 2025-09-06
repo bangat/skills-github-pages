@@ -246,11 +246,12 @@ const toSpokenWard = label => {
   }
 
   /* 전송 */
- /* ───── 방명록 전송 경로 수정 시작 ───── */
+  /* ───── 방명록 전송 경로(서버 트리거 경로) 시작 ───── */
 async function sendMessage(){
   const text = msgBox.value.trim();
   if (!text) return;
-  const roomRef = ref(db, `guestbook/${ward}`);  // 병동별 컬렉션에 저장
+  if (!ward) { alert("병동을 먼저 선택하세요."); return; }   // 안전 처리
+  const roomRef = ref(db, `guestbook/${ward}`);               // ✅ guestbook/{ward}
   await push(roomRef, {
     text, author:`${ward}병동`, ward,
     ts: Date.now(), ts_server: serverTimestamp(),
@@ -262,40 +263,45 @@ async function sendMessage(){
   stickToBottom = true; toBottom();
   setTimeout(()=> msgBox.focus({preventScroll:true}), 0);
 }
-/* ───── 방명록 전송 경로 수정 종료 ───── */
+/* ───── 방명록 전송 경로(서버 트리거 경로) 종료 ───── */
 
   sendBtn.addEventListener('click', sendMessage);
 
-  /* ───── 방명록 구독 경로 수정 시작 ───── */
-/* 구독: 최신 200개, 항상 하단 고정 */
-const q = query(ref(db, `guestbook/${ward}`), limitToLast(200));  // 병동별로 구독
+  /* ───── 전체 병동 구독(전병동 타임라인) 시작 ───── */
+/* 병동 목록(인덱스.html과 동일하게 유지) */
+const WARDS = ["93","83","73","71","63","62","61","52","51","42","41","기타","린넨실"];
 let initialLoaded=false;
-onChildAdded(q, snap=>{
-  const v = snap.val() || {};
-  const mine = isMine(v);
-  const ts = v.ts || Date.now();
 
-  ensureDayHeader(ts);
+/* 각 병동 하위에 새 메시지가 생길 때마다 바로 렌더 */
+WARDS.forEach((_w) => {
+  const q = query(ref(db, `guestbook/${_w}`), limitToLast(120));
+  onChildAdded(q, snap => {
+    const v = snap.val() || {};
+    const ts = v.ts || Date.now();
+    const mine = isMine(v);
 
-  const displayWard = (v.author && v.author.trim())
-    ? v.author.trim()
-    : (v.ward ? `${v.ward}병동` : '린넨실');
+    ensureDayHeader(ts);
 
-  renderMessage({ who: displayWard, text: v.text || "", ts, mine });
+    const displayWard = (v.author && v.author.trim())
+      ? v.author.trim()
+      : (v.ward ? `${v.ward}병동` : `${_w}병동`);
 
-  if (!initialLoaded){
-    clearTimeout(onChildAdded._t);
-    onChildAdded._t = setTimeout(()=>{ initialLoaded=true; stickToBottom=true; toBottom(); }, 0);
-  } else if (stickToBottom || mine){
-    stickToBottom=true; toBottom();
-  }
+    renderMessage({ who: displayWard, text: v.text || "", ts, mine });
 
-  if (!mine){
-    try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
-    speakArrival(displayWard);
-  }
+    if (!initialLoaded){
+      clearTimeout(onChildAdded._t);
+      onChildAdded._t = setTimeout(()=>{ initialLoaded=true; stickToBottom=true; toBottom(); }, 0);
+    } else if (stickToBottom || mine){
+      stickToBottom=true; toBottom();
+    }
+
+    if (!mine){
+      try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
+      speakArrival(displayWard);
+    }
+  });
 });
-/* ───── 방명록 구독 경로 수정 종료 ───── */
+/* ───── 전체 병동 구독(전병동 타임라인) 종료 ───── */
 
 
   window.addEventListener('load', ()=>{ stickToBottom=true; toBottom(); });
@@ -339,5 +345,3 @@ onChildAdded(q, snap=>{
 
 </body>
 </html>
-
-
