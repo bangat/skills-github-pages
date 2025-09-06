@@ -343,5 +343,84 @@ WARDS.forEach((_w) => {
   });
 </script>
 
+<!-- ▷▷▷ push-token-collector 시작 ▷▷▷ -->
+<script type="module">
+  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getMessaging, getToken, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+  import { getDatabase, ref, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  // (1) Firebase (중복 초기화 방지)
+  const firebaseConfig = {
+    apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
+    authDomain: "hallymlinen.firebaseapp.com",
+    databaseURL: "https://hallymlinen-default-rtdb.firebaseio.com",
+    projectId: "hallymlinen",
+    storageBucket: "hallymlinen.appspot.com",
+    messagingSenderId: "867775830688",
+    appId: "1:867775830688:web:cef3ed4e70ae9818f347c5"
+  };
+  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  // (2) 내 병동 라벨 (상단 chip과 동일 로직)
+  const urlWard = new URL(location.href).searchParams.get("ward");
+  const ward = (urlWard?.trim() || (localStorage.getItem("linen/ward")||"").trim() || "");
+
+  // (3) 사용자 uid (로컬에 고정 저장)
+  const LS_UID = "linen/pushUid";
+  const uid = localStorage.getItem(LS_UID) || (() => {
+    const v = (crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Math.random()).slice(2);
+    localStorage.setItem(LS_UID, v);
+    return v;
+  })();
+
+  // (4) 푸시 권한 + 토큰 수집 → /pushTokens/{ward}/{uid} 와 /pushTokens/_ALL/{uid}
+  (async () => {
+    try {
+      if (!(await isSupported())) return;                            // Safari 등 미지원 브라우저 대응
+      if (!('serviceWorker' in navigator)) return;
+
+      // SW 준비(방명록.html 하단에서 등록한 sw.js와 연동)
+      const swReg = await navigator.serviceWorker.ready;
+
+      // 권한 요청
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') return;
+
+      const messaging = getMessaging(app);
+
+      // ★ 중요: VAPID 공개키는 Firebase 콘솔 > Cloud Messaging > Web Push 인증서의 "키 페어" 사용
+      const VAPID_KEY = '<여기에_웹푸시_VAPID_공개키_입력>'; // 예) 'BEl...'
+      const token = await getToken(messaging, {
+        vapidKey: VAPID_KEY,
+        serviceWorkerRegistration: swReg
+      });
+      if (!token) return;
+
+      const base = {
+        token,
+        ward: ward || "",
+        ts: Date.now(),
+        ts_server: serverTimestamp(),
+        ua: navigator.userAgent || ""
+      };
+
+      // 병동별 그룹
+      if (ward) {
+        await set(ref(db, `pushTokens/${ward}/${uid}`), base);
+      }
+      // 전병동 공통 그룹
+      await set(ref(db, `pushTokens/_ALL/${uid}`), base);
+
+      console.log('[push] token stored:', { ward: ward || '(none)', uid });
+    } catch (e) {
+      console.warn('[push] token collect fail:', e);
+    }
+  })();
+</script>
+<!-- ▷▷▷ push-token-collector 종료 ▷▷▷ -->
+
+
 </body>
 </html>
+
