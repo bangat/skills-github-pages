@@ -308,10 +308,29 @@ WARDS.forEach((_w) => {
 </script>
 
 <!-- ******** 서비스워커 등록 (변경) 시작 ******** -->
+<!-- ******** 서비스워커 등록 (변경) 시작 ******** -->
 <script>
-/* ▷▷▷ 서비스워커 등록/보관 시작 ▷▷▷ */
-const SCOPE = '/skills-github-pages/';
-const SW_URL = `${SCOPE}sw.js`;
+  /* ▷▷▷ 서비스워커 등록/보관 시작 ▷▷▷ */
+  const SCOPE = '/skills-github-pages/';
+  const SW_URL = `${SCOPE}sw.js`;
+
+  // 전역 보관: 다른 모듈에서 serviceWorkerRegistration으로 재사용
+  window.__swReadyPromise = (async () => {
+    if (!('serviceWorker' in navigator)) return null;
+    try {
+      let reg = await navigator.serviceWorker.getRegistration(SCOPE);
+      if (!reg) reg = await navigator.serviceWorker.register(SW_URL, { scope: SCOPE });
+      window.__swReg = reg;
+      // ready 상태 보장(알림 구독 직전 race condition 방지)
+      return await navigator.serviceWorker.ready;
+    } catch (err) {
+      console.warn('[SW] register/ready fail:', err);
+      return null;
+    }
+  })();
+  /* ▷▷▷ 서비스워커 등록/보관 종료 ▷▷▷ */
+</script>
+<!-- ******** 서비스워커 등록 (변경) 끝 ******** -->
 
 // 전역 보관: 다른 모듈에서 재사용하기 쉽게
 window.__swReadyPromise = (async () => {
@@ -434,5 +453,6 @@ window.__swReadyPromise = (async () => {
 
 </body>
 </html>
+
 
 
