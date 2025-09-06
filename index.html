@@ -2135,7 +2135,7 @@ document.addEventListener("click", (e) => {
 
   const TOKEN_KEY = "linen/fcmToken";
   const TOKEN_VERSION_KEY = "linen/fcmTokenVer";
-  const TOKEN_SCHEMA_VERSION = "v2";
+  const TOKEN_SCHEMA_VERSION = "v3";
 
   const ward = (() => (new URL(location.href).searchParams.get("ward")?.trim() || (localStorage.getItem("linen/ward")||"").trim() || ""))();
 
@@ -2152,18 +2152,24 @@ document.addEventListener("click", (e) => {
     return reg;
   }
 
-  async function upsertToken(token) {
-    try {
-      const path = `guestbook/tokens/${encodeURIComponent(token)}`;
-      await set(ref(db, path), {
-        ward: ward || "",
-        ua: navigator.userAgent || "",
-        ts: Date.now()
-      });
-    } catch (e) {
-      console.warn("[FCM] save token fail:", e);
-    }
+  /* ───── 토큰 저장 경로/스키마 서버 기준으로 정렬 시작 ───── */
+async function upsertToken(token) {
+  try {
+    if (!ward) return; // 병동 미지정이면 스킵(원하면 _ALL 병렬 저장 추가 가능)
+    const key = encodeURIComponent(token);     // 토큰을 키로 사용(중복 방지)
+    const path = `pushTokens/${ward}/${key}`;  // 서버가 읽는 경로와 동일
+    await set(ref(db, path), {
+      token,
+      ward,
+      ua: navigator.userAgent || "",
+      ts: Date.now()
+    });
+  } catch (e) {
+    console.warn("[FCM] save token fail:", e);
   }
+}
+/* ───── 토큰 저장 경로/스키마 서버 기준으로 정렬 종료 ───── */
+
 
   async function refreshFcmTokenIfNeeded() {
     try {
@@ -2208,6 +2214,7 @@ document.addEventListener("click", (e) => {
 
 </body>
 </html>
+
 
 
 
