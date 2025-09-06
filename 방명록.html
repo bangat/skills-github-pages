@@ -390,7 +390,7 @@ WARDS.forEach((_w) => {
       const messaging = getMessaging(app);
 
       // ★ 중요: VAPID 공개키는 Firebase 콘솔 > Cloud Messaging > Web Push 인증서의 "키 페어" 사용
-      const VAPID_KEY = '<여기에_웹푸시_VAPID_공개키_입력>'; // 예) 'BEl...'
+      const VAPID_KEY = 'BDUJY48GaGacu_zkXXSFXAtPRQGn20A1-MqRUDtjgXqEnSi_XCpJo8x3ykmeOpeD76zzvFh_vO-xUgeP4c5S-iw'; // 예) 'BEl...'
       const token = await getToken(messaging, {
         vapidKey: VAPID_KEY,
         serviceWorkerRegistration: swReg
@@ -423,4 +423,5 @@ WARDS.forEach((_w) => {
 
 </body>
 </html>
+
 
