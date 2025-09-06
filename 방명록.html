@@ -307,18 +307,29 @@ WARDS.forEach((_w) => {
   window.addEventListener('load', ()=>{ stickToBottom=true; toBottom(); });
 </script>
 
-<!-- 서비스워커 등록 (푸시 수신용) -->
+<!-- ******** 서비스워커 등록 (변경) 시작 ******** -->
 <script>
-  const SCOPE = '/skills-github-pages/';
-  const SW_URL = `${SCOPE}sw.js`;
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register(SW_URL, { scope: SCOPE })
-        .then(reg => console.log('[SW] ready:', reg.scope))
-        .catch(err => console.warn('[SW] register fail:', err));
-    });
+/* ▷▷▷ 서비스워커 등록/보관 시작 ▷▷▷ */
+const SCOPE = '/skills-github-pages/';
+const SW_URL = `${SCOPE}sw.js`;
+
+// 전역 보관: 다른 모듈에서 재사용하기 쉽게
+window.__swReadyPromise = (async () => {
+  if (!('serviceWorker' in navigator)) return null;
+  try {
+    // 이미 등록되어 있으면 그걸 사용, 없으면 등록
+    let reg = await navigator.serviceWorker.getRegistration(SCOPE);
+    if (!reg) reg = await navigator.serviceWorker.register(SW_URL, { scope: SCOPE });
+    window.__swReg = reg;
+    return await navigator.serviceWorker.ready; // ready 상태 보장
+  } catch (err) {
+    console.warn('[SW] register/ready fail:', err);
+    return null;
   }
+})();
+/* ▷▷▷ 서비스워커 등록/보관 종료 ▷▷▷ */
 </script>
+<!-- ******** 서비스워커 등록 (변경) 끝 ******** -->
 
 <!-- FCM 포그라운드: 진동만. 음성안내는 RTDB 이벤트에서 처리 -->
 <script type="module">
@@ -423,6 +434,5 @@ WARDS.forEach((_w) => {
 
 </body>
 </html>
-
 
 
