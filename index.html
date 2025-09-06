@@ -2157,13 +2157,22 @@ async function upsertToken(token) {
   try {
     if (!ward) return; // 병동 미지정이면 스킵(원하면 _ALL 병렬 저장 추가 가능)
     const key = encodeURIComponent(token);     // 토큰을 키로 사용(중복 방지)
-    const path = `pushTokens/${ward}/${key}`;  // 서버가 읽는 경로와 동일
-    await set(ref(db, path), {
-      token,
-      ward,
-      ua: navigator.userAgent || "",
-      ts: Date.now()
-    });
+    const path = `pushTokens/${ward}/${key}`;
+await set(ref(db, path), {
+  token,
+  ward,
+  ua: navigator.userAgent || "",
+  ts: Date.now()
+});
+
+// ───── 추가: _ALL 그룹에도 등록 ─────
+await set(ref(db, `pushTokens/_ALL/${key}`), {
+  token,
+  ward,
+  ua: navigator.userAgent || "",
+  ts: Date.now()
+});
+
   } catch (e) {
     console.warn("[FCM] save token fail:", e);
   }
@@ -2214,6 +2223,7 @@ async function upsertToken(token) {
 
 </body>
 </html>
+
 
 
 
