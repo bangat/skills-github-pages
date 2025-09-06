@@ -2133,24 +2133,38 @@ document.addEventListener("click", (e) => {
   const db  = getDatabase(app);
   const msg = getMessaging(app);
 
-  const TOKEN_KEY = "linen/fcmToken";
-  const TOKEN_VERSION_KEY = "linen/fcmTokenVer";
-  const TOKEN_SCHEMA_VERSION = "v3";
+  const TOKEN_KEY = "linen/fcmToken";/* ▷▷▷ ensureServiceWorker 변경코드 시작 ▷▷▷ */
+async function ensureServiceWorker() {
+  if (!("serviceWorker" in navigator)) return null;
 
-  const ward = (() => (new URL(location.href).searchParams.get("ward")?.trim() || (localStorage.getItem("linen/ward")||"").trim() || ""))();
-
-  async function ensureServiceWorker() {
-    if (!("serviceWorker" in navigator)) return null;
-    let reg = await navigator.serviceWorker.getRegistration();
-    if (!reg) {
-      try {
-        reg = await navigator.serviceWorker.register("sw.js");
-      } catch (e) {
-        console.warn("[FCM] sw register fail:", e);
-      }
+  // 1) 현재 경로(/skills-github-pages/)의 메시징 SW를 우선 등록
+  const MSG_SW = "firebase-messaging-sw.js";
+  try {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    const hit = regs.find(r => r?.active?.scriptURL?.endsWith("/" + MSG_SW));
+    if (hit) {
+      console.log("[SW] using messaging sw:", hit.scope, hit.active?.scriptURL);
+      return hit;
     }
+    const reg = await navigator.serviceWorker.register(MSG_SW);
+    console.log("[SW] registered messaging sw:", reg.scope, reg.active?.scriptURL);
     return reg;
+  } catch (e) {
+    console.warn("[SW] messaging sw register failed, fallback to sw.js:", e);
   }
+
+  // 2) 실패 시 일반 SW로 폴백
+  try {
+    const reg2 = await navigator.serviceWorker.register("sw.js");
+    console.log("[SW] registered fallback sw:", reg2.scope, reg2.active?.scriptURL);
+    return reg2;
+  } catch (e2) {
+    console.warn("[SW] fallback sw register failed:", e2);
+    return null;
+  }
+}
+/* ▷▷▷ ensureServiceWorker 변경코드 종료 ▷▷▷ */
+
 
  /* ───── 전병동 푸시용 토큰 업서트 시작 ───── */
 async function upsertToken(token) {
@@ -2209,15 +2223,32 @@ async function upsertToken(token) {
     }
   }
 
-  window.addEventListener("load", () => {
-    const FLAG = "linen/fcmCheckedOnce:index";
-    if (localStorage.getItem(FLAG) !== "1") {
-      localStorage.setItem(FLAG, "1");
-      refreshFcmTokenIfNeeded();
-    } else if (localStorage.getItem(TOKEN_VERSION_KEY) !== TOKEN_SCHEMA_VERSION) {
-      refreshFcmTokenIfNeeded();
-    }
-  });
+  win/* ▷▷▷ load-handler 변경코드 시작 ▷▷▷ */
+window.addEventListener("load", async () => {
+  const FLAG = "linen/fcmCheckedOnce:index";
+
+  // 권한 요청(허용 전이면 먼저 요청)
+  if (!("Notification" in window)) {
+    console.warn("[FCM] Notification API not available");
+    return;
+  }
+  if (Notification.permission === "default") {
+    try { await Notification.requestPermission(); } catch {}
+  }
+  if (Notification.permission !== "granted") {
+    console.warn("[FCM] push permission not granted — skip getToken");
+    return;
+  }
+
+  if (localStorage.getItem(FLAG) !== "1") {
+    localStorage.setItem(FLAG, "1");
+    await refreshFcmTokenIfNeeded();
+  } else if (localStorage.getItem(TOKEN_VERSION_KEY) !== TOKEN_SCHEMA_VERSION) {
+    await refreshFcmTokenIfNeeded();
+  }
+});
+/* ▷▷▷ load-handler 변경코드 종료 ▷▷▷ */
+
 </script>
 <!-- ───────── FCM 토큰 재수집(인덱스 최초 1회 + 변경 시 갱신) 종료 ───────── -->
 
@@ -2225,6 +2256,7 @@ async function upsertToken(token) {
 
 </body>
 </html>
+
 
 
 
