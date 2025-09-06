@@ -994,15 +994,24 @@ function openAdminGate(){
   }
 
   if (pad){
-    pad.onclick = (e)=>{
-      const b = e.target.closest("button");
-      if (!b) return;
-      const n = b.getAttribute("data-n");
-      const del = b.hasAttribute("data-del");
-      if (n !== null){ push(n); return; }
-      if (del){ backspace(); return; }
-    };
-  }
+  pad.onclick = (e)=>{
+    const b = e.target.closest("button");
+    if (!b) return;
+    const n = b.getAttribute("data-n");
+    const del = b.hasAttribute("data-del");
+    if (n !== null){
+      push(n);
+      if (navigator.vibrate) navigator.vibrate(15);   // ✅ 숫자 입력 시 진동
+      return;
+    }
+    if (del){
+      backspace();
+      if (navigator.vibrate) navigator.vibrate(25);   // ✅ 지움은 조금 더 길게
+      return;
+    }
+  };
+}
+
   $ok.onclick = tryLogin;
   $can.onclick = ()=>{ closeModal("#adminModal"); clearPin(); };
   document.addEventListener("keydown", function onKey(e){
@@ -1101,6 +1110,7 @@ function qcPreviewSum(){
   if (!__qc.entry) return base;
   return base + ((__qc.lastOp === "-") ? -curN : curN);
 }
+// ▷▷▷ (1) qcApplyOperator 변경코드 시작 ▷▷▷
 function qcApplyOperator(opRaw){
   const op = (opRaw === "-" || opRaw === "−") ? "-" : "+";
   const disp = op === "-" ? "−" : "+";
@@ -1113,9 +1123,11 @@ function qcApplyOperator(opRaw){
   }
   __qc.exprParts.push(disp);
   __qc.lastOp = op;
-  try{ playSnd("#btnClickSound"); }catch(_){}
+  // (변경) 입력창 동작에서는 소리 없음
   qcRender();
 }
+// ▷▷▷ (1) qcApplyOperator 변경코드 종료 ▷▷▷
+
 function qcComputeFinal(){ qcPushEntryIfAny(); return __qc.terms.reduce((a,b)=>a+b, 0); }
 function qcRender(){
   const box = document.getElementById("qcExpr");
@@ -1145,30 +1157,35 @@ function openQtyKeypad({ title="수량", onConfirm } = {}){
       ent.addEventListener(ev, (e)=>{ e.preventDefault(); ent.blur(); }, { passive:false });
     });
     ent.oninput = ()=>{};
-    ent.onkeydown = (e)=>{
-      if (e.key==="Escape"){ e.preventDefault(); closeModal("#qtyCalcModal"); }
-      if (e.key==="Enter" || e.key==="NumpadEnter"){
-        e.preventDefault();
-        const result = qcComputeFinal();
-        const b = document.getElementById("qcExpr");
-        if (b){ const shown = __qc.exprParts.join(" "); b.textContent = shown ? `${shown} = ${result}` : String(result); }
-        try{ playSnd("#submitSound"); }catch(_){}
-        setTimeout(()=>{
-          __qc.onConfirm && __qc.onConfirm(result);
-          qcReset("+");
-          if (b) b.textContent = "—";
-          ent.value = "";
-          closeModal("#qtyCalcModal");
-        }, 120);
-      }
-      if (e.key==="+" || e.key==="-"){ e.preventDefault(); qcApplyOperator(e.key==="+" ? "+" : "-"); }
-    };
+  // ▷▷▷ (2) openQtyKeypad/ent.onkeydown 변경코드 시작 ▷▷▷
+ent.onkeydown = (e)=>{
+  if (e.key==="Escape"){ e.preventDefault(); closeModal("#qtyCalcModal"); }
+  if (e.key==="Enter" || e.key==="NumpadEnter"){
+    e.preventDefault();
+    const result = qcComputeFinal();
+    const b = document.getElementById("qcExpr");
+    if (b){ const shown = __qc.exprParts.join(" "); b.textContent = shown ? `${shown} = ${result}` : String(result); }
+    // (변경) 입력창 확인에서는 소리 없음
+    setTimeout(()=>{
+      __qc.onConfirm && __qc.onConfirm(result);
+      qcReset("+");
+      if (b) b.textContent = "—";
+      ent.value = "";
+      closeModal("#qtyCalcModal");
+    }, 120);
+  }
+  if (e.key==="+" || e.key==="-"){ e.preventDefault(); qcApplyOperator(e.key==="+" ? "+" : "-"); }
+};
+// ▷▷▷ (2) openQtyKeypad/ent.onkeydown 변경코드 종료 ▷▷▷
+
   }
   if (!openQtyKeypad._wired){
     const pad = document.querySelector("#qtyCalcModal .qcPad");
     pad.addEventListener("click", (e)=>{
       const b = e.target.closest("button");
       if (!b) return;
+// ✅ 진동 추가 (15ms)
+ if (navigator.vibrate) navigator.vibrate(15);
       const k = b.getAttribute("data-k"), del = b.getAttribute("data-act")==="del", op = b.getAttribute("data-op");
       if (k !== null){ if (__qc.entry.length < 6){ __qc.entry = (__qc.entry==="0") ? k : (__qc.entry + k); if (ent) ent.value = __qc.entry; qcRender(); } return; }
       if (del){ __qc.entry = __qc.entry.slice(0,-1); if (ent) ent.value = __qc.entry; qcRender(); return; }
@@ -1181,19 +1198,22 @@ function openQtyKeypad({ title="수량", onConfirm } = {}){
       const headEl = document.getElementById("qcTitle"); if (headEl) headEl.textContent = "수량 입력";
       closeModal("#qtyCalcModal");
     };
-    document.getElementById("qcOk").onclick = ()=>{
-      const result = qcComputeFinal();
-      const box = document.getElementById("qcExpr");
-      if (box){ const shown = __qc.exprParts.join(" "); box.textContent = shown ? `${shown} = ${result}` : String(result); }
-      try{ playSnd("#submitSound"); }catch(_){}
-      setTimeout(()=>{
-        __qc.onConfirm && __qc.onConfirm(result);
-        qcReset("+");
-        if (box) box.textContent = "—"; if (ent) ent.value = "";
-        const headEl = document.getElementById("qcTitle"); if (headEl) headEl.textContent = "수량 입력";
-        closeModal("#qtyCalcModal");
-      }, 120);
-    };
+    // ▷▷▷ (3) openQtyKeypad/#qcOk.onclick 변경코드 시작 ▷▷▷
+document.getElementById("qcOk").onclick = ()=>{
+  const result = qcComputeFinal();
+  const box = document.getElementById("qcExpr");
+  if (box){ const shown = __qc.exprParts.join(" "); box.textContent = shown ? `${shown} = ${result}` : String(result); }
+  // (변경) 입력창 확인 버튼에서도 소리 없음
+  setTimeout(()=>{
+    __qc.onConfirm && __qc.onConfirm(result);
+    qcReset("+");
+    if (box) box.textContent = "—"; if (ent) ent.value = "";
+    const headEl = document.getElementById("qcTitle"); if (headEl) headEl.textContent = "수량 입력";
+    closeModal("#qtyCalcModal");
+  }, 120);
+};
+// ▷▷▷ (3) openQtyKeypad/#qcOk.onclick 변경코드 종료 ▷▷▷
+
     openQtyKeypad._wired = true;
   }
   qcRender();
@@ -1312,21 +1332,41 @@ function buildTable(){
         }catch(_){}
       }
     };
-    tr.querySelectorAll("[data-delta]").forEach(btn=>{
-      btn.addEventListener('click', e=>{ addRipple(e); springOnce(btn); });
-      const delta = parseInt(btn.dataset.delta, 10);
-      const apply = () => {
-        const prev = parseInt(inp.dataset.prev || "0") || 0;
-        const v = (parseInt(inp.value || "0") || 0) + delta;
-        inp.value = v;
-        setDraftQty(name, v);
-        maybeBuzz(prev, v);
-        inp.dataset.prev = String(v);
-        refreshTotalUI();
-      };
-      btn.addEventListener('click', () => { apply(); try { playSnd("#btnClickSound"); } catch(_) {} });
-      attachHoldRepeat(btn, apply);
-    });
+   tr.querySelectorAll("[data-delta]").forEach(btn=>{
+  // 클릭 시 리플/스프링
+  btn.addEventListener('click', e=>{ addRipple(e); springOnce(btn); });
+
+  const delta = parseInt(btn.dataset.delta, 10);
+  const apply = () => {
+    const prev = parseInt(inp.dataset.prev || "0") || 0;
+    const v = (parseInt(inp.value || "0") || 0) + delta;
+    inp.value = v;
+    setDraftQty(name, v);
+    maybeBuzz(prev, v);
+    inp.dataset.prev = String(v);
+    refreshTotalUI();
+  };
+
+  // ▶ 클릭 1회에 소리 + 진동
+  btn.addEventListener('click', () => {
+    apply();
+    try { playSnd("#btnClickSound"); } catch(_) {}
+    if (navigator.vibrate) navigator.vibrate(12);   // ✅ 진동 추가
+  });
+
+  // ▶ 길게 누를 때 반복시에도 소리/진동 (너무 시끄럽지 않게 간격 조절)
+  let _lastBeep = 0;
+  attachHoldRepeat(btn, () => {
+    apply();
+    const now = Date.now();
+    if (now - _lastBeep > 220) {                   // ✅ 0.22초 간격으로만 소리
+      try { playSnd("#btnClickSound"); } catch(_) {}
+      _lastBeep = now;
+    }
+    if (navigator.vibrate) navigator.vibrate(8);   // ✅ 각 스텝마다 짧게 진동
+  });
+});
+
     tb.appendChild(tr);
   });
 
@@ -1435,15 +1475,19 @@ async function saveAll(){
 
   const cleared={}; ALL_ITEMS.forEach(i=>cleared[i]=0); setDraft(cleared);
   Array.from(document.querySelectorAll("#inputTable tbody input")).forEach(inp=>{ inp.value="0"; inp.dataset.prev="0"; });
-  refreshTotalUI();
-  playSnd("#submitSound");
-  openModal('#submitModal', '#smOk');
-  showToast("저장 완료", "RTDB 동기화 & 로컬 백업");
+ // ▷▷▷ (4) saveAll 제출 사운드 변경코드 시작 ▷▷▷
+refreshTotalUI();
+// (변경) RTDB 저장 성공(ok===true)일 때만 제출 사운드 재생
+if (ok) playSnd("#submitSound");
+openModal('#submitModal', '#smOk');
+showToast("저장 완료", "RTDB 동기화 & 로컬 백업");
 
-  if(document.body.classList.contains("mode-stats")){
-    const d=new Date(ts).toISOString().slice(0,10);
-    el("#dateStart").value=d; el("#dateEnd").value=d; await renderStats();
-  }
+if(document.body.classList.contains("mode-stats")){
+  const d=new Date(ts).toISOString().slice(0,10);
+  el("#dateStart").value=d; el("#dateEnd").value=d; await renderStats();
+}
+// ▷▷▷ (4) saveAll 제출 사운드 변경코드 종료 ▷▷▷
+
 }
 
 /* === 통계 화면 관련 함수 === */
@@ -2068,7 +2112,6 @@ document.addEventListener("click", (e) => {
 
 </body>
 </html>
-
 
 
 
