@@ -49,6 +49,7 @@ const STATIC_CACHE = `static-${SW_VERSION}`;
 const PRECACHE = [
   `${BASE_PATH}`,                   // 앱 루트
   `${BASE_PATH}index.html`,
+  `${BASE_PATH}방명록.html`,
   `${BASE_PATH}manifest.json`,
   `${BASE_PATH}icons/apple-touch-icon.png`,
 ];
@@ -112,6 +113,7 @@ self.addEventListener('fetch', (event) => {
   }
   event.respondWith(handleAsset(req));
 });
+
 
 
 
