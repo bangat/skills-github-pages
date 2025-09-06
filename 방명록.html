@@ -246,51 +246,57 @@ const toSpokenWard = label => {
   }
 
   /* 전송 */
-  async function sendMessage(){
-    const text = msgBox.value.trim();
-    if (!text) return;
-    const roomRef = ref(db,'guestbook/messages');
-    await push(roomRef, {
-      text, author:`${ward}병동`, ward,
-      ts: Date.now(), ts_server: serverTimestamp(),
-      url: "/skills-github-pages/방명록.html"
-    });
-    msgBox.value = ""; refreshSend();
+ /* ───── 방명록 전송 경로 수정 시작 ───── */
+async function sendMessage(){
+  const text = msgBox.value.trim();
+  if (!text) return;
+  const roomRef = ref(db, `guestbook/${ward}`);  // 병동별 컬렉션에 저장
+  await push(roomRef, {
+    text, author:`${ward}병동`, ward,
+    ts: Date.now(), ts_server: serverTimestamp(),
+    url: "/skills-github-pages/방명록.html"
+  });
+  msgBox.value = ""; refreshSend();
 
-    // 키보드 유지 + 바닥 고정
-    stickToBottom = true; toBottom();
-    setTimeout(()=> msgBox.focus({preventScroll:true}), 0);
-  }
+  // 키보드 유지 + 바닥 고정
+  stickToBottom = true; toBottom();
+  setTimeout(()=> msgBox.focus({preventScroll:true}), 0);
+}
+/* ───── 방명록 전송 경로 수정 종료 ───── */
+
   sendBtn.addEventListener('click', sendMessage);
 
-  /* 구독: 최신 200개, 항상 하단 고정 */
-  const q = query(ref(db,'guestbook/messages'), limitToLast(200));
-  let initialLoaded=false;
-  onChildAdded(q, snap=>{
-    const v = snap.val() || {};
-    const mine = isMine(v);
-    const ts = v.ts || Date.now();
+  /* ───── 방명록 구독 경로 수정 시작 ───── */
+/* 구독: 최신 200개, 항상 하단 고정 */
+const q = query(ref(db, `guestbook/${ward}`), limitToLast(200));  // 병동별로 구독
+let initialLoaded=false;
+onChildAdded(q, snap=>{
+  const v = snap.val() || {};
+  const mine = isMine(v);
+  const ts = v.ts || Date.now();
 
-    ensureDayHeader(ts);
+  ensureDayHeader(ts);
 
-    const displayWard = (v.author && v.author.trim())
-      ? v.author.trim()
-      : (v.ward ? `${v.ward}병동` : '린넨실');
+  const displayWard = (v.author && v.author.trim())
+    ? v.author.trim()
+    : (v.ward ? `${v.ward}병동` : '린넨실');
 
-    renderMessage({ who: displayWard, text: v.text || "", ts, mine });
+  renderMessage({ who: displayWard, text: v.text || "", ts, mine });
 
-    if (!initialLoaded){
-      clearTimeout(onChildAdded._t);
-      onChildAdded._t = setTimeout(()=>{ initialLoaded=true; stickToBottom=true; toBottom(); }, 0);
-    } else if (stickToBottom || mine){
-      stickToBottom=true; toBottom();
-    }
+  if (!initialLoaded){
+    clearTimeout(onChildAdded._t);
+    onChildAdded._t = setTimeout(()=>{ initialLoaded=true; stickToBottom=true; toBottom(); }, 0);
+  } else if (stickToBottom || mine){
+    stickToBottom=true; toBottom();
+  }
 
-    if (!mine){
-      try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
-      speakArrival(displayWard);
-    }
-  });
+  if (!mine){
+    try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
+    speakArrival(displayWard);
+  }
+});
+/* ───── 방명록 구독 경로 수정 종료 ───── */
+
 
   window.addEventListener('load', ()=>{ stickToBottom=true; toBottom(); });
 </script>
@@ -333,4 +339,5 @@ const toSpokenWard = label => {
 
 </body>
 </html>
+
 
