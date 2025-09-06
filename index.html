@@ -2113,8 +2113,7 @@ document.addEventListener("click", (e) => {
 <!-- ───────── FCM 토큰 재수집(인덱스 최초 1회 + 변경 시 갱신) 시작 ───────── -->
 <script type="module">
   // 네 실제 발급받은 웹 푸시 공개키
-  const VAPID_KEY = 'BDUJY48GaGacu_zkXXSFXAtPRQGn20A1-MqRUDtjgXqEnSi_XCpJo8x3ykmeOpeD76zzFh_vo-xUpe4c5S-iw'; // Firebase 콘솔의 Web Push 공개키
-
+  const VAPID_KEY = "BDUJY48GaGacu_zkXXSFXAtPRQGn20A1-MqRUDtjgXqEnSi_XCpJo8x3ykmeOpeD76zzFh_vo-xUpe4c5S-iw"; // Firebase 콘솔(Web Push 인증서)의 '현재 키'
 
   import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getMessaging, getToken, deleteToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
@@ -2226,6 +2225,7 @@ async function upsertToken(token) {
 
 </body>
 </html>
+
 
 
 
