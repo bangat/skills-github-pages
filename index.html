@@ -2133,7 +2133,8 @@ document.addEventListener("click", (e) => {
   const db  = getDatabase(app);
   const msg = getMessaging(app);
 
-  const TOKEN_KEY = "linen/fcmToken";/* ▷▷▷ ensureServiceWorker 변경코드 시작 ▷▷▷ */
+  const TOKEN_VERSION_KEY   = "linen/fcmTokenSchema"; // localStorage key
+const TOKEN_SCHEMA_VERSION = "v1";  
 async function ensureServiceWorker() {
   if (!("serviceWorker" in navigator)) return null;
 
@@ -2164,6 +2165,10 @@ async function ensureServiceWorker() {
   }
 }
 /* ▷▷▷ ensureServiceWorker 변경코드 종료 ▷▷▷ */
+  /* ▷▷▷ 현재 선택 병동 로컬 바인딩 시작 ▷▷▷ */
+const ward = (window?.state?.ward ?? "").toString().trim();
+/* ▷▷▷ 현재 선택 병동 로컬 바인딩 종료 ▷▷▷ */
+
 
 
  /* ───── 전병동 푸시용 토큰 업서트 시작 ───── */
@@ -2254,3 +2259,4 @@ window.addEventListener("load", async () => {
 
 </body>
 </html>
+
