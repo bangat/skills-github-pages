@@ -1,458 +1,408 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8" />
-<meta http-equiv="Cache-Control" content="no-store" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="manifest" href="manifest.json" />
-<meta name="theme-color" content="#2563eb" />
-<title>소통방</title>
-<style>
-  :root{
-    --bg:#f4f7fb; --card:#ffffff; --accent:#2563eb; --muted:#5b677a; --text:#0f172a; --border:#e6eaf2;
-    --r-lg:16px; --r-md:12px; --navH:56px;
-    --shadow-1:0 4px 16px rgba(15,23,42,.08); --shadow-2:0 10px 30px rgba(15,23,42,.10);
-    --focus:0 0 0 2px rgba(37,99,235,.22),0 0 0 6px rgba(37,99,235,.1);
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%;-webkit-text-size-adjust:100%}
-  body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
+  <!-- ───────── head 메타/매니페스트 시작 ───────── -->
+  <meta charset="utf-8" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#2563eb" />
+  <title>소통방</title>
+  <!-- ───────── head 메타/매니페스트 종료 ───────── -->
 
-  .topBar{position:sticky; top:0; z-index:80; background:rgba(255,255,255,.86); backdrop-filter:saturate(180%) blur(10px); border-bottom:1px solid var(--border)}
-  .topBar .wrap{ max-width:980px; margin:0 auto; padding:10px 12px; display:flex; align-items:center; gap:8px }
-  .backBtn{ display:inline-grid; place-items:center; width:36px; height:36px; border-radius:10px; border:1px solid var(--border); background:#fff; box-shadow:var(--shadow-1); cursor:pointer }
-  .title{ font-weight:900; font-size:18px; letter-spacing:-.2px }
-  .sender{ margin-left:auto; font-size:13px; color:#475569; display:flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--border); padding:6px 8px; border-radius:10px }
-  .sender .chip{ font-weight:800; color:#0b3fb8 }
-  .sender a{ color:#64748b; text-underline-offset:2px }
+  <!-- ───────── 전역 스타일 시작 ───────── -->
+  <style>
+    :root{
+      --bg:#f4f7fb; --card:#ffffff; --accent:#2563eb; --muted:#5b677a; --text:#0f172a; --border:#e6eaf2;
+      --r-lg:16px; --r-md:12px; --navH:56px;
+      --shadow-1:0 4px 16px rgba(15,23,42,.08); --shadow-2:0 10px 30px rgba(15,23,42,.10);
+      --focus:0 0 0 2px rgba(37,99,235,.22),0 0 0 6px rgba(37,99,235,.1);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;-webkit-text-size-adjust:100%}
+    body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
 
-  main{ max-width:980px; margin:0 auto; padding:10px 12px calc(100px + env(safe-area-inset-bottom)) }
-  .panel{ background:#fff; border:1px solid rgba(15,23,42,.06); border-radius:18px; box-shadow:0 16px 44px rgba(15,23,42,.10); min-height:50vh; display:flex; flex-direction:column; overflow:hidden }
+    .topBar{position:sticky; top:0; z-index:80; background:rgba(255,255,255,.86); backdrop-filter:saturate(180%) blur(10px); border-bottom:1px solid var(--border)}
+    .topBar .wrap{ max-width:980px; margin:0 auto; padding:10px 12px; display:flex; align-items:center; gap:8px }
+    .backBtn{ display:inline-grid; place-items:center; width:36px; height:36px; border-radius:10px; border:1px solid var(--border); background:#fff; box-shadow:var(--shadow-1); cursor:pointer }
+    .title{ font-weight:900; font-size:18px; letter-spacing:-.2px }
+    .sender{ margin-left:auto; font-size:13px; color:#475569; display:flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--border); padding:6px 8px; border-radius:10px }
+    .sender .chip{ font-weight:800; color:#0b3fb8 }
+    .sender a{ color:#64748b; text-underline-offset:2px }
 
-  .chatScroll{
-    flex:1; min-height:300px; overflow:auto; padding:12px;
-    background:linear-gradient(#fff,#fff) padding-box, linear-gradient(180deg,rgba(37,99,235,.06),rgba(37,99,235,0)) border-box;
-    overscroll-behavior:contain;
-  }
+    main{ max-width:980px; margin:0 auto; padding:10px 12px calc(100px + env(safe-area-inset-bottom)) }
+    .panel{ background:#fff; border:1px solid rgba(15,23,42,.06); border-radius:18px; box-shadow:0 16px 44px rgba(15,23,42,.10); min-height:50vh; display:flex; flex-direction:column; overflow:hidden }
 
-  .dayHeader{ text-align:center; margin:6px 0 10px }
-  .dayHeader .badge{ display:inline-block; font-size:12px; color:#475569; background:#eef2f7; border:1px solid var(--border); padding:4px 10px; border-radius:999px; box-shadow:var(--shadow-1) }
+    .chatScroll{
+      flex:1; min-height:300px; overflow:auto; padding:12px;
+      background:linear-gradient(#fff,#fff) padding-box, linear-gradient(180deg,rgba(37,99,235,.06),rgba(37,99,235,0)) border-box;
+      overscroll-behavior:contain;
+    }
 
-  .msgs{ list-style:none; padding:0; margin:6px 0 0; display:flex; flex-direction:column; gap:10px }
+    .dayHeader{ text-align:center; margin:6px 0 10px }
+    .dayHeader .badge{ display:inline-block; font-size:12px; color:#475569; background:#eef2f7; border:1px solid var(--border); padding:4px 10px; border-radius:999px; box-shadow:var(--shadow-1) }
 
-  .msgRow{ display:flex; align-items:flex-end; gap:6px }
-  .msgRow.left{ justify-content:flex-start }
-  .msgRow.right{ justify-content:flex-end }
+    .msgs{ list-style:none; padding:0; margin:6px 0 0; display:flex; flex-direction:column; gap:10px }
 
-  .msg{ max-width:78%; padding:10px 12px; border-radius:14px; border:1px solid var(--border); box-shadow:0 6px 20px rgba(15,23,42,.06) }
-  .msg .line{ font-size:15px; line-height:1.35 }
-  .msg .from{ font-weight:900; color:#0b3fb8; white-space:nowrap; margin-right:4px }
-  .msg .text{ white-space:pre-wrap; word-break:break-word }
+    .msgRow{ display:flex; align-items:flex-end; gap:6px }
+    .msgRow.left{ justify-content:flex-start }
+    .msgRow.right{ justify-content:flex-end }
 
-  .msg.mine{ background:#fff9c2; border-color:#f5e58a }
-  .msg.theirs{ background:#ffffff; border-color:#e6eaf2 }
-  .msg.mine .from{ display:none }
+    .msg{ max-width:78%; padding:10px 12px; border-radius:14px; border:1px solid var(--border); box-shadow:0 6px 20px rgba(15,23,42,.06) }
+    .msg .line{ font-size:15px; line-height:1.35 }
+    .msg .from{ font-weight:900; color:#0b3fb8; white-space:nowrap; margin-right:4px }
+    .msg .text{ white-space:pre-wrap; word-break:break-word }
 
-  .msgTime{ font-size:12px; color:#64748b; white-space:nowrap; line-height:1 }
-  .msgRow.left  .msgTime{ margin-left:6px }
-  .msgRow.right .msgTime{ margin-right:6px; order:-1 }
+    .msg.mine{ background:#fff9c2; border-color:#f5e58a }
+    .msg.theirs{ background:#ffffff; border-color:#e6eaf2 }
+    .msg.mine .from{ display:none }
 
-  .chatScroll::-webkit-scrollbar{ width:10px }
-  .chatScroll::-webkit-scrollbar-thumb{ background:#e5eaf3; border-radius:999px; border:3px solid #fff }
+    .msgTime{ font-size:12px; color:#64748b; white-space:nowrap; line-height:1 }
+    .msgRow.left  .msgTime{ margin-left:6px }
+    .msgRow.right .msgTime{ margin-right:6px; order:-1 }
 
-  .inputBar{ position:fixed; left:0; right:0; bottom:0; z-index:60; background:#fff; border-top:1px solid var(--border); padding:10px 12px calc(10px + env(safe-area-inset-bottom)) }
-  .inputWrap{ max-width:980px; margin:0 auto; display:flex; gap:8px }
-  .textbox{ flex:1; min-height:44px; max-height:140px; padding:10px 12px; border:1px solid var(--border); border-radius:12px; font-size:15px; resize:vertical; outline:none; background:#fff; color:#0f172a }
-  .textbox:focus{ border-color:var(--accent); box-shadow:var(--focus) }
-  .sendBtn{ flex:0 0 auto; padding:0 16px; border:none; border-radius:12px; font-weight:900; font-size:15px; cursor:pointer; background:linear-gradient(180deg,#4f83ff,#2563eb); color:#fff; box-shadow:0 10px 28px rgba(37,99,235,.25) }
-  .sendBtn:disabled{ opacity:.5; cursor:not-allowed; box-shadow:none }
-</style>
+    .chatScroll::-webkit-scrollbar{ width:10px }
+    .chatScroll::-webkit-scrollbar-thumb{ background:#e5eaf3; border-radius:999px; border:3px solid #fff }
+
+    .inputBar{ position:fixed; left:0; right:0; bottom:0; z-index:60; background:#fff; border-top:1px solid var(--border); padding:10px 12px calc(10px + env(safe-area-inset-bottom)) }
+    .inputWrap{ max-width:980px; margin:0 auto; display:flex; gap:8px }
+    .textbox{ flex:1; min-height:44px; max-height:140px; padding:10px 12px; border:1px solid var(--border); border-radius:12px; font-size:15px; resize:vertical; outline:none; background:#fff; color:#0f172a }
+    .textbox:focus{ border-color:var(--accent); box-shadow:var(--focus) }
+    .sendBtn{ flex:0 0 auto; padding:0 16px; border:none; border-radius:12px; font-weight:900; font-size:15px; cursor:pointer; background:linear-gradient(180deg,#4f83ff,#2563eb); color:#fff; box-shadow:0 10px 28px rgba(37,99,235,.25) }
+    .sendBtn:disabled{ opacity:.5; cursor:not-allowed; box-shadow:none }
+  </style>
+  <!-- ───────── 전역 스타일 종료 ───────── -->
 </head>
 <body>
 
-<!-- 상단 바 -->
-<div class="topBar">
-  <div class="wrap">
-    <button class="backBtn" id="goBack" title="뒤로">←</button>
-    <div class="title">실시간 방명록</div>
-    <div class="sender" id="whoAmI" title="발신자 병동">
-      발신자 <span class="chip" id="wardChip">-</span>
-      <a href="./" id="changeWard">변경</a>
+  <!-- ───────── 상단 바 시작 ───────── -->
+  <div class="topBar">
+    <div class="wrap">
+      <button class="backBtn" id="goBack" title="뒤로">←</button>
+      <div class="title">실시간 방명록</div>
+      <div class="sender" id="whoAmI" title="발신자 병동">
+        발신자 <span class="chip" id="wardChip">-</span>
+        <a href="./" id="changeWard">변경</a>
+      </div>
     </div>
   </div>
-</div>
+  <!-- ───────── 상단 바 종료 ───────── -->
 
-<main>
-  <section class="panel" aria-label="실시간 메시지">
-    <div class="chatScroll" id="chatScroll">
-      <ul class="msgs" id="msgList"></ul>
-      <!-- 항상 맨 아래를 가리키는 센티넬 -->
-      <div id="endSentinel" aria-hidden="true"></div>
+  <!-- ───────── 본문(리스트) 시작 ───────── -->
+  <main>
+    <section class="panel" aria-label="실시간 메시지">
+      <div class="chatScroll" id="chatScroll">
+        <ul class="msgs" id="msgList"></ul>
+        <!-- 항상 맨 아래를 가리키는 센티넬 -->
+        <div id="endSentinel" aria-hidden="true"></div>
+      </div>
+    </section>
+  </main>
+  <!-- ───────── 본문(리스트) 종료 ───────── -->
+
+  <!-- ───────── 하단 입력창 시작 ───────── -->
+  <div class="inputBar">
+    <div class="inputWrap">
+      <textarea id="msgBox" class="textbox" placeholder="메시지를 입력하세요." rows="2" maxlength="500" autofocus></textarea>
+      <button id="sendBtn" class="sendBtn" type="button" disabled>전송</button>
     </div>
-  </section>
-</main>
-
-<!-- 하단 입력 -->
-<div class="inputBar">
-  <div class="inputWrap">
-    <textarea id="msgBox" class="textbox" placeholder="메시지를 입력하세요." rows="2" maxlength="500" autofocus></textarea>
-    <button id="sendBtn" class="sendBtn" type="button" disabled>전송</button>
   </div>
-</div>
+  <!-- ───────── 하단 입력창 종료 ───────── -->
 
-<!-- Firebase + 하단고정 + 날짜헤더 + TTS(남이 보낸 것만) -->
-<script type="module">
-  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, push, serverTimestamp, onChildAdded, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  <!-- ───────── Firebase/RTDB/렌더/TTS 모듈 시작 ───────── -->
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, push, serverTimestamp, onChildAdded, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
-    authDomain: "hallymlinen.firebaseapp.com",
-    databaseURL: "https://hallymlinen-default-rtdb.firebaseio.com",
-    projectId: "hallymlinen",
-    storageBucket: "hallymlinen.appspot.com",
-    messagingSenderId: "867775830688",
-    appId: "1:867775830688:web:cef3ed4e70ae9818f347c5"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
+      authDomain: "hallymlinen.firebaseapp.com",
+      databaseURL: "https://hallymlinen-default-rtdb.firebaseio.com",
+      projectId: "hallymlinen",
+      storageBucket: "hallymlinen.appspot.com",
+      messagingSenderId: "867775830688",
+      appId: "1:867775830688:web:cef3ed4e70ae9818f347c5"
+    };
 
-  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-  const db  = getDatabase(app);
+    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
 
-  const $ = s => document.querySelector(s);
-  const ward = (()=> {
-    const qp = new URL(location.href).searchParams.get("ward");
-    return (qp?.trim() || (localStorage.getItem("linen/ward")||"").trim() || "");
-  })();
+    const $ = s => document.querySelector(s);
+    const ward = (()=> {
+      const qp = new URL(location.href).searchParams.get("ward");
+      return (qp?.trim() || (localStorage.getItem("linen/ward")||"").trim() || "");
+    })();
 
-  $("#wardChip").textContent = ward ? `${ward}병동` : "미지정";
-  $("#changeWard").addEventListener("click", (e)=>{ e.preventDefault(); location.href="./"; });
-  $("#goBack").addEventListener("click", (e)=> {
-    e.preventDefault();
-    const base = "./";
-    location.href = ward ? `${base}?ward=${encodeURIComponent(ward)}` : base;
-  });
+    $("#wardChip").textContent = ward ? `${ward}병동` : "미지정";
+    $("#changeWard").addEventListener("click", (e)=>{ e.preventDefault(); location.href="./"; });
+    $("#goBack").addEventListener("click", (e)=> {
+      e.preventDefault();
+      const base = "./";
+      location.href = ward ? `${base}?ward=${encodeURIComponent(ward)}` : base;
+    });
 
-  const msgBox = $("#msgBox");
-  const sendBtn = $("#sendBtn");
-  const scrollBox = $("#chatScroll");
-  const msgList = $("#msgList");
-  const endSentinel = $("#endSentinel");
+    const msgBox = $("#msgBox");
+    const sendBtn = $("#sendBtn");
+    const scrollBox = $("#chatScroll");
+    const msgList = $("#msgList");
+    const endSentinel = $("#endSentinel");
 
-  const esc = s => (s||"").replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-  const timeK = ts => { const d=new Date(ts); let h=d.getHours(),m=d.getMinutes(); const ap=h<12?"오전":"오후"; h=h%12||12; return `${ap} ${h}:${String(m).padStart(2,"0")}`; };
-  const dateBadge = ts => { const d=new Date(ts); return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`; };
-  const dayKey = ts => { const d=new Date(ts); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+    const esc = s => (s||"").replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    const timeK = ts => { const d=new Date(ts); let h=d.getHours(),m=d.getMinutes(); const ap=h<12?"오전":"오후"; h=h%12||12; return `${ap} ${h}:${String(m).padStart(2,"0")}`; };
+    const dateBadge = ts => { const d=new Date(ts); return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`; };
+    const dayKey = ts => { const d=new Date(ts); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 
-  /* ==== 항상 최하단 고정 ==== */
-  let stickToBottom = true; // 사용자가 위로 스크롤하면 false
-  const toBottom = () => endSentinel?.scrollIntoView({block:'end'});
-
-  const atBottom = () => (scrollBox.scrollHeight - scrollBox.scrollTop - scrollBox.clientHeight) < 40;
-  scrollBox.addEventListener('scroll', ()=>{ stickToBottom = atBottom(); });
-
-  // 레이아웃/키보드 변화에도 재고정
-  new ResizeObserver(()=>{ if (stickToBottom) { toBottom(); setTimeout(toBottom,80); setTimeout(toBottom,300); } }).observe(scrollBox);
-  new ResizeObserver(()=>{ if (stickToBottom) { toBottom(); } }).observe(msgList);
-  if (window.visualViewport){
-    visualViewport.addEventListener('resize', ()=>{ if (stickToBottom) { toBottom(); setTimeout(toBottom,120); setTimeout(toBottom,320); }});
-  }
-
-  // 입력 포커스 시에도 하단 고정(키보드 열려도 유지)
-  msgBox.addEventListener('focus', ()=>{ stickToBottom = true; toBottom(); });
-
-  /* 전송 가능 상태 */
-  const refreshSend = () => sendBtn.disabled = !(msgBox.value.trim() && ward);
-  msgBox.addEventListener('input', refreshSend);
-  msgBox.addEventListener('keydown', e=>{
-    if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendBtn.click(); }
-  });
-  // 버튼이 포커스를 훔치지 않게 해서 키보드 유지
-  sendBtn.addEventListener('mousedown', e=> e.preventDefault());
-  refreshSend();
-
-  /* 날짜 구분 */
-  let __lastDay = null;
-  function ensureDayHeader(ts){
-    const k = dayKey(ts);
-    if (k !== __lastDay){
-      const li = document.createElement('li');
-      li.className = 'dayHeader';
-      li.innerHTML = `<span class="badge">${dateBadge(ts)}</span>`;
-      msgList.appendChild(li);
-      __lastDay = k;
+    /* ───── 하단 고정 시작 ───── */
+    let stickToBottom = true;
+    const toBottom = () => endSentinel?.scrollIntoView({block:'end'});
+    const atBottom = () => (scrollBox.scrollHeight - scrollBox.scrollTop - scrollBox.clientHeight) < 40;
+    scrollBox.addEventListener('scroll', ()=>{ stickToBottom = atBottom(); });
+    new ResizeObserver(()=>{ if (stickToBottom) { toBottom(); setTimeout(toBottom,80); setTimeout(toBottom,300); } }).observe(scrollBox);
+    new ResizeObserver(()=>{ if (stickToBottom) { toBottom(); } }).observe(msgList);
+    if (window.visualViewport){
+      visualViewport.addEventListener('resize', ()=>{ if (stickToBottom) { toBottom(); setTimeout(toBottom,120); setTimeout(toBottom,320); }});
     }
-  }
+    msgBox.addEventListener('focus', ()=>{ stickToBottom = true; toBottom(); });
+    /* ───── 하단 고정 종료 ───── */
 
-  /* 내 메시지? */
-  function isMine(v){
-    const me = ward.trim();
-    const a = (v.author||"").replace(/병동$/,'').trim();
-    const w = (v.ward||"").trim();
-    return me && (a===me || w===me);
-  }
+    /* ───── 전송 가능 상태 시작 ───── */
+    const refreshSend = () => sendBtn.disabled = !(msgBox.value.trim() && ward);
+    msgBox.addEventListener('input', refreshSend);
+    msgBox.addEventListener('keydown', e=>{
+      if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendBtn.click(); }
+    });
+    sendBtn.addEventListener('mousedown', e=> e.preventDefault());
+    refreshSend();
+    /* ───── 전송 가능 상태 종료 ───── */
 
-/* 숫자 → 자리수 읽기(62→육이, 73→칠삼, 51→오일) */
-const DIG = {'0':'영','1':'일','2':'이','3':'삼','4':'사','5':'오','6':'육','7':'칠','8':'팔','9':'구'};
-const readDigits = s => String(s).split('').map(ch=>DIG[ch]??ch).join('');
-
-const toSpokenWard = label => {
-  const str = String(label).trim();
-
-  // 1) "린넨실병동" → "린넨실"
-  if (/^린넨실\s*병동$/.test(str)) {
-    return "린넨실";
-  }
-
-  // 2) 숫자 병동 → 자리수 읽기
-  const m = str.match(/^(\d+)\s*병동$/);
-  if (m) {
-    return `${readDigits(m[1])}병동`;
-  }
-
-  // 3) 그 외는 원본 그대로
-  return str;
-};
-
-
-  /* 포그라운드 TTS(남이 보낸 메시지만) */
-  function speakArrival(senderLabel){
-    try{
-      if (document.hidden) return;              // 백그라운드에선 SW 알림만
-      if (!('speechSynthesis' in window)) return;
-      const u = new SpeechSynthesisUtterance(`${toSpokenWard(senderLabel)} 메세지!`);
-      u.lang='ko-KR'; u.rate=1.5;
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(u);
-    }catch {}
-  }
-
-  /* 렌더 */
-  function renderMessage({who, text, ts, mine}){
-    const row = document.createElement('li');
-    row.className = `msgRow ${mine?'right':'left'}`;
-
-    const bubble = document.createElement('div');
-    bubble.className = `msg ${mine?'mine':'theirs'}`;
-    bubble.innerHTML = `<div class="line"><span class="from">${who||'익명'}</span><span class="text">${esc(text)}</span></div>`;
-
-    const time = document.createElement('div');
-    time.className = 'msgTime';
-    time.textContent = timeK(ts);
-
-    if (mine){ row.appendChild(time); row.appendChild(bubble); }
-    else      { row.appendChild(bubble); row.appendChild(time); }
-
-    msgList.appendChild(row);
-  }
-
-  /* 전송 */
-  /* ───── 방명록 전송 경로(서버 트리거 경로) 시작 ───── */
-async function sendMessage(){
-  const text = msgBox.value.trim();
-  if (!text) return;
-  if (!ward) { alert("병동을 먼저 선택하세요."); return; }   // 안전 처리
-  const roomRef = ref(db, `guestbook/${ward}`);               // ✅ guestbook/{ward}
-  await push(roomRef, {
-    text, author:`${ward}병동`, ward,
-    ts: Date.now(), ts_server: serverTimestamp(),
-    url: "/skills-github-pages/방명록.html"
-  });
-  msgBox.value = ""; refreshSend();
-
-  // 키보드 유지 + 바닥 고정
-  stickToBottom = true; toBottom();
-  setTimeout(()=> msgBox.focus({preventScroll:true}), 0);
-}
-/* ───── 방명록 전송 경로(서버 트리거 경로) 종료 ───── */
-
-  sendBtn.addEventListener('click', sendMessage);
-
-  /* ───── 전체 병동 구독(전병동 타임라인) 시작 ───── */
-/* 병동 목록(인덱스.html과 동일하게 유지) */
-const WARDS = ["93","83","73","71","63","62","61","52","51","42","41","기타","린넨실"];
-let initialLoaded=false;
-
-/* 각 병동 하위에 새 메시지가 생길 때마다 바로 렌더 */
-WARDS.forEach((_w) => {
-  const q = query(ref(db, `guestbook/${_w}`), limitToLast(120));
-  onChildAdded(q, snap => {
-    const v = snap.val() || {};
-    const ts = v.ts || Date.now();
-    const mine = isMine(v);
-
-    ensureDayHeader(ts);
-
-    const displayWard = (v.author && v.author.trim())
-      ? v.author.trim()
-      : (v.ward ? `${v.ward}병동` : `${_w}병동`);
-
-    renderMessage({ who: displayWard, text: v.text || "", ts, mine });
-
-    if (!initialLoaded){
-      clearTimeout(onChildAdded._t);
-      onChildAdded._t = setTimeout(()=>{ initialLoaded=true; stickToBottom=true; toBottom(); }, 0);
-    } else if (stickToBottom || mine){
-      stickToBottom=true; toBottom();
-    }
-
-    if (!mine){
-      try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
-      speakArrival(displayWard);
-    }
-  });
-});
-/* ───── 전체 병동 구독(전병동 타임라인) 종료 ───── */
-
-
-  window.addEventListener('load', ()=>{ stickToBottom=true; toBottom(); });
-</script>
-
-<!-- ******** 서비스워커 등록 (변경) 시작 ******** -->
-<!-- ******** 서비스워커 등록 (변경) 시작 ******** -->
-<script>
-  /* ▷▷▷ 서비스워커 등록/보관 시작 ▷▷▷ */
-  const SCOPE = '/skills-github-pages/';
-  const SW_URL = `${SCOPE}sw.js`;
-
-  // 전역 보관: 다른 모듈에서 serviceWorkerRegistration으로 재사용
-  window.__swReadyPromise = (async () => {
-    if (!('serviceWorker' in navigator)) return null;
-    try {
-      let reg = await navigator.serviceWorker.getRegistration(SCOPE);
-      if (!reg) reg = await navigator.serviceWorker.register(SW_URL, { scope: SCOPE });
-      window.__swReg = reg;
-      // ready 상태 보장(알림 구독 직전 race condition 방지)
-      return await navigator.serviceWorker.ready;
-    } catch (err) {
-      console.warn('[SW] register/ready fail:', err);
-      return null;
-    }
-  })();
-  /* ▷▷▷ 서비스워커 등록/보관 종료 ▷▷▷ */
-</script>
-<!-- ******** 서비스워커 등록 (변경) 끝 ******** -->
-
-// 전역 보관: 다른 모듈에서 재사용하기 쉽게
-window.__swReadyPromise = (async () => {
-  if (!('serviceWorker' in navigator)) return null;
-  try {
-    // 이미 등록되어 있으면 그걸 사용, 없으면 등록
-    let reg = await navigator.serviceWorker.getRegistration(SCOPE);
-    if (!reg) reg = await navigator.serviceWorker.register(SW_URL, { scope: SCOPE });
-    window.__swReg = reg;
-    return await navigator.serviceWorker.ready; // ready 상태 보장
-  } catch (err) {
-    console.warn('[SW] register/ready fail:', err);
-    return null;
-  }
-})();
-/* ▷▷▷ 서비스워커 등록/보관 종료 ▷▷▷ */
-</script>
-<!-- ******** 서비스워커 등록 (변경) 끝 ******** -->
-
-<!-- FCM 포그라운드: 진동만. 음성안내는 RTDB 이벤트에서 처리 -->
-<script type="module">
-  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getMessaging, onMessage as onFcmMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
-    authDomain: "hallymlinen.firebaseapp.com",
-    projectId: "hallymlinen",
-    messagingSenderId: "867775830688",
-    appId: "1:867775830688:web:cef3ed4e70ae9818f347c5"
-  };
-
-  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-  const messaging = getMessaging(app);
-
-  onFcmMessage(messaging, (payload) => {
-    console.log('[FCM foreground]', payload);
-    try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
-    // TTS는 위 onChildAdded에서 mine 체크 후 실행
-  });
-</script>
-
-<!-- ▷▷▷ push-token-collector 시작 ▷▷▷ -->
-<script type="module">
-  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getMessaging, getToken, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
-  import { getDatabase, ref, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-  // (1) Firebase (중복 초기화 방지)
-  const firebaseConfig = {
-    apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
-    authDomain: "hallymlinen.firebaseapp.com",
-    databaseURL: "https://hallymlinen-default-rtdb.firebaseio.com",
-    projectId: "hallymlinen",
-    storageBucket: "hallymlinen.appspot.com",
-    messagingSenderId: "867775830688",
-    appId: "1:867775830688:web:cef3ed4e70ae9818f347c5"
-  };
-  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-  const db  = getDatabase(app);
-
-  // (2) 내 병동 라벨 (상단 chip과 동일 로직)
-  const urlWard = new URL(location.href).searchParams.get("ward");
-  const ward = (urlWard?.trim() || (localStorage.getItem("linen/ward")||"").trim() || "");
-
-  // (3) 사용자 uid (로컬에 고정 저장)
-  const LS_UID = "linen/pushUid";
-  const uid = localStorage.getItem(LS_UID) || (() => {
-    const v = (crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Math.random()).slice(2);
-    localStorage.setItem(LS_UID, v);
-    return v;
-  })();
-
-  // (4) 푸시 권한 + 토큰 수집 → /pushTokens/{ward}/{uid} 와 /pushTokens/_ALL/{uid}
-  (async () => {
-    try {
-      if (!(await isSupported())) return;                            // Safari 등 미지원 브라우저 대응
-      if (!('serviceWorker' in navigator)) return;
-
-      // SW 준비(방명록.html 하단에서 등록한 sw.js와 연동)
-      const swReg = await navigator.serviceWorker.ready;
-
-      // 권한 요청
-      const perm = await Notification.requestPermission();
-      if (perm !== 'granted') return;
-
-      const messaging = getMessaging(app);
-
-      // ★ 중요: VAPID 공개키는 Firebase 콘솔 > Cloud Messaging > Web Push 인증서의 "키 페어" 사용
-     const VAPID_KEY = 'BDUJY48GaGacu_zkXXSFXAtPRQGn20A1-MqRUDtjgXqEnSi_XCpJo8x3ykmeOpeD76zzFh_vo-xUpe4c5S-iw';
-   const token = await getToken(messaging, {
-        vapidKey: VAPID_KEY,
-        serviceWorkerRegistration: swReg
-      });
-      if (!token) return;
-
-      const base = {
-        token,
-        ward: ward || "",
-        ts: Date.now(),
-        ts_server: serverTimestamp(),
-        ua: navigator.userAgent || ""
-      };
-
-      // 병동별 그룹
-      if (ward) {
-        await set(ref(db, `pushTokens/${ward}/${uid}`), base);
+    /* ───── 날짜 헤더 관리 시작 ───── */
+    let __lastDay = null;
+    function ensureDayHeader(ts){
+      const k = dayKey(ts);
+      if (k !== __lastDay){
+        const li = document.createElement('li');
+        li.className = 'dayHeader';
+        li.innerHTML = `<span class="badge">${dateBadge(ts)}</span>`;
+        msgList.appendChild(li);
+        __lastDay = k;
       }
-      // 전병동 공통 그룹
-      await set(ref(db, `pushTokens/_ALL/${uid}`), base);
-
-      console.log('[push] token stored:', { ward: ward || '(none)', uid });
-    } catch (e) {
-      console.warn('[push] token collect fail:', e);
     }
-  })();
-</script>
-<!-- ▷▷▷ push-token-collector 종료 ▷▷▷ -->
+    /* ───── 날짜 헤더 관리 종료 ───── */
 
+    /* ───── 내 메시지 판별 시작 ───── */
+    function isMine(v){
+      const me = ward.trim();
+      const a = (v.author||"").replace(/병동$/,'').trim();
+      const w = (v.ward||"").trim();
+      return me && (a===me || w===me);
+    }
+    /* ───── 내 메시지 판별 종료 ───── */
+
+    /* ───── 병동명 TTS 변환 시작 ───── */
+    const DIG = {'0':'영','1':'일','2':'이','3':'삼','4':'사','5':'오','6':'육','7':'칠','8':'팔','9':'구'};
+    const readDigits = s => String(s).split('').map(ch=>DIG[ch]??ch).join('');
+    const toSpokenWard = label => {
+      const str = String(label).trim();
+      if (/^린넨실\s*병동$/.test(str)) return "린넨실";
+      const m = str.match(/^(\d+)\s*병동$/);
+      if (m) return `${readDigits(m[1])}병동`;
+      return str;
+    };
+    /* ───── 병동명 TTS 변환 종료 ───── */
+
+    /* ───── 포그라운드 TTS 시작 ───── */
+    function speakArrival(senderLabel){
+      try{
+        if (document.hidden) return;
+        if (!('speechSynthesis' in window)) return;
+        const u = new SpeechSynthesisUtterance(`${toSpokenWard(senderLabel)} 메세지!`);
+        u.lang='ko-KR'; u.rate=1.5;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(u);
+      }catch {}
+    }
+    /* ───── 포그라운드 TTS 종료 ───── */
+
+    /* ───── 메시지 렌더 시작 ───── */
+    function renderMessage({who, text, ts, mine}){
+      const row = document.createElement('li');
+      row.className = `msgRow ${mine?'right':'left'}`;
+      const bubble = document.createElement('div');
+      bubble.className = `msg ${mine?'mine':'theirs'}`;
+      bubble.innerHTML = `<div class="line"><span class="from">${who||'익명'}</span><span class="text">${esc(text)}</span></div>`;
+      const time = document.createElement('div');
+      time.className = 'msgTime';
+      time.textContent = timeK(ts);
+      if (mine){ row.appendChild(time); row.appendChild(bubble); }
+      else      { row.appendChild(bubble); row.appendChild(time); }
+      msgList.appendChild(row);
+    }
+    /* ───── 메시지 렌더 종료 ───── */
+
+    /* ───── 전송 로직 시작 ───── */
+    async function sendMessage(){
+      const text = msgBox.value.trim();
+      if (!text) return;
+      if (!ward) { alert("병동을 먼저 선택하세요."); return; }
+      const roomRef = ref(db, `guestbook/${ward}`);
+      await push(roomRef, {
+        text, author:`${ward}병동`, ward,
+        ts: Date.now(), ts_server: serverTimestamp(),
+        url: "/skills-github-pages/방명록.html"
+      });
+      msgBox.value = ""; refreshSend();
+      stickToBottom = true; toBottom();
+      setTimeout(()=> msgBox.focus({preventScroll:true}), 0);
+    }
+    sendBtn.addEventListener('click', sendMessage);
+    /* ───── 전송 로직 종료 ───── */
+
+    /* ───── 전병동 타임라인 구독 시작 ───── */
+    const WARDS = ["93","83","73","71","63","62","61","52","51","42","41","기타","린넨실"];
+    let initialLoaded=false;
+    WARDS.forEach((_w) => {
+      const q = query(ref(db, `guestbook/${_w}`), limitToLast(120));
+      onChildAdded(q, snap => {
+        const v = snap.val() || {};
+        const ts = v.ts || Date.now();
+        const mine = isMine(v);
+        ensureDayHeader(ts);
+        const displayWard = (v.author && v.author.trim())
+          ? v.author.trim()
+          : (v.ward ? `${v.ward}병동` : `${_w}병동`);
+        renderMessage({ who: displayWard, text: v.text || "", ts, mine });
+
+        if (!initialLoaded){
+          clearTimeout(onChildAdded._t);
+          onChildAdded._t = setTimeout(()=>{ initialLoaded=true; stickToBottom=true; toBottom(); }, 0);
+        } else if (stickToBottom || mine){
+          stickToBottom=true; toBottom();
+        }
+
+        if (!mine){
+          try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
+          speakArrival(displayWard);
+        }
+      });
+    });
+    window.addEventListener('load', ()=>{ stickToBottom=true; toBottom(); });
+    /* ───── 전병동 타임라인 구독 종료 ───── */
+  </script>
+  <!-- ───────── Firebase/RTDB/렌더/TTS 모듈 종료 ───────── -->
+
+  <!-- ───────── 서비스워커 등록/보관 시작 ───────── -->
+  <script>
+    const SCOPE = '/skills-github-pages/';
+    const SW_URL = `${SCOPE}sw.js`;
+
+    window.__swReadyPromise = (async () => {
+      if (!('serviceWorker' in navigator)) return null;
+      try {
+        let reg = await navigator.serviceWorker.getRegistration(SCOPE);
+        if (!reg) reg = await navigator.serviceWorker.register(SW_URL, { scope: SCOPE });
+        window.__swReg = reg;
+        return await navigator.serviceWorker.ready; // ready 보장
+      } catch (err) {
+        console.warn('[SW] register/ready fail:', err);
+        return null;
+      }
+    })();
+  </script>
+  <!-- ───────── 서비스워커 등록/보관 종료 ───────── -->
+
+  <!-- ───────── FCM 포그라운드 수신(진동만) 시작 ───────── -->
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getMessaging, onMessage as onFcmMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
+      authDomain: "hallymlinen.firebaseapp.com",
+      projectId: "hallymlinen",
+      messagingSenderId: "867775830688",
+      appId: "1:867775830688:web:cef3ed4e70ae9818f347c5"
+    };
+
+    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const messaging = getMessaging(app);
+
+    onFcmMessage(messaging, (payload) => {
+      console.log('[FCM foreground]', payload);
+      try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
+      // 음성 안내는 RTDB onChildAdded에서 처리
+    });
+  </script>
+  <!-- ───────── FCM 포그라운드 수신(진동만) 종료 ───────── -->
+
+  <!-- ───────── push-token-collector 시작 ───────── -->
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getMessaging, getToken, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+    import { getDatabase, ref, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
+      authDomain: "hallymlinen.firebaseapp.com",
+      databaseURL: "https://hallymlinen-default-rtdb.firebaseio.com",
+      projectId: "hallymlinen",
+      storageBucket: "hallymlinen.appspot.com",
+      messagingSenderId: "867775830688",
+      appId: "1:867775830688:web:cef3ed4e70ae9818f347c5"
+    };
+    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    const urlWard = new URL(location.href).searchParams.get("ward");
+    const ward = (urlWard?.trim() || (localStorage.getItem("linen/ward")||"").trim() || "");
+
+    const LS_UID = "linen/pushUid";
+    const uid = localStorage.getItem(LS_UID) || (() => {
+      const v = (crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Math.random()).slice(2);
+      localStorage.setItem(LS_UID, v);
+      return v;
+    })();
+
+    (async () => {
+      try {
+        if (!(await isSupported())) return;
+        if (!('serviceWorker' in navigator)) return;
+
+        const swReg = await navigator.serviceWorker.ready;
+
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') return;
+
+        const messaging = getMessaging(app);
+
+        // ▼ Firebase 콘솔(Web Push 인증서)의 VAPID 공개키
+        const VAPID_KEY = 'BDUJY48GaGacu_zkXXSFXAtPRQGn20A1-MqRUDtjgXqEnSi_XCpJo8x3ykmeOpeD76zzFh_vo-xUpe4c5S-iw';
+
+        const token = await getToken(messaging, {
+          vapidKey: VAPID_KEY,
+          serviceWorkerRegistration: swReg
+        });
+        if (!token) return;
+
+        const base = {
+          token,
+          ward: ward || "",
+          ts: Date.now(),
+          ts_server: serverTimestamp(),
+          ua: navigator.userAgent || ""
+        };
+
+        if (ward) {
+          await set(ref(db, `pushTokens/${ward}/${uid}`), base);
+        }
+        await set(ref(db, `pushTokens/_ALL/${uid}`), base);
+
+        console.log('[push] token stored:', { ward: ward || '(none)', uid });
+      } catch (e) {
+        console.warn('[push] token collect fail:', e);
+      }
+    })();
+  </script>
+  <!-- ───────── push-token-collector 종료 ───────── -->
 
 </body>
 </html>
-
-
-
