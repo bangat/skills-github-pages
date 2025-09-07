@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- ▷▷▷ head 메타 시작 ▷▷▷ -->
+  <meta charset="utf-8" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="color-scheme" content="light">
+  <title>구매현황 엑셀 업로더</title>
+  <!-- ▷▷▷ head 메타 종료 ▷▷▷ -->
+
+  <!-- ▷▷▷ 전역 스타일 시작 ▷▷▷ -->
+  <style>
+    :root{
+      color-scheme: light;
+      --bg:#f4f7fb; --card:#fff; --text:#0f172a; --muted:#5b677a; --border:#e6eaf2; --accent:#2563eb;
+      --r:14px; --shadow:0 10px 30px rgba(15,23,42,.10);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Apple SD Gothic Neo,sans-serif}
+    .wrap{max-width:980px;margin:22px auto;padding:0 14px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);padding:18px}
+    h1{margin:0 0 8px;font-size:20px}
+    .row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+    label{display:block;margin:12px 0 6px;color:#334155;font-weight:800}
+    input[type="text"],select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px}
+    input[type="file"]{margin-top:6px}
+    .btn{padding:10px 16px;border:none;border-radius:10px;background:linear-gradient(180deg,#4f83ff,#2563eb);color:#fff;font-weight:900;cursor:pointer}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .log{font-family:ui-monospace,Consolas,monospace;background:#0b1220;color:#bfe0ff;padding:12px;border-radius:10px;white-space:pre-wrap;min-height:160px}
+    table{border-collapse:collapse;width:100%;margin-top:8px}
+    th,td{border:1px solid var(--border);padding:6px 8px;font-size:12px}
+    th{background:#f1f5fb}
+    .ok{color:#16a34a} .err{color:#ef4444}
+    .small{font-size:12px;color:#64748b}
+  </style>
+  <!-- ▷▷▷ 전역 스타일 종료 ▷▷▷ -->
+
+  <!-- ▷▷▷ 라이브러리 로드 시작 ▷▷▷ -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- ▷▷▷ 라이브러리 로드 종료 ▷▷▷ -->
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>구매현황 엑셀 업로더</h1>
+    <p style="margin:0 0 10px;color:#475569">엑셀(.xlsx)을 선택하면 브라우저에서 파싱해 <b>Firebase RTDB</b>로 업로드합니다.</p>
+
+    <!-- 섹션별 ○○○○○○○○시작: 입력 영역 -->
+    <div class="row">
+      <div style="flex:1 1 240px">
+        <label>Firebase Database URL</label>
+        <input id="dbURL" type="text" value="https://hallymlinen-default-rtdb.firebaseio.com" placeholder="https://...-default-rtdb.firebaseio.com">
+      </div>
+      <div style="flex:1 1 200px">
+        <label>업로드 기준 경로</label>
+        <input id="basePath" type="text" value="/purchase_status" placeholder="/purchase_status">
+      </div>
+      <div style="flex:0 1 120px">
+        <label>연도(선택)</label>
+        <input id="yearBox" type="text" inputmode="numeric" placeholder="예: 2025">
+      </div>
+      <div style="flex:1 1 220px">
+        <label>엑셀 파일(.xlsx)</label>
+        <input id="filePick" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+      </div>
+      <div style="flex:0 0 220px">
+        <label>Auth 토큰(선택)</label>
+        <input id="authBox" type="text" placeholder="Database secret / custom token">
+      </div>
+      <div style="flex:0 0 auto">
+        <button id="runBtn" class="btn" disabled>업로드 시작</button>
+      </div>
+      <div style="flex:0 0 auto">
+        <label class="small"><input id="dryRun" type="checkbox" checked> 테스트 모드(서버 업로드 안 함)</label>
+      </div>
+    </div>
+    <!-- 종료○○○○○○○○ -->
+
+    <!-- 섹션별 ○○○○○○○○시작: 시트/미리보기 -->
+    <div id="sheetArea" style="margin-top:12px;display:none">
+      <label>시트 선택</label>
+      <select id="sheetSel"></select>
+      <div id="preview"></div>
+    </div>
+    <!-- 종료○○○○○○○○ -->
+
+    <label style="margin-top:14px">진행 로그</label>
+    <div id="log" class="log"></div>
+  </div>
+</div>
+
+<!-- 섹션별 ○○○○○○○○시작: 스크립트(엑셀 파싱 + RTDB 업로드) -->
+<script>
+/* ------------주석(helper-basic) 시작 ---- */
+const $ = s=>document.querySelector(s);
+const logEl = $("#log");
+const log = (m,cls='')=>{
+  console[cls==='err'?'error':'log'](m);
+  logEl.innerHTML += (cls?`<span class="${cls}">`:'') + (typeof m==='string'?m:JSON.stringify(m)) + (cls?'</span>':'') + "\n";
+  logEl.scrollTop = logEl.scrollHeight;
+};
+const okInput = ()=> $("#dbURL").value.trim().startsWith("https://") && $("#basePath").value.trim().startsWith("/");
+const updateBtn = ()=> $("#runBtn").disabled = !(okInput() && $("#filePick").files.length>0);
+$("#dbURL").addEventListener('input', updateBtn);
+$("#basePath").addEventListener('input', updateBtn);
+/* ------------주석(helper-basic) 끝 ---- */
+
+/* ------------주석(file-parse-xlsx) 시작 ---- */
+let workbook = null, sheetNames = [], fileNameHint = "";
+$("#filePick").addEventListener('change', async (e)=>{
+  $("#preview").innerHTML = ""; $("#sheetArea").style.display = "none"; workbook=null; sheetNames=[];
+  updateBtn();
+  const f = e.target.files[0];
+  if (!f) return;
+  fileNameHint = f.name || "";
+
+  try{
+    const buf = await f.arrayBuffer();
+    workbook = XLSX.read(buf, { type:'array' });
+    sheetNames = workbook.SheetNames || [];
+    if (!sheetNames.length) { log("시트를 찾을 수 없습니다.", 'err'); return; }
+
+    const sel = $("#sheetSel");
+    sel.innerHTML = sheetNames.map(n=>`<option value="${n}">${n}</option>`).join("");
+    $("#sheetArea").style.display = "";
+
+    const y = guessYear("", sheetNames[0], fileNameHint);
+    if (y && !$("#yearBox").value) $("#yearBox").value = y;
+
+    renderPreview(sel.value);
+    log(`엑셀 로드 성공: 시트 ${sheetNames.length}개`);
+  }catch(err){
+    log(`엑셀 파싱 실패: ${err}`, 'err');
+  }
+});
+$("#sheetSel").addEventListener('change', ()=>{
+  const v = $("#sheetSel").value||"";
+  const y = guessYear($("#yearBox").value, v, fileNameHint);
+  if (y && !$("#yearBox").value) $("#yearBox").value = y;
+  renderPreview(v);
+});
+
+/* 헤더 위치 탐색: '구분' 또는 '품목' + '사이즈' 라인을 기준 */
+function findHeaderRow(rows2d){
+  const norm = s=>String(s||'').replace(/\s+/g,'').trim();
+  for (let i=0;i<Math.min(rows2d.length,40);i++){
+    const row = rows2d[i]||[];
+    const hasGubun = row.some(v=> norm(v)==='구분' || norm(v)==='품목' );
+    const hasSize  = row.some(v=> norm(v)==='사이즈' );
+    if (hasGubun && hasSize) return i;
+    if (hasGubun) return i+1;
+  }
+  return 2;
+}
+
+/* 섹션 정규화: '발주|입고'라는 단어만 포함돼도 매칭 */
+function normalizeSection(s){
+  const t = String(s||'').replace(/\s+/g,'').trim();
+  if (/발주/.test(t)) return '발주';
+  if (/입고/.test(t)) return '입고';
+  return t || '';
+}
+
+function renderPreview(name){
+  const ws = workbook.Sheets[name];
+  const rows2d = XLSX.utils.sheet_to_json(ws, { header:1, defval:"" });
+  const idx = findHeaderRow(rows2d);
+  const H1 = rows2d[idx-1] || [];
+  const H2 = rows2d[idx]   || [];
+
+  let parent = "";
+  const FLAT = H2.map((child, i)=>{
+    parent = (H1[i] && String(H1[i]).trim()) || parent;
+    const p = normalizeSection(String(parent||"").trim());
+    const c = String(child||"").trim();
+    if (i===0) return "구분";
+    if (i===1) return "사이즈";
+    if (!p && c) return c;
+    if (p && !c) return p;
+    return `${p}:${c}`;
+  });
+
+  const body = rows2d.slice(idx+1);
+  let html = `<table><thead><tr>${FLAT.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>`;
+  for (const arr of body.slice(0,20)){
+    const padded = [...arr];
+    while (padded.length < FLAT.length) padded.push("");
+    html += `<tr>${padded.map(v=>`<td>${String(v)}</td>`).join("")}</tr>`;
+  }
+  html += `</tbody></table>`;
+  $("#preview").innerHTML = html;
+}
+/* ------------주석(file-parse-xlsx) 끝 ---- */
+
+/* ------------주석(schema-map) 시작 ---- */
+function slug(s){ return String(s||'').trim().replace(/[./[\]#$\u0000-\u001F]/g,'_').replace(/\s+/g,'_').slice(0,120); }
+
+const GROUP_ALIASES = {
+  "일반상의의":"일반상의","일반하의의":"일반하의","정형상의의":"정형상의","정형하의의":"정형하의",
+  "얼음포":"얼음주머니","얼음주머니":"얼음주머니","중환의":"중환의"
+};
+const norm0 = s=>String(s||'').replace(/\s+/g,'').trim();
+function normalizeGroupRaw(s){
+  const raw = norm0(s);
+  const cut = raw.replace(/의$/,'');
+  return GROUP_ALIASES[raw] || GROUP_ALIASES[cut] || cut;
+}
+function normalizeSize(s){ return norm0(s); }
+function makeGroupSize(group, size){ return `${normalizeGroupRaw(group)}${normalizeSize(size)}`; }
+
+function mapGroupToApp(groupRaw){
+  const g = normalizeGroupRaw(groupRaw);
+  if (/^일반상/.test(g))   return { prefix:'일반환의', topBottom:'상의' };
+  if (/^일반하/.test(g))   return { prefix:'일반환의', topBottom:'하의' };
+  if (/^정형상/.test(g))   return { prefix:'정형환의', topBottom:'상의' };
+  if (/^정형하/.test(g))   return { prefix:'정형환의', topBottom:'하의' };
+  if (/^고관절/.test(g))   return { prefix:'고관절',   topBottom:''   };
+  // 시트류/소모품 그대로(대시트/반시트/베갯잇/수건/억제대/얼음주머니/중환의 등)
+  return { prefix:g, topBottom:'' };
+}
+function makeItemName(prefix, size){
+  const sz = normalizeSize(size);
+  return sz ? `${prefix}${sz}` : prefix;
+}
+
+function parseMonthLabel(lbl){
+  const s = String(lbl||"").replace(/\(.*?\)/g,"").trim();
+  let m = s.match(/^(\d{1,2})\s*월$/);               if (m) return { month:+m[1] };
+  m = s.match(/^(\d{1,2})\s*월\s*(\d{1,2})\s*일$/);   if (m) return { month:+m[1], day:+m[2] };
+  m = s.match(/^(\d{1,2})\s*월,?\s*(\d{1,2})\s*월$/); if (m) return { month:+m[2] };
+  if (/이월/.test(s)) return { month:2 };
+  return {};
+}
+function fillDown(arr){
+  let last = "";
+  return arr.map(v=>{ const s=String(v||"").trim(); if(s){last=s;return s;} return last; });
+}
+function guessYear(yearStr, sheetName, fileName){
+  const c1 = String(yearStr||"").match(/^(20\d{2})$/);
+  if (c1) return c1[1];
+  const c2 = String(sheetName||"").match(/\b(20\d{2})\b/);
+  if (c2) return c2[1];
+  const c3 = String(fileName||"").match(/\b(20\d{2})\b/);
+  if (c3) return c3[1];
+  return String(new Date().getFullYear());
+}
+
+function buildRecordsFromSheet(ws, sheetName, yearStr){
+  const A = XLSX.utils.sheet_to_json(ws, { header:1, defval:"" });
+  const idx = findHeaderRow(A);
+  const H1 = A[idx-1]||[], H2 = A[idx]||[];
+  let parent=""; 
+  const FLAT = H2.map((child,i)=>{
+    parent = (H1[i] && String(H1[i]).trim()) || parent;
+    const p = normalizeSection(String(parent||"").trim());
+    const c = String(child||"").trim();
+    if (i===0) return "구분";
+    if (i===1) return "사이즈";
+    if (!p && c) return c;
+    if (p && !c) return p;
+    return `${p}:${c}`;
+  });
+
+  const data = A.slice(idx+1);
+  const groupFilled = fillDown(data.map(r=> r[0]));
+  const year = guessYear(yearStr, sheetName, fileNameHint);
+
+  const recs = [];
+  for (let r=0; r<data.length; r++){
+    const row = data[r] || [];
+    const group = String(groupFilled[r]||"").trim();
+    const size  = String(row[1]||"").trim();
+    if (!size && !group) continue;
+
+    const { prefix, topBottom } = mapGroupToApp(group);
+    const itemName = makeItemName(prefix, size);
+    const groupSize = makeGroupSize(group, size);
+
+    for (let c=2; c<FLAT.length; c++){
+      const key = FLAT[c];
+      const [sectionRaw,labelRaw=''] = String(key).split(':');
+      const section = normalizeSection(sectionRaw);
+      if (!section) continue;
+
+      const val = row[c];
+      if (val===null || val===undefined || String(val).toString().trim()==="") continue;
+
+      const qty = Number(val);
+      if (!Number.isFinite(qty) || Math.abs(qty)===Infinity) continue;
+
+      const label = String(labelRaw).trim();
+      const when = parseMonthLabel(label);
+      const y = year;
+      const m = when.month ? String(when.month).padStart(2,'0') : "unknown";
+      const monthKey = (m==="unknown") ? "unknown" : `${y}-${m}`;
+      const day = when.day ? String(when.day).padStart(2,'0') : "";
+
+      recs.push({
+        item: itemName,
+        group, size, groupSize,
+        topBottom, section, label, qty, y, m, monthKey,
+        day: day ? `${y}-${m}-${day}` : ""
+      });
+    }
+  }
+  return recs;
+}
+/* ------------주석(schema-map) 끝 ---- */
+
+/* ------------주석(uploader-rest) 시작 ---- */
+async function uploadSheet(sheetName, basePath){
+  const ws = workbook.Sheets[sheetName];
+  const mapped = buildRecordsFromSheet(ws, sheetName, $("#yearBox").value);
+
+  if ($("#dryRun").checked){
+    log(`[테스트] ${sheetName} 매핑 ${mapped.length}건. 예시 5건 출력:`);
+    mapped.slice(0,5).forEach(v=>{
+      const branch = (v.section==='발주')?'orders':(v.section==='입고'?'receipts':'others');
+      const path = `${basePath}/${v.item}/${branch}/${v.monthKey}/${slug(`${v.item}_${branch}_${v.label}`)}_...`;
+      log({ path, value:v });
+    });
+    return;
+  }
+
+  const rootBase = $("#dbURL").value.replace(/\/$/,'');
+  const auth = ($("#authBox").value||"").trim();
+  const root = rootBase + '/.json' + (auth?`?auth=${encodeURIComponent(auth)}`:'');
+  const chunkSize = 400;
+  let uploaded = 0;
+
+  for (let i=0; i<mapped.length; i+=chunkSize){
+    const part = mapped.slice(i, i+chunkSize);
+    const updates = {};
+
+    for (const r of part){
+      const branch = (r.section === '발주') ? 'orders' : (r.section === '입고' ? 'receipts' : 'others');
+      const ym = r.monthKey;
+      const autoKey = `${slug(`${r.item}_${branch}_${r.label}`)}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+      const path = `${basePath}/${r.item}/${branch}/${ym}/${autoKey}`;
+
+      const common = {
+        group: r.group, size: r.size, groupSize: r.groupSize,
+        topBottom: r.topBottom, label: r.label, qty: r.qty, y: r.y, m: r.m
+      };
+
+      updates[path] = (branch === 'receipts') ? { ...common, day: r.day } : { ...common };
+    }
+
+    const res = await fetch(root, {
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(updates)
+    });
+
+    if (!res.ok){
+      const t = await res.text().catch(()=>'(본문 없음)');
+      log(`PATCH 실패 ${res.status}: ${t}`, 'err');
+      throw new Error(`PATCH 실패 ${res.status}`);
+    }
+    uploaded += part.length;
+    log(`+ ${sheetName}: ${uploaded}/${mapped.length} 업로드됨`);
+  }
+}
+/* ------------주석(uploader-rest) 끝 ---- */
+
+/* ------------주석(run-handler) 시작 ---- */
+$("#runBtn").addEventListener('click', async ()=>{
+  if (!workbook) { log("엑셀을 먼저 선택하세요.", 'err'); return; }
+  const base = $("#basePath").value.trim().replace(/\/+$/,'');
+  if (!base.startsWith('/')) { log("업로드 기준 경로는 '/'로 시작해야 합니다.", 'err'); return; }
+
+  $("#runBtn").disabled = true; logEl.textContent = "";
+  try{
+    const names = sheetNames.length ? sheetNames : workbook.SheetNames;
+    for (const name of names){ await uploadSheet(name, base); }
+    log(`[완료] 모든 시트 처리 성공`, 'ok');
+  }catch(e){
+    log(String(e && e.message ? e.message : e), 'err');
+  }finally{
+    $("#runBtn").disabled = false;
+  }
+});
+updateBtn();
+/* ------------주석(run-handler) 끝 ---- */
+</script>
+<!-- 종료○○○○○○○○ -->
+</body>
+</html>
