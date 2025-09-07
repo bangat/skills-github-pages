@@ -755,7 +755,7 @@
       }
 
       const buf=await wb.xlsx.writeBuffer();
-      saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), `구매현황_전체_${Date.now()}.xlsx`);
+saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), `구매현황(${new Date().getFullYear()}).xlsx`);
     }
     /* ───────── 엑셀 내보내기 종료 ───────── */
   </script>
