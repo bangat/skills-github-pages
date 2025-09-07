@@ -61,12 +61,14 @@
     table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;}
     thead th{position:sticky;top:0;background:#f8fafc;border-bottom:1px solid var(--border);font-size:12px;height:30px}
     td,th{border-bottom:1px solid var(--border);padding:6px 8px;text-align:center;font-size:12px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
-    .is-orders table tbody td:first-child{ text-align:center; }
-
+    
     .tbl-receipts td, .tbl-receipts th { vertical-align: middle; }
     .tbl-receipts td:nth-child(2), .tbl-receipts th:nth-child(2){ width:80px; }
     .tbl-receipts td:nth-child(3), .tbl-receipts th:nth-child(3){ width:70px; }
     .tbl-receipts td:nth-child(4), .tbl-receipts th:nth-child(4){ width:65px; }
+    /* [수정] 입고현황 수량 입력칸 사이즈 조정 */
+    .tbl-receipts input[type="number"] { width: 52px; }
+
     .o-cell, .pcell{ font-variant-numeric: tabular-nums; }
     .pcell{ text-align:center; overflow:visible; min-width:3.5ch; }
     .done td{ background:var(--done); }
@@ -75,6 +77,17 @@
     .name-cell{ position:relative; }
     .badge-dot{ position:absolute; right:4px; top:4px; width:14px; height:14px; border-radius:999px; background:#ef4444; color:#fff; font-weight:900; font-size:10px; display:flex; align-items:center; justify-content:center; line-height:12px; }
     .is-hidden{ display:none !important; }
+
+    /* [추가] 발주내역 테이블 전용 스타일 */
+    .tbl-summary th, .tbl-summary td { padding-left: 4px; padding-right: 4px; }
+    .tbl-summary th:first-child, .tbl-summary td:first-child {
+        width: auto;
+        text-align: left;
+        padding-left: 10px;
+    }
+    .tbl-summary th:not(:first-child), .tbl-summary td:not(:first-child) {
+        width: 65px;
+    }
 
     .progress{height:16px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin:6px}
     .progress > div{height:100%;background:var(--accent);text-align:center;font-size:11px;color:#fff;line-height:16px}
@@ -128,7 +141,8 @@
         <div id="patientTabs" class="patient-tabs" style="display:none">
           <button class="ptab active" data-kind="normal">일반환의</button>
           <button class="ptab" data-kind="ortho">정형환의</button>
-          <button class="ptab" data-kind="hip">고관절</button> </div>
+          <button class="ptab" data-kind="hip">고관절</button>
+        </div>
         </div>
 
       <div id="formBox"></div>
@@ -137,11 +151,12 @@
 
   <div class="savebar">
     <a href="뉴업로더.html" target="_blank" class="btn ghost"><i data-feather="upload"></i> 엑셀 업로드</a>
-
     <button id="btnExcelBottom" class="btn green"><i data-feather="download"></i> 엑셀로 내려받기</button>
     <div class="spacer"></div>
     <button id="btnSaveBottom" class="btn primary"><i data-feather="save"></i> <span id="saveLabel">발주 저장</span></button>
   </div>
+
+
   <div id="toast" role="status" aria-live="polite" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:60px;background:#111827;color:#fff;padding:8px 12px;border-radius:10px;font-size:12px;"></div>
 
   <script type="module">
@@ -164,7 +179,7 @@
 
     /* ───────── 유틸/상수 시작 ───────── */
     const BASE_SHEETS = ["대시트","반시트","베갯잇","수건","중환의","얼음포","억제대"];
-    const HIP_NEW     = ["고관절XL","고관절L","고관절M"]; // 상/하 없음(별도 탭에서 입력)
+    const HIP_NEW     = ["고관절XL","고관절L","고관절M"];
     const NORMAL_SIZES = ["4XL","3XL","2XL","XL","L","M","S"];
     const ORTHO_SIZES  = ["3XL","2XL","XL","L","M","S"];
 
@@ -309,7 +324,7 @@
     /* ───────── 발주 입력 UI ───────── */
     function renderOrdersUI(container){
       if(state.tab==='sheet'){
-        const sheets = [...BASE_SHEETS, ...HIP_NEW]; // 시트류에도 고관절 3종 표시 유지
+        const sheets = [...BASE_SHEETS, ...HIP_NEW];
         container.innerHTML = `
           <div class="table-wrap">
             <table>
@@ -328,17 +343,16 @@
           if(v>0) state.draftOrders.sheet.set(e.target.dataset.item, v); else state.draftOrders.sheet.delete(e.target.dataset.item);
         }));
       }else if(state.tab==='patient'){
-        // ── 일반/정형/고관절 탭별 입력
         if(state.patientKind==='hip'){
           const rows = HIP_NEW.map(n=>({label:n, key:n}));
           container.innerHTML = `
             <div class="table-wrap">
               <table>
-                <thead><tr><th style="text-align:left; padding-left:8px;">품목</th><th>수량</th></tr></thead>
+                <thead><tr><th>품목</th><th>수량</th></tr></thead>
                 <tbody>
                   ${rows.map(r=>`
                     <tr>
-                      <td style="text-align:left; padding-left:8px;">${r.label}</td>
+                      <td>${r.label}</td>
                       <td><input type="number" min="0" inputmode="numeric" class="q-hip" data-item="${r.key}" value="${state.draftOrders.hip.get(r.key)||''}" /></td>
                     </tr>`).join('')}
                 </tbody>
@@ -362,11 +376,11 @@
           container.innerHTML = `
             <div class="table-wrap">
               <table>
-                <thead><tr><th style="text-align:left; padding-left:8px;">품목</th><th>수량</th></tr></thead>
+                <thead><tr><th>품목</th><th>수량</th></tr></thead>
                 <tbody>
                   ${rows.map(r=>`
                     <tr>
-                      <td style="text-align:left; padding-left:8px;" class="${colorCls}">${r.label}</td>
+                      <td class="${colorCls}">${r.label}</td>
                       <td><input type="number" min="0" inputmode="numeric" class="q-pt" data-key="${r.key}" value="${state.draftOrders.patient.get(r.key)||''}" /></td>
                     </tr>`).join('')}
                 </tbody>
@@ -454,7 +468,6 @@
         ${buildPatientTable('ortho','txt-ortho')}
       `;
 
-      // 입력 변화 시 100% 파란색 클래스 동적 반영
       $$('.rq').forEach(inp=>{
         inp.addEventListener('input', (e)=>{
           const tr = e.target.closest('tr');
@@ -503,16 +516,16 @@
         const arr=Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true);
         return arr.reduce((s,e)=> s+toInt(e.qty),0);
       };
+      // [수정] 인라인 스타일 제거하고 CSS 클래스 사용하도록 변경
       const rowHtml=(label,o,i,color='')=>{
         const n=o-i; const negCls = n<0 ? 'neg' : '';
         return `<tr>
-          <td style="text-align:left; padding-left:8px;" class="${color}">${label}</td>
+          <td class="${color}">${label}</td>
           <td>${o}</td><td>${i}</td><td class="${negCls}">${n}</td>
         </tr>`;
       };
 
       const parts=[];
-      // ─ 누적(맨 위)
       let rows=[];
       ITEMS.forEach(r=>{
         const o=sumAcross(r.key,r.tb,'orders'), i=sumAcross(r.key,r.tb,'receipts');
@@ -524,13 +537,12 @@
       parts.push(`
         <div class="sec-title">전체 발주내역</div>
         <div class="table-wrap">
-          <table>
-            <thead><tr><th style="text-align:left; padding-left:8px;">품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
+          <table class="tbl-summary">
+            <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
             <tbody>${rows.join('')}</tbody>
           </table>
         </div>`);
 
-      // ─ 월별(최신→과거)
       monthsDesc.forEach(m=>{
         const rowsM=[];
         ITEMS.forEach(r=>{
@@ -544,8 +556,8 @@
           parts.push(`
             <div class="sec-title">월별 · ${m}</div>
             <div class="table-wrap">
-              <table>
-                <thead><tr><th style="text-align:left; padding-left:8px;">품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
+              <table class="tbl-summary">
+                <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
                 <tbody>${rowsM.join('')}</tbody>
               </table>
             </div>`);
@@ -577,7 +589,7 @@
       const p = totO>0 ? Math.round((totR/totO)*100) : (totR>0?100:0);
       const bar = $('#progressBarInner'); bar.style.width = Math.min(100,p)+'%'; bar.textContent = Math.min(100,p)+'%';
       const overTxt = (totR<=totO)? `${p}%` : `-${Math.round((totR-totO)/totO*100)}%`;
-      $('#gaugeStats').textContent = `전체 발주수량 ${totO}개 · 전체 입고수량 ${totR}개 — ${overTxt} 입고됨`;
+      $('#gaugeStats').textContent = `전체 발주 ${totO}개 · 전체 입고 ${totR}개 — ${overTxt} 입고됨`;
     }
 
     /* ───────── 저장(단일 날짜) ───────── */
@@ -589,13 +601,10 @@
 
       if(state.mode==='orders'){
         const entries = [];
-        // 시트/고관절(시트 탭)
         state.draftOrders.sheet.forEach((qty, item)=>{ if(qty>0) entries.push({itemName:item, qty}); });
-        // 환자복(일반/정형)
         state.draftOrders.patient.forEach((qty, key)=>{
           const [itemName, tb] = key.split('__'); if(qty>0) entries.push({itemName, qty, topBottom:tb});
         });
-        // 환자복 탭의 고관절(상/하 없음)
         state.draftOrders.hip.forEach((qty, item)=>{ if(qty>0) entries.push({itemName:item, qty}); });
 
         if(entries.length===0){ alert('발주 입력값이 없습니다.'); return; }
@@ -635,7 +644,6 @@
       };
       const sumRange = (it, kind, months, tb='')=> months.reduce((acc,m)=> acc + sumMonth(it,kind,m,tb), 0);
 
-      /* ───── 엑셀·요약시트 시작 ───── */
       const wsSum=wb.addWorksheet('요약');
       wsSum.addRow(['품목','발주량','입고량','미입고','진행률']);
       wsSum.columns=[{width:20},{width:12},{width:12},{width:12},{width:12}];
@@ -651,15 +659,13 @@
           const pct = (o>0) ? (v<=o? `${Math.round(v/o*100)}%` : `-${Math.round((v-o)/o*100)}%`) : (v>0?'100%':'0%');
           const row=wsSum.addRow([r.label,o,v,n,pct]);
 
-          // 색상 구분
           if(r.group==='normal') row.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
           if(r.group==='ortho')  row.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
           if(n<0) row.getCell(4).font={color:{argb:'FFF43F5E'},bold:true};
 
-          // 100% 입고 강조(미입고 0이고 발주>0)
           if(o>0 && n===0){
             row.eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE8F7EE'}}; });
-            row.getCell(5).font={bold:true, color:{argb:'FF2563EB'}}; // 퍼센트 파랑
+            row.getCell(5).font={bold:true, color:{argb:'FF2563EB'}};
           }
         }
       });
@@ -680,11 +686,9 @@
         wsSum.getRow(r).eachCell((c,ci)=>{ c.alignment={vertical:'middle',horizontal:(ci===1?'left':'center')};
           c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; });
       }
-      /* ───── 엑셀·요약시트 종료 ───── */
 
-      /* ───── 엑셀·발주월별(발주만) 시작 ───── */
       const wsOrd=wb.addWorksheet('발주월별');
-      wsOrd.addRow(['품목', ...monthsAll.map(m=>`${m}발주`)]);
+      wsOrd.addRow(['품목', ...monthsAll.map(m=>`${m.replace('-','년 ')}월발주`)]);
       wsOrd.columns=[{width:20}, ...monthsAll.map(()=>({width:12}))];
       wsOrd.views = [{state:'frozen', xSplit:1, ySplit:1}];
       ITEMS.forEach(r=>{
@@ -705,9 +709,7 @@
         wsOrd.getRow(r).eachCell((c,ci)=>{ c.alignment={vertical:'middle',horizontal:(ci===1?'left':'center')};
           c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; });
       }
-      /* ───── 엑셀·발주월별 종료 ───── */
 
-      /* ───── 엑셀·입고(날짜별) 시작 ───── */
       const monthToDays = {};
       monthsAll.forEach(m=>{
         const daysSet = new Set();
@@ -751,7 +753,6 @@
         wsRecv.getRow(r).eachCell((c,ci)=>{ c.alignment={vertical:'middle',horizontal:(ci===1?'left':'center')};
           c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; });
       }
-      /* ───── 엑셀·입고(날짜별) 종료 ───── */
 
       const buf=await wb.xlsx.writeBuffer();
       saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), `구매현황_전체_${Date.now()}.xlsx`);
