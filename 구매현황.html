@@ -105,6 +105,94 @@
     .txt-normal{ color:#16a34a; font-weight:800;}
     .txt-ortho{  color:#2563eb; font-weight:800;}
     .neg{ color:#f43f5e; font-weight:900;}
+
+
+/* 이 코드를 <style> 태그 안쪽에 추가하세요 */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
+  width: 90%;
+  max-width: 420px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.modal-header .close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.modal-body ul {
+  list-style: none;
+  padding: 0;
+  margin: 15px 0;
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.modal-body li {
+  padding: 6px 0;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+}
+.modal-body li:last-child {
+  border-bottom: none;
+}
+.modal-body li .item-name {
+  font-weight: 600;
+  color: var(--text);
+}
+.modal-body li .item-qty {
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 15px;
+  border-top: 1px solid var(--border);
+}
+
+
+
   </style>
   </head>
 <body>
@@ -592,41 +680,91 @@
       $('#gaugeStats').textContent = `전체 발주 ${totO}개 · 전체 입고 ${totR}개 — ${overTxt} 입고됨`;
     }
 
-    /* ───────── 저장(단일 날짜) ───────── */
-    async function onSaveAll(){
-      const ymd = state.entryDate;
-      if(!ymd){ alert('날짜를 선택하세요.'); return; }
-      const ym  = ymOf(ymd);
-      const day = Number(ymd.split('-')[2]||'1');
+    /* ───────── 저장 로직 (모달 확인 기능 추가) ───────── */
 
-      if(state.mode==='orders'){
-        const entries = [];
-        state.draftOrders.sheet.forEach((qty, item)=>{ if(qty>0) entries.push({itemName:item, qty}); });
-        state.draftOrders.patient.forEach((qty, key)=>{
-          const [itemName, tb] = key.split('__'); if(qty>0) entries.push({itemName, qty, topBottom:tb});
-        });
-        state.draftOrders.hip.forEach((qty, item)=>{ if(qty>0) entries.push({itemName:item, qty}); });
+// 임시로 저장할 데이터를 담을 변수
+let entriesToSave = [];
 
-        if(entries.length===0){ alert('발주 입력값이 없습니다.'); return; }
-        await batchAddOrders(entries, ym);
-        state.draftOrders.sheet.clear(); state.draftOrders.patient.clear(); state.draftOrders.hip.clear();
-        showToast('발주 저장 완료');
-      }else{
-        const entries = [];
-        $$('.rq').forEach(inp=>{
-          const qty = toInt(inp.value);
-          if(qty>0){
-            const itemName = inp.dataset.item, tb = inp.dataset.tb||'';
-            entries.push({itemName, topBottom:tb, qty});
-          }
-        });
-        if(entries.length===0){ alert('입고 입력값이 없습니다.'); return; }
-        await batchAddReceipts(entries, ym, day);
-        showToast('입고 완료');
+// 모달창의 확인 버튼을 눌렀을 때 실제 저장을 실행하는 함수
+async function proceedWithSave() {
+  const ymd = state.entryDate;
+  const ym  = ymOf(ymd);
+  const day = Number(ymd.split('-')[2]||'1');
+
+  if(state.mode === 'orders'){
+    await batchAddOrders(entriesToSave, ym);
+    state.draftOrders.sheet.clear(); 
+    state.draftOrders.patient.clear(); 
+    state.draftOrders.hip.clear();
+    showToast('발주 저장 완료');
+  } else {
+    await batchAddReceipts(entriesToSave, ym, day);
+    showToast('입고 완료');
+  }
+
+  // 상태 초기화 및 화면 새로고침
+  entriesToSave = [];
+  state.snapshot = await getStatusOnce();
+  renderBody();
+  refreshProgress();
+}
+
+// 메인 저장 버튼 클릭 시 모달을 띄우는 함수 (기존 onSaveAll의 새 버전)
+async function onSaveAll() {
+  const entries = [];
+  if(state.mode === 'orders'){
+    // 발주 모드일 때 데이터 수집
+    state.draftOrders.sheet.forEach((qty, item) => { if(qty>0) entries.push({name: item, qty}); });
+    state.draftOrders.patient.forEach((qty, key) => {
+      const [itemName, tb] = key.split('__');
+      // 환자복 라벨 생성 (예: 일반상의4XL)
+      const kindLabel = itemName.includes('일반') ? '일반' : '정형';
+      const size = itemName.replace('일반환의','').replace('정형환의','');
+      const name = labelOf(kindLabel, tb, size);
+      if(qty>0) entries.push({name, qty});
+    });
+    state.draftOrders.hip.forEach((qty, item)=>{ if(qty>0) entries.push({name: item, qty}); });
+  } else {
+    // 입고 모드일 때 데이터 수집
+    $$('.rq').forEach(inp => {
+      const qty = toInt(inp.value);
+      if(qty > 0){
+        const name = inp.closest('tr').querySelector('.name').textContent;
+        entries.push({name, qty});
       }
-      state.snapshot = await getStatusOnce();
-      renderBody(); refreshProgress();
-    }
+    });
+  }
+
+  if(entries.length === 0){
+    alert((state.mode === 'orders' ? '발주' : '입고') + ' 입력값이 없습니다.');
+    return;
+  }
+  
+  // 원본 저장 데이터를 임시 변수에 복사
+  entriesToSave = state.mode === 'orders' 
+    ? [...state.draftOrders.sheet.entries(), ...state.draftOrders.patient.entries(), ...state.draftOrders.hip.entries()].map(([key, qty]) => {
+        if(key.includes('__')) { // 환자복
+            const [itemName, topBottom] = key.split('__');
+            return {itemName, qty, topBottom};
+        }
+        return {itemName: key, qty}; // 시트류, 고관절
+    }).filter(e => e.qty > 0)
+    : $$('.rq').filter(inp => toInt(inp.value) > 0).map(inp => ({
+        itemName: inp.dataset.item,
+        topBottom: inp.dataset.tb || '',
+        qty: toInt(inp.value)
+    }));
+
+
+  // 모달에 내용 채우고 띄우기
+  const modal = $('#confirmationModal');
+  const summaryList = $('#modalSummaryList');
+  summaryList.innerHTML = entries.map(e => `<li><span class="item-name">${e.name}</span> <span class="item-qty">${e.qty}개</span></li>`).join('');
+  
+  $('#modalTitle').textContent = state.mode === 'orders' ? '발주 내역 확인' : '입고 내역 확인';
+  modal.style.display = 'flex';
+}
+
 
     /* ───────── 엑셀 내보내기(요약/발주월별/입고-날짜별) ───────── */
     async function onExportExcel_AllData(){
@@ -759,5 +897,24 @@ saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.sprea
     }
     /* ───────── 엑셀 내보내기 종료 ───────── */
   </script>
+<div id="confirmationModal" class="modal-overlay" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modalTitle">저장 내역 확인</h3>
+      <button id="modalCloseBtn" class="close-btn">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>아래 내역으로 저장하시겠습니까?</p>
+      <ul id="modalSummaryList">
+        </ul>
+    </div>
+    <div class="modal-footer">
+      <button id="modalCancelBtn" class="btn ghost">취소</button>
+      <button id="modalConfirmBtn" class="btn primary">확인</button>
+    </div>
+  </div>
+</div>
+
+
   </body>
 </html>
