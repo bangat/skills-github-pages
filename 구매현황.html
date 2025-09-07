@@ -376,6 +376,20 @@
       $('#btnSaveBottom').addEventListener('click', onSaveAll);
       $('#btnExcelBottom').addEventListener('click', onExportExcel_AllData);
 
+      // [추가] 모달 버튼 이벤트 리스너 설정
+      const modal = $('#confirmationModal');
+      $('#modalConfirmBtn').addEventListener('click', () => {
+          proceedWithSave();
+          modal.style.display = 'none';
+      });
+      $('#modalCancelBtn').addEventListener('click', () => {
+          modal.style.display = 'none';
+      });
+      $('#modalCloseBtn').addEventListener('click', () => {
+          modal.style.display = 'none';
+      });
+
+
       renderBody(); refreshProgress();
       if (window.feather && typeof feather.replace === 'function') {
         feather.replace({ width:'1em', height:'1em' });
