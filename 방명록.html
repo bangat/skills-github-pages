@@ -374,8 +374,7 @@ window.addEventListener('load', ()=>{ stickToBottom=true; toBottom(); });
         const messaging = getMessaging(app);
 
         // ▼ Firebase 콘솔(Web Push 인증서)의 VAPID 공개키
-        const VAPID_KEY = 'BDUJY48GaGacu_zkXXSFXAtPRQGn20A1-MqRUDtjgXqEnSi_XCpJo8x3ykmeOpeD76zzFh_vo-xUpe4c5S-iw';
-
+const VAPID_KEY = 'BDUJY48GaGacu/zkXXSFXAtPRQGn20A1+MqRUDtjgXqEnSi/XCpJo8x3ykmeOpeD76zzFh/vo+xUpe4c5S+iw';
         const token = await getToken(messaging, {
           vapidKey: VAPID_KEY,
           serviceWorkerRegistration: swReg
