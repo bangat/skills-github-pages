@@ -244,7 +244,7 @@
       const text = msgBox.value.trim();
       if (!text) return;
       if (!ward) { alert("병동을 먼저 선택하세요."); return; }
-      const roomRef = ref(db, `guestbook/messages`); // ✅ 올바른 통합 경로로 수정
+      const roomRef = ref(db, `guestbook/${ward}`);
       await push(roomRef, {
         text, author:`${ward}병동`, ward,
         ts: Date.now(), ts_server: serverTimestamp(),
@@ -258,47 +258,57 @@
     /* ───── 전송 로직 종료 ───── */
 
     /* ───── 전병동 타임라인 구독 시작 ───── */
-let initialLoaded=false;
-// ✅ 하나의 통합된 경로만 구독하도록 수정
-const q = query(ref(db, `guestbook/messages`), limitToLast(120)); 
-onChildAdded(q, snap => {
-  const v = snap.val() || {};
-  const ts = v.ts || Date.now();
-  const mine = isMine(v);
-  ensureDayHeader(ts);
+    const WARDS = ["93","83","73","71","63","62","61","52","51","42","41","기타","린넨실"];
+    let initialLoaded=false;
+    WARDS.forEach((_w) => {
+      const q = query(ref(db, `guestbook/${_w}`), limitToLast(120));
+      onChildAdded(q, snap => {
+        const v = snap.val() || {};
+        const ts = v.ts || Date.now();
+        const mine = isMine(v);
+        ensureDayHeader(ts);
+        const displayWard = (v.author && v.author.trim())
+          ? v.author.trim()
+          : (v.ward ? `${v.ward}병동` : `${_w}병동`);
+        renderMessage({ who: displayWard, text: v.text || "", ts, mine });
 
-  const displayWard = (v.author && v.author.trim()) ? v.author.trim() : (v.ward ? `${v.ward}병동` : '익명');
-  renderMessage({ who: displayWard, text: v.text || "", ts, mine });
+        if (!initialLoaded){
+          clearTimeout(onChildAdded._t);
+          onChildAdded._t = setTimeout(()=>{ initialLoaded=true; stickToBottom=true; toBottom(); }, 0);
+        } else if (stickToBottom || mine){
+          stickToBottom=true; toBottom();
+        }
 
-  if (!initialLoaded){
-    clearTimeout(onChildAdded._t);
-    // [수정] 초기 메시지 로드 후 스크롤이 안정적으로 이동하도록 지연시간 조정
-    onChildAdded._t = setTimeout(()=>{ initialLoaded=true; stickToBottom=true; toBottom(); }, 200);
-  } else if (stickToBottom || mine){
-    stickToBottom=true; toBottom();
-  }
-
-  // [수정] 초기 로드 시에는 불필요한 알림(진동, 음성)이 오지 않도록 initialLoaded 플래그 확인
-  if (!mine && initialLoaded){
-    try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
-    speakArrival(displayWard);
-  }
-});
-window.addEventListener('load', ()=>{ stickToBottom=true; toBottom(); });
-/* ───── 전병동 타임라인 구독 종료 ───── */
+        if (!mine){
+          try { navigator.vibrate && navigator.vibrate([60,40,60]); } catch {}
+          speakArrival(displayWard);
+        }
+      });
+    });
+    window.addEventListener('load', ()=>{ stickToBottom=true; toBottom(); });
+    /* ───── 전병동 타임라인 구독 종료 ───── */
   </script>
   <!-- ───────── Firebase/RTDB/렌더/TTS 모듈 종료 ───────── -->
 
- <script>
-  // 이제 sw.js 하나만 등록합니다.
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js')
-        .then(reg => console.log('[SW] Registered:', reg.scope))
-        .catch(err => console.error('[SW] Registration failed:', err));
-    });
-  }
-</script>
+  <!-- ───────── 서비스워커 등록/보관 시작 ───────── -->
+  <script>
+    const SCOPE = '/skills-github-pages/';
+    const SW_URL = `${SCOPE}sw.js`;
+
+    window.__swReadyPromise = (async () => {
+      if (!('serviceWorker' in navigator)) return null;
+      try {
+        let reg = await navigator.serviceWorker.getRegistration(SCOPE);
+        if (!reg) reg = await navigator.serviceWorker.register(SW_URL, { scope: SCOPE });
+        window.__swReg = reg;
+        return await navigator.serviceWorker.ready; // ready 보장
+      } catch (err) {
+        console.warn('[SW] register/ready fail:', err);
+        return null;
+      }
+    })();
+  </script>
+  <!-- ───────── 서비스워커 등록/보관 종료 ───────── -->
 
   <!-- ───────── FCM 포그라운드 수신(진동만) 시작 ───────── -->
   <script type="module">
@@ -365,7 +375,8 @@ window.addEventListener('load', ()=>{ stickToBottom=true; toBottom(); });
         const messaging = getMessaging(app);
 
         // ▼ Firebase 콘솔(Web Push 인증서)의 VAPID 공개키
-const VAPID_KEY = "BDUJY48GaGacu_zkXXSFXAtPRQGn20A1-MqRUDtjgXqEnSi_XCpJo8x3ykmeOpeD76zzFh_vo-xUpe4c5S-iw";
+        const VAPID_KEY = 'BDUJY48GaGacu_zkXXSFXAtPRQGn20A1-MqRUDtjgXqEnSi_XCpJo8x3ykmeOpeD76zzFh_vo-xUpe4c5S-iw';
+
         const token = await getToken(messaging, {
           vapidKey: VAPID_KEY,
           serviceWorkerRegistration: swReg
