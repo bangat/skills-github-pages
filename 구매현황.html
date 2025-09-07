@@ -1,15 +1,20 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+  <!-- ▷▷▷ head 메타 시작 ▷▷▷ -->
   <meta charset="utf-8" />
   <meta http-equiv="Cache-Control" content="no-store" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>발주·입고 현황</title>
+  <!-- ▷▷▷ head 메타 종료 ▷▷▷ -->
 
+  <!-- ▷▷▷ 외부 라이브러리 로드 시작 ▷▷▷ -->
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <!-- ▷▷▷ 외부 라이브러리 로드 종료 ▷▷▷ -->
 
+  <!-- ▷▷▷ 전역 스타일 시작 ▷▷▷ -->
   <style>
     :root{
       --bg:#f4f7fb; --card:#ffffff; --accent:#2563eb; --muted:#5b677a; --text:#0f172a; --border:#e6eaf2;
@@ -73,6 +78,7 @@
     .pcell{ text-align:center; overflow:visible; min-width:3.5ch; }
     .done td{ background:var(--done); }
     .over td:last-child{ color:var(--light-red); font-weight:800; }
+    .pcell.pc100{ color:var(--accent); font-weight:900; } /* 진행률 100% 파란색 강조 */
     .name-cell{ position:relative; }
     .badge-dot{ position:absolute; right:4px; top:4px; width:14px; height:14px; border-radius:999px; background:#ef4444; color:#fff; font-weight:900; font-size:10px; display:flex; align-items:center; justify-content:center; line-height:12px; }
     .is-hidden{ display:none !important; }
@@ -88,12 +94,19 @@
     .savebar .btn{height:42px; border-radius:12px; font-size:15px; padding:0 16px;}
 
     .sec-title{font-weight:900; font-size:13px; color:#334155; padding:8px 10px; margin:6px 6px 0;}
+    .divider-strong{border-top:2px solid #cbd5e1; margin:4px 6px;}
+
+    .txt-normal{ color:#16a34a; font-weight:800;}
+    .txt-ortho{  color:#2563eb; font-weight:800;}
+    .neg{ color:#f43f5e; font-weight:900;}
   </style>
+  <!-- ▷▷▷ 전역 스타일 종료 ▷▷▷ -->
 </head>
 <body>
   <div class="wrap">
     <div class="card">
       <div class="card-head">
+        <!-- ───────── 상단 탭/날짜/게이지 시작 ───────── -->
         <div class="row">
           <div class="subtabs" role="tablist" aria-label="발주/입고 전환">
             <button id="tab-orders" class="subtab active" data-mode="orders">발주현황</button>
@@ -101,14 +114,13 @@
           </div>
         </div>
 
+        <!-- 단일 날짜(등록용) -->
         <div class="datebar">
-          <input id="dateFrom" type="date" aria-label="시작 날짜" />
-          <span style="color:#94a3b8">~</span>
-          <input id="dateTo"   type="date" aria-label="종료 날짜" />
+          <input id="entryDate" type="date" aria-label="기록 날짜" />
         </div>
 
         <div style="padding:6px 6px 0">
-          <div id="gaugeStats" style="font-size:12px;color:#475569;margin:4px 0 2px">전체 발주수량 0개 · 전체 입고수량 0개 — 0% 입고됨</div>
+          <div id="gaugeStats" style="font-size:12px;color:#475569;margin:4px 0 2px">발주수량 0개 · 입고수량 0개 — 0% 입고됨</div>
           <div class="progress" aria-label="진행률">
             <div id="progressBarInner" style="width:0%">0%</div>
           </div>
@@ -121,13 +133,14 @@
             <button class="itemtab" data-tab="summary">발주내역</button>
           </div>
           <div class="spacer"></div>
-          <!-- 상단 엑셀 버튼 삭제됨 -->
         </div>
 
         <div id="patientTabs" class="patient-tabs" style="display:none">
           <button class="ptab active" data-kind="normal">일반환의</button>
           <button class="ptab" data-kind="ortho">정형환의</button>
+          <button class="ptab" data-kind="hip">고관절</button> <!-- 고관절 탭 추가 -->
         </div>
+        <!-- ───────── 상단 탭/날짜/게이지 종료 ───────── -->
       </div>
 
       <div id="formBox"></div>
@@ -141,6 +154,7 @@
 
   <div id="toast" role="status" aria-live="polite" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:60px;background:#111827;color:#fff;padding:8px 12px;border-radius:10px;font-size:12px;"></div>
 
+  <!-- ▷▷▷ 스크립트 시작 ▷▷▷ -->
   <script type="module">
     /* ───────── Firebase 시작 ───────── */
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -160,45 +174,47 @@
     /* ───────── Firebase 종료 ───────── */
 
     /* ───────── 유틸/상수 시작 ───────── */
-    const SHEET_PRIORITY = ["대시트","반시트","베갯잇","수건","중환의","얼음포","억제대"];
+    const BASE_SHEETS = ["대시트","반시트","베갯잇","수건","중환의","얼음포","억제대"];
+    const HIP_NEW     = ["고관절XL","고관절L","고관절M"]; // 상/하 없음(별도 탭에서 입력)
     const NORMAL_SIZES = ["4XL","3XL","2XL","XL","L","M","S"];
     const ORTHO_SIZES  = ["3XL","2XL","XL","L","M","S"];
-    const HIP_SIZES    = ["XL","L","M"];
-    const makeName = (prefix,size)=> `${prefix}${size}`;
 
     const $ = s=>document.querySelector(s);
     const $$ = s=>Array.from(document.querySelectorAll(s));
     const pad2 = n => String(n).padStart(2,'0');
     const ymOf = (d)=> (d||'').slice(0,7);
-    function ymRange(fromDate, toDate){
-      if(!fromDate || !toDate) return [];
-      const fs = new Date(fromDate), ts = new Date(toDate);
-      let y=fs.getFullYear(), m=fs.getMonth()+1;
-      const out=[];
-      while(y<ts.getFullYear() || (y===ts.getFullYear() && m<=ts.getMonth()+1)){
-        out.push(`${y}-${pad2(m)}`); m++; if(m>12){m=1;y++; }
-      }
-      return out;
-    }
-    function yearMonths(y){ const out=[]; for(let m=1;m<=12;m++) out.push(`${y}-${pad2(m)}`); return out; }
+    const toInt = v => Math.round(Number(v)||0);
+    const isYM = k => /^\d{4}-\d{2}$/.test(k);
+
     function showToast(msg='완료'){
       const t = document.getElementById('toast');
       t.textContent = msg; t.style.display='block';
       clearTimeout(window.__toastTimer);
       window.__toastTimer = setTimeout(()=> t.style.display='none', 1600);
     }
+
+    function collectAllMonths(data){
+      const set = new Set();
+      Object.values(data||{}).forEach(it=>{
+        Object.keys(it.orders||{}).forEach(m=>{ if(isYM(m)) set.add(m); });
+        Object.keys(it.receipts||{}).forEach(m=>{ if(isYM(m)) set.add(m); });
+      });
+      return Array.from(set).sort();
+    }
+    const sortDescYM = list => [...list].sort((a,b)=> a<b ? 1 : (a>b ? -1 : 0));
+    const labelOf = (kind, tb, size) => `${kind}${tb==='상의'?'상의':'하의'}${size}`;
     /* ───────── 유틸/상수 종료 ───────── */
 
     /* ───────── 상태 ───────── */
     const state = {
       mode:'orders', tab:'sheet',
-      dateFrom:'', dateTo:'',
+      entryDate:'',
       snapshot:null,
-      draftOrders:{ sheet:new Map(), patient:new Map() },
+      draftOrders:{ sheet:new Map(), patient:new Map(), hip:new Map() },
       patientKind:'normal'
     };
 
-    /* ───────── DB ───────── */
+    /* ───────── DB I/O ───────── */
     async function getStatusOnce(){
       const snap = await get(ref(rtdb, 'purchase_status'));
       return snap.exists() ? (snap.val()||{}) : {};
@@ -206,30 +222,30 @@
     async function batchAddOrders(entries, ym){
       const updates = {};
       entries.forEach(({itemName, qty, topBottom})=>{
-        if(!qty) return;
+        const q = toInt(qty); if(q<=0) return;
         const k = push(ref(rtdb)).key;
         updates[`purchase_status/${itemName}/name`] = itemName;
-        updates[`purchase_status/${itemName}/orders/${ym}/${k}`] = {qty:Number(qty)||0, topBottom: topBottom||'', ts:Date.now()};
+        updates[`purchase_status/${itemName}/orders/${ym}/${k}`] = {qty:q, topBottom: topBottom||'', ts:Date.now()};
       });
       if(Object.keys(updates).length) await update(ref(rtdb), updates);
     }
     async function batchAddReceipts(entries, ym, day){
       const updates = {};
+      const d = Number(day)||1;
       entries.forEach(({itemName, qty, topBottom})=>{
-        if(!qty) return;
+        const q = toInt(qty); if(q<=0) return;
         const k = push(ref(rtdb)).key;
         updates[`purchase_status/${itemName}/name`] = itemName;
-        updates[`purchase_status/${itemName}/receipts/${ym}/${k}`] = {day:Number(day)||1, qty:Number(qty)||0, topBottom: topBottom||'', ts:Date.now()};
+        updates[`purchase_status/${itemName}/receipts/${ym}/${k}`] = {day:d, qty:q, topBottom: topBottom||'', ts:Date.now()};
       });
       if(Object.keys(updates).length) await update(ref(rtdb), updates);
     }
 
     /* ───────── 초기화 ───────── */
-    document.addEventListener('DOMContentLoaded', ()=>{
+    document.addEventListener('DOMContentLoaded', async ()=>{
       const t = new Date();
       const ymd = `${t.getFullYear()}-${pad2(t.getMonth()+1)}-${pad2(t.getDate())}`;
-      $('#dateFrom').value = ymd; state.dateFrom=ymd;
-      $('#dateTo').value   = ymd; state.dateTo=ymd;
+      $('#entryDate').value = ymd; state.entryDate=ymd;
 
       $$('.subtab').forEach(btn=>{
         btn.addEventListener('click', ()=>{
@@ -263,11 +279,10 @@
         });
       });
 
-      $('#dateFrom').addEventListener('change', ()=>{ state.dateFrom = $('#dateFrom').value; renderBody(); refreshProgress(); });
-      $('#dateTo').addEventListener('change',   ()=>{ state.dateTo   = $('#dateTo').value;   renderBody(); refreshProgress(); });
+      $('#entryDate').addEventListener('change', ()=>{ state.entryDate = $('#entryDate').value; });
 
       $('#btnSaveBottom').addEventListener('click', onSaveAll);
-      $('#btnExcelBottom').addEventListener('click', onExportHorizontalExcel);
+      $('#btnExcelBottom').addEventListener('click', onExportExcel_AllData);
 
       renderBody(); refreshProgress();
       if (window.feather && typeof feather.replace === 'function') {
@@ -275,7 +290,24 @@
       }
     });
 
-    /* ───────── 렌더 (주문/입고) ───────── */
+    /* ───────── 품목 마스터 생성(레거시 고관절 키는 읽기만) ───────── */
+    function buildItems(snapshot){
+      const hasHipNew = HIP_NEW.some(k=> snapshot[k]);
+      const hasHipOld = !!snapshot['고관절'];
+      const sheetList = [...BASE_SHEETS, ...(hasHipNew ? HIP_NEW : (hasHipOld ? ['고관절'] : HIP_NEW))];
+
+      const items = [];
+      sheetList.forEach(n=> items.push({label:n, key:n, tb:'', group:'sheet'}));
+      NORMAL_SIZES.forEach(sz=>{
+        ['상의','하의'].forEach(tb=> items.push({label:labelOf('일반',tb,sz), key:`일반환의${sz}`, tb, group:'normal'}));
+      });
+      ORTHO_SIZES.forEach(sz=>{
+        ['상의','하의'].forEach(tb=> items.push({label:labelOf('정형',tb,sz), key:`정형환의${sz}`, tb, group:'ortho'}));
+      });
+      return items;
+    }
+
+    /* ───────── 본문 렌더 ───────── */
     async function renderBody(){
       if(!state.snapshot) state.snapshot = await getStatusOnce();
       const container = $('#formBox'); container.innerHTML='';
@@ -285,14 +317,16 @@
       else await renderReceiptsUI(container);
     }
 
+    /* ───────── 발주 입력 UI ───────── */
     function renderOrdersUI(container){
       if(state.tab==='sheet'){
+        const sheets = [...BASE_SHEETS, ...HIP_NEW]; // 시트류에도 고관절 3종 표시 유지
         container.innerHTML = `
           <div class="table-wrap">
             <table>
               <thead><tr><th>품목</th><th>수량</th></tr></thead>
               <tbody>
-                ${SHEET_PRIORITY.map(n=>`
+                ${sheets.map(n=>`
                   <tr>
                     <td>${n}</td>
                     <td><input type="number" min="0" inputmode="numeric" class="q-sheet" data-item="${n}" value="${state.draftOrders.sheet.get(n)||''}"/></td>
@@ -301,107 +335,114 @@
             </table>
           </div>`;
         $$('.q-sheet').forEach(i=> i.addEventListener('input', e=>{
-          const v = Number(e.target.value||0);
+          const v = toInt(e.target.value);
           if(v>0) state.draftOrders.sheet.set(e.target.dataset.item, v); else state.draftOrders.sheet.delete(e.target.dataset.item);
         }));
       }else if(state.tab==='patient'){
-        const sizes = state.patientKind==='normal' ? NORMAL_SIZES : ORTHO_SIZES;
-        const prefix = state.patientKind==='normal' ? '일반환의' : '정형환의';
-        const rows = [];
-        sizes.forEach(sz=>['상의','하의'].forEach(tb=>{
-          const key = `${makeName(prefix,sz)}__${tb}`; rows.push({label:prefix,size:sz,tb,key});
-        }));
-        container.innerHTML = `
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th style="text-align:left; padding-left:8px;">품목</th><th>사이즈</th><th>상/하</th><th>수량</th></tr></thead>
-              <tbody>
-                ${rows.map(r=>`
-                  <tr>
-                    <td style="text-align:left; padding-left:8px;">${r.label}</td><td>${r.size}</td><td>${r.tb}</td>
-                    <td><input type="number" min="0" inputmode="numeric" class="q-pt" data-key="${r.key}" value="${state.draftOrders.patient.get(r.key)||''}" /></td>
-                  </tr>`).join('')}
-              </tbody>
-            </table>
-          </div>`;
-        $$('.q-pt').forEach(i=> i.addEventListener('input', e=>{
-          const v = Number(e.target.value||0);
-          if(v>0) state.draftOrders.patient.set(e.target.dataset.key, v); else state.draftOrders.patient.delete(e.target.dataset.key);
-        }));
+        // ── 일반/정형/고관절 탭별 입력
+        if(state.patientKind==='hip'){
+          const rows = HIP_NEW.map(n=>({label:n, key:n}));
+          container.innerHTML = `
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th style="text-align:left; padding-left:8px;">품목</th><th>수량</th></tr></thead>
+                <tbody>
+                  ${rows.map(r=>`
+                    <tr>
+                      <td style="text-align:left; padding-left:8px;">${r.label}</td>
+                      <td><input type="number" min="0" inputmode="numeric" class="q-hip" data-item="${r.key}" value="${state.draftOrders.hip.get(r.key)||''}" /></td>
+                    </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>`;
+          $$('.q-hip').forEach(i=> i.addEventListener('input', e=>{
+            const v = toInt(e.target.value);
+            if(v>0) state.draftOrders.hip.set(e.target.dataset.item, v); else state.draftOrders.hip.delete(e.target.dataset.item);
+          }));
+        }else{
+          const sizes = state.patientKind==='normal' ? NORMAL_SIZES : ORTHO_SIZES;
+          const kindLabel = state.patientKind==='normal' ? '일반' : '정형';
+          const colorCls  = state.patientKind==='normal' ? 'txt-normal' : 'txt-ortho';
+          const rows = [];
+          sizes.forEach(sz=>{
+            ['상의','하의'].forEach(tb=>{
+              const itemKey = `${state.patientKind==='normal'?'일반환의':'정형환의'}${sz}__${tb}`;
+              rows.push({label: `${kindLabel}${tb}${sz}`, key:itemKey});
+            });
+          });
+          container.innerHTML = `
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th style="text-align:left; padding-left:8px;">품목</th><th>수량</th></tr></thead>
+                <tbody>
+                  ${rows.map(r=>`
+                    <tr>
+                      <td style="text-align:left; padding-left:8px;" class="${colorCls}">${r.label}</td>
+                      <td><input type="number" min="0" inputmode="numeric" class="q-pt" data-key="${r.key}" value="${state.draftOrders.patient.get(r.key)||''}" /></td>
+                    </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>`;
+          $$('.q-pt').forEach(i=> i.addEventListener('input', e=>{
+            const v = toInt(e.target.value);
+            if(v>0) state.draftOrders.patient.set(e.target.dataset.key, v); else state.draftOrders.patient.delete(e.target.dataset.key);
+          }));
+        }
       }else{
-        renderOrderSummaryWithMonthly(container);
+        renderOrderSummary(container);
       }
     }
 
+    /* ───────── 입고 UI(전체기간 집계) ───────── */
     async function renderReceiptsUI(container){
-      const months = ymRange(state.dateFrom, state.dateTo);
       const data = state.snapshot||{};
+      const months = collectAllMonths(data);
       if(months.length===0){ container.innerHTML=''; return; }
 
+      const ITEMS = buildItems(data);
       const sumBy = (name, path, tb='')=>{
         return months.reduce((acc, m)=>{
           const node = (((data[name]||{})[path]||{})[m])||{};
           const arr = Object.values(node).filter(e=> (tb? (e.topBottom||'')===tb : true));
-          return acc + arr.reduce((s,e)=> s+(Number(e.qty)||0),0);
+          return acc + arr.reduce((s,e)=> s+toInt(e.qty),0);
         },0);
       };
 
-      const sheetRows = SHEET_PRIORITY.map(n=>{
-        const o = sumBy(n,'orders'); if(o<=0) return '';
-        const r = sumBy(n,'receipts');
-        const done = r>=o ? 'done' : '';
-        const over = r>o ? 'over' : '';
-        const prDisp = (r<=o) ? `${Math.round((r/o)*100)}%` : `-${Math.round((r-o)/o*100)}%`;
-        const overCnt = Math.max(0, r - o);
+      const sheetRows = ITEMS.filter(x=>x.group==='sheet').map(r=>{
+        const o = sumBy(r.key,'orders',r.tb), rv = sumBy(r.key,'receipts',r.tb);
+        if(o<=0 && rv<=0) return '';
+        const done = rv>=o ? 'done' : '';
+        const over = rv>o ? 'over' : '';
+        const prDisp = (o>0) ? (rv<=o ? `${Math.round((rv/o)*100)}%` : `-${Math.round((rv-o)/o*100)}%`) : (rv>0?'100%':'0%');
+        const overCnt = Math.max(0, rv - o);
         const badgeClass = overCnt ? '' : 'is-hidden';
-        return `<tr class="rec-row ${done} ${over}" data-item="${n}" data-tb="">
-  <td class="name-cell"><span class="name">${n}</span><span class="badge-dot ${badgeClass}" title="추가입고 ${overCnt}개">+</span></td>
-  <td class="o-cell"><span class="o" data-o="${o}" data-r="${r}">${o}/${r}</span></td>
-  <td><input type="number" min="0" inputmode="numeric" class="rq" data-item="${n}" data-tb="" /></td>
-  <td class="pcell">${prDisp}</td>
+        const pc100Class = (o>0 && rv>=o && (rv-o)===0) ? 'pc100' : '';
+        return `<tr class="rec-row ${done} ${over}" data-item="${r.key}" data-tb="">
+  <td class="name-cell"><span class="name">${r.label}</span><span class="badge-dot ${badgeClass}" title="추가입고 ${overCnt}개">+</span></td>
+  <td class="o-cell"><span class="o" data-o="${o}" data-r="${rv}">${o}/${rv}</span></td>
+  <td><input type="number" min="0" inputmode="numeric" class="rq" data-item="${r.key}" data-tb="" /></td>
+  <td class="pcell ${pc100Class}">${prDisp}</td>
 </tr>`;
       }).filter(Boolean).join('');
 
-      const buildPatientTable = (prefix, sizes, withTB=true, aliasText='')=>{
+      const buildPatientTable = (group, colorClass)=>{
         const rows=[];
-        sizes.forEach(sz=>{
-          const name = makeName(prefix, sz);
-          if(withTB){
-            ['상의','하의'].forEach(tb=>{
-              const o = sumBy(name,'orders',tb);
-              if(o>0){
-                const r = sumBy(name,'receipts',tb);
-                const done = r>=o ? 'done' : '';
-                const over = r>o ? 'over' : '';
-                const prDisp = (r<=o) ? `${Math.round((r/o)*100)}%` : `-${Math.round((r-o)/o*100)}%`;
-                const label = `${aliasText}${sz}${tb==='상의'?'상의':'하의'}`;
-                const overCnt = Math.max(0, r - o);
-                const badgeClass = overCnt ? '' : 'is-hidden';
-                rows.push(`<tr class="rec-row ${done} ${over}" data-item="${name}" data-tb="${tb}">
-  <td class="name-cell"><span class="name">${label}</span><span class="badge-dot ${badgeClass}" title="추가입고 ${overCnt}개">+</span></td>
-  <td class="o-cell"><span class="o" data-o="${o}" data-r="${r}">${o}/${r}</span></td>
-  <td><input type="number" min="0" inputmode="numeric" class="rq" data-item="${name}" data-tb="${tb}" /></td>
-  <td class="pcell">${prDisp}</td>
+        ITEMS.filter(x=>x.group===group).forEach(r=>{
+          const o = sumBy(r.key,'orders',r.tb);
+          const i = sumBy(r.key,'receipts',r.tb);
+          if(o>0 || i>0){
+            const prDisp = (o>0) ? (i<=o? `${Math.round((i/o)*100)}%` : `-${Math.round((i-o)/o*100)}%`) : (i>0?'100%':'0%');
+            const done = i>=o ? 'done' : '';
+            const over = i>o ? 'over' : '';
+            const overCnt = Math.max(0, i - o);
+            const badgeClass = overCnt ? '' : 'is-hidden';
+            const pc100Class = (o>0 && i>=o && (i-o)===0) ? 'pc100' : '';
+            rows.push(`<tr class="rec-row ${done} ${over}" data-item="${r.key}" data-tb="${r.tb}">
+  <td class="name-cell"><span class="name ${colorClass}">${r.label}</span><span class="badge-dot ${badgeClass}" title="추가입고 ${overCnt}개">+</span></td>
+  <td class="o-cell"><span class="o" data-o="${o}" data-r="${i}">${o}/${i}</span></td>
+  <td><input type="number" min="0" inputmode="numeric" class="rq" data-item="${r.key}" data-tb="${r.tb}" /></td>
+  <td class="pcell ${pc100Class}">${prDisp}</td>
 </tr>`);
-              }
-            });
-          }else{
-            const o = sumBy(name,'orders');
-            if(o>0){
-              const r = sumBy(name,'receipts');
-              const done = r>=o ? 'done' : '';
-              const over = r>o ? 'over' : '';
-              const prDisp = (r<=o) ? `${Math.round((r/o)*100)}%` : `-${Math.round((r-o)/o*100)}%`;
-              const label = `고관절${sz}`;
-              const overCnt = Math.max(0, r - o);
-              const badgeClass = overCnt ? '' : 'is-hidden';
-              rows.push(`<tr class="rec-row ${done} ${over}" data-item="${name}" data-tb="">
-  <td class="name-cell"><span class="name">${label}</span><span class="badge-dot ${badgeClass}" title="추가입고 ${overCnt}개">+</span></td>
-  <td class="o-cell"><span class="o" data-o="${o}" data-r="${r}">${o}/${r}</span></td>
-  <td><input type="number" min="0" inputmode="numeric" class="rq" data-item="${name}" data-tb="" /></td>
-  <td class="pcell">${prDisp}</td>
-</tr>`);
-            }
           }
         });
         if(rows.length===0) return '';
@@ -418,17 +459,19 @@
             <tbody>${sheetRows}</tbody>
           </table>
         </div>
-        ${buildPatientTable('일반환의', NORMAL_SIZES, true, '일반')}
-        ${buildPatientTable('정형환의', ORTHO_SIZES, true, '정형')}
-        ${buildPatientTable('고관절', HIP_SIZES, false)}
+        <div class="divider-strong"></div>
+        ${buildPatientTable('normal','txt-normal')}
+        <div class="divider-strong"></div>
+        ${buildPatientTable('ortho','txt-ortho')}
       `;
 
+      // 입력 변화 시 100% 파란색 클래스 동적 반영
       $$('.rq').forEach(inp=>{
         inp.addEventListener('input', (e)=>{
           const tr = e.target.closest('tr');
           const oEl = tr.querySelector('.o');
-          const o = Number(oEl.dataset.o), r0 = Number(oEl.dataset.r);
-          const v = Number(e.target.value||0);
+          const o = toInt(oEl.dataset.o), r0 = toInt(oEl.dataset.r);
+          const v = toInt(e.target.value);
           const rNew = r0 + v;
           oEl.textContent = `${o}/${rNew}`;
           const pcell = tr.querySelector('.pcell');
@@ -439,149 +482,107 @@
           if(isOver){
             const over = rNew - o;
             pcell.textContent = `-${Math.round((over/o)*100)}%`;
+            pcell.classList.remove('pc100');
             badge.classList.remove('is-hidden');
             badge.title = `추가입고 ${over}개`;
           }else{
-            pcell.textContent = `${Math.round((rNew/o)*100)}%`;
+            const pct = o>0 ? Math.round((rNew/o)*100) : (rNew>0?100:0);
+            pcell.textContent = `${pct}%`;
+            pcell.classList.toggle('pc100', pct===100);
             badge.classList.add('is-hidden');
           }
         });
       });
     }
 
-    /* ───────── 저장: 발주=시작월, 입고=종료월+일 ───────── */
-    async function onSaveAll(){
-      const ymOrders   = ymOf(state.dateFrom);
-      const ymReceipts = ymOf(state.dateTo);
-      const day        = Number((state.dateTo||'').split('-')[2]||'1');
-
-      if(state.mode==='orders'){
-        const entries = [];
-        state.draftOrders.sheet.forEach((qty, item)=>{ if(qty>0) entries.push({itemName:item, qty}); });
-        state.draftOrders.patient.forEach((qty, key)=>{
-          const [itemName, tb] = key.split('__'); if(qty>0) entries.push({itemName, qty, topBottom:tb});
-        });
-        if(entries.length===0){ alert('발주 입력값이 없습니다.'); return; }
-        await batchAddOrders(entries, ymOrders);
-        state.draftOrders.sheet.clear(); state.draftOrders.patient.clear();
-        showToast('발주 저장 완료');
-      }else{
-        const entries = [];
-        $$('.rq').forEach(inp=>{
-          const qty = Number(inp.value||0);
-          if(qty>0){
-            const itemName = inp.dataset.item, tb = inp.dataset.tb||'';
-            entries.push({itemName, topBottom:tb, qty});
-          }
-        });
-        if(entries.length===0){ alert('입고 입력값이 없습니다.'); return; }
-        await batchAddReceipts(entries, ymReceipts, day);
-        showToast('입고 완료');
-      }
-      state.snapshot = await getStatusOnce();
-      renderBody(); refreshProgress();
-    }
-
-    /* ───────── 발주내역(해당년도 자동) ───────── */
-    function renderOrderSummaryWithMonthly(container){
-      const now = new Date();
-      const year = now.getFullYear();
-      const monthsAsc = yearMonths(year);
-      const months = [...monthsAsc].sort((a,b)=> a<b ? 1 : (a>b ? -1 : 0));
+    /* ───────── 발주내역(누적 + 월별 최신순) ───────── */
+    function renderOrderSummary(container){
       const data = state.snapshot||{};
+      const monthsAsc = collectAllMonths(data);
+      const monthsDesc = sortDescYM(monthsAsc);
+      const ITEMS = buildItems(data);
 
-      const sumOrdersAcross = (name, tb='')=>{
+      const sumAcross=(name,tb='',kind='orders')=>{
         return monthsAsc.reduce((acc,m)=>{
-          const ord = (((data[name]||{}).orders||{})[m])||{};
-          const arr = Object.values(ord).filter(e=> tb? (e.topBottom||'')===tb : true);
-          return acc + arr.reduce((s,e)=> s+(Number(e.qty)||0),0);
+          const node=(((data[name]||{})[kind]||{})[m])||{};
+          const arr=Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true);
+          return acc+arr.reduce((s,e)=> s+toInt(e.qty),0);
         },0);
       };
-      const sumOrdersByMonth = (name, month, tb='')=>{
-        const ord = (((data[name]||{}).orders||{})[month])||{};
-        const arr = Object.values(ord).filter(e=> tb? (e.topBottom||'')===tb : true);
-        return arr.reduce((s,e)=> s+(Number(e.qty)||0),0);
+      const sumMonth=(name,month,tb='',kind='orders')=>{
+        const node=(((data[name]||{})[kind]||{})[month])||{};
+        const arr=Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true);
+        return arr.reduce((s,e)=> s+toInt(e.qty),0);
+      };
+      const rowHtml=(label,o,i,color='')=>{
+        const n=o-i; const negCls = n<0 ? 'neg' : '';
+        return `<tr>
+          <td style="text-align:left; padding-left:8px;" class="${color}">${label}</td>
+          <td>${o}</td><td>${i}</td><td class="${negCls}">${n}</td>
+        </tr>`;
       };
 
-      const sumRows=[];
-      SHEET_PRIORITY.forEach(n=>{ const o=sumOrdersAcross(n); if(o>0) sumRows.push({label:n, qty:o}); });
-      const pushPtSum=(prefix, sizes, alias)=>{
-        sizes.forEach(sz=>{
-          const nm = makeName(prefix, sz);
-          ['상의','하의'].forEach(tb=>{
-            const o=sumOrdersAcross(nm, tb); if(o>0) sumRows.push({label:`${alias}${sz}${tb==='상의'?'상의':'하의'}`, qty:o});
-          });
-        });
-      };
-      pushPtSum('일반환의', NORMAL_SIZES, '일반');
-      pushPtSum('정형환의', ORTHO_SIZES, '정형');
-      HIP_SIZES.forEach(sz=>{
-        const nm=makeName('고관절', sz);
-        const o=sumOrdersAcross(nm); if(o>0) sumRows.push({label:`고관절${sz}`, qty:o});
+      const parts=[];
+      // ─ 누적(맨 위)
+      let rows=[];
+      ITEMS.forEach(r=>{
+        const o=sumAcross(r.key,r.tb,'orders'), i=sumAcross(r.key,r.tb,'receipts');
+        if(o||i){
+          const color = r.group==='normal' ? 'txt-normal' : (r.group==='ortho' ? 'txt-ortho' : '');
+          rows.push(rowHtml(r.label,o,i,color));
+        }
       });
-
-      const buildMonthlyBlocks = ()=>{
-        return months.map(m=>{
-          const mRows=[];
-          SHEET_PRIORITY.forEach(n=>{
-            const v = sumOrdersByMonth(n, m);
-            if(v>0) mRows.push({label:n, qty:v});
-          });
-          const pushPtMonth=(prefix, sizes, alias)=>{
-            sizes.forEach(sz=>{
-              const nm = makeName(prefix, sz);
-              ['상의','하의'].forEach(tb=>{
-                const v = sumOrdersByMonth(nm, m, tb);
-                if(v>0) mRows.push({label:`${alias}${sz}${tb==='상의'?'상의':'하의'}`, qty:v});
-              });
-            });
-          };
-          pushPtMonth('일반환의', NORMAL_SIZES, '일반');
-          pushPtMonth('정형환의', ORTHO_SIZES, '정형');
-          HIP_SIZES.forEach(sz=>{
-            const nm = makeName('고관절', sz);
-            const v = sumOrdersByMonth(nm, m);
-            if(v>0) mRows.push({label:`고관절${sz}`, qty:v});
-          });
-
-          if(mRows.length===0) return '';
-          return `
-            <div class="sec-title">월별 내역 · ${m}</div>
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th style="text-align:left; padding-left:8px;">품목</th><th>발주량</th></tr></thead>
-                <tbody>
-                  ${mRows.map(r=>`<tr><td style="text-align:left; padding-left:8px;">${r.label}</td><td>${r.qty}</td></tr>`).join('')}
-                </tbody>
-              </table>
-            </div>`;
-        }).join('');
-      };
-
-      container.innerHTML = `
-        <div class="sec-title">발주내역 · 합산</div>
+      parts.push(`
+        <div class="sec-title">전체 발주내역</div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th style="text-align:left; padding-left:8px;">품목</th><th>발주량</th></tr></thead>
-            <tbody>
-              ${sumRows.map(r=>`<tr><td style="text-align:left; padding-left:8px;">${r.label}</td><td>${r.qty}</td></tr>`).join('')}
-            </tbody>
+            <thead><tr><th style="text-align:left; padding-left:8px;">품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
+            <tbody>${rows.join('')}</tbody>
           </table>
-        </div>
-        ${buildMonthlyBlocks()}
-      `;
+        </div>`);
+
+      // ─ 월별(최신→과거)
+      monthsDesc.forEach(m=>{
+        const rowsM=[];
+        ITEMS.forEach(r=>{
+          const o=sumMonth(r.key,m,r.tb,'orders'); const i=sumMonth(r.key,m,r.tb,'receipts');
+          if(o||i){
+            const color = r.group==='normal' ? 'txt-normal' : (r.group==='ortho' ? 'txt-ortho' : '');
+            rowsM.push(rowHtml(r.label,o,i,color));
+          }
+        });
+        if(rowsM.length){
+          parts.push(`
+            <div class="sec-title">월별 · ${m}</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th style="text-align:left; padding-left:8px;">품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
+                <tbody>${rowsM.join('')}</tbody>
+              </table>
+            </div>`);
+        }
+      });
+
+      container.innerHTML = parts.join('');
     }
 
-    /* ───────── 진행률 ───────── */
+    /* ───────── 진행률(정의된 품목만 합산) ───────── */
     async function refreshProgress(){
       if(!state.snapshot) state.snapshot = await getStatusOnce();
-      const months = ymRange(state.dateFrom, state.dateTo);
       const data = state.snapshot||{};
+      const months = collectAllMonths(data);
+      const ITEMS = buildItems(data);
+
       let totO=0, totR=0;
       months.forEach(m=>{
-        Object.values(data).forEach(it=>{
-          totO += Object.values(((it.orders||{})[m])||{}).reduce((s,e)=> s+(Number(e.qty)||0),0);
-          totR += Object.values(((it.receipts||{})[m])||{}).reduce((s,e)=> s+(Number(e.qty)||0),0);
+        ITEMS.forEach(it=>{
+          const o = Object.values((((data[it.key]||{}).orders||{})[m])||{})
+                    .filter(e=> it.tb? (e.topBottom||'')===it.tb : true)
+                    .reduce((s,e)=> s+toInt(e.qty),0);
+          const r = Object.values((((data[it.key]||{}).receipts||{})[m])||{})
+                    .filter(e=> it.tb? (e.topBottom||'')===it.tb : true)
+                    .reduce((s,e)=> s+toInt(e.qty),0);
+          totO += o; totR += r;
         });
       });
       const p = totO>0 ? Math.round((totR/totO)*100) : (totR>0?100:0);
@@ -590,141 +591,184 @@
       $('#gaugeStats').textContent = `전체 발주수량 ${totO}개 · 전체 입고수량 ${totR}개 — ${overTxt} 입고됨`;
     }
 
-    /* ───────── 엑셀 내보내기(입고 없는 달은 '입고'열 생성 안 함, 완전 무활동 달은 제외) ───────── */
-    async function onExportHorizontalExcel(){
+    /* ───────── 저장(단일 날짜) ───────── */
+    async function onSaveAll(){
+      const ymd = state.entryDate;
+      if(!ymd){ alert('날짜를 선택하세요.'); return; }
+      const ym  = ymOf(ymd);
+      const day = Number(ymd.split('-')[2]||'1');
+
+      if(state.mode==='orders'){
+        const entries = [];
+        // 시트/고관절(시트 탭)
+        state.draftOrders.sheet.forEach((qty, item)=>{ if(qty>0) entries.push({itemName:item, qty}); });
+        // 환자복(일반/정형)
+        state.draftOrders.patient.forEach((qty, key)=>{
+          const [itemName, tb] = key.split('__'); if(qty>0) entries.push({itemName, qty, topBottom:tb});
+        });
+        // 환자복 탭의 고관절(상/하 없음)
+        state.draftOrders.hip.forEach((qty, item)=>{ if(qty>0) entries.push({itemName:item, qty}); });
+
+        if(entries.length===0){ alert('발주 입력값이 없습니다.'); return; }
+        await batchAddOrders(entries, ym);
+        state.draftOrders.sheet.clear(); state.draftOrders.patient.clear(); state.draftOrders.hip.clear();
+        showToast('발주 저장 완료');
+      }else{
+        const entries = [];
+        $$('.rq').forEach(inp=>{
+          const qty = toInt(inp.value);
+          if(qty>0){
+            const itemName = inp.dataset.item, tb = inp.dataset.tb||'';
+            entries.push({itemName, topBottom:tb, qty});
+          }
+        });
+        if(entries.length===0){ alert('입고 입력값이 없습니다.'); return; }
+        await batchAddReceipts(entries, ym, day);
+        showToast('입고 완료');
+      }
+      state.snapshot = await getStatusOnce();
+      renderBody(); refreshProgress();
+    }
+
+    /* ───────── 엑셀 내보내기(요약/발주월별/입고-날짜별) ───────── */
+    async function onExportExcel_AllData(){
       if(!state.snapshot) state.snapshot=await getStatusOnce();
       const all=state.snapshot||{};
-      const monthsAll=ymRange(state.dateFrom, state.dateTo);
-
-      // (1) 완전 무활동 달 제거(발주 0 & 입고 0)
-      const activeMonths = monthsAll.filter(m=>{
-        let has=false;
-        for(const it of Object.values(all)){
-          const ord=((it.orders||{})[m])||{};
-          const rec=((it.receipts||{})[m])||{};
-          const so = Object.values(ord).reduce((s,e)=> s+(Number(e.qty)||0),0);
-          const sr = Object.values(rec).reduce((s,e)=> s+(Number(e.qty)||0),0);
-          if(so>0 || sr>0){ has=true; break; }
-        }
-        return has;
-      });
+      const monthsAll=collectAllMonths(all);
+      const ITEMS = buildItems(all);
 
       const wb=new ExcelJS.Workbook();
 
-      // 품목 행 정의
-      const itemsRows = [];
-      SHEET_PRIORITY.forEach(n=> itemsRows.push({label:n, key:n, tb:''}));
-      [['일반환의', NORMAL_SIZES, '일반'], ['정형환의', ORTHO_SIZES, '정형']].forEach(([prefix, sizes, alias])=>{
-        sizes.forEach(sz=>{
-          ['상의','하의'].forEach(tb=>{
-            const key = makeName(prefix, sz);
-            itemsRows.push({label:`${alias}${sz}${tb==='상의'?'상의':'하의'}`, key, tb});
-          });
-        });
-      });
-      HIP_SIZES.forEach(sz=> itemsRows.push({label:`고관절${sz}`, key:makeName('고관절', sz), tb:''}));
-
-      // 합계 유틸
-      const sumOrdersMonth = (it, m, tb='')=>{
-        const node=((it.orders||{})[m])||{};
+      const sumMonth = (it, kind, m, tb='')=>{
+        const node=((it[kind]||{})[m])||{};
         return Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true)
-          .reduce((s,e)=> s+(Number(e.qty)||0),0);
+          .reduce((s,e)=> s+toInt(e.qty),0);
       };
-      const sumReceiptsMonthDay = (it, m, day, tb='')=>{
-        const node=((it.receipts||{})[m])||{};
-        return Object.values(node)
-          .filter(e=> (tb? (e.topBottom||'')===tb : true) && Number(e.day||1)===day)
-          .reduce((s,e)=> s+(Number(e.qty)||0),0);
-      };
-      const sumRange = (it, tb, kind, monthsList)=>{
-        return monthsList.reduce((acc,mm)=>{
-          const node=((it[kind]||{})[mm])||{};
-          const arr=Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true);
-          return acc+arr.reduce((s,e)=> s+(Number(e.qty)||0),0);
-        },0);
-      };
+      const sumRange = (it, kind, months, tb='')=> months.reduce((acc,m)=> acc + sumMonth(it,kind,m,tb), 0);
 
-      // (2) 월별 '입고 날짜' 존재 여부/목록(있을 때만 입고 열 생성)
-      const monthToDays = {};
-      const hasRecv = {};
-      activeMonths.forEach(m=>{
-        const daysSet = new Set();
-        itemsRows.forEach(r=>{
-          const it = all[r.key]||{};
-          const node = ((it.receipts||{})[m])||{};
-          Object.values(node).forEach(e=>{
-            if((r.tb? (e.topBottom||'')===r.tb : true) && (Number(e.qty)||0)>0){
-              daysSet.add(Number(e.day||1));
-            }
-          });
-        });
-        const list = Array.from(daysSet).sort((a,b)=>a-b);
-        monthToDays[m] = list;
-        hasRecv[m] = list.length>0;
-      });
-
-      // 시트1: 요약
+      /* ───── 엑셀·요약시트 시작 ───── */
       const wsSum=wb.addWorksheet('요약');
-      wsSum.addRow(['품목','발주량','입고량','진행률']);
-      wsSum.columns=[{width:20},{width:12},{width:12},{width:12}];
-      itemsRows.forEach(r=>{
+      wsSum.addRow(['품목','발주량','입고량','미입고','진행률']);
+      wsSum.columns=[{width:20},{width:12},{width:12},{width:12},{width:12}];
+      wsSum.views = [{state:'frozen', xSplit:1, ySplit:1}];
+
+      let totO=0, totR=0;
+      ITEMS.forEach(r=>{
         const it=all[r.key]||{};
-        const o=sumRange(it,r.tb,'orders',activeMonths);
-        const v=sumRange(it,r.tb,'receipts',activeMonths);
-        if(o>0 || v>0){
+        const o=sumRange(it,'orders',monthsAll,r.tb);
+        const v=sumRange(it,'receipts',monthsAll,r.tb);
+        const n=o-v; totO+=o; totR+=v;
+        if(o!==0 || v!==0){
           const pct = (o>0) ? (v<=o? `${Math.round(v/o*100)}%` : `-${Math.round((v-o)/o*100)}%`) : (v>0?'100%':'0%');
-          wsSum.addRow([r.label,o,v,pct]);
+          const row=wsSum.addRow([r.label,o,v,n,pct]);
+
+          // 색상 구분
+          if(r.group==='normal') row.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
+          if(r.group==='ortho')  row.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
+          if(n<0) row.getCell(4).font={color:{argb:'FFF43F5E'},bold:true};
+
+          // 100% 입고 강조(미입고 0이고 발주>0)
+          if(o>0 && n===0){
+            row.eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE8F7EE'}}; });
+            row.getCell(5).font={bold:true, color:{argb:'FF2563EB'}}; // 퍼센트 파랑
+          }
         }
       });
-
-      // 시트2: 발주월별(가로) — 'YYYY-MM발주' + (입고 있는 달만) 'M월 D일 입고' 열
-      const wsOrders=wb.addWorksheet('발주월별(가로)');
-      const headers = [];
-      activeMonths.forEach(m=>{
-        const mm = Number(m.slice(5,7));
-        headers.push(`${m}발주`);               // 발주 헤더 가독성↑
-        if(hasRecv[m]) monthToDays[m].forEach(d=> headers.push(`${mm}월 ${d}일 입고`));
+      const totN = totO - totR;
+      const totalRow = wsSum.addRow(['종합(전체)', totO, totR, totN, (totO>0? (totR<=totO? `${Math.round(totR/totO*100)}%` : `-${Math.round((totR-totO)/totO*100)}%`) : (totR>0?'100%':'0%'))]);
+      totalRow.eachCell(c=>{
+        c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF2563EB'}};
+        c.font={bold:true,color:{argb:'FFFFFFFF'}};
+        c.alignment={horizontal:'center'};
+        c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
       });
-      wsOrders.addRow(['품목', ...headers]);
-
-      // 열 너비
-      const widths = [{width:20}];
-      activeMonths.forEach(m=>{
-        widths.push({width:12});                // 'YYYY-MM발주'
-        if(hasRecv[m]) monthToDays[m].forEach(()=> widths.push({width:13}));
+      wsSum.getRow(1).eachCell(c=>{
+        c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1E293B'}};
+        c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center'};
+        c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
       });
-      wsOrders.columns = widths;
+      for(let r=2; r<wsSum.rowCount; r++){
+        wsSum.getRow(r).eachCell((c,ci)=>{ c.alignment={vertical:'middle',horizontal:(ci===1?'left':'center')};
+          c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; });
+      }
+      /* ───── 엑셀·요약시트 종료 ───── */
 
-      // 행 데이터
-      itemsRows.forEach(r=>{
+      /* ───── 엑셀·발주월별(발주만) 시작 ───── */
+      const wsOrd=wb.addWorksheet('발주월별');
+      wsOrd.addRow(['품목', ...monthsAll.map(m=>`${m}발주`)]);
+      wsOrd.columns=[{width:20}, ...monthsAll.map(()=>({width:12}))];
+      wsOrd.views = [{state:'frozen', xSplit:1, ySplit:1}];
+      ITEMS.forEach(r=>{
         const it=all[r.key]||{};
-        const row = [];
-        activeMonths.forEach(m=>{
-          row.push(sumOrdersMonth(it,m,r.tb));             // 발주 합계
-          if(hasRecv[m]) monthToDays[m].forEach(d=> row.push(sumReceiptsMonthDay(it,m,d,r.tb)));
-        });
-        if(row.some(v=>v>0)) wsOrders.addRow([r.label, ...row]);
-      });
-
-      // 공통 스타일
-      [wsSum, wsOrders].forEach(ws=>{
-        ws.getRow(1).font={bold:true,color:{argb:'FFFFFFFF'}};
-        ws.getRow(1).alignment={vertical:'middle',horizontal:'center'};
-        ws.getRow(1).eachCell(cell=>{
-          cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF2563EB'}};
-          cell.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
-        });
-        for(let r=2; r<=ws.rowCount; r++){
-          ws.getRow(r).eachCell((c,ci)=>{
-            c.alignment={vertical:'middle',horizontal:(ci===1?'left':'center')};
-            c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
-          });
+        const vals=monthsAll.map(m=> sumMonth(it,'orders',m,r.tb));
+        if(vals.some(v=>v!==0)){
+          const added=wsOrd.addRow([r.label, ...vals]);
+          if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
+          if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
         }
       });
+      wsOrd.getRow(1).eachCell(c=>{
+        c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1E293B'}};
+        c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center'};
+        c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
+      });
+      for(let r=2; r<=wsOrd.rowCount; r++){
+        wsOrd.getRow(r).eachCell((c,ci)=>{ c.alignment={vertical:'middle',horizontal:(ci===1?'left':'center')};
+          c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; });
+      }
+      /* ───── 엑셀·발주월별 종료 ───── */
+
+      /* ───── 엑셀·입고(날짜별) 시작 ───── */
+      const monthToDays = {};
+      monthsAll.forEach(m=>{
+        const daysSet = new Set();
+        ITEMS.forEach(r=>{
+          const recs = (((all[r.key]||{}).receipts||{})[m])||{};
+          Object.values(recs).forEach(e=>{
+            const d = Number(e.day||'');
+            if(!Number.isNaN(d)) daysSet.add(d);
+          });
+        });
+        monthToDays[m] = Array.from(daysSet).sort((a,b)=>a-b);
+      });
+      const wsRecv=wb.addWorksheet('입고(날짜별)');
+      const recvHeaders = ['품목', ...monthsAll.flatMap(m=> monthToDays[m].map(d=>`${Number(m.slice(5))}월 ${d}일`))];
+      wsRecv.addRow(recvHeaders);
+      wsRecv.columns=[{width:20}, ...recvHeaders.slice(1).map(()=>({width:13}))];
+      wsRecv.views = [{state:'frozen', xSplit:1, ySplit:1}];
+
+      const daySum = (it, m, d, tb='')=>{
+        const node=((it.receipts||{})[m])||{};
+        return Object.values(node).filter(e=>{
+          const okTB = tb? (e.topBottom||'')===tb : true;
+          return okTB && Number(e.day||'')===d;
+        }).reduce((s,e)=> s+toInt(e.qty),0);
+      };
+      ITEMS.forEach(r=>{
+        const it=all[r.key]||{};
+        const vals = monthsAll.flatMap(m=> monthToDays[m].map(d=> daySum(it, m, d, r.tb)));
+        if(vals.some(v=>v!==0)){
+          const added=wsRecv.addRow([r.label, ...vals]);
+          if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
+          if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
+        }
+      });
+      wsRecv.getRow(1).eachCell(c=>{
+        c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1E293B'}};
+        c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center'};
+        c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
+      });
+      for(let r=2; r<=wsRecv.rowCount; r++){
+        wsRecv.getRow(r).eachCell((c,ci)=>{ c.alignment={vertical:'middle',horizontal:(ci===1?'left':'center')};
+          c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; });
+      }
+      /* ───── 엑셀·입고(날짜별) 종료 ───── */
 
       const buf=await wb.xlsx.writeBuffer();
-      saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), `구매현황_${state.dateFrom}_${state.dateTo}.xlsx`);
+      saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), `구매현황_전체_${Date.now()}.xlsx`);
     }
+    /* ───────── 엑셀 내보내기 종료 ───────── */
   </script>
+  <!-- ▷▷▷ 스크립트 종료 ▷▷▷ -->
 </body>
 </html>
