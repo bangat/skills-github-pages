@@ -289,25 +289,16 @@ window.addEventListener('load', ()=>{ stickToBottom=true; toBottom(); });
   </script>
   <!-- ───────── Firebase/RTDB/렌더/TTS 모듈 종료 ───────── -->
 
-  <!-- ───────── 서비스워커 등록/보관 시작 ───────── -->
-  <script>
-    const SCOPE = '/skills-github-pages/';
-    const SW_URL = `${SCOPE}sw.js`;
-
-    window.__swReadyPromise = (async () => {
-      if (!('serviceWorker' in navigator)) return null;
-      try {
-        let reg = await navigator.serviceWorker.getRegistration(SCOPE);
-        if (!reg) reg = await navigator.serviceWorker.register(SW_URL, { scope: SCOPE });
-        window.__swReg = reg;
-        return await navigator.serviceWorker.ready; // ready 보장
-      } catch (err) {
-        console.warn('[SW] register/ready fail:', err);
-        return null;
-      }
-    })();
-  </script>
-  <!-- ───────── 서비스워커 등록/보관 종료 ───────── -->
+ <script>
+  // 이제 sw.js 하나만 등록합니다.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('[SW] Registered:', reg.scope))
+        .catch(err => console.error('[SW] Registration failed:', err));
+    });
+  }
+</script>
 
   <!-- ───────── FCM 포그라운드 수신(진동만) 시작 ───────── -->
   <script type="module">
