@@ -2133,7 +2133,10 @@ document.addEventListener("click", (e) => {
   const db  = getDatabase(app);
   const msg = getMessaging(app);
 
-  const TOKEN_KEY = "linen/fcmToken";/* ▷▷▷ ensureServiceWorker 변경코드 시작 ▷▷▷ */
+  const TOKEN_KEY = "linen/fcmToken";
+  const TOKEN_VERSION_KEY = "linen/fcmTokenVersion"; // ✅ 추가
+const TOKEN_SCHEMA_VERSION = "1";                  // ✅ 추가
+  /* ▷▷▷ ensureServiceWorker 변경코드 시작 ▷▷▷ */
 async function ensureServiceWorker() {
   if (!("serviceWorker" in navigator)) return null;
 
@@ -2254,3 +2257,4 @@ window.addEventListener("load", async () => {
 
 </body>
 </html>
+
