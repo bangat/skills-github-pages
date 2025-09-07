@@ -1,20 +1,13 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <!-- ▷▷▷ head 메타 시작 ▷▷▷ -->
   <meta charset="utf-8" />
   <meta http-equiv="Cache-Control" content="no-store" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>발주·입고 현황</title>
-  <!-- ▷▷▷ head 메타 종료 ▷▷▷ -->
-
-  <!-- ▷▷▷ 외부 라이브러리 로드 시작 ▷▷▷ -->
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
-  <!-- ▷▷▷ 외부 라이브러리 로드 종료 ▷▷▷ -->
-
-  <!-- ▷▷▷ 전역 스타일 시작 ▷▷▷ -->
   <style>
     :root{
       --bg:#f4f7fb; --card:#ffffff; --accent:#2563eb; --muted:#5b677a; --text:#0f172a; --border:#e6eaf2;
@@ -31,16 +24,16 @@
     .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .spacer{flex:1 1 auto}
 
-    .btn{
+    .btn, a.btn{
       border:1px solid var(--border);background:#fff;border-radius:12px;
       padding:0 12px;height:34px;font-weight:800;cursor:pointer;font-size:13px;
       display:inline-flex;align-items:center;justify-content:center;gap:8px;
-      white-space:nowrap; min-width:64px;
+      white-space:nowrap; min-width:64px; text-decoration: none; color: var(--text);
     }
     .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
     .btn.green{background:var(--ok);color:#fff;border-color:var(--ok)}
-    .btn.ghost{background:#f8fafc;border-color:var(--border);color:#334155}
-    .btn:active{transform:translateY(1px)}
+    .btn.ghost, a.btn.ghost{background:#f8fafc;border-color:var(--border);color:#334155}
+    .btn:active, a.btn:active{transform:translateY(1px)}
 
     input[type="date"], input[type="number"]{
       border:1px solid var(--border);border-radius:12px;padding:0 8px;height:34px;font-size:13px;background:#fff;outline:none;min-width:0;text-align:center;
@@ -89,9 +82,9 @@
     .savebar{
       position:fixed; left:0; right:0; bottom:0; z-index:300;
       background:#fff; border-top:1px solid var(--border); box-shadow:0 -6px 16px rgba(15,23,42,.08);
-      padding:10px; display:flex; gap:10px; align-items:center; justify-content:flex-end;
+      padding:10px; display:flex; gap:10px; align-items:center;
     }
-    .savebar .btn{height:42px; border-radius:12px; font-size:15px; padding:0 16px;}
+    .savebar .btn, .savebar a.btn{height:42px; border-radius:12px; font-size:15px; padding:0 16px;}
 
     .sec-title{font-weight:900; font-size:13px; color:#334155; padding:8px 10px; margin:6px 6px 0;}
     .divider-strong{border-top:2px solid #cbd5e1; margin:4px 6px;}
@@ -100,13 +93,11 @@
     .txt-ortho{  color:#2563eb; font-weight:800;}
     .neg{ color:#f43f5e; font-weight:900;}
   </style>
-  <!-- ▷▷▷ 전역 스타일 종료 ▷▷▷ -->
-</head>
+  </head>
 <body>
   <div class="wrap">
     <div class="card">
       <div class="card-head">
-        <!-- ───────── 상단 탭/날짜/게이지 시작 ───────── -->
         <div class="row">
           <div class="subtabs" role="tablist" aria-label="발주/입고 전환">
             <button id="tab-orders" class="subtab active" data-mode="orders">발주현황</button>
@@ -114,7 +105,6 @@
           </div>
         </div>
 
-        <!-- 단일 날짜(등록용) -->
         <div class="datebar">
           <input id="entryDate" type="date" aria-label="기록 날짜" />
         </div>
@@ -138,23 +128,22 @@
         <div id="patientTabs" class="patient-tabs" style="display:none">
           <button class="ptab active" data-kind="normal">일반환의</button>
           <button class="ptab" data-kind="ortho">정형환의</button>
-          <button class="ptab" data-kind="hip">고관절</button> <!-- 고관절 탭 추가 -->
+          <button class="ptab" data-kind="hip">고관절</button> </div>
         </div>
-        <!-- ───────── 상단 탭/날짜/게이지 종료 ───────── -->
-      </div>
 
       <div id="formBox"></div>
     </div>
   </div>
 
   <div class="savebar">
+    <a href="뉴업로더.html" target="_blank" class="btn ghost"><i data-feather="upload"></i> 엑셀 업로드</a>
+
     <button id="btnExcelBottom" class="btn green"><i data-feather="download"></i> 엑셀로 내려받기</button>
+    <div class="spacer"></div>
     <button id="btnSaveBottom" class="btn primary"><i data-feather="save"></i> <span id="saveLabel">발주 저장</span></button>
   </div>
-
   <div id="toast" role="status" aria-live="polite" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:60px;background:#111827;color:#fff;padding:8px 12px;border-radius:10px;font-size:12px;"></div>
 
-  <!-- ▷▷▷ 스크립트 시작 ▷▷▷ -->
   <script type="module">
     /* ───────── Firebase 시작 ───────── */
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -769,6 +758,5 @@
     }
     /* ───────── 엑셀 내보내기 종료 ───────── */
   </script>
-  <!-- ▷▷▷ 스크립트 종료 ▷▷▷ -->
-</body>
+  </body>
 </html>
