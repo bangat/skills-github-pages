@@ -2133,8 +2133,12 @@ document.addEventListener("click", (e) => {
   const db  = getDatabase(app);
   const msg = getMessaging(app);
 
-  const TOKEN_VERSION_KEY   = "linen/fcmTokenSchema"; // localStorage key
-const TOKEN_SCHEMA_VERSION = "v1";  
+/* ▷▷▷ FCM 토큰 키/버전 상수 시작 ▷▷▷ */
+const TOKEN_KEY            = "linen/fcmToken";        // localStorage 키 (토큰 값)
+const TOKEN_VERSION_KEY    = "linen/fcmTokenSchema";  // localStorage 키 (스키마 버전)
+const TOKEN_SCHEMA_VERSION = "v1";                    // 현재 스키마 버전 문자열
+/* ▷▷▷ FCM 토큰 키/버전 상수 종료 ▷▷▷ */
+
 async function ensureServiceWorker() {
   if (!("serviceWorker" in navigator)) return null;
 
@@ -2259,4 +2263,5 @@ window.addEventListener("load", async () => {
 
 </body>
 </html>
+
 
