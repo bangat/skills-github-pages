@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta http-equiv="Cache-Control" content="no-store" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <title>구매현황 엑셀 업로더 (요약 파일용)</title>
+  <title>구매현황 엑셀 업로더</title>
   <style>
     :root{
       color-scheme: light; --bg:#f4f7fb; --card:#fff; --text:#0f172a; --muted:#5b677a; --border:#e6eaf2; --accent:#2563eb;
@@ -12,20 +12,67 @@
     }
     *{box-sizing:border-box}
     html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Apple SD Gothic Neo,sans-serif}
-    .wrap{max-width:980px;margin:22px auto;padding:0 14px}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);padding:18px}
+    .wrap{max-width:980px;margin:16px auto;padding:0 14px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);padding:24px}
     h1{margin:0 0 8px;font-size:20px}
-    .row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
-    label{display:block;margin:12px 0 6px;color:#334155;font-weight:800}
-    input[type="text"],select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px}
-    input[type="file"]{margin-top:6px}
-    .btn{padding:10px 16px;border:none;border-radius:10px;background:linear-gradient(180deg,#4f83ff,#2563eb);color:#fff;font-weight:900;cursor:pointer}
-    .btn:disabled{opacity:.6;cursor:not-allowed}
-    .log{font-family:ui-monospace,Consolas,monospace;background:#0b1220;color:#bfe0ff;padding:12px;border-radius:10px;white-space:pre-wrap;min-height:160px}
+    label{display:block;margin:12px 0 6px;color:#334155;font-weight:800;font-size:14px;}
+    .btn{
+        display:flex; align-items:center; justify-content:center;
+        width:100%; height:48px; margin-top:16px;
+        padding:10px 16px;border:none;border-radius:12px;
+        background:linear-gradient(180deg,#4f83ff,#2563eb);
+        color:#fff;font-weight:900;font-size:16px;cursor:pointer;
+    }
+    .btn:disabled{background: #a5b4fc; cursor:not-allowed}
+    .log{font-family:ui-monospace,Consolas,monospace;background:#0b1220;color:#bfe0ff;padding:12px;border-radius:10px;white-space:pre-wrap;min-height:160px;font-size:12px; line-height: 1.6;}
     table{border-collapse:collapse;width:100%;margin-top:8px}
-    th,td{border:1px solid var(--border);padding:6px 8px;font-size:12px}
+    th,td{border:1px solid var(--border);padding:6px 8px;font-size:12px; text-align:center;}
     th{background:#f1f5fb}
-    .ok{color:#16a34a} .err{color:#ef4444}
+    .ok{color:#16a34a} .warn{color:#f59e0b} .err{color:#ef4444}
+    #preview {
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+        border: 1px solid var(--border); border-radius: 8px; margin-top: 8px;
+    }
+    #preview table { margin-top: 0; border: none; width: auto; min-width: 100%; }
+
+    /* [추가] 새로운 파일 업로드 영역 스타일 */
+    #file-upload-area {
+        margin-top: 16px;
+        border: 2px dashed var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        text-align: center;
+        cursor: pointer;
+        transition: background-color 0.2s, border-color 0.2s;
+    }
+    #file-upload-area:hover, #file-upload-area.dragover {
+        background-color: #f8fafc;
+        border-color: var(--accent);
+    }
+    #file-upload-area .upload-icon {
+        width: 40px; height: 40px;
+        color: var(--accent);
+        margin: 0 auto 12px;
+    }
+    #file-upload-area .upload-text {
+        font-weight: 600;
+        color: var(--muted);
+    }
+    #file-upload-area .file-name {
+        margin-top: 8px;
+        font-weight: 800;
+        color: var(--accent);
+        font-size: 14px;
+    }
+    input[type="file"] { display: none; }
+
+    /* 모바일 화면 대응 미디어 쿼리 */
+    @media (max-width: 640px) {
+        .wrap { margin: 0; padding: 0; }
+        .card { border-radius: 0; border-left:0; border-right:0; padding: 18px; }
+        h1 { font-size: 18px; }
+        p { font-size: 14px; }
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -33,36 +80,32 @@
 <div class="wrap">
   <div class="card">
     <h1>구매현황 엑셀 업로더</h1>
-    <p style="margin:0 0 10px;color:#475569">앱에서 내려받은 요약 엑셀(.xlsx)을 선택하면 <b>'발주월별', '입고(날짜별)'</b> 시트를 읽어 서버에 업로드합니다.</p>
+    <p style="margin:0 0 10px;color:#475569">요약 엑셀(.xlsx)을 선택하면 서버 데이터를 업데이트합니다.</p>
 
-    <div class="row">
-      <div style="flex:1 1 240px">
-        <label>Firebase Database URL</label>
-        <input id="dbURL" type="text" value="https://hallymlinen-default-rtdb.firebaseio.com" placeholder="https://...-default-rtdb.firebaseio.com">
-      </div>
-      <div style="flex:1 1 200px">
-        <label>업로드 기준 경로</label>
-        <input id="basePath" type="text" value="/purchase_status" placeholder="/purchase_status">
-      </div>
-      <div style="flex:0 1 120px">
-        <label>연도(필수)</label>
-        <input id="yearBox" type="text" inputmode="numeric" placeholder="예: 2025">
-      </div>
-      <div style="flex:1 1 220px">
-        <label>엑셀 파일(.xlsx)</label>
-        <input id="filePick" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
-      </div>
-      <div style="flex:0 0 auto">
-        <button id="runBtn" class="btn" disabled>업로드 시작</button>
-      </div>
+    <div style="display:none;">
+      <input id="dbURL" type="text" value="https://hallymlinen-default-rtdb.firebaseio.com">
+      <input id="basePath" type="text" value="/purchase_status">
     </div>
-    <div id="sheetArea" style="margin-top:12px;display:none">
+    
+    <input type="file" id="filePick" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+    <label for="filePick" id="file-upload-area">
+        <div class="upload-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        </div>
+        <div class="upload-text">파일을 선택하거나 여기에 드래그하세요</div>
+        <div class="file-name" id="fileName"></div>
+    </label>
+
+    <button id="runBtn" class="btn" disabled>업로드 시작</button>
+    
+    <label style="margin-top:16px">진행 로그</label>
+    <div id="log" class="log"></div>
+
+    <div id="sheetArea" style="margin-top:16px;display:none">
       <label>시트 미리보기</label>
       <select id="sheetSel"></select>
       <div id="preview"></div>
     </div>
-    <label style="margin-top:14px">진행 로그</label>
-    <div id="log" class="log"></div>
   </div>
 </div>
 
@@ -71,217 +114,236 @@
 const $ = s => document.querySelector(s);
 const logEl = $("#log");
 const log = (m, cls = '') => {
-  console[cls === 'err' ? 'error' : 'log'](m);
+  console[cls === 'err' ? 'error' : (cls === 'warn' ? 'warn' : 'log')](m);
   logEl.innerHTML += (cls ? `<span class="${cls}">` : '') + (typeof m === 'string' ? m : JSON.stringify(m)) + (cls ? '</span>' : '') + "\n";
   logEl.scrollTop = logEl.scrollHeight;
 };
-const okInput = () => $("#dbURL").value.trim().startsWith("https://") && $("#basePath").value.trim().startsWith("/") && $("#yearBox").value.trim().length === 4;
-const updateBtn = () => $("#runBtn").disabled = !(okInput() && $("#filePick").files.length > 0);
-$("#dbURL").addEventListener('input', updateBtn);
-$("#basePath").addEventListener('input', updateBtn);
-$("#yearBox").addEventListener('input', updateBtn);
+const updateBtn = () => $("#runBtn").disabled = !($("#filePick").files.length > 0);
 
-/* ------------ File Parsing (XLSX) ------------ */
-let workbook = null, sheetNames = [], fileNameHint = "";
-$("#filePick").addEventListener('change', async (e) => {
-  $("#preview").innerHTML = ""; $("#sheetArea").style.display = "none"; workbook = null; sheetNames = [];
-  const f = e.target.files[0];
-  if (!f) { updateBtn(); return; }
-  fileNameHint = f.name || "";
+/* ------------ File Parsing & UI Handling ------------ */
+let workbook = null, sheetNames = [];
+const fileInput = $("#filePick");
+const uploadArea = $("#file-upload-area");
+const fileNameEl = $("#fileName");
 
-  try {
-    const buf = await f.arrayBuffer();
-    workbook = XLSX.read(buf, { type: 'array' });
-    sheetNames = workbook.SheetNames || [];
-    if (!sheetNames.length) { log("시트를 찾을 수 없습니다.", 'err'); return; }
-
-    const sel = $("#sheetSel");
-    sel.innerHTML = sheetNames.map(n => `<option value="${n}">${n}</option>`).join("");
-    $("#sheetArea").style.display = "";
-
-    const y = guessYear($("#yearBox").value, sheetNames[0], fileNameHint);
-    if (y && !$("#yearBox").value) $("#yearBox").value = y;
+// 파일 선택 시 처리
+const handleFileSelect = (file) => {
+    if (!file) return;
+    fileNameEl.textContent = file.name;
     
-    renderPreview(sel.value);
-    log(`엑셀 로드 성공: 시트 ${sheetNames.length}개`);
-  } catch (err) {
-    log(`엑셀 파싱 실패: ${err}`, 'err');
-  } finally {
-    updateBtn();
-  }
-});
+    $("#preview").innerHTML = ""; 
+    $("#sheetArea").style.display = "none"; 
+    workbook = null; 
+    sheetNames = [];
+    logEl.textContent = "";
+
+    try {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const buf = e.target.result;
+            workbook = XLSX.read(buf, { type: 'array' });
+            sheetNames = workbook.SheetNames || [];
+            if (!sheetNames.length) { log("시트를 찾을 수 없습니다.", 'err'); return; }
+
+            const sel = $("#sheetSel");
+            sel.innerHTML = sheetNames.map(n => `<option value="${n}">${n}</option>`).join("");
+            $("#sheetArea").style.display = "block";
+            renderPreview(sel.value);
+            log(`엑셀 로드 성공: 시트 ${sheetNames.length}개`);
+        };
+        reader.readAsArrayBuffer(file);
+    } catch (err) {
+        log(`엑셀 파싱 실패: ${err}`, 'err');
+    } finally {
+        updateBtn();
+    }
+}
+
+fileInput.addEventListener('change', (e) => handleFileSelect(e.target.files[0]));
 $("#sheetSel").addEventListener('change', () => renderPreview($("#sheetSel").value));
+
+// 드래그 앤 드롭 이벤트 처리
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+});
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+});
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        fileInput.files = files; // 중요: 드롭된 파일을 input에 할당
+        handleFileSelect(files[0]);
+    }
+});
+
 
 function renderPreview(name) {
   if (!workbook) return;
   const ws = workbook.Sheets[name];
   const rows2d = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
   let html = `<table>`;
-  rows2d.slice(0, 20).forEach((row, i) => {
-    const tag = i === 0 ? 'th' : 'td';
-    html += `<tr>${row.map(cell => `<${tag}>${String(cell)}</${tag}>`).join("")}</tr>`;
-  });
+  rows2d.slice(0, 20).forEach((row, i) => { html += `<tr>${row.map(cell => `<${i===0?'th':'td'}>${String(cell)}</${i===0?'th':'td'}>`).join("")}</tr>`; });
   html += `</table>`;
   $("#preview").innerHTML = html;
 }
 
-/* ------------ Schema Mapping (for Summary Files) ------------ */
-function slug(s) { return String(s || '').trim().replace(/[.\/[\]#$\u0000-\u001F]/g, '_').replace(/\s+/g, '_').slice(0, 120); }
-function guessYear(yearStr, sheetName, fileName) {
-  const c1 = String(yearStr || "").match(/^(20\d{2})$/); if (c1) return c1[1];
-  const c2 = String(sheetName || "").match(/\b(20\d{2})\b/); if (c2) return c2[1];
-  const c3 = String(fileName || "").match(/\b(20\d{2})\b/); if (c3) return c3[1];
-  return "";
-}
-
-//품목 라벨을 DB 키로 변환하는 함수
+/* ------------ Schema Mapping & Data Processing ------------ */
+// ... (이하 로직은 이전과 동일) ...
 function mapLabelToApp(label) {
     const s = String(label || '').trim();
-    // 시트류 품목 우선 처리 (고관절 포함)
     const sheetItems = ["대시트","반시트","베갯잇","수건","중환의","얼음포","억제대","고관절XL","고관절L","고관절M"];
-    if (sheetItems.includes(s)) {
-        return { item: s, topBottom: '' };
-    }
-    // 환자복 품목 처리 (정규식 사용)
-    const match = s.match(/^(일반|정형)(상의|하의)(4XL|3XL|2XL|XL|L|M|S)$/);
+    if (sheetItems.includes(s)) return { item: s, topBottom: '' };
+    const match = s.match(/^(일반|정형)(상의|하의)의?(4XL|3XL|2XL|XL|L|M|S)$/);
     if (match) {
-        const kind = match[1]; // 일반 or 정형
-        const tb = match[2];   // 상의 or 하의
-        const size = match[3]; // 사이즈
+        const [_, kind, tb, size] = match;
         const prefix = kind === '일반' ? '일반환의' : '정형환의';
-        const item = `${prefix}${size}`;
-        return { item, topBottom: tb };
+        return { item: `${prefix}${size}`, topBottom: tb };
     }
-    // 매칭되지 않는 경우 원본 라벨을 키로 사용
     return { item: s, topBottom: '' };
 }
 
-//요약 시트에서 데이터 레코드를 생성하는 새 함수
 function buildRecordsFromSheet(ws, sheetName, year) {
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
-    if (rows.length < 2) return [];
+    if (rows.length < 2) return { records: [], months: new Set(), items: new Set(), year: year };
 
     const header = rows[0];
     const dataRows = rows.slice(1);
     const records = [];
+    const monthsInSheet = new Set();
+    const itemsInSheet = new Set();
 
     const isMonthlyOrders = /발주월별/.test(sheetName);
     const isDailyReceipts = /입고\(날짜별\)/.test(sheetName);
 
-    if (!isMonthlyOrders && !isDailyReceipts) return []; //처리할 시트가 아니면 종료
-
     for (const row of dataRows) {
         const label = String(row[0] || '').trim();
         if (!label) continue;
-
         const { item, topBottom } = mapLabelToApp(label);
+        itemsInSheet.add(item);
         
         for (let c = 1; c < header.length; c++) {
             const qty = Number(row[c]);
             if (!qty || !Number.isFinite(qty)) continue;
-
             const colHeader = String(header[c] || '').trim();
             let recordData = null;
 
             if (isMonthlyOrders) {
-                const match = colHeader.match(/^(\d{4}-\d{2})발주$/);
+                const match = colHeader.match(/^(\d{2})년\s*(\d{1,2})월$/);
                 if (match) {
-                    recordData = { section: 'orders', monthKey: match[1], day: '' };
+                    year = `20${match[1]}`;
+                    const m = String(match[2]).padStart(2, '0');
+                    const monthKey = `${year}-${m}`;
+                    monthsInSheet.add(monthKey);
+                    recordData = { section: 'orders', monthKey, ts: new Date(monthKey + '-01').getTime() };
                 }
             } else if (isDailyReceipts) {
                 const match = colHeader.match(/^(\d{1,2})월\s*(\d{1,2})일$/);
-                if (match) {
+                if (match && year) {
                     const m = String(match[1]).padStart(2, '0');
-                    const d = String(match[2]).padStart(2, '0');
-                    recordData = {
-                        section: 'receipts',
-                        monthKey: `${year}-${m}`,
-                        day: `${year}-${m}-${d}`
-                    };
+                    const d = Number(match[2]);
+                    const monthKey = `${year}-${m}`;
+                    monthsInSheet.add(monthKey);
+                    recordData = { section: 'receipts', monthKey, day: d };
                 }
             }
+            if (recordData) records.push({ item, topBottom, qty, ...recordData });
+        }
+    }
+    return { records, months: monthsInSheet, items: itemsInSheet, year };
+}
 
-            if (recordData) {
-                records.push({ item, topBottom, qty, label, ...recordData });
+/* ------------ Uploader (REST API) ------------ */
+async function deleteExistingData(section, monthsToDelete, itemsToDelete, basePath) {
+    if (monthsToDelete.size === 0 || itemsToDelete.size === 0) return;
+    const rootBase = $("#dbURL").value.replace(/\/$/, '');
+    const updates = {};
+    const sectionLabel = section === 'orders' ? '발주' : '입고';
+    
+    log(`[데이터 삭제] 엑셀에 포함된 ${sectionLabel} 데이터(${monthsToDelete.size}개월치)를 삭제합니다...`, 'warn');
+
+    for (const item of itemsToDelete) {
+        for (const month of monthsToDelete) {
+            updates[`${basePath}/${item}/${section}/${month}`] = null;
+        }
+    }
+    
+    const res = await fetch(`${rootBase}/.json`, { method: 'PATCH', body: JSON.stringify(updates) });
+    if (!res.ok) throw new Error(`기존 ${sectionLabel} 데이터 삭제 실패: ${res.statusText}`);
+    log(`> 기존 ${sectionLabel} 데이터 삭제 완료.`, 'ok');
+}
+
+async function uploadSheetData(records, basePath) {
+  if (!records || records.length === 0) return;
+  const rootBase = $("#dbURL").value.replace(/\/$/, '');
+  const updates = {};
+  for (const r of records) {
+    const path = `${basePath}/${r.item}/${r.section}/${r.monthKey}`;
+    const key = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    updates[`${path}/${key}`] = r.section === 'orders' 
+      ? { qty: r.qty, topBottom: r.topBottom, ts: r.ts }
+      : { qty: r.qty, topBottom: r.topBottom, day: r.day };
+  }
+  const res = await fetch(`${rootBase}/.json`, { method: 'PATCH', body: JSON.stringify(updates) });
+  if (!res.ok) throw new Error(`업로드 실패 ${res.status}: ${await res.text()}`);
+  log(`> ${records.length}개 레코드 업로드 완료.`);
+}
+
+/* ------------ Run Handler (Main Logic) ------------ */
+$("#runBtn").addEventListener('click', async () => {
+  if (!workbook) { log("엑셀을 먼저 선택하세요.", 'err'); return; }
+  
+  const basePath = $("#basePath").value.trim();
+  $("#runBtn").disabled = true;
+  logEl.textContent = "";
+  let year = "";
+
+  try {
+    const orderSheetName = sheetNames.find(name => /발주월별/.test(name));
+    if (orderSheetName) {
+        log(`[시작] '발주월별' 시트 처리 중...`);
+        const ws = workbook.Sheets[orderSheetName];
+        const result = buildRecordsFromSheet(ws, orderSheetName, year);
+        year = result.year;
+        if (result.records.length > 0) {
+            log(`> '${orderSheetName}' 시트에서 ${result.records.length}개 발주 데이터 발견. (기준 연도: ${year})`);
+            await deleteExistingData('orders', result.months, result.items, basePath);
+            await uploadSheetData(result.records, basePath);
+        } else {
+            log(`> '${orderSheetName}' 시트에서 처리할 데이터가 없습니다.`, 'warn');
+        }
+    } else {
+        log(`[경고] '발주월별' 시트를 찾을 수 없습니다. 입고 내역 처리를 위해 연도가 필요합니다.`, 'warn');
+    }
+
+    if (!year && orderSheetName) {
+        log(`[오류] '발주월별' 시트에서 연도를 파악하지 못해 입고 내역을 처리할 수 없습니다.`, 'err');
+    } else {
+        const receiptSheetName = sheetNames.find(name => /입고\(날짜별\)/.test(name));
+        if (receiptSheetName) {
+            log(`[시작] '입고(날짜별)' 시트 처리 중...`);
+            const ws = workbook.Sheets[receiptSheetName];
+            const result = buildRecordsFromSheet(ws, receiptSheetName, year);
+             if (result.records.length > 0) {
+                log(`> '${receiptSheetName}' 시트에서 ${result.records.length}개 입고 데이터 발견.`);
+                await deleteExistingData('receipts', result.months, result.items, basePath);
+                await uploadSheetData(result.records, basePath);
+            } else {
+                log(`> '${receiptSheetName}' 시트에서 처리할 데이터가 없습니다.`, 'warn');
             }
         }
     }
-    return records;
-}
+    log(`[완료] 모든 데이터 처리 성공`, 'ok');
 
-/* ------------ Uploader (REST) ------------ */
-async function uploadSheetData(records, basePath) {
-  if (!records || records.length === 0) {
-    log(`- 업로드할 데이터가 없습니다.`);
-    return;
-  }
-  const rootBase = $("#dbURL").value.replace(/\/$/, '');
-  const root = rootBase + '/.json';
-  const chunkSize = 400;
-  let uploaded = 0;
-
-  for (let i = 0; i < records.length; i += chunkSize) {
-    const part = records.slice(i, i + chunkSize);
-    const updates = {};
-    for (const r of part) {
-      const autoKey = `${slug(r.item)}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      const path = `${basePath}/${r.item}/${r.section}/${r.monthKey}/${autoKey}`;
-      updates[path] = {
-        qty: r.qty,
-        topBottom: r.topBottom,
-        label: r.label, // 원본 라벨 정보 추가
-        ...(r.section === 'receipts' && { day: r.day })
-      };
-    }
-    const res = await fetch(root, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
-    if (!res.ok) {
-      const t = await res.text().catch(() => '(본문 없음)');
-      log(`PATCH 실패 ${res.status}: ${t}`, 'err');
-      throw new Error(`PATCH 실패 ${res.status}`);
-    }
-    uploaded += part.length;
-    log(`+ ${uploaded}/${records.length} 레코드 업로드됨...`);
-  }
-}
-
-/* ------------ Run Handler ------------ */
-$("#runBtn").addEventListener('click', async () => {
-  if (!workbook) { log("엑셀을 먼저 선택하세요.", 'err'); return; }
-  const basePath = $("#basePath").value.trim();
-  const year = $("#yearBox").value.trim();
-  if (!year) { log("연도를 필수로 입력해야 합니다.", 'err'); return; }
-
-  $("#runBtn").disabled = true;
-  logEl.textContent = "";
-
-  try {
-    let allRecords = [];
-    for (const name of sheetNames) {
-      if (/발주월별|입고\(날짜별\)/.test(name)) {
-        log(`[시작] '${name}' 시트 처리 중...`);
-        const ws = workbook.Sheets[name];
-        const sheetRecords = buildRecordsFromSheet(ws, name, year);
-        if (sheetRecords.length > 0) {
-          allRecords.push(...sheetRecords);
-          log(`> '${name}' 시트에서 ${sheetRecords.length}개 데이터 발견.`);
-        }
-      }
-    }
-
-    if (allRecords.length > 0) {
-      log(`[업로드] 총 ${allRecords.length}개 데이터를 서버로 전송합니다.`);
-      await uploadSheetData(allRecords, basePath);
-      log(`[완료] 모든 데이터 처리 성공`, 'ok');
-    } else {
-      log(`[알림] '발주월별' 또는 '입고(날짜별)' 시트에서 유효한 데이터를 찾지 못했습니다.`, 'err');
-    }
   } catch (e) {
     log(String(e && e.message ? e.message : e), 'err');
   } finally {
     $("#runBtn").disabled = false;
   }
 });
-updateBtn();
 </script>
 </body>
 </html>
