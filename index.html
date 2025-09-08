@@ -5,9 +5,19 @@
   <meta http-equiv="Cache-Control" content="no-store" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 
-  <!-- 라이트 모드 고정 -->
-  <meta name="color-scheme" content="light" />
-  <meta name="theme-color" content="#f4f7fb" />
+<!-- 라이트 모드 고정 -->
+<meta name="color-scheme" content="light" />
+<meta name="theme-color" content="#f4f7fb" />
+
+<!-- ▷▷▷ 메타(강제 라이트 고정) 시작 ▷▷▷ -->
+<!-- iOS/Safari: 폼컨트롤/스크롤바 등 시스템 UI까지 라이트만 지원 -->
+<meta name="supported-color-schemes" content="light" />
+<!-- 크롬/안드로이드/삼성인터넷: 다크 환경에서도 주소창 색을 라이트로 고정 -->
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#f4f7fb" />
+<!-- 다크 리더(확장프로그램) 강제 반전 무시 -->
+<meta name="darkreader-lock" />
+<!-- ▷▷▷ 메타(강제 라이트 고정) 종료 ▷▷▷ -->
+
 
   <!-- PWA/아이콘 -->
   <link rel="manifest" href="manifest.json" />
@@ -34,21 +44,40 @@
       --focus:0 0 0 2px rgba(37,99,235,.22), 0 0 0 6px rgba(37,99,235,.1);
     }
 
-    /* ===== 시스템 다크모드여도 라이트 값으로 강제 ===== */
-    @media (prefers-color-scheme: dark){
-      :root{
-        --bg:#f4f7fb !important;
-        --card:#ffffff !important;
-        --accent:#2563eb !important;
-        --muted:#5b677a !important;
-        --text:#0f172a !important;
-        --border:#e6eaf2 !important;
-      }
-      html, body{
-        background: var(--bg) !important;
-        color: var(--text) !important;
-      }
-    }
+   /* ===== 시스템 다크모드여도 라이트 값으로 강제 ===== */
+/* ▷▷▷ CSS(dark-optout) 시작 ▷▷▷ */
+@media (prefers-color-scheme: dark){
+  /* 1) 변수를 라이트톤으로 고정 */
+  :root{
+    --bg:#f4f7fb !important;
+    --card:#ffffff !important;
+    --accent:#2563eb !important;
+    --muted:#5b677a !important;
+    --text:#0f172a !important;
+    --border:#e6eaf2 !important;
+  }
+
+  /* 2) 문서 전역 라이트 렌더링 힌트 */
+  html{
+    color-scheme: light !important;
+    /* 일부 브라우저의 '자동 반전' 완화 */
+    filter: none !important;
+    background: var(--bg) !important;
+  }
+  body{
+    background: var(--bg) !important;
+    color: var(--text) !important;
+    filter: none !important;
+  }
+
+  /* 3) 미디어/벡터 반전 방지 (자동 다크가 걸리면 이미지가 뒤집혀 보일 수 있음) */
+  img, picture, video, canvas, svg{
+    filter: none !important;
+    mix-blend-mode: normal !important;
+  }
+}
+/* ▷▷▷ CSS(dark-optout) 종료 ▷▷▷ */
+
 
     *{box-sizing:border-box}
     html,body{height:100%; -webkit-text-size-adjust:100%}
@@ -2139,7 +2168,21 @@ document.addEventListener("click", (e) => {
 
 <script>
   feather.replace();
+
+  // ▷▷▷ JS(force-light-guard) 시작 ▷▷▷
+  // 확장/사용자CSS가 html에 filter를 강제로 걸어도 즉시 해제
+  try{
+    const clearHtmlFilter = () => {
+      const s = (document.documentElement.getAttribute('style')||'').toLowerCase();
+      if (s.includes('filter')) document.documentElement.style.filter = 'none';
+    };
+    clearHtmlFilter();
+    // DOM 변경에도 재확인 (비용 낮은 옵저버)
+    new MutationObserver(clearHtmlFilter).observe(document.documentElement, { attributes:true, attributeFilter:['style'] });
+  }catch(_){}
+  // ▷▷▷ JS(force-light-guard) 종료 ▷▷▷
 </script>
+
 <div id="loadingOverlay" style="display:none">
   <div class="spinner"></div>
   <div>잠시만 기다려주세요…</div>
@@ -2148,3 +2191,4 @@ document.addEventListener("click", (e) => {
 
 </body>
 </html>
+
