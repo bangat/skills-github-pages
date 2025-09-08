@@ -1,38 +1,64 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8" />
-<meta http-equiv="Cache-Control" content="no-store" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<meta name="color-scheme" content="light only">
-<link rel="manifest" href="manifest.json" />
-<meta name="theme-color" content="#2563eb" />
+  <meta charset="utf-8" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-<title>린넨실 출고관리</title>
-<style>
-  :root {
-  color-scheme: light only;  /* ★ 다크모드 완전 무시, 항상 라이트 고정 */
-  --bg:#f4f7fb; 
-  --card:#ffffff; 
-  --accent:#2563eb; 
-  --muted:#5b677a; 
-  --text:#0f172a; 
-  --border:#e6eaf2;
-  --r-lg:16px; 
-  --r-md:12px;
-  --shadow-1:0 4px 16px rgba(15,23,42,.08); 
-  --shadow-2:0 10px 30px rgba(15,23,42,.10);
-  --focus:0 0 0 2px rgba(37,99,235,.22),
-           0 0 0 6px rgba(37,99,235,.1);
-}
-  *{box-sizing:border-box}
-  html,body{height:100%;-webkit-text-size-adjust:100%}
-  body{margin:0;font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;background:var(--bg);color:var(--text)}
+  <!-- 라이트 모드 고정 -->
+  <meta name="color-scheme" content="light" />
+  <meta name="theme-color" content="#f4f7fb" />
 
+  <!-- PWA/아이콘 -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <title>린넨실 출고관리</title>
+
+  <style>
+    /* ===== 라이트 모드 강제 기본값 ===== */
+    :root{
+      color-scheme: light;
+      --bg:#f4f7fb;
+      --card:#ffffff;
+      --accent:#2563eb;
+      --muted:#5b677a;
+      --text:#0f172a;
+      --border:#e6eaf2;
+      --r-lg:16px; --r-md:12px;
+      --shadow-1:0 4px 16px rgba(15,23,42,.08);
+      --shadow-2:0 10px 30px rgba(15,23,42,.10);
+      --focus:0 0 0 2px rgba(37,99,235,.22), 0 0 0 6px rgba(37,99,235,.1);
+    }
+
+    /* ===== 시스템 다크모드여도 라이트 값으로 강제 ===== */
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg:#f4f7fb !important;
+        --card:#ffffff !important;
+        --accent:#2563eb !important;
+        --muted:#5b677a !important;
+        --text:#0f172a !important;
+        --border:#e6eaf2 !important;
+      }
+      html, body{
+        background: var(--bg) !important;
+        color: var(--text) !important;
+      }
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%; -webkit-text-size-adjust:100%}
+    body{
+      margin:0;
+      font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+ 
   
 /* ----- 로딩 오버레이 시작 ----- */
 #loadingOverlay{
