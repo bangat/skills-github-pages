@@ -145,6 +145,7 @@
   <!-- ------------주석(firebase-sdk-v10) 시작 ---- -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     // 프로젝트 설정
@@ -159,8 +160,14 @@
       measurementId: "G-T02ZFK18L3"
     };
 
-    const app  = initializeApp(firebaseConfig);
+const app  = initializeApp(firebaseConfig);
     const rtdb = getDatabase(app);
+    const auth = getAuth(app);
+
+    signInAnonymously(auth).catch((error) => {
+      console.error("Anonymous sign-in failed:", error);
+      alert("데이터베이스 접근 권한을 얻는 데 실패했습니다. 새로고침 해주세요.");
+    });
 
     // 유틸 + 저장/불러오기 함수
     // ------------주석(firebase-utils-v10) 시작 ----
@@ -1114,3 +1121,4 @@
   <!-- --------주석(feather-activate) 종료 -------- -->
 </body>
 </html>
+
