@@ -943,22 +943,34 @@ function asLine(arg){
   } catch(_) { return String(arg); }
 }
 
+/* ▷▷▷ console-warn-filter 확장 시작 ▷▷▷ */
 ;["error","warn"].forEach(type=>{
   const orig = console[type];
   console[type] = function(...args){
     try { orig.apply(console, args); } catch(_){}
     let msg = "";
     try { msg = args.map(asLine).join(" "); } catch(_){}
-    if (type === "warn" && /The play\(\) request was interrupted by a call to pause\(\)|AbortError.*play\(\)|Autoplay|gesture/i.test(msg)) {
-      return;
-    }
+    // 오디오 관련 경고/차단은 전송 제외
+    const ignoreAudio = /The play\(\) request was interrupted by a call to pause\(\)|AbortError.*play\(\)|Autoplay|gesture|NotAllowedError|^\[audio\]\s*play failed|^\[audio\]\s*exception/i.test(msg);
+    if (type === "warn" && ignoreAudio) return;
+    if (type === "error" && /NotAllowedError|AbortError.*play\(\)/i.test(msg)) return;
     try { tgSendNow(`[${type.toUpperCase()}] ${msg}`); } catch(_){}
   };
 });
+/* ▷▷▷ console-warn-filter 확장 종료 ▷▷▷ */
+
 
 window.tgLog = (...args)=> tgSendNow(`[LOG] ` + args.map(asLine).join(" "));
 window.addEventListener("error", e=> tgSendNow(`[ONERROR] ${e.message} @ ${e.filename}:${e.lineno}:${e.colno}\n${e.error?.stack||''}`));
-window.addEventListener("unhandledrejection", e=> tgSendNow(`[UNHANDLED] ${(e.reason && (e.reason.stack||e.reason.message)) || asLine(e.reason)}`));
+/* ▷▷▷ unhandledrejection-audio-filter 시작 ▷▷▷ */
+window.addEventListener("unhandledrejection", e=>{
+  const r = e.reason;
+  const text = (r && (r.stack || r.message)) || asLine(r) || "";
+  if (/NotAllowedError|AbortError.*play\(\)|Autoplay|gesture|^\[audio\]/i.test(text)) return;
+  tgSendNow(`[UNHANDLED] ${text}`);
+});
+/* ▷▷▷ unhandledrejection-audio-filter 종료 ▷▷▷ */
+
 </script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -2191,4 +2203,5 @@ document.addEventListener("click", (e) => {
 
 </body>
 </html>
+
 
