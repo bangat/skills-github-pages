@@ -44,10 +44,8 @@
       --focus:0 0 0 2px rgba(37,99,235,.22), 0 0 0 6px rgba(37,99,235,.1);
     }
 
-   /* ===== 시스템 다크모드여도 라이트 값으로 강제 ===== */
-/* ▷▷▷ CSS(dark-optout) 시작 ▷▷▷ */
+  /* ===== 시스템 다크모드여도 라이트 값으로 강제 ===== */
 @media (prefers-color-scheme: dark){
-  /* 1) 변수를 라이트톤으로 고정 */
   :root{
     --bg:#f4f7fb !important;
     --card:#ffffff !important;
@@ -56,6 +54,39 @@
     --text:#0f172a !important;
     --border:#e6eaf2 !important;
   }
+  html, body{
+    background: var(--bg) !important;
+    color: var(--text) !important;
+  }
+}
+
+/* ▷▷▷ CSS(force-light-mobile) 시작 ▷▷▷ */
+/* 터치 디바이스(모바일)에서 OS/브라우저의 강제 다크 반전을 무력화 */
+@media (prefers-color-scheme: dark) and (pointer: coarse){
+  html, body{
+    color-scheme: light !important;
+    background: #ffffff !important;
+    filter: none !important;
+  }
+  /* 이미지/비디오가 반전되는 현상 방지 */
+  img, picture, video, canvas, svg{
+    filter: none !important;
+    mix-blend-mode: normal !important;
+  }
+  /* 일부 브라우저가 html에 filter 인라인을 주입할 때 차단 */
+  html:where([style*="filter"]){
+    filter: none !important;
+  }
+  /* Dark Reader 류가 data-속성으로 테마를 강제하는 경우 중립화 */
+  html[data-darkreader-mode], body[data-darkreader-mode],
+  :root[data-darkreader-mode], [data-darkreader-scheme]{
+    color-scheme: light !important;
+    filter: none !important;
+    background: #ffffff !important;
+  }
+}
+/* ▷▷▷ CSS(force-light-mobile) 종료 ▷▷▷ */
+
 
   /* 2) 문서 전역 라이트 렌더링 힌트 */
   html{
@@ -2181,19 +2212,42 @@ document.addEventListener("click", (e) => {
 <script>
   feather.replace();
 
-  // ▷▷▷ JS(force-light-guard) 시작 ▷▷▷
-  // 확장/사용자CSS가 html에 filter를 강제로 걸어도 즉시 해제
+  // ▷▷▷ JS(force-light-guard-plus) 시작 ▷▷▷
   try{
-    const clearHtmlFilter = () => {
-      const s = (document.documentElement.getAttribute('style')||'').toLowerCase();
-      if (s.includes('filter')) document.documentElement.style.filter = 'none';
+    const htmlEl = document.documentElement;
+
+    const clearDarkArtifacts = () => {
+      // 1) html 인라인 filter 제거
+      const styleAttr = (htmlEl.getAttribute('style')||'').toLowerCase();
+      if (styleAttr.includes('filter')) htmlEl.style.filter = 'none';
+
+      // 2) data-darkreader-* 속성 제거 (확장/브라우저 다크)
+      if (htmlEl.hasAttribute('data-darkreader-mode')) htmlEl.removeAttribute('data-darkreader-mode');
+      if (htmlEl.hasAttribute('data-darkreader-scheme')) htmlEl.removeAttribute('data-darkreader-scheme');
+
+      // 3) 주입된 다크 스타일 태그 제거
+      const badStyles = Array.from(document.querySelectorAll('style.darkreader, style[id*="darkreader"], link[rel="stylesheet"][data-darkreader]'));
+      badStyles.forEach(n => { try{ n.parentNode && n.parentNode.removeChild(n); }catch(_){} });
+
+      // 4) 라이트 힌트 유지
+      htmlEl.style.colorScheme = 'light';
     };
-    clearHtmlFilter();
-    // DOM 변경에도 재확인 (비용 낮은 옵저버)
-    new MutationObserver(clearHtmlFilter).observe(document.documentElement, { attributes:true, attributeFilter:['style'] });
+
+    // 최초 1회
+    clearDarkArtifacts();
+
+    // html 속성/스타일 변화 감시
+    new MutationObserver(clearDarkArtifacts).observe(htmlEl, { attributes: true, attributeFilter: ['style','data-darkreader-mode','data-darkreader-scheme'] });
+    // head에 주입되는 style/link 감시
+    new MutationObserver(clearDarkArtifacts).observe(document.head || document.documentElement, { childList: true, subtree: true });
+
+    // 화면 회전/재개 시 재확인 (모바일에서 다크가 다시 붙는 경우)
+    window.addEventListener('pageshow', clearDarkArtifacts);
+    window.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') clearDarkArtifacts(); });
   }catch(_){}
-  // ▷▷▷ JS(force-light-guard) 종료 ▷▷▷
+  // ▷▷▷ JS(force-light-guard-plus) 종료 ▷▷▷
 </script>
+
 
 <div id="loadingOverlay" style="display:none">
   <div class="spinner"></div>
@@ -2203,5 +2257,4 @@ document.addEventListener("click", (e) => {
 
 </body>
 </html>
-
 
