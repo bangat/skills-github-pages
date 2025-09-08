@@ -215,6 +215,45 @@
     // ------------주석(firebase-utils-v10) 끝 ----
   </script>
   <!-- ------------주석(firebase-sdk-v10) 끝 ---- -->
+<script>
+    (async () => {
+
+      const verifyTokenUrl = 'https://us-central1-hallymlinen.cloudfunctions.net/verifyAdminToken';
+      const loginPage = './인덱스.html'; // 로그인 페이지 경로
+
+      // 1. 브라우저 저장소에서 토큰을 가져옵니다.
+      const token = localStorage.getItem('adminToken');
+
+      // 2. 토큰이 없으면 즉시 로그인 페이지로 리디렉션합니다.
+      if (!token) {
+        window.location.href = loginPage;
+        return; // 아래 코드가 실행되지 않도록 여기서 중단합니다.
+      }
+
+      // 3. 토큰이 있는 경우, 서버에 유효한지 검증을 요청합니다.
+      try {
+        const response = await fetch(verifyTokenUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}` // 표준 방식인 Bearer 토큰으로 전송
+          }
+        });
+
+        // 4. 서버가 토큰이 유효하지 않다고 응답하면 (예: 만료, 위조),
+        //    잘못된 토큰을 삭제하고 로그인 페이지로 리디렉션합니다.
+        if (!response.ok) {
+          localStorage.removeItem('adminToken');
+          window.location.href = loginPage;
+        }
+        // 검증에 성공하면 아무것도 하지 않고 페이지 로드를 계속 진행합니다.
+
+      } catch (error) {
+        // 5. 네트워크 오류 등으로 서버와 통신이 안될 경우에도 접근을 막습니다.
+        console.error('Token verification error:', error);
+        window.location.href = loginPage;
+      }
+    })();
+  </script>
 </head>
 
 <body>
@@ -1075,4 +1114,3 @@
   <!-- --------주석(feather-activate) 종료 -------- -->
 </body>
 </html>
-
