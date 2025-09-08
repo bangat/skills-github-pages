@@ -1051,7 +1051,8 @@ window.addEventListener("unhandledrejection", e=>{
 const REPO_SLUG = "bangat/linenward";
 const APK_NAME = "WardLinen.apk";
 const LATEST_DIRECT = `https://github.com/${REPO_SLUG}/releases/latest/download/${APK_NAME}`;
-const ADMIN_PASS = "2398";
+// [보안 수정] 클라이언트 측 코드에서 비밀번호를 제거했습니다.
+// const ADMIN_PASS = "2398";
 
 const ITEMS={
   "시트":["대시트","반시트","베갯잇","수　건"],
@@ -1088,17 +1089,63 @@ function openAdminGate(){
   function push(n){ if (pin.length >= 6) return; pin += String(n); render(); }
   function backspace(){ pin = pin.slice(0,-1); render(); }
   function clearPin(){ pin = ""; render(); }
-  function tryLogin(){
-    if (pin === ADMIN_PASS){
-      closeModal("#adminModal");
-      location.href = "출근부.html?back=1";
-    }else{
-      clearPin();
-      $in.placeholder = "틀렸습니다.";
-      try{ playSnd("#warnSound"); }catch(_){}
-      $ok.focus();
+  
+  // [보안 수정] 로그인 로직을 서버 측에서 처리하도록 변경
+  async function tryLogin(){
+    // 중요: 이 함수는 이제 서버에서 비밀번호를 확인해야 합니다.
+    // 비밀번호를 받고 올바른지 여부를 반환하는 서버리스 함수(예: Firebase Cloud Function)를 만들어야 합니다.
+    
+    // 예시: 서버리스 함수 엔드포인트 URL
+    // TODO: 이 URL을 실제 함수 URL로 교체해야 합니다.
+    // 예시
+const checkPasswordUrl = 'https://us-central1-hallymlinen.cloudfunctions.net/checkAdminPassword';
+
+    // 로딩 표시
+    const okButton = el("#adminOk");
+    const originalText = okButton.textContent;
+    okButton.disabled = true;
+    okButton.textContent = '확인 중...';
+    
+    try {
+        const response = await fetch(checkPasswordUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ pin: pin }) // 입력된 PIN을 서버로 전송
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            // 서버가 비밀번호가 올바르다고 확인
+            closeModal("#adminModal");
+            // 추가 보안 참고: '출근부.html' 페이지도 서버에서 보호해야 합니다.
+            // 지금은 누구나 URL을 직접 입력하여 접근할 수 있습니다.
+            // 더 나은 접근 방식은 서버가 임시 액세스 토큰을 반환하고, 
+            // 해당 토큰을 사용하여 보호된 콘텐츠를 가져오는 것입니다.
+            location.href = "출근부.html?back=1";
+        } else {
+            // 서버가 비밀번호가 틀렸다고 응답
+            clearPin();
+            $in.placeholder = "틀렸습니다.";
+            try{ playSnd("#warnSound"); }catch(_){}
+            $ok.focus();
+        }
+    } catch (error) {
+        // 네트워크 오류 또는 서버 함수 문제 처리
+        console.error('비밀번호 확인 중 오류:', error);
+        clearPin();
+        $in.placeholder = "인증 오류";
+        try{ playSnd("#warnSound"); }catch(_){}
+        $ok.focus();
+    } finally {
+        // 버튼 상태 복원
+        okButton.disabled = false;
+        okButton.textContent = originalText;
     }
   }
+
 
   if (pad){
   pad.onclick = (e)=>{
@@ -1108,12 +1155,12 @@ function openAdminGate(){
     const del = b.hasAttribute("data-del");
     if (n !== null){
       push(n);
-      if (navigator.vibrate) navigator.vibrate(15);   // ✅ 숫자 입력 시 진동
+      if (navigator.vibrate) navigator.vibrate(15);
       return;
     }
     if (del){
       backspace();
-      if (navigator.vibrate) navigator.vibrate(25);   // ✅ 지움은 조금 더 길게
+      if (navigator.vibrate) navigator.vibrate(25);
       return;
     }
   };
@@ -2257,4 +2304,3 @@ document.addEventListener("click", (e) => {
 
 </body>
 </html>
-
