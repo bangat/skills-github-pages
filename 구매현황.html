@@ -246,6 +246,7 @@
 
  <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getDatabase, ref, get, push, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
     const firebaseConfig = {
       apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
@@ -257,8 +258,15 @@
       appId: "1:867775830688:web:cef3ed4e70ae9818f347c5",
       measurementId: "G-T02ZFK18L3"
     };
-    const app  = initializeApp(firebaseConfig);
+const app  = initializeApp(firebaseConfig);
     const rtdb = getDatabase(app);
+    const auth = getAuth(app);
+
+    signInAnonymously(auth).catch((error) => {
+      console.error("Anonymous sign-in failed:", error);
+      alert("데이터베이스 접근 권한을 얻는 데 실패했습니다. 새로고침 해주세요.");
+    });
+   
     const BASE_SHEETS = ["대시트","반시트","베갯잇","수건","중환의","얼음포","억제대"];
     const HIP_NEW     = ["고관절XL","고관절L","고관절M"];
     const NORMAL_SIZES = ["4XL","3XL","2XL","XL","L","M","S"];
@@ -754,3 +762,4 @@
   </script>
 </body>
 </html>
+
