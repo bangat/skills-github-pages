@@ -1,18 +1,14 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <!-- ▷▷▷ head 메타 시작 ▷▷▷ -->
   <meta charset="utf-8" />
   <meta http-equiv="Cache-Control" content="no-store" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>출근부 · 관리자</title>
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-  <!-- ▷▷▷ head 메타 종료 ▷▷▷ -->
 
-  <!-- [1/4] JWT 토큰 검증 (페이지 접근 제어) -->
   <script>
     (async () => {
-      // 🚨 중요: 이 URL을 실제 배포된 verifyAdminToken 함수 URL로 변경하세요!
       const verifyTokenUrl = 'https://us-central1-hallymlinen.cloudfunctions.net/verifyAdminToken';
       const loginPage = './index.html';
       const token = localStorage.getItem('adminToken');
@@ -177,6 +173,7 @@
         const token = localStorage.getItem('adminToken');
         if (!token) { return alert("인증 토큰이 없습니다. 다시 로그인해주세요."); }
 
+        // 🚨 중요: 실제 배포된 saveAttendanceData 함수 URL로 변경하세요!
         const url = 'https://us-central1-hallymlinen.cloudfunctions.net/saveAttendanceData';
         
         const path = `/attendance/${ymKey(y,m)}/${nameKey(name)}/${pad2(day)}`;
@@ -198,6 +195,7 @@
             return {};
         }
 
+        // 🚨 중요: 실제 배포된 getAttendanceData 함수 URL로 변경하세요!
         const url = new URL('https://us-central1-hallymlinen.cloudfunctions.net/getAttendanceData');
         url.searchParams.append('year', y);
         url.searchParams.append('month', m);
@@ -240,13 +238,14 @@
     window.applyMonthDataToTable = applyMonthDataToTable;
   </script>
 </head>
-
 <body>
   <div class="wrap">
+
     <nav class="topTabs" aria-label="상단 탭">
       <a href="#" aria-current="page"><i class="icon" data-feather="calendar"></i>출근부</a>
       <a href="./구매현황.html"><i class="icon" data-feather="bar-chart-2"></i>구매관리</a>
     </nav>
+
     <div class="card">
       <div class="card-head">
         <div class="title">출근부</div>
@@ -410,7 +409,7 @@
     function openEditModal(meta, tr){ currentRow = tr; currentMeta=meta; const [ , nameCell, inCell, outCell, , noteCell] = tr.children; editDate.value = `${meta.y}-${pad2(meta.m)}-${pad2(meta.day)}`; editNote.value = noteCell.textContent || ''; const inVal  = (inCell.textContent||'').trim(); const outVal = (outCell.textContent||'').trim(); leaveSel.value = (inVal==='연'&&outVal==='차') ? 'annual' : (inVal==='반'&&outVal==='차') ? 'half'   : (inVal==='조'&&outVal==='가') ? 'family' : ''; timeIn.value  = toTimeValue(inVal); timeOut.value = toTimeValue(outVal); if (dayOffCheck){ dayOffCheck.checked = isCellHolidayMark(inVal, outVal); const disabled = dayOffCheck.checked; if (timeIn)  timeIn.disabled  = disabled; if (timeOut) timeOut.disabled = disabled; } editBackdrop.style.display='flex'; }
     function closeEditModal(){ editBackdrop.style.display='none'; }
     qs('#editCancel').addEventListener('click', closeEditModal);
-    qs('#editApply').addEventListener('click', ()=>{ if(!currentRow) return; const [dateCell, nameCell, inCell, outCell, , noteCell] = currentRow.children; const isSunday = /sun/.test(dateCell.className); const [yy,mm2,dd] = editDate.value.split('-').map(Number); const isHoliday = !!dynamicHolidayLabel(yy,mm2,dd); if(leaveSel.value==='annual'){ inCell.textContent='연'; outCell.textContent='차'; } else if(leaveSel.value==='half'){ inCell.textContent='반'; outCell.textContent='차'; } else if(leaveSel.value==='family'){ inCell.textContent='조'; outCell.textContent='가'; } else{ if (dayOffCheck && dayOffCheck.checked){ inCell.textContent  = '휴'; outCell.textContent = '무'; }else{ const tIn  = toCellValue(timeIn?.value); const tOut = toCellValue(timeOut?.value); if(tIn || tOut){ inCell.textContent  = tIn || ''; outCell.textContent = tOut || ''; }else{ if(isHoliday || isSunday){ inCell.textContent=''; outCell.textContent=''; }else{ inCell.textContent=DEFAULT_IN; outCell.textContent=DEFAULT_OUT; } } } } const [y,m,day] = editDate.value.split('-').map(Number); const hlabel = dynamicHolidayLabel(y,m,day); noteCell.textContent = addLabelOnce(editNote.value.trim(), hlabel); (async ()=>{ const [y,m,day] = editDate.value.split('-').map(Number); const nm = (nameInput.value||'').trim(); const [ , , inCell2, outCell2, , noteCell2] = currentRow.children; await saveDayToFirebase({ y, m, day, name: nm, inT: (inCell2.textContent||'').trim(), outT: (outCell2.textContent||'').trim(), note: (noteCell2.textContent||'').trim(), leave: (leaveSel.value||'') }); showToast('저장 완료'); })().catch(console.warn); closeEditModal(); });
+    qs('#editApply').addEventListener('click', ()=>{ if(!currentRow) return; const [dateCell, nameCell, inCell, outCell, , noteCell] = currentRow.children; const isSunday = /sun/.test(dateCell.className); const [yy,mm2,dd] = editDate.value.split('-').map(Number); const isHoliday = !!dynamicHolidayLabel(yy,mm2,dd); if(leaveSel.value==='annual'){ inCell.textContent='연'; outCell.textContent='차'; } else if(leaveSel.value==='half'){ inCell.textContent='반'; outCell.textContent='차'; } else if(leaveSel.value==='family'){ inCell.textContent='조'; outCell.textContent='가'; } else{ if (dayOffCheck && dayOffCheck.checked){ inCell.textContent  = '휴'; outCell.textContent = '무'; }else{ const tIn  = toCellValue(timeIn?.value); const tOut = toCellValue(timeOut?.value); if(tIn || tOut){ inCell.textContent  = tIn || ''; outCell.textContent = tOut || ''; }else{ if(isHoliday || isSunday){ inCell.textContent=''; outCell.textContent=''; }else{ inCell.textContent=DEFAULT_IN; outCell.textContent=DEFAULT_OUT; } } } } const [y,m,day] = editDate.value.split('-').map(Number); const hlabel = dynamicHolidayLabel(y,m,day); noteCell.textContent = addLabelOnce(editNote.value.trim(), hlabel); (async ()=>{ const [y,m,day] = editDate.value.split('-').map(Number); const nm = (nameInput.value||'').trim(); const [ , , inCell2, outCell2, , noteCell2] = currentRow.children; await window.saveDayToFirebase({ y, m, day, name: nm, inT: (inCell2.textContent||'').trim(), outT: (outCell2.textContent||'').trim(), note: (noteCell2.textContent||'').trim(), leave: (leaveSel.value||'') }); showToast('저장 완료'); })().catch(console.warn); closeEditModal(); });
     
     async function makeWorkbook(){ const ym = monthInput.value; if(!ym){ alert('월을 선택하세요.'); throw new Error('no-month'); } const [y,m] = ym.split('-').map(Number); const nm = (nameInput.value||'').trim(); const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet('출근표', { pageSetup:{ paperSize:9, orientation:'portrait', margins:{left:0,right:0,top:0,bottom:0.1,header:0,footer:0}, horizontalCentered:true, verticalCentered:true, fitToPage:true, fitToWidth:1, fitToHeight:0 } }); const baseFont = {name:'맑은 고딕', size:12}; ws.getColumn(1).width = 6.25; ws.getColumn(2).width = 9.75; ws.getColumn(3).width = 12.88; ws.getColumn(4).width = 12.88; ws.getColumn(5).width = 12.88; ws.getColumn(6).width = 9.75; ws.getColumn(7).width = 5.35; ws.getColumn(8).width = 11; ws.getRow(1).height = 14.25; ws.getRow(2).height = 36.75; ws.getRow(3).height = 29.25; ws.getRow(4).height = 25; ws.mergeCells('G1:G2'); const g1 = ws.getCell('G1'); const g2 = ws.getCell('G2'); g1.value = '결\n재\n란'; g1.font  = {name:'맑은 고딕', size:11, bold:true}; g1.alignment = { vertical:'middle', horizontal:'center', wrapText:true }; g2.alignment = g1.alignment; ['G1','G2'].forEach(a=>{ ws.getCell(a).border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; }); const h1 = ws.getCell('H1'); h1.value='팀장'; h1.font={name:'맑은 고딕',size:11}; h1.alignment={vertical:'middle',horizontal:'center'}; const h2 = ws.getCell('H2'); h2.value=''; ['H1','H2'].forEach(a=>{ ws.getCell(a).border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; }); ws.mergeCells('A3:H3'); const t = ws.getCell('A3'); t.value = `${y}년 ${m}월 린넨실(직원) 출근표`; t.font  = {name:'맑은 고딕', size:18, bold:true}; t.alignment = {vertical:'middle', horizontal:'center'}; ws.getCell('A4').value='날짜'; ws.getCell('B4').value='이름'; ws.getCell('C4').value='출근시각'; ws.getCell('D4').value='퇴근시각'; ws.getCell('E4').value='본인서명'; ws.getCell('F4').value='비고'; ws.mergeCells('F4:G4'); ws.getCell('H4').value='담당자확인'; ['A4','B4','C4','D4','E4','F4','H4'].forEach(a=>{ const c=ws.getCell(a); c.font={...baseFont, bold:true}; c.alignment={vertical:'middle',horizontal:'center'}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF1F5F9'}}; c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; }); const lastDay = new Date(y, m, 0).getDate(); const startRow = 5; for(let d=1; d<=lastDay; d++){ const rIdx = startRow + d - 1; const r = ws.getRow(rIdx); r.height = 22; const dateObj = new Date(y, m-1, d); const dow = dateObj.getDay(); const isSun=dow===0, isSat=dow===6; const tr = qsa('#tbody tr')[d-1]; let [ , , inT, outT, , noteText] = tr ? Array.from(tr.children).map(td=> (td.textContent||'').trim()) : [null,null,'','','','']; if(isSun){ inT='휴'; outT='무'; } else{ if(!inT)  inT=DEFAULT_IN; if(!outT) outT=DEFAULT_OUT; } const hlabel = dynamicHolidayLabel(y,m,d); noteText = addLabelOnce(noteText, hlabel); ws.getCell(rIdx,1).value=d; ws.getCell(rIdx,2).value=(nameInput.value||'').trim(); ws.getCell(rIdx,3).value=inT; ws.getCell(rIdx,4).value=outT; ws.getCell(rIdx,5).value=''; ws.getCell(rIdx,6).value=noteText||''; ws.mergeCells(`F${rIdx}:G${rIdx}`); ws.getCell(rIdx,8).value=''; for(let c=1;c<=8;c++){ if(c===7) continue; const cell=ws.getCell(rIdx,c); cell.font=baseFont; cell.alignment={vertical:'middle',horizontal:(c===6?'left':'center')}; cell.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; } ws.getCell(rIdx,6).alignment = { vertical:'middle', horizontal:'left', wrapText:false }; if(isSat){ ws.getCell(rIdx,1).font={...baseFont,color:{argb:'FF2563EB'}}; } if(isSun || hlabel){ ws.getCell(rIdx,1).font={...baseFont,color:{argb:'FFEF4444'}}; } } ws.eachRow(row=> row.eachCell(cell=>{ cell.font = cell.font || baseFont; })); const fileName = `${y}-${pad2(m)}-출근부.xlsx`; return {wb, fileName}; }
     
@@ -426,10 +425,10 @@
     function blobToDataUrl(blob){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob); }); }
     emailSend.addEventListener('click', async ()=>{ const to = (emailTo.value||'').trim(); if(!to){ alert('받는 메일을 입력하세요.'); return; } const spinner = qs('#loadingSpinner'); spinner.style.display = 'flex'; try{ const {wb,fileName} = await makeWorkbook(); const buf = await wb.xlsx.writeBuffer(); const blob = new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}); const dataUrl = await blobToDataUrl(blob); const monthTxt = Number(monthInput.value.split('-')[1]); const subject = `한림병원 ${monthTxt}월 출근부 첨부합니다.`; const res = await fetch(GAS_WEBAPP_URL, { method: 'POST', headers: {'Content-Type':'text/plain;charset=UTF-8'}, body: JSON.stringify({ to: to, subject: subject, message: '출근부 파일을 첨부합니다.', filename: fileName, attachment: dataUrl }) }); const json = await res.json(); if(!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`); showToast('메일 전송 성공 ✅'); closeEmailModal(); }catch(err){ console.error(err); alert('메일 전송에 실패했어요. 엑셀 저장 후 메일 앱에서 첨부로 전송해 주세요.'); }finally{ spinner.style.display = 'none'; } });
     
-    genBtn.addEventListener('click', async ()=>{ showBootSpinner(); try{ const [y,mm] = (monthInput.value || '').split('-').map(Number); if (y) await loadHolidays(y); const cached = getLastNameCache(); if (cached && !String(nameInput.value||'').trim()){ nameInput.value = cached; } buildTable(monthInput.value, nameInput.value.trim()); const nm = (nameInput.value||'').trim(); if (y && mm && nm){ const data = await loadMonthFromFirebase(y, mm, nm); applyMonthDataToTable(y, mm, data); } } finally { hideBootSpinner(); } });
+    genBtn.addEventListener('click', async ()=>{ showBootSpinner(); try{ const [y,mm] = (monthInput.value || '').split('-').map(Number); if (y) await loadHolidays(y); const cached = getLastNameCache(); if (cached && !String(nameInput.value||'').trim()){ nameInput.value = cached; } buildTable(monthInput.value, nameInput.value.trim()); const nm = (nameInput.value||'').trim(); if (y && mm && nm){ const data = await window.loadMonthFromFirebase(y, mm, nm); window.applyMonthDataToTable(y, mm, data); } } finally { hideBootSpinner(); } });
     clearBtn.addEventListener('click', ()=> tbody.innerHTML='');
     
-    (async ()=>{ showBootSpinner(); try{ const cached0 = getLastNameCache(); if (cached0) nameInput.value = cached0; buildTable(monthInput.value, nameInput.value.trim()); const [y,mm] = (monthInput.value || '').split('-').map(Number); if (y) { await loadHolidays(y); qsa('#tbody tr').forEach((tr, idx)=>{ const day = idx+1; const [dateCell, , , , , noteCell] = tr.children; const hlabel = dynamicHolidayLabel(y,mm,day); if(hlabel){ noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel); dateCell.classList.add('sun'); } }); } const nm0 = (nameInput.value||'').trim(); if (y && mm && nm0){ const data0 = await loadMonthFromFirebase(y, mm, nm0); applyMonthDataToTable(y, mm, data0); } } finally { hideBootSpinner(); } })();
+    (async ()=>{ showBootSpinner(); try{ const cached0 = getLastNameCache(); if (cached0) nameInput.value = cached0; buildTable(monthInput.value, nameInput.value.trim()); const [y,mm] = (monthInput.value || '').split('-').map(Number); if (y) { await loadHolidays(y); qsa('#tbody tr').forEach((tr, idx)=>{ const day = idx+1; const [dateCell, , , , , noteCell] = tr.children; const hlabel = dynamicHolidayLabel(y,mm,day); if(hlabel){ noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel); dateCell.classList.add('sun'); } }); } const nm0 = (nameInput.value||'').trim(); if (y && mm && nm0){ const data0 = await window.loadMonthFromFirebase(y, mm, nm0); window.applyMonthDataToTable(y, mm, data0); } } finally { hideBootSpinner(); } })();
   </script>
 
   <div id="bootSpinner" class="modal-backdrop" style="z-index:190; background:rgba(255,255,255,0.7); display:none">
