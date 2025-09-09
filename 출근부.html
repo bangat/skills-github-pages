@@ -9,6 +9,33 @@
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
   <!-- ▷▷▷ head 메타 종료 ▷▷▷ -->
 
+  <!-- [1/4] JWT 토큰 검증 (페이지 접근 제어) -->
+  <script>
+    (async () => {
+      // 🚨 중요: 이 URL을 실제 배포된 verifyAdminToken 함수 URL로 변경하세요!
+      const verifyTokenUrl = 'https://us-central1-hallymlinen.cloudfunctions.net/verifyAdminToken';
+      const loginPage = './index.html';
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        window.location.href = loginPage;
+        return;
+      }
+      try {
+        const response = await fetch(verifyTokenUrl, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) {
+          localStorage.removeItem('adminToken');
+          window.location.href = loginPage;
+        }
+      } catch (error) {
+        console.error('Token verification error:', error);
+        window.location.href = loginPage;
+      }
+    })();
+  </script>
+
   <!-- ▷▷▷ 전역 스타일 시작 ▷▷▷ -->
   <style>
     :root{
@@ -21,8 +48,6 @@
     body{margin:0;background:var(--bg);color:var(--text);font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;}
     .wrap{max-width:980px;margin:10px auto;padding:10px}
     .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-1)}
-
-    /* ------------주석(top-tabs-style 시작) ------------ */
     .topTabs{display:flex; gap:8px; margin:0 0 10px 0; padding:0 2px;}
     .topTabs a{
       flex:0 0 auto;
@@ -37,22 +62,15 @@
       pointer-events:none;
     }
     .topTabs a:active{ transform:translateY(1px); }
-    /* ------------주석(top-tabs-style 종료) ------------ */
-
-    /* 헤더 구성 */
     .card-head{padding:12px;display:grid;gap:10px}
     .title{font-size:20px;font-weight:800}
-
-    /* 2열/버튼 그리드 */
     .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
     .grid-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
     .row{display:flex;gap:8px;align-items:center}
-
     input[type="text"], input[type="month"], input[type="email"], select{
       border:1px solid var(--border);border-radius:12px;padding:0 12px;height:42px;font-size:15px;background:#fff;outline:none;min-width:0;width:100%;
     }
     input:focus, select:focus{box-shadow:var(--focus);border-color:transparent}
-
     .btn{
       border:1px solid var(--border);background:#fff;border-radius:12px;
       padding:0 12px;height:42px;font-weight:700;cursor:pointer;font-size:15px;
@@ -61,8 +79,6 @@
     .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
     .btn:active{transform:translateY(1px)}
     .icon{ width:1em; height:1em; stroke-width:2.5; vertical-align:-0.15em; }
-
-    /* 표 */
     .table-wrap{border-radius:12px;border:1px solid var(--border);margin:8px 12px;overflow:hidden}
     table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}
     thead th{position:sticky;top:0;background:#f8fafc;border-bottom:1px solid var(--border);font-size:12.5px;height:32px}
@@ -71,16 +87,11 @@
     .date-col{width:36px;font-weight:700}
     .name-col{width:50px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .time-col{width:60px}
-    /* ------------주석(note-col-visible) 시작 ---- */
     .note-col{width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    /* ------------주석(note-col-visible) 끝 ---- */
     .sun{color:#ef4444}
     .sat{color:#2563eb}
     .app-hide{display:none}
-
-    .card-foot{display:none} /* 로컬저장/불러오기 제거 */
-
-    /* 모달 */
+    .card-foot{display:none}
     .modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:12px;z-index:100;background:rgba(15,23,42,.5)}
     .modal{width:min(560px, 94vw);background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:0 10px 30px rgba(15,23,42,.12);overflow:hidden}
     .modal-hd{padding:14px 18px;border-bottom:1px solid var(--border);font-weight:800;font-size:18px}
@@ -89,8 +100,6 @@
     .row-inline{display:grid;grid-template-columns:98px 1fr;gap:10px;align-items:center}
     .row-inline .wfit{width:140px}
     .hidden{display:none!important}
-
-    /* ------------주석(modal-mobile-tuning) 시작 ---- */
     @media (max-width: 480px){
       .modal{width:96vw;border-radius:16px}
       .modal-bd{gap:10px}
@@ -101,17 +110,11 @@
       }
       .modal-ft{position:sticky;bottom:0;background:#fff}
     }
-    /* ------------주석(modal-mobile-tuning) 끝 ---- */
-
-    /* ------------주석(toast-style) 시작 ---- */
     #toast{
       position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
       background:#16a34a;color:#fff;padding:10px 14px;border-radius:12px;
       box-shadow:var(--shadow-1);display:none;z-index:250;font-weight:700
     }
-    /* ------------주석(toast-style) 끝 ---- */
-
-    /* 키보드 안전 바텀시트 모드 */
     #emailBackdrop.kb-safe{
       align-items:flex-end;
       padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px);
@@ -121,7 +124,6 @@
       max-width:640px;
       border-radius:14px 14px 0 0;
     }
-
     #toast {
       position:fixed;
       left:50%; bottom:18px;
@@ -139,15 +141,14 @@
   <!-- ▷▷▷ 전역 스타일 종료 ▷▷▷ -->
 
   <!-- ExcelJS / FileSaver -->
-  <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 
-  <!-- ------------주석(firebase-sdk-v10) 시작 ---- -->
+  <!-- [2/4] Firebase SDK 및 익명 인증 -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
+    
     // 프로젝트 설정
     const firebaseConfig = {
       apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
@@ -160,39 +161,58 @@
       measurementId: "G-T02ZFK18L3"
     };
 
-const app  = initializeApp(firebaseConfig);
-    const rtdb = getDatabase(app);
+    const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
     signInAnonymously(auth).catch((error) => {
       console.error("Anonymous sign-in failed:", error);
-      alert("데이터베이스 접근 권한을 얻는 데 실패했습니다. 새로고침 해주세요.");
     });
 
-    // 유틸 + 저장/불러오기 함수
-    // ------------주석(firebase-utils-v10) 시작 ----
+    // [3/4] 서버 통신 함수로 교체
     const pad2 = n => String(n).padStart(2,'0');
     const ymKey = (y,m)=>`${y}-${pad2(m)}`;
     const nameKey = s => (String(s||'').trim().replace(/[.#$\[\]/]/g,'_') || 'NONAME');
 
     async function saveDayToFirebase({y,m,day,name,inT,outT,note,leave,ot}){
-      const path = `/attendance/${ymKey(y,m)}/${nameKey(name)}/${pad2(day)}`;
-      const payload = {
-        y, m, day,
-        name: String(name||'').trim(),
-        in: String(inT||''),
-        out: String(outT||''),
-        note: String(note||''),
-        leave: String(leave||''),
-        ot: String(ot||'')
-      };
-      await set(ref(rtdb, path), payload);
+        const token = localStorage.getItem('adminToken');
+        if (!token) { return alert("인증 토큰이 없습니다. 다시 로그인해주세요."); }
+
+        const url = 'https://us-central1-hallymlinen.cloudfunctions.net/saveAttendanceData';
+        
+        const path = `/attendance/${ymKey(y,m)}/${nameKey(name)}/${pad2(day)}`;
+        const payload = { y, m, day, name: String(name||'').trim(), in: String(inT||''), out: String(outT||''), note: String(note||''), leave: String(leave||''), ot: String(ot||'') };
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ path, payload })
+        });
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
     }
 
     async function loadMonthFromFirebase(y,m,name){
-      const path = `/attendance/${ymKey(y,m)}/${nameKey(name)}`;
-      const snap = await get(ref(rtdb, path));
-      return snap.exists() ? (snap.val() || {}) : {};
+        const token = localStorage.getItem('adminToken');
+        if (!token) {
+            alert("인증 토큰이 없습니다. 다시 로그인해주세요.");
+            window.location.href = './index.html';
+            return {};
+        }
+
+        const url = new URL('https://us-central1-hallymlinen.cloudfunctions.net/getAttendanceData');
+        url.searchParams.append('year', y);
+        url.searchParams.append('month', m);
+        url.searchParams.append('name', name);
+
+        const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+        
+        if (!response.ok) {
+            if (response.status === 403) {
+                localStorage.removeItem('adminToken');
+                window.location.href = './index.html';
+            }
+            throw new Error(`Server error: ${response.status}`);
+        }
+        return await response.json();
     }
 
     function applyMonthDataToTable(y,m,data){
@@ -215,87 +235,34 @@ const app  = initializeApp(firebaseConfig);
       });
     }
 
-    // 전역 노출
     window.saveDayToFirebase = saveDayToFirebase;
     window.loadMonthFromFirebase = loadMonthFromFirebase;
     window.applyMonthDataToTable = applyMonthDataToTable;
-    // ------------주석(firebase-utils-v10) 끝 ----
-  </script>
-  <!-- ------------주석(firebase-sdk-v10) 끝 ---- -->
-<script>
-    (async () => {
-
-      const verifyTokenUrl = 'https://us-central1-hallymlinen.cloudfunctions.net/verifyAdminToken';
-      const loginPage = './인덱스.html'; // 로그인 페이지 경로
-
-      // 1. 브라우저 저장소에서 토큰을 가져옵니다.
-      const token = localStorage.getItem('adminToken');
-
-      // 2. 토큰이 없으면 즉시 로그인 페이지로 리디렉션합니다.
-      if (!token) {
-        window.location.href = loginPage;
-        return; // 아래 코드가 실행되지 않도록 여기서 중단합니다.
-      }
-
-      // 3. 토큰이 있는 경우, 서버에 유효한지 검증을 요청합니다.
-      try {
-        const response = await fetch(verifyTokenUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}` // 표준 방식인 Bearer 토큰으로 전송
-          }
-        });
-
-        // 4. 서버가 토큰이 유효하지 않다고 응답하면 (예: 만료, 위조),
-        //    잘못된 토큰을 삭제하고 로그인 페이지로 리디렉션합니다.
-        if (!response.ok) {
-          localStorage.removeItem('adminToken');
-          window.location.href = loginPage;
-        }
-        // 검증에 성공하면 아무것도 하지 않고 페이지 로드를 계속 진행합니다.
-
-      } catch (error) {
-        // 5. 네트워크 오류 등으로 서버와 통신이 안될 경우에도 접근을 막습니다.
-        console.error('Token verification error:', error);
-        window.location.href = loginPage;
-      }
-    })();
   </script>
 </head>
 
 <body>
   <div class="wrap">
-
-    <!-- ------------주석(top-tabs-dom 시작) ------------ -->
     <nav class="topTabs" aria-label="상단 탭">
       <a href="#" aria-current="page"><i class="icon" data-feather="calendar"></i>출근부</a>
       <a href="./구매현황.html"><i class="icon" data-feather="bar-chart-2"></i>구매관리</a>
     </nav>
-    <!-- ------------주석(top-tabs-dom 종료) ------------ -->
-
     <div class="card">
       <div class="card-head">
         <div class="title">출근부</div>
-
-        <!-- 1) 입력 박스 줄: 이름, 월 -->
         <div class="grid-2">
           <input id="nameInput" type="text" placeholder="이름" />
           <input id="monthInput" type="month" />
         </div>
-
-        <!-- 2) 생성 / 초기화 -->
         <div class="grid-btns">
           <button id="genBtn" class="btn primary"><i class="icon" data-feather="download-cloud"></i>출근표 불러오기</button>
           <button id="clearBtn" class="btn"><i class="icon" data-feather="trash-2"></i>초기화</button>
         </div>
-
-        <!-- 3) 내보내기 / 메일 전송 -->
         <div class="grid-btns">
           <button id="xlsxBtn" class="btn"><i class="icon" data-feather="file-text"></i>엑셀로 내려받기</button>
           <button id="emailBtn" class="btn"><i class="icon" data-feather="send"></i>메일로 전송</button>
         </div>
       </div>
-
       <div class="table-wrap">
         <table id="tbl">
           <thead>
@@ -315,7 +282,6 @@ const app  = initializeApp(firebaseConfig);
     </div>
   </div>
 
-  <!-- 근무 상태 편집 모달 -->
   <div id="editBackdrop" class="modal-backdrop">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
       <div class="modal-hd" id="editTitle">근무 상태 편집</div>
@@ -324,7 +290,6 @@ const app  = initializeApp(firebaseConfig);
           <label>대상 날짜</label>
           <input id="editDate" type="text" readonly />
         </div>
-
         <div class="row-inline">
           <label>휴가 사용</label>
           <select id="leaveSel">
@@ -334,8 +299,6 @@ const app  = initializeApp(firebaseConfig);
             <option value="family">조가</option>
           </select>
         </div>
-
-        <!-- ------------주석(edit-ui-time-range) 시작 ---- -->
         <div class="row-inline">
           <label>시간 조정</label>
           <div class="row" style="gap:10px">
@@ -344,9 +307,6 @@ const app  = initializeApp(firebaseConfig);
             <input id="timeOut" type="text" inputmode="numeric" pattern="\\d{2}:\\d{2}" placeholder="예: 15:30" class="wfit" />
           </div>
         </div>
-        <!-- ------------주석(edit-ui-time-range) 끝 ---- -->
-
-        <!-- ------------주석(edit-ui-dayoff) 시작 ---- -->
         <div class="row-inline">
           <label>휴무</label>
           <div class="row" style="gap:10px">
@@ -356,8 +316,6 @@ const app  = initializeApp(firebaseConfig);
             </label>
           </div>
         </div>
-        <!-- ------------주석(edit-ui-dayoff) 끝 ---- -->
-
         <div class="row-inline">
           <label>비고</label>
           <input id="editNote" type="text" placeholder="엑셀 비고란에 들어갑니다" />
@@ -370,7 +328,6 @@ const app  = initializeApp(firebaseConfig);
     </div>
   </div>
 
-  <!-- 이메일 입력 모달 -->
   <div id="emailBackdrop" class="modal-backdrop">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="emailTitle" style="width:min(420px,92vw)">
       <div class="modal-hd" id="emailTitle">메일로 전송</div>
@@ -387,8 +344,8 @@ const app  = initializeApp(firebaseConfig);
     </div>
   </div>
 
+  <!-- [4/4] 기존 UI 로직 스크립트 -->
   <script>
-    /* ===== 기본 ===== */
     const pad2 = n => String(n).padStart(2,'0');
     const DEFAULT_IN  = '06 : 00';
     const DEFAULT_OUT = '15 : 30';
@@ -402,699 +359,86 @@ const app  = initializeApp(firebaseConfig);
     const xlsxBtn    = qs('#xlsxBtn');
     const emailBtn   = qs('#emailBtn');
     const tbody      = qs('#tbody');
-
-    // ------------주석(name-cache-utils) 시작 ----
+    
     const LS_KEY_LAST_NAME = 'att:lastName';
-    function setLastNameCache(v){
-      try{ localStorage.setItem(LS_KEY_LAST_NAME, String(v||'').trim()); }catch(_e){}
-    }
-    function getLastNameCache(){
-      try{ return localStorage.getItem(LS_KEY_LAST_NAME) || ''; }catch(_e){ return ''; }
-    }
-    // ------------주석(name-cache-utils) 끝 ----
-
-    // ------------주석(name-cache-bind) 시작 ----
+    function setLastNameCache(v){ try{ localStorage.setItem(LS_KEY_LAST_NAME, String(v||'').trim()); }catch(_e){} }
+    function getLastNameCache(){ try{ return localStorage.getItem(LS_KEY_LAST_NAME) || ''; }catch(_e){ return ''; } }
+    
     nameInput.addEventListener('change', ()=> setLastNameCache(nameInput.value));
     nameInput.addEventListener('blur',   ()=> setLastNameCache(nameInput.value));
     genBtn.addEventListener('click',     ()=> setLastNameCache(nameInput.value));
-    // ------------주석(name-cache-bind) 끝 ----
-
-    // ⬇⬇ 여기 붙여넣기 ⬇⬇
+    
     const LS_KEY_LAST_EMAIL = 'att:lastEmail';
-    function setLastEmailCache(v){
-      try{ localStorage.setItem(LS_KEY_LAST_EMAIL, String(v||'').trim()); }catch(_e){}
-    }
-    function getLastEmailCache(){
-      try{ return localStorage.getItem(LS_KEY_LAST_EMAIL) || ''; }catch(_e){ return ''; }
-    }
-    // ------------주석(email-cache-utils) 끝 ----
-
-    // ------------주석(GAS endpoint) 시작 ----
+    function setLastEmailCache(v){ try{ localStorage.setItem(LS_KEY_LAST_EMAIL, String(v||'').trim()); }catch(_e){} }
+    function getLastEmailCache(){ try{ return localStorage.getItem(LS_KEY_LAST_EMAIL) || ''; }catch(_e){ return ''; } }
+    
     const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxLS7c2bcl50k5LMOqC8Axx7PUZN-h5mN-MuNQddNcjc9P2BhWPxmaSPAWWbzhDRK8/exec';
-    // ------------주석(GAS endpoint) 끝 ----
-
-    // ------------주석(bootSpinner 제어) 시작 ----
-    function showBootSpinner(){
-      const el = document.getElementById('bootSpinner');
-      if (el) el.style.display = 'flex';
-    }
-    function hideBootSpinner(){
-      const el = document.getElementById('bootSpinner');
-      if (el) el.style.display = 'none';
-    }
-    // ------------주석(bootSpinner 제어) 끝 ----
-
-    // ------------주석(GAS warmup) 시작 ----
-    fetch(GAS_WEBAPP_URL, {
-      method: 'POST',
-      headers: {'Content-Type':'text/plain;charset=UTF-8'},
-      body: JSON.stringify({ ping: true })
-    }).catch(()=>{ /* 무시 */ });
-    // ------------주석(GAS warmup) 끝 ----
-
-    // ------------주석(공휴일 데이터) 시작 ----
-    const HOLIDAY_MAP = new Map(); // 'YYYY-MM-DD' -> '공휴일명(정리된 문자열)'
-
-    function normalizeHolidayName(s){
-      if(!s) return '';
-      s = String(s).replace(/\s+/g, ' ').trim();
-      s = s.replace(/^쉬는 날\s*/i, '');
-      s = s.replace(/^\(대체\)\s*/i, '');
-      s = s.replace(/대체공휴일(?:\s*\(.+?\))?/g, '대체공휴일');
-      return s;
-    }
-    function consolidateNames(arr){
-      const uniq = Array.from(new Set(arr.map(normalizeHolidayName).filter(Boolean)));
-      uniq.sort((a,b)=>b.length-a.length);
-      const kept = [];
-      uniq.forEach(n=>{
-        if(!kept.some(k=>k.includes(n) && k!==n)) kept.push(n);
-      });
-      return kept.join(' / ');
-    }
-
-    async function loadHolidays(year){
-      try{
-        const url = `${GAS_WEBAPP_URL}?fn=holidays&year=${year}`;
-        const res = await fetch(url, { method:'GET' });
-        const json = await res.json();
-        if(json.ok && Array.isArray(json.items)){
-          HOLIDAY_MAP.clear();
-          const bucket = new Map();
-          json.items.forEach(({date,name})=>{
-            const arr = bucket.get(date) || [];
-            arr.push(name);
-            bucket.set(date, arr);
-          });
-          bucket.forEach((names, date)=>{
-            HOLIDAY_MAP.set(date, consolidateNames(names));
-          });
-
-          // ------------주석(alt-holiday-postprocess) 시작 ----
-          (function applyAltForLunarHolidays(){
-            const entries = Array.from(HOLIDAY_MAP.entries())
-              .filter(([_, name]) => /추석|설날/.test(name));
-            if (!entries.length) return;
-            entries.sort((a,b)=> a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0);
-            const clusters = [];
-            let curr = [];
-            const toDate = s => { const [y,m,d]=s.split('-').map(Number); return new Date(y, m-1, d); };
-            const isNextDay = (a,b)=> {
-              const da = toDate(a), db = toDate(b);
-              return (db - da) === 24*60*60*1000;
-            };
-            entries.forEach(([dateStr, name], i)=>{
-              if (i===0) { curr.push([dateStr, name]); return; }
-              const prev = entries[i-1][0];
-              if (isNextDay(prev, dateStr)) curr.push([dateStr, name]);
-              else { clusters.push(curr); curr = [[dateStr, name]]; }
-            });
-            if (curr.length) clusters.push(curr);
-            clusters.forEach(cluster=>{
-              const hasSunday = cluster.some(([dateStr])=> new Date(dateStr).getDay() === 0);
-              if (hasSunday) {
-                const [lastDate] = cluster[cluster.length - 1];
-                HOLIDAY_MAP.set(lastDate, '대체공휴일');
-              }
-            });
-          })();
-          // ------------주석(alt-holiday-postprocess) 끝 ----
-
-          // ------------주석(holiday-repaint) 시작 ----
-          try{
-            const [currY, currM] = (monthInput.value||'').split('-').map(Number);
-            if (currY === year) {
-              qsa('#tbody tr').forEach((tr, idx)=>{
-                const day = idx+1;
-                const [dateCell, , , , , noteCell] = tr.children;
-                const hlabel = dynamicHolidayLabel(currY, currM, day);
-                if (hlabel) {
-                  noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel);
-                  dateCell.classList.add('sun');
-                }
-              });
-            }
-          }catch(_e){ /* 무시 */ }
-          // ------------주석(holiday-repaint) 끝 ----
-        }
-      }catch(e){ console.warn('공휴일 로드 실패:', e); }
-    }
-    function dynamicHolidayLabel(y, m, d){
-      const key = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      if(HOLIDAY_MAP.has(key)) return HOLIDAY_MAP.get(key);
-      const md = `${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const fixed = {'01-01':'신정','03-01':'삼일절','05-05':'어린이날','06-06':'현충일','08-15':'광복절','10-03':'개천절','10-09':'한글날','12-25':'성탄절'};
-      return fixed[md] || '';
-    }
-    // ------------주석(공휴일 데이터) 끝 ----
-    // 변경코드 마지막끝줄: // ------------주석(공휴일 데이터) 끝 ----
-
-    (function initMonth(){
-      const d=new Date();
-      monthInput.value = `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
-    })();
-
-    // 공휴일 라벨 중복 방지
-    // -----주석(holiday-label) 시작 ----
+    
+    function showBootSpinner(){ const el = document.getElementById('bootSpinner'); if (el) el.style.display = 'flex'; }
+    function hideBootSpinner(){ const el = document.getElementById('bootSpinner'); if (el) el.style.display = 'none'; }
+    
+    fetch(GAS_WEBAPP_URL, { method: 'POST', headers: {'Content-Type':'text/plain;charset=UTF-8'}, body: JSON.stringify({ ping: true }) }).catch(()=>{});
+    
+    const HOLIDAY_MAP = new Map();
+    function normalizeHolidayName(s){ if(!s) return ''; s = String(s).replace(/\s+/g, ' ').trim(); s = s.replace(/^쉬는 날\s*/i, ''); s = s.replace(/^\(대체\)\s*/i, ''); s = s.replace(/대체공휴일(?:\s*\(.+?\))?/g, '대체공휴일'); return s; }
+    function consolidateNames(arr){ const uniq = Array.from(new Set(arr.map(normalizeHolidayName).filter(Boolean))); uniq.sort((a,b)=>b.length-a.length); const kept = []; uniq.forEach(n=>{ if(!kept.some(k=>k.includes(n) && k!==n)) kept.push(n); }); return kept.join(' / '); }
+    async function loadHolidays(year){ try{ const url = `${GAS_WEBAPP_URL}?fn=holidays&year=${year}`; const res = await fetch(url, { method:'GET' }); const json = await res.json(); if(json.ok && Array.isArray(json.items)){ HOLIDAY_MAP.clear(); const bucket = new Map(); json.items.forEach(({date,name})=>{ const arr = bucket.get(date) || []; arr.push(name); bucket.set(date, arr); }); bucket.forEach((names, date)=>{ HOLIDAY_MAP.set(date, consolidateNames(names)); }); (function applyAltForLunarHolidays(){ const entries = Array.from(HOLIDAY_MAP.entries()).filter(([_, name]) => /추석|설날/.test(name)); if (!entries.length) return; entries.sort((a,b)=> a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0); const clusters = []; let curr = []; const toDate = s => { const [y,m,d]=s.split('-').map(Number); return new Date(y, m-1, d); }; const isNextDay = (a,b)=> { const da = toDate(a), db = toDate(b); return (db - da) === 24*60*60*1000; }; entries.forEach(([dateStr, name], i)=>{ if (i===0) { curr.push([dateStr, name]); return; } const prev = entries[i-1][0]; if (isNextDay(prev, dateStr)) curr.push([dateStr, name]); else { clusters.push(curr); curr = [[dateStr, name]]; } }); if (curr.length) clusters.push(curr); clusters.forEach(cluster=>{ const hasSunday = cluster.some(([dateStr])=> new Date(dateStr).getDay() === 0); if (hasSunday) { const [lastDate] = cluster[cluster.length - 1]; HOLIDAY_MAP.set(lastDate, '대체공휴일'); } }); })(); try{ const [currY, currM] = (monthInput.value||'').split('-').map(Number); if (currY === year) { qsa('#tbody tr').forEach((tr, idx)=>{ const day = idx+1; const [dateCell, , , , , noteCell] = tr.children; const hlabel = dynamicHolidayLabel(currY, currM, day); if (hlabel) { noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel); dateCell.classList.add('sun'); } }); } }catch(_e){} } }catch(e){ console.warn('공휴일 로드 실패:', e); } }
+    function dynamicHolidayLabel(y, m, d){ const key = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; if(HOLIDAY_MAP.has(key)) return HOLIDAY_MAP.get(key); const md = `${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; const fixed = {'01-01':'신정','03-01':'삼일절','05-05':'어린이날','06-06':'현충일','08-15':'광복절','10-03':'개천절','10-09':'한글날','12-25':'성탄절'}; return fixed[md] || ''; }
+    
+    (function initMonth(){ const d=new Date(); monthInput.value = `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; })();
+    
     const addLabelOnce = (note, label) => !label ? (note||'') : !note ? label : (note.includes(label) ? note : `${note} / ${label}`);
-    // -----주석(holiday-label) 끝 ----
-
-    /* ===== 표 생성 ===== */
-    function buildTable(ym, name){
-      tbody.innerHTML='';
-      if(!ym){ alert('월을 선택하세요.'); return; }
-      const [y,m] = ym.split('-').map(Number);
-      const lastDay = new Date(y, m, 0).getDate();
-
-      for(let day=1; day<=lastDay; day++){
-        const dt = new Date(y, m-1, day);
-        const dow = dt.getDay(); const isSun=dow===0, isSat=dow===6;
-
-        const tr = document.createElement('tr');
-
-        const dateCell = document.createElement('td');
-        dateCell.className = 'date-col ' + (isSun?'sun':isSat?'sat':'' );
-        dateCell.style.textAlign='center'; dateCell.textContent = day;
-
-        const nameCell = document.createElement('td');
-        nameCell.className='name-col'; nameCell.textContent = name || '';
-
-        const inCell  = document.createElement('td'); inCell.className='time-col';
-        const outCell = document.createElement('td'); outCell.className='time-col';
-        const signCell = document.createElement('td'); signCell.className='app-hide';
-        const noteCell = document.createElement('td'); noteCell.className='note-col';
-        const apprCell = document.createElement('td'); apprCell.className='app-hide';
-
-        /* ------------주석(holiday-default-blank) 시작 ---- */
-        const hlabel = dynamicHolidayLabel(y,m,day);
-
-        if (isSun) {
-          inCell.textContent  = '휴';
-          outCell.textContent = '무';
-        } else if (!hlabel) {
-          inCell.textContent  = DEFAULT_IN;
-          outCell.textContent = DEFAULT_OUT;
-        }
-        if (hlabel) {
-          noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel);
-          dateCell.classList.add('sun');
-        }
-        /* ------------주석(holiday-default-blank) 끝 ---- */
-
-        tr.addEventListener('click', ()=> openEditModal({y,m,day,dow,isSun,isSat}, tr));
-        tr.append(dateCell, nameCell, inCell, outCell, signCell, noteCell, apprCell);
-        tbody.appendChild(tr);
-      }
-    }
-
-    /* ===== 편집 모달 ===== */
-    const editBackdrop = qs('#editBackdrop');
-    const editDate  = qs('#editDate');
-    const leaveSel  = qs('#leaveSel');
-    const editNote  = qs('#editNote');
-
-    // ------------주석(edit-vars-time-range) 시작 ----
-    const timeIn  = qs('#timeIn');
-    const timeOut = qs('#timeOut');
-
-    function normalizeHHMM(raw){
-      let s = String(raw||'').trim();
-      if(!s) return '';
-      s = s.replace(/[^\d]/g,'');
-      if(s.length===1) s = '0'+s+'00';
-      else if(s.length===2) s = s + '00';
-      else if(s.length===3) s = '0' + s;
-      else if(s.length>4) s = s.slice(0,4);
-      const hh = Math.min(parseInt(s.slice(0,2),10)||0, 23);
-      const mm = Math.min(parseInt(s.slice(2,4),10)||0, 59);
-      return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
-    }
-    const toTimeValue = (s) => {
-      s = String(s||'').trim();
-      const m = s.match(/(\d{1,2})\s*:\s*(\d{2})/);
-      return m ? `${m[1].padStart(2,'0')}:${m[2]}` : '';
-    };
-    const toCellValue = (s) => {
-      const m = String(s||'').match(/(\d{1,2}):(\d{2})/);
-      return m ? `${m[1].padStart(2,'0')} : ${m[2]}` : '';
-    };
-    function bindTimeAutoFormat(el){
-      if(!el) return;
-      el.addEventListener('input', ()=>{
-        const v = el.value.replace(/[^\d]/g,'');
-        if(v.length===0){ el.value=''; return; }
-        if(v.length<=2){ el.value = v; return; }
-        el.value = v.slice(0,2) + ':' + v.slice(2,4);
-      });
-      el.addEventListener('blur', ()=>{ el.value = normalizeHHMM(el.value); });
-    }
-    bindTimeAutoFormat(timeIn);
-    bindTimeAutoFormat(timeOut);
-    // ------------주석(edit-vars-time-range) 끝 ----
-
-    // ------------주석(time-chips-and-toast) 시작 ----
-    const chipsWrap = qs('#timeChips');
-    function addMinutesToHHMM(hhmm, addMin){
-      const m = String(hhmm||'').match(/(\d{1,2}):(\d{2})/);
-      if(!m) return '';
-      let h = parseInt(m[1],10), mm = parseInt(m[2],10);
-      let total = h*60 + mm + (addMin|0);
-      if (total < 0) total = 0;
-      h = Math.floor(total/60); mm = total%60;
-      return `${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
-    }
-    chipsWrap?.addEventListener('click', (e)=>{
-      const btn = e.target.closest('.chip'); if(!btn) return;
-      if (typeof dayOffCheck !== 'undefined' && dayOffCheck){ dayOffCheck.checked = false; }
-      if (timeIn)  timeIn.disabled = false;
-      if (timeOut) timeOut.disabled = false;
-
-      if(btn.dataset.set){
-        const [which, val] = btn.dataset.set.split(':');
-        if(which==='in' && timeIn) timeIn.value = val;
-        if(which==='out'&& timeOut) timeOut.value = val;
-      }else if(btn.dataset.inc){
-        const [which, mins] = btn.dataset.inc.split(':');
-        if(which==='out' && timeOut){
-          const cur = timeOut.value || '15:30';
-          timeOut.value = addMinutesToHHMM(cur, parseInt(mins,10));
-        }
-      }
-    });
-    function showToast(msg='저장 완료'){
-      const t = qs('#toast'); if(!t) return;
-      t.textContent = msg;
-      t.style.display = 'block';
-      clearTimeout(window.__toastTimer);
-      window.__toastTimer = setTimeout(()=> t.style.display='none', 1500);
-    }
-    // ------------주석(time-chips-and-toast) 끝 ----
-
-    // ------------주석(edit-vars-dayoff) 시작 ----
-    const dayOffCheck = qs('#dayOffCheck');
-    function isCellHolidayMark(inVal, outVal){
-      return inVal === '휴' && outVal === '무';
-    }
-    dayOffCheck?.addEventListener('change', ()=>{
-      const disabled = dayOffCheck.checked;
-      if (timeIn)  timeIn.disabled  = disabled;
-      if (timeOut) timeOut.disabled = disabled;
-    });
-    // ------------주석(edit-vars-dayoff) 끝 ----
-
+    
+    function buildTable(ym, name){ tbody.innerHTML=''; if(!ym){ alert('월을 선택하세요.'); return; } const [y,m] = ym.split('-').map(Number); const lastDay = new Date(y, m, 0).getDate(); for(let day=1; day<=lastDay; day++){ const dt = new Date(y, m-1, day); const dow = dt.getDay(); const isSun=dow===0, isSat=dow===6; const tr = document.createElement('tr'); const dateCell = document.createElement('td'); dateCell.className = 'date-col ' + (isSun?'sun':isSat?'sat':'' ); dateCell.style.textAlign='center'; dateCell.textContent = day; const nameCell = document.createElement('td'); nameCell.className='name-col'; nameCell.textContent = name || ''; const inCell  = document.createElement('td'); inCell.className='time-col'; const outCell = document.createElement('td'); outCell.className='time-col'; const signCell = document.createElement('td'); signCell.className='app-hide'; const noteCell = document.createElement('td'); noteCell.className='note-col'; const apprCell = document.createElement('td'); apprCell.className='app-hide'; const hlabel = dynamicHolidayLabel(y,m,day); if (isSun) { inCell.textContent  = '휴'; outCell.textContent = '무'; } else if (!hlabel) { inCell.textContent  = DEFAULT_IN; outCell.textContent = DEFAULT_OUT; } if (hlabel) { noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel); dateCell.classList.add('sun'); } tr.addEventListener('click', ()=> openEditModal({y,m,day,dow,isSun,isSat}, tr)); tr.append(dateCell, nameCell, inCell, outCell, signCell, noteCell, apprCell); tbody.appendChild(tr); } }
+    
+    const editBackdrop = qs('#editBackdrop'); const editDate  = qs('#editDate'); const leaveSel  = qs('#leaveSel'); const editNote  = qs('#editNote');
+    const timeIn  = qs('#timeIn'); const timeOut = qs('#timeOut');
+    function normalizeHHMM(raw){ let s = String(raw||'').trim(); if(!s) return ''; s = s.replace(/[^\d]/g,''); if(s.length===1) s = '0'+s+'00'; else if(s.length===2) s = s + '00'; else if(s.length===3) s = '0' + s; else if(s.length>4) s = s.slice(0,4); const hh = Math.min(parseInt(s.slice(0,2),10)||0, 23); const mm = Math.min(parseInt(s.slice(2,4),10)||0, 59); return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`; }
+    const toTimeValue = (s) => { s = String(s||'').trim(); const m = s.match(/(\d{1,2})\s*:\s*(\d{2})/); return m ? `${m[1].padStart(2,'0')}:${m[2]}` : ''; };
+    const toCellValue = (s) => { const m = String(s||'').match(/(\d{1,2}):(\d{2})/); return m ? `${m[1].padStart(2,'0')} : ${m[2]}` : ''; };
+    function bindTimeAutoFormat(el){ if(!el) return; el.addEventListener('input', ()=>{ const v = el.value.replace(/[^\d]/g,''); if(v.length===0){ el.value=''; return; } if(v.length<=2){ el.value = v; return; } el.value = v.slice(0,2) + ':' + v.slice(2,4); }); el.addEventListener('blur', ()=>{ el.value = normalizeHHMM(el.value); }); }
+    bindTimeAutoFormat(timeIn); bindTimeAutoFormat(timeOut);
+    
+    const chipsWrap = qs('#timeChips'); function addMinutesToHHMM(hhmm, addMin){ const m = String(hhmm||'').match(/(\d{1,2}):(\d{2})/); if(!m) return ''; let h = parseInt(m[1],10), mm = parseInt(m[2],10); let total = h*60 + mm + (addMin|0); if (total < 0) total = 0; h = Math.floor(total/60); mm = total%60; return `${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}`; }
+    chipsWrap?.addEventListener('click', (e)=>{ const btn = e.target.closest('.chip'); if(!btn) return; if (typeof dayOffCheck !== 'undefined' && dayOffCheck){ dayOffCheck.checked = false; } if (timeIn)  timeIn.disabled = false; if (timeOut) timeOut.disabled = false; if(btn.dataset.set){ const [which, val] = btn.dataset.set.split(':'); if(which==='in' && timeIn) timeIn.value = val; if(which==='out'&& timeOut) timeOut.value = val; }else if(btn.dataset.inc){ const [which, mins] = btn.dataset.inc.split(':'); if(which==='out' && timeOut){ const cur = timeOut.value || '15:30'; timeOut.value = addMinutesToHHMM(cur, parseInt(mins,10)); } } });
+    function showToast(msg='저장 완료'){ const t = qs('#toast'); if(!t) return; t.textContent = msg; t.style.display = 'block'; clearTimeout(window.__toastTimer); window.__toastTimer = setTimeout(()=> t.style.display='none', 1500); }
+    
+    const dayOffCheck = qs('#dayOffCheck'); function isCellHolidayMark(inVal, outVal){ return inVal === '휴' && outVal === '무'; }
+    dayOffCheck?.addEventListener('change', ()=>{ const disabled = dayOffCheck.checked; if (timeIn)  timeIn.disabled  = disabled; if (timeOut) timeOut.disabled = disabled; });
+    
     let currentRow=null, currentMeta=null;
-
-    function openEditModal(meta, tr){
-      currentRow = tr; currentMeta=meta;
-      const [ , nameCell, inCell, outCell, , noteCell] = tr.children;
-
-      editDate.value = `${meta.y}-${pad2(meta.m)}-${pad2(meta.day)}`;
-      editNote.value = noteCell.textContent || '';
-
-      const inVal  = (inCell.textContent||'').trim();
-      const outVal = (outCell.textContent||'').trim();
-      leaveSel.value =
-        (inVal==='연'&&outVal==='차') ? 'annual' :
-        (inVal==='반'&&outVal==='차') ? 'half'   :
-        (inVal==='조'&&outVal==='가') ? 'family' : '';
-
-      /* ------------주석(open-fill-time-range) 시작 ---- */
-      timeIn.value  = toTimeValue(inVal);
-      timeOut.value = toTimeValue(outVal);
-      /* ------------주석(open-fill-time-range) 끝 ---- */
-
-      /* ------------주석(open-fill-dayoff) 시작 ---- */
-      if (dayOffCheck){
-        dayOffCheck.checked = isCellHolidayMark(inVal, outVal);
-        const disabled = dayOffCheck.checked;
-        if (timeIn)  timeIn.disabled  = disabled;
-        if (timeOut) timeOut.disabled = disabled;
-      }
-      /* ------------주석(open-fill-dayoff) 끝 ---- */
-
-      editBackdrop.style.display='flex';
-    }
+    function openEditModal(meta, tr){ currentRow = tr; currentMeta=meta; const [ , nameCell, inCell, outCell, , noteCell] = tr.children; editDate.value = `${meta.y}-${pad2(meta.m)}-${pad2(meta.day)}`; editNote.value = noteCell.textContent || ''; const inVal  = (inCell.textContent||'').trim(); const outVal = (outCell.textContent||'').trim(); leaveSel.value = (inVal==='연'&&outVal==='차') ? 'annual' : (inVal==='반'&&outVal==='차') ? 'half'   : (inVal==='조'&&outVal==='가') ? 'family' : ''; timeIn.value  = toTimeValue(inVal); timeOut.value = toTimeValue(outVal); if (dayOffCheck){ dayOffCheck.checked = isCellHolidayMark(inVal, outVal); const disabled = dayOffCheck.checked; if (timeIn)  timeIn.disabled  = disabled; if (timeOut) timeOut.disabled = disabled; } editBackdrop.style.display='flex'; }
     function closeEditModal(){ editBackdrop.style.display='none'; }
     qs('#editCancel').addEventListener('click', closeEditModal);
-
-    qs('#editApply').addEventListener('click', ()=>{
-      if(!currentRow) return;
-      const [dateCell, nameCell, inCell, outCell, , noteCell] = currentRow.children;
-      const isSunday = /sun/.test(dateCell.className);
-
-      /* ------------주석(edit-apply-time-range-and-holiday) 시작 ---- */
-      const [yy,mm2,dd] = editDate.value.split('-').map(Number);
-      const isHoliday = !!dynamicHolidayLabel(yy,mm2,dd);
-
-      if(leaveSel.value==='annual'){ inCell.textContent='연'; outCell.textContent='차'; }
-      else if(leaveSel.value==='half'){ inCell.textContent='반'; outCell.textContent='차'; }
-      else if(leaveSel.value==='family'){ inCell.textContent='조'; outCell.textContent='가'; }
-      else{
-        if (dayOffCheck && dayOffCheck.checked){
-          inCell.textContent  = '휴';
-          outCell.textContent = '무';
-        }else{
-          const tIn  = toCellValue(timeIn?.value);
-          const tOut = toCellValue(timeOut?.value);
-          if(tIn || tOut){
-            inCell.textContent  = tIn || '';
-            outCell.textContent = tOut || '';
-          }else{
-            if(isHoliday || isSunday){
-              inCell.textContent=''; outCell.textContent='';
-            }else{
-              inCell.textContent=DEFAULT_IN; outCell.textContent=DEFAULT_OUT;
-            }
-          }
-        }
-      }
-      /* ------------주석(edit-apply-time-range-and-holiday) 끝 ---- */
-
-      // ------------주석(editApply-holiday) 시작 ----
-      const [y,m,day] = editDate.value.split('-').map(Number);
-      const hlabel = dynamicHolidayLabel(y,m,day);
-      noteCell.textContent = addLabelOnce(editNote.value.trim(), hlabel);
-      // ------------주석(editApply-holiday) 끝 ----
-
-      /* ------------주석(editApply-save-firebase-v10) 시작 ---- */
-      (async ()=>{
-        const [y,m,day] = editDate.value.split('-').map(Number);
-        const nm = (nameInput.value||'').trim();
-        const [ , , inCell2, outCell2, , noteCell2] = currentRow.children;
-
-        await saveDayToFirebase({
-          y, m, day,
-          name: nm,
-          inT: (inCell2.textContent||'').trim(),
-          outT: (outCell2.textContent||'').trim(),
-          note: (noteCell2.textContent||'').trim(),
-          leave: (leaveSel.value||'')
-        });
-        showToast('저장 완료');
-      })().catch(console.warn);
-      /* ------------주석(editApply-save-firebase-v10) 끝 ---- */
-
-      closeEditModal();
-    });
-
-    /* ===== 엑셀 생성 ===== */
-    async function makeWorkbook(){
-      const ym = monthInput.value;
-      if(!ym){ alert('월을 선택하세요.'); throw new Error('no-month'); }
-      const [y,m] = ym.split('-').map(Number);
-      const nm = (nameInput.value||'').trim();
-
-      const wb = new ExcelJS.Workbook();
-      const ws = wb.addWorksheet('출근표', {
-        pageSetup:{
-          paperSize:9, orientation:'portrait',
-          margins:{left:0,right:0,top:0,bottom:0.1,header:0,footer:0},
-          horizontalCentered:true, verticalCentered:true,
-          fitToPage:true, fitToWidth:1, fitToHeight:0
-        }
-      });
-      const baseFont = {name:'맑은 고딕', size:12};
-
-      // 열 너비
-      ws.getColumn(1).width = 6.25;
-      ws.getColumn(2).width = 9.75;
-      ws.getColumn(3).width = 12.88;
-      ws.getColumn(4).width = 12.88;
-      ws.getColumn(5).width = 12.88;
-      ws.getColumn(6).width = 9.75;
-      ws.getColumn(7).width = 5.35;
-      ws.getColumn(8).width = 11;
-
-      // 행 높이
-      ws.getRow(1).height = 14.25; ws.getRow(2).height = 36.75;
-      ws.getRow(3).height = 29.25; ws.getRow(4).height = 25;
-
-      // 결재란(세로 텍스트, 호환)
-      ws.mergeCells('G1:G2');
-      const g1 = ws.getCell('G1');
-      const g2 = ws.getCell('G2');
-      g1.value = '결\n재\n란';
-      g1.font  = {name:'맑은 고딕', size:11, bold:true};
-      g1.alignment = { vertical:'middle', horizontal:'center', wrapText:true };
-      g2.alignment = g1.alignment;
-      ['G1','G2'].forEach(a=>{
-        ws.getCell(a).border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
-      });
-      const h1 = ws.getCell('H1'); h1.value='팀장';
-      h1.font={name:'맑은 고딕',size:11};
-      h1.alignment={vertical:'middle',horizontal:'center'};
-      const h2 = ws.getCell('H2'); h2.value='';
-      ['H1','H2'].forEach(a=>{
-        ws.getCell(a).border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
-      });
-      // 변경코드 마지막끝줄: ['H1','H2'] 보더 설정 라인
-
-      // 타이틀
-      ws.mergeCells('A3:H3');
-      const t = ws.getCell('A3');
-      t.value = `${y}년 ${m}월 린넨실(직원) 출근표`;
-      t.font  = {name:'맑은 고딕', size:18, bold:true};
-      t.alignment = {vertical:'middle', horizontal:'center'};
-
-      // 헤더
-      ws.getCell('A4').value='날짜';
-      ws.getCell('B4').value='이름';
-      ws.getCell('C4').value='출근시각';
-      ws.getCell('D4').value='퇴근시각';
-      ws.getCell('E4').value='본인서명';
-      ws.getCell('F4').value='비고';
-      ws.mergeCells('F4:G4');
-      ws.getCell('H4').value='담당자확인';
-      ['A4','B4','C4','D4','E4','F4','H4'].forEach(a=>{
-        const c=ws.getCell(a);
-        c.font={...baseFont, bold:true};
-        c.alignment={vertical:'middle',horizontal:'center'};
-        c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF1F5F9'}};
-        c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
-      });
-
-      // 데이터
-      const lastDay = new Date(y, m, 0).getDate();
-      const startRow = 5;
-      for(let d=1; d<=lastDay; d++){
-        const rIdx = startRow + d - 1;
-        const r = ws.getRow(rIdx); r.height = 22;
-
-        const dateObj = new Date(y, m-1, d);
-        const dow = dateObj.getDay(); const isSun=dow===0, isSat=dow===6;
-
-        const tr = qsa('#tbody tr')[d-1];
-        let [ , , inT, outT, , noteText] = tr
-              ? Array.from(tr.children).map(td=> (td.textContent||'').trim())
-              : [null,null,'','','',''];
-
-        if(isSun){ inT='휴'; outT='무'; }
-        else{
-          if(!inT)  inT=DEFAULT_IN;
-          if(!outT) outT=DEFAULT_OUT;
-        }
-        const hlabel = dynamicHolidayLabel(y,m,d);
-        noteText = addLabelOnce(noteText, hlabel);
-
-        ws.getCell(rIdx,1).value=d;
-        ws.getCell(rIdx,2).value=(nameInput.value||'').trim();
-        ws.getCell(rIdx,3).value=inT;
-        ws.getCell(rIdx,4).value=outT;
-        ws.getCell(rIdx,5).value='';
-        ws.getCell(rIdx,6).value=noteText||'';
-        ws.mergeCells(`F${rIdx}:G${rIdx}`);
-        ws.getCell(rIdx,8).value='';
-
-        for(let c=1;c<=8;c++){
-          if(c===7) continue;
-          const cell=ws.getCell(rIdx,c);
-          cell.font=baseFont;
-          cell.alignment={vertical:'middle',horizontal:(c===6?'left':'center')};
-          cell.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}};
-        }
-        // ------------주석(엑셀 노트줄바꿈 방지) 시작 ----
-        ws.getCell(rIdx,6).alignment = { vertical:'middle', horizontal:'left', wrapText:false };
-        // ------------주석(엑셀 노트줄바꿈 방지) 끝 ----
-        // 변경코드 마지막끝줄: // ------------주석(엑셀 노트줄바꿈 방지) 끝 ----
-
-        if(isSat){ ws.getCell(rIdx,1).font={...baseFont,color:{argb:'FF2563EB'}}; }
-        if(isSun || hlabel){ ws.getCell(rIdx,1).font={...baseFont,color:{argb:'FFEF4444'}}; }
-      }
-
-      ws.eachRow(row=> row.eachCell(cell=>{ cell.font = cell.font || baseFont; }));
-      const fileName = `${y}-${pad2(m)}-출근부.xlsx`;
-      return {wb, fileName};
-    }
-
-    // 엑셀 저장
-    xlsxBtn.addEventListener('click', async ()=>{
-      try{
-        const {wb,fileName} = await makeWorkbook();
-        const buf = await wb.xlsx.writeBuffer();
-        saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), fileName);
-      }catch(e){ if(e.message!=='no-month') console.error(e); }
-    });
-
-    // 메일 전송
-    const emailBackdrop = qs('#emailBackdrop');
-    const emailTo = qs('#emailTo');
-    const emailSend = qs('#emailSend');
-    const emailCancel = qs('#emailCancel');
-
-    // ------------주석(email-modal-close-fn) 시작 ----
-    function closeEmailModal(){
-      emailBackdrop.style.display = 'none';
-      emailBackdrop.classList.remove('kb-safe');
-      emailBackdrop.style.paddingBottom = '0px';
-    }
-    // ------------주석(email-modal-close-fn) 끝 ----
-
-    // 모달 열기
-    emailBtn.addEventListener('click', ()=>{
-      const cachedEmail = getLastEmailCache();
-      if (cachedEmail && !String(emailTo.value||'').trim()){
-        emailTo.value = cachedEmail;
-      }
-      emailBackdrop.style.display='flex';
-      setTimeout(()=>{
-        emailTo.focus();
-        emailBackdrop.classList.add('kb-safe');
-        emailTo.scrollIntoView({block:'center'});
-      }, 0);
-    });
+    qs('#editApply').addEventListener('click', ()=>{ if(!currentRow) return; const [dateCell, nameCell, inCell, outCell, , noteCell] = currentRow.children; const isSunday = /sun/.test(dateCell.className); const [yy,mm2,dd] = editDate.value.split('-').map(Number); const isHoliday = !!dynamicHolidayLabel(yy,mm2,dd); if(leaveSel.value==='annual'){ inCell.textContent='연'; outCell.textContent='차'; } else if(leaveSel.value==='half'){ inCell.textContent='반'; outCell.textContent='차'; } else if(leaveSel.value==='family'){ inCell.textContent='조'; outCell.textContent='가'; } else{ if (dayOffCheck && dayOffCheck.checked){ inCell.textContent  = '휴'; outCell.textContent = '무'; }else{ const tIn  = toCellValue(timeIn?.value); const tOut = toCellValue(timeOut?.value); if(tIn || tOut){ inCell.textContent  = tIn || ''; outCell.textContent = tOut || ''; }else{ if(isHoliday || isSunday){ inCell.textContent=''; outCell.textContent=''; }else{ inCell.textContent=DEFAULT_IN; outCell.textContent=DEFAULT_OUT; } } } } const [y,m,day] = editDate.value.split('-').map(Number); const hlabel = dynamicHolidayLabel(y,m,day); noteCell.textContent = addLabelOnce(editNote.value.trim(), hlabel); (async ()=>{ const [y,m,day] = editDate.value.split('-').map(Number); const nm = (nameInput.value||'').trim(); const [ , , inCell2, outCell2, , noteCell2] = currentRow.children; await saveDayToFirebase({ y, m, day, name: nm, inT: (inCell2.textContent||'').trim(), outT: (outCell2.textContent||'').trim(), note: (noteCell2.textContent||'').trim(), leave: (leaveSel.value||'') }); showToast('저장 완료'); })().catch(console.warn); closeEditModal(); });
+    
+    async function makeWorkbook(){ const ym = monthInput.value; if(!ym){ alert('월을 선택하세요.'); throw new Error('no-month'); } const [y,m] = ym.split('-').map(Number); const nm = (nameInput.value||'').trim(); const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet('출근표', { pageSetup:{ paperSize:9, orientation:'portrait', margins:{left:0,right:0,top:0,bottom:0.1,header:0,footer:0}, horizontalCentered:true, verticalCentered:true, fitToPage:true, fitToWidth:1, fitToHeight:0 } }); const baseFont = {name:'맑은 고딕', size:12}; ws.getColumn(1).width = 6.25; ws.getColumn(2).width = 9.75; ws.getColumn(3).width = 12.88; ws.getColumn(4).width = 12.88; ws.getColumn(5).width = 12.88; ws.getColumn(6).width = 9.75; ws.getColumn(7).width = 5.35; ws.getColumn(8).width = 11; ws.getRow(1).height = 14.25; ws.getRow(2).height = 36.75; ws.getRow(3).height = 29.25; ws.getRow(4).height = 25; ws.mergeCells('G1:G2'); const g1 = ws.getCell('G1'); const g2 = ws.getCell('G2'); g1.value = '결\n재\n란'; g1.font  = {name:'맑은 고딕', size:11, bold:true}; g1.alignment = { vertical:'middle', horizontal:'center', wrapText:true }; g2.alignment = g1.alignment; ['G1','G2'].forEach(a=>{ ws.getCell(a).border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; }); const h1 = ws.getCell('H1'); h1.value='팀장'; h1.font={name:'맑은 고딕',size:11}; h1.alignment={vertical:'middle',horizontal:'center'}; const h2 = ws.getCell('H2'); h2.value=''; ['H1','H2'].forEach(a=>{ ws.getCell(a).border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; }); ws.mergeCells('A3:H3'); const t = ws.getCell('A3'); t.value = `${y}년 ${m}월 린넨실(직원) 출근표`; t.font  = {name:'맑은 고딕', size:18, bold:true}; t.alignment = {vertical:'middle', horizontal:'center'}; ws.getCell('A4').value='날짜'; ws.getCell('B4').value='이름'; ws.getCell('C4').value='출근시각'; ws.getCell('D4').value='퇴근시각'; ws.getCell('E4').value='본인서명'; ws.getCell('F4').value='비고'; ws.mergeCells('F4:G4'); ws.getCell('H4').value='담당자확인'; ['A4','B4','C4','D4','E4','F4','H4'].forEach(a=>{ const c=ws.getCell(a); c.font={...baseFont, bold:true}; c.alignment={vertical:'middle',horizontal:'center'}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF1F5F9'}}; c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; }); const lastDay = new Date(y, m, 0).getDate(); const startRow = 5; for(let d=1; d<=lastDay; d++){ const rIdx = startRow + d - 1; const r = ws.getRow(rIdx); r.height = 22; const dateObj = new Date(y, m-1, d); const dow = dateObj.getDay(); const isSun=dow===0, isSat=dow===6; const tr = qsa('#tbody tr')[d-1]; let [ , , inT, outT, , noteText] = tr ? Array.from(tr.children).map(td=> (td.textContent||'').trim()) : [null,null,'','','','']; if(isSun){ inT='휴'; outT='무'; } else{ if(!inT)  inT=DEFAULT_IN; if(!outT) outT=DEFAULT_OUT; } const hlabel = dynamicHolidayLabel(y,m,d); noteText = addLabelOnce(noteText, hlabel); ws.getCell(rIdx,1).value=d; ws.getCell(rIdx,2).value=(nameInput.value||'').trim(); ws.getCell(rIdx,3).value=inT; ws.getCell(rIdx,4).value=outT; ws.getCell(rIdx,5).value=''; ws.getCell(rIdx,6).value=noteText||''; ws.mergeCells(`F${rIdx}:G${rIdx}`); ws.getCell(rIdx,8).value=''; for(let c=1;c<=8;c++){ if(c===7) continue; const cell=ws.getCell(rIdx,c); cell.font=baseFont; cell.alignment={vertical:'middle',horizontal:(c===6?'left':'center')}; cell.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; } ws.getCell(rIdx,6).alignment = { vertical:'middle', horizontal:'left', wrapText:false }; if(isSat){ ws.getCell(rIdx,1).font={...baseFont,color:{argb:'FF2563EB'}}; } if(isSun || hlabel){ ws.getCell(rIdx,1).font={...baseFont,color:{argb:'FFEF4444'}}; } } ws.eachRow(row=> row.eachCell(cell=>{ cell.font = cell.font || baseFont; })); const fileName = `${y}-${pad2(m)}-출근부.xlsx`; return {wb, fileName}; }
+    
+    xlsxBtn.addEventListener('click', async ()=>{ try{ const {wb,fileName} = await makeWorkbook(); const buf = await wb.xlsx.writeBuffer(); saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), fileName); }catch(e){ if(e.message!=='no-month') console.error(e); } });
+    
+    const emailBackdrop = qs('#emailBackdrop'); const emailTo = qs('#emailTo'); const emailSend = qs('#emailSend'); const emailCancel = qs('#emailCancel');
+    function closeEmailModal(){ emailBackdrop.style.display = 'none'; emailBackdrop.classList.remove('kb-safe'); emailBackdrop.style.paddingBottom = '0px'; }
+    emailBtn.addEventListener('click', ()=>{ const cachedEmail = getLastEmailCache(); if (cachedEmail && !String(emailTo.value||'').trim()){ emailTo.value = cachedEmail; } emailBackdrop.style.display='flex'; setTimeout(()=>{ emailTo.focus(); emailBackdrop.classList.add('kb-safe'); emailTo.scrollIntoView({block:'center'}); }, 0); });
     emailCancel.addEventListener('click', closeEmailModal);
-
-    // 키보드 대응
     emailTo.addEventListener('focus', ()=>{ emailBackdrop.classList.add('kb-safe'); });
-    emailTo.addEventListener('blur', ()=>{
-      if (emailBackdrop.style.display === 'flex') return;
-      emailBackdrop.classList.remove('kb-safe');
-    });
-    (function attachViewportHook(){
-      const vv = window.visualViewport;
-      if(!vv) return;
-      const onResize = ()=>{
-        const gap = Math.max(0, window.innerHeight - vv.height);
-        if (gap > 80) emailBackdrop.classList.add('kb-safe');
-        emailBackdrop.style.paddingBottom = (gap>0 ? (gap + 16) : 0) + 'px';
-      };
-      vv.addEventListener('resize', onResize);
-      vv.addEventListener('scroll', onResize);
-    })();
-
-    function blobToDataUrl(blob){
-      return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob); });
-    }
-
-    emailSend.addEventListener('click', async ()=>{
-      const to = (emailTo.value||'').trim();
-      if(!to){ alert('받는 메일을 입력하세요.'); return; }
-      const spinner = qs('#loadingSpinner');
-      spinner.style.display = 'flex';
-      try{
-        const {wb,fileName} = await makeWorkbook();
-        const buf = await wb.xlsx.writeBuffer();
-        const blob = new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-        const dataUrl = await blobToDataUrl(blob);
-        const monthTxt = Number(monthInput.value.split('-')[1]);
-        const subject = `한림병원 ${monthTxt}월 출근부 첨부합니다.`;
-        // 변경코드 마지막끝줄: const subject = `한림병원 ${monthTxt}월 출근부 첨부합니다.`;
-
-        const res = await fetch(GAS_WEBAPP_URL, {
-          method: 'POST',
-          headers: {'Content-Type':'text/plain;charset=UTF-8'},
-          body: JSON.stringify({
-            to: to,
-            subject: subject,
-            message: '출근부 파일을 첨부합니다.',
-            filename: fileName,
-            attachment: dataUrl
-          })
-        });
-
-        const json = await res.json();
-        if(!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
-        showToast('메일 전송 성공 ✅');
-        closeEmailModal();
-      }catch(err){
-        console.error(err);
-        alert('메일 전송에 실패했어요. 엑셀 저장 후 메일 앱에서 첨부로 전송해 주세요.');
-      }finally{
-        spinner.style.display = 'none';
-      }
-    });
-
-    // 불러오기 버튼
-    genBtn.addEventListener('click', async ()=>{
-      showBootSpinner();
-      try{
-        const [y,mm] = (monthInput.value || '').split('-').map(Number);
-        if (y) await loadHolidays(y);
-
-        const cached = getLastNameCache();
-        if (cached && !String(nameInput.value||'').trim()){
-          nameInput.value = cached;
-        }
-
-        buildTable(monthInput.value, nameInput.value.trim());
-
-        const nm = (nameInput.value||'').trim();
-        if (y && mm && nm){
-          const data = await loadMonthFromFirebase(y, mm, nm);
-          applyMonthDataToTable(y, mm, data);
-        }
-      } finally {
-        hideBootSpinner();
-      }
-    });
-
+    emailTo.addEventListener('blur', ()=>{ if (emailBackdrop.style.display === 'flex') return; emailBackdrop.classList.remove('kb-safe'); });
+    (function attachViewportHook(){ const vv = window.visualViewport; if(!vv) return; const onResize = ()=>{ const gap = Math.max(0, window.innerHeight - vv.height); if (gap > 80) emailBackdrop.classList.add('kb-safe'); emailBackdrop.style.paddingBottom = (gap>0 ? (gap + 16) : 0) + 'px'; }; vv.addEventListener('resize', onResize); vv.addEventListener('scroll', onResize); })();
+    function blobToDataUrl(blob){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(blob); }); }
+    emailSend.addEventListener('click', async ()=>{ const to = (emailTo.value||'').trim(); if(!to){ alert('받는 메일을 입력하세요.'); return; } const spinner = qs('#loadingSpinner'); spinner.style.display = 'flex'; try{ const {wb,fileName} = await makeWorkbook(); const buf = await wb.xlsx.writeBuffer(); const blob = new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}); const dataUrl = await blobToDataUrl(blob); const monthTxt = Number(monthInput.value.split('-')[1]); const subject = `한림병원 ${monthTxt}월 출근부 첨부합니다.`; const res = await fetch(GAS_WEBAPP_URL, { method: 'POST', headers: {'Content-Type':'text/plain;charset=UTF-8'}, body: JSON.stringify({ to: to, subject: subject, message: '출근부 파일을 첨부합니다.', filename: fileName, attachment: dataUrl }) }); const json = await res.json(); if(!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`); showToast('메일 전송 성공 ✅'); closeEmailModal(); }catch(err){ console.error(err); alert('메일 전송에 실패했어요. 엑셀 저장 후 메일 앱에서 첨부로 전송해 주세요.'); }finally{ spinner.style.display = 'none'; } });
+    
+    genBtn.addEventListener('click', async ()=>{ showBootSpinner(); try{ const [y,mm] = (monthInput.value || '').split('-').map(Number); if (y) await loadHolidays(y); const cached = getLastNameCache(); if (cached && !String(nameInput.value||'').trim()){ nameInput.value = cached; } buildTable(monthInput.value, nameInput.value.trim()); const nm = (nameInput.value||'').trim(); if (y && mm && nm){ const data = await loadMonthFromFirebase(y, mm, nm); applyMonthDataToTable(y, mm, data); } } finally { hideBootSpinner(); } });
     clearBtn.addEventListener('click', ()=> tbody.innerHTML='');
-
-    // -----주석(init-holidays) 시작 ----
-    (async ()=>{
-      showBootSpinner();
-      try{
-        const cached0 = getLastNameCache();
-        if (cached0) nameInput.value = cached0;
-        buildTable(monthInput.value, nameInput.value.trim());
-        const [y,mm] = (monthInput.value || '').split('-').map(Number);
-
-        if (y) {
-          await loadHolidays(y);
-          qsa('#tbody tr').forEach((tr, idx)=>{
-            const day = idx+1;
-            const [dateCell, , , , , noteCell] = tr.children;
-            const hlabel = dynamicHolidayLabel(y,mm,day);
-            if(hlabel){
-              noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel);
-              dateCell.classList.add('sun');
-            }
-          });
-        }
-        /* ------------주석(init-load-firebase-v10) 시작 ---- */
-        const nm0 = (nameInput.value||'').trim();
-        if (y && mm && nm0){
-          const data0 = await loadMonthFromFirebase(y, mm, nm0);
-          applyMonthDataToTable(y, mm, data0);
-        }
-        /* ------------주석(init-load-firebase-v10) 끝 ---- */
-      } finally {
-        hideBootSpinner();
-      }
-    })();
-    // -----주석(init-holidays) 끝 ----
+    
+    (async ()=>{ showBootSpinner(); try{ const cached0 = getLastNameCache(); if (cached0) nameInput.value = cached0; buildTable(monthInput.value, nameInput.value.trim()); const [y,mm] = (monthInput.value || '').split('-').map(Number); if (y) { await loadHolidays(y); qsa('#tbody tr').forEach((tr, idx)=>{ const day = idx+1; const [dateCell, , , , , noteCell] = tr.children; const hlabel = dynamicHolidayLabel(y,mm,day); if(hlabel){ noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel); dateCell.classList.add('sun'); } }); } const nm0 = (nameInput.value||'').trim(); if (y && mm && nm0){ const data0 = await loadMonthFromFirebase(y, mm, nm0); applyMonthDataToTable(y, mm, data0); } } finally { hideBootSpinner(); } })();
   </script>
 
-  <!-- ------------주석(데이터 로딩 스피너) 시작 ---- -->
   <div id="bootSpinner" class="modal-backdrop" style="z-index:190; background:rgba(255,255,255,0.7); display:none">
     <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
       <div class="spinner" style="width:44px;height:44px;border:5px solid #ccc;border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite"></div>
       <div style="font-weight:600;color:#2563eb">데이터 불러오는중...</div>
     </div>
   </div>
-  <!-- ------------주석(데이터 로딩 스피너) 끝 ---- -->
-
-  <!-- -----주석(로딩 스피너) 시작 ----- -->
+  
   <div id="loadingSpinner" class="modal-backdrop" style="z-index:200; background:rgba(255,255,255,0.7)">
     <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
       <div class="spinner" style="width:48px;height:48px;border:5px solid #ccc;border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite"></div>
@@ -1104,13 +448,9 @@ const app  = initializeApp(firebaseConfig);
   <style>
     @keyframes spin { from { transform:rotate(0deg);} to { transform:rotate(360deg);} }
   </style>
-  <!-- -----주석(로딩 스피너) 끝 ----- -->
-
-  <!-- ------------주석(toast-dom) 시작 ---- -->
+  
   <div id="toast" role="status" aria-live="polite"></div>
-  <!-- ------------주석(toast-dom) 끝 ---- -->
-
-  <!-- --------주석(feather-activate) 시작 -------- -->
+  
   <script>
     (function() {
       if (window.feather && typeof feather.replace === 'function') {
@@ -1118,7 +458,6 @@ const app  = initializeApp(firebaseConfig);
       }
     })();
   </script>
-  <!-- --------주석(feather-activate) 종료 -------- -->
 </body>
 </html>
 
