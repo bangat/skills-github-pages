@@ -7,31 +7,6 @@
   <title>출근부 · 관리자</title>
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 
-  <script>
-    (async () => {
-      const verifyTokenUrl = 'https://us-central1-hallymlinen.cloudfunctions.net/verifyAdminToken';
-      const loginPage = './index.html';
-      const token = localStorage.getItem('adminToken');
-      if (!token) {
-        window.location.href = loginPage;
-        return;
-      }
-      try {
-        const response = await fetch(verifyTokenUrl, {
-          method: 'GET',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!response.ok) {
-          localStorage.removeItem('adminToken');
-          window.location.href = loginPage;
-        }
-      } catch (error) {
-        console.error('Token verification error:', error);
-        window.location.href = loginPage;
-      }
-    })();
-  </script>
-
   <!-- ▷▷▷ 전역 스타일 시작 ▷▷▷ -->
   <style>
     :root{
@@ -459,4 +434,5 @@
   </script>
 </body>
 </html>
+
 
