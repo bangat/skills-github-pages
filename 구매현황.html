@@ -8,6 +8,33 @@
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  
+  <script>
+    (async () => {
+      // 🚨 중요: 이 URL을 실제 배포된 verifyAdminToken 함수 URL로 변경해야 합니다!
+      const verifyTokenUrl = 'https://us-central1-hallymlinen.cloudfunctions.net/verifyAdminToken';
+      const loginPage = './index.html';
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        window.location.href = loginPage;
+        return;
+      }
+      try {
+        const response = await fetch(verifyTokenUrl, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) {
+          localStorage.removeItem('adminToken');
+          window.location.href = loginPage;
+        }
+      } catch (error) {
+        console.error('Token verification error:', error);
+        window.location.href = loginPage;
+      }
+    })();
+  </script>
+  
   <style>
     :root{
       --bg:#f4f7fb; --card:#ffffff; --accent:#2563eb; --muted:#5b677a; --text:#0f172a; --border:#e6eaf2;
@@ -70,7 +97,6 @@
     .tbl-summary th, .tbl-summary td { padding-left: 4px; padding-right: 4px; }
     .tbl-summary th:first-child, .tbl-summary td:first-child { width: auto; text-align: left; padding-left: 10px; }
     .tbl-summary th:not(:first-child), .tbl-summary td:not(:first-child) { width: 65px; }
-    /* [수정] 발주내역 행에 마우스 올리면 배경색 변경 및 커서 모양 변경 */
     .tbl-summary .editable-row:hover { background-color: #f1f5f9; cursor: pointer; }
     .progress{height:16px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin:6px}
     .progress > div{height:100%;background:var(--accent);text-align:center;font-size:11px;color:#fff;line-height:16px}
@@ -106,7 +132,7 @@
     .modal-content {
       background: var(--card); padding: 20px; border-radius: 16px;
       box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
-      width: 90%; max-width: 480px; /* [수정] 수정 모달 너비 확장 */
+      width: 90%; max-width: 480px;
       animation: modal-appear 0.3s ease-out;
     }
     @keyframes modal-appear { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
@@ -123,7 +149,6 @@
       list-style: none; padding: 0; margin: 15px 0; max-height: 300px; overflow-y: auto;
       border: 1px solid var(--border); border-radius: 10px; padding: 10px;
     }
-    /* [수정] 확인 모달과 수정 모달 리스트 스타일 분리 및 수정 */
     #confirmationModal .modal-body li {
       padding: 8px 4px; border-bottom: 1px solid #f1f5f9;
       display: flex; justify-content: space-between; align-items: center;
@@ -150,49 +175,6 @@
     }
     #editModal .modal-body .spinner { width: 32px; height: 32px; border-width: 4px; margin: 20px auto; }
   </style>
-
-<script>
-    (async () => {
-      // 🚨 중요: 이 URL을 실제 배포된 verifyAdminToken 함수 URL로 변경해야 합니다!
-      const verifyTokenUrl = 'https://us-central1-hallymlinen.cloudfunctions.net/verifyAdminToken';
-      const loginPage = './인덱스.html'; // 로그인 페이지 경로
-
-      // 1. 브라우저 저장소에서 토큰을 가져옵니다.
-      const token = localStorage.getItem('adminToken');
-
-      // 2. 토큰이 없으면 즉시 로그인 페이지로 리디렉션합니다.
-      if (!token) {
-        window.location.href = loginPage;
-        return; // 아래 코드가 실행되지 않도록 여기서 중단합니다.
-      }
-
-      // 3. 토큰이 있는 경우, 서버에 유효한지 검증을 요청합니다.
-      try {
-        const response = await fetch(verifyTokenUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}` // 표준 방식인 Bearer 토큰으로 전송
-          }
-        });
-
-        // 4. 서버가 토큰이 유효하지 않다고 응답하면 (예: 만료, 위조),
-        //    잘못된 토큰을 삭제하고 로그인 페이지로 리디렉션합니다.
-        if (!response.ok) {
-          localStorage.removeItem('adminToken');
-          window.location.href = loginPage;
-        }
-        // 검증에 성공하면 아무것도 하지 않고 페이지 로드를 계속 진행합니다.
-
-      } catch (error) {
-        // 5. 네트워크 오류 등으로 서버와 통신이 안될 경우에도 접근을 막습니다.
-        console.error('Token verification error:', error);
-        window.location.href = loginPage;
-      }
-    })();
-  </script>
-</head>
-
-
 </head>
 <body>
   <div id="loader" class="loader-overlay"><div class="spinner"></div><p>데이터 불러오는중...</p></div>
@@ -244,10 +226,12 @@
     </div>
   </div>
 
- <script type="module">
+  <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getDatabase, ref, get, push, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    // 클라이언트에서 고유 ID 생성을 위해 ref, push는 남겨둡니다.
+    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
       authDomain: "hallymlinen.firebaseapp.com",
@@ -258,7 +242,8 @@
       appId: "1:867775830688:web:cef3ed4e70ae9818f347c5",
       measurementId: "G-T02ZFK18L3"
     };
-const app  = initializeApp(firebaseConfig);
+    
+    const app  = initializeApp(firebaseConfig);
     const rtdb = getDatabase(app);
     const auth = getAuth(app);
 
@@ -267,10 +252,47 @@ const app  = initializeApp(firebaseConfig);
       alert("데이터베이스 접근 권한을 얻는 데 실패했습니다. 새로고침 해주세요.");
     });
    
-    const BASE_SHEETS = ["대시트","반시트","베갯잇","수건","중환의","얼음포","억제대"];
-    const HIP_NEW     = ["고관절XL","고관절L","고관절M"];
-    const NORMAL_SIZES = ["4XL","3XL","2XL","XL","L","M","S"];
-    const ORTHO_SIZES  = ["3XL","2XL","XL","L","M","S"];
+    // [3/4] 서버 통신 함수로 교체
+    async function getStatusOnce(){
+        const token = localStorage.getItem('adminToken');
+        if (!token) {
+            alert("인증 토큰이 없습니다. 다시 로그인해주세요.");
+            window.location.href = './index.html';
+            return {};
+        }
+        
+        // 🚨 중요: 실제 배포된 getPurchaseData 함수 URL로 변경하세요!
+        const url = 'https://us-central1-hallymlinen.cloudfunctions.net/getPurchaseData';
+
+        const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!response.ok) {
+            if (response.status === 403) {
+                localStorage.removeItem('adminToken');
+                window.location.href = './index.html';
+            }
+            throw new Error(`Server error: ${response.status}`);
+        }
+        return await response.json();
+    }
+    
+    async function updatePurchaseStatus(updates) {
+        const token = localStorage.getItem('adminToken');
+        if (!token) { return alert("인증 토큰이 없습니다. 다시 로그인해주세요."); }
+
+        // 🚨 중요: 실제 배포된 updatePurchaseData 함수 URL로 변경하세요!
+        const url = 'https://us-central1-hallymlinen.cloudfunctions.net/updatePurchaseData';
+
+        if (Object.keys(updates).length === 0) return;
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ updates })
+        });
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+    }
+
+    // [4/4] 기존 UI 로직 스크립트 (서버 함수를 호출하도록 일부 수정)
     const $ = s=>document.querySelector(s);
     const $$ = s=>Array.from(document.querySelectorAll(s));
     const pad2 = n => String(n).padStart(2,'0');
@@ -301,32 +323,11 @@ const app  = initializeApp(firebaseConfig);
       draftOrders:{ sheet:new Map(), patient:new Map(), hip:new Map() },
       patientKind:'normal'
     };
-
-    async function getStatusOnce(){
-      const snap = await get(ref(rtdb, 'purchase_status'));
-      return snap.exists() ? (snap.val()||{}) : {};
-    }
-    async function batchAddOrders(entries, ym){
-      const updates = {};
-      entries.forEach(({itemName, qty, topBottom})=>{
-        const q = toInt(qty); if(q<=0) return;
-        const k = push(ref(rtdb)).key;
-        updates[`purchase_status/${itemName}/name`] = itemName;
-        updates[`purchase_status/${itemName}/orders/${ym}/${k}`] = {qty:q, topBottom: topBottom||'', ts:Date.now()};
-      });
-      if(Object.keys(updates).length) await update(ref(rtdb), updates);
-    }
-    async function batchAddReceipts(entries, ym, day){
-      const updates = {};
-      const d = Number(day)||1;
-      entries.forEach(({itemName, qty, topBottom})=>{
-        const q = toInt(qty); if(q<=0) return;
-        const k = push(ref(rtdb)).key;
-        updates[`purchase_status/${itemName}/name`] = itemName;
-        updates[`purchase_status/${itemName}/receipts/${ym}/${k}`] = {day:d, qty:q, topBottom: topBottom||'', ts:Date.now()};
-      });
-      if(Object.keys(updates).length) await update(ref(rtdb), updates);
-    }
+    
+    const BASE_SHEETS = ["대시트","반시트","베갯잇","수건","중환의","얼음포","억제대"];
+    const HIP_NEW     = ["고관절XL","고관절L","고관절M"];
+    const NORMAL_SIZES = ["4XL","3XL","2XL","XL","L","M","S"];
+    const ORTHO_SIZES  = ["3XL","2XL","XL","L","M","S"];
 
     document.addEventListener('DOMContentLoaded', async ()=>{
       const loader = $('#loader');
@@ -423,7 +424,6 @@ const app  = initializeApp(firebaseConfig);
 
     function renderOrdersUI(container){
       if(state.tab==='sheet'){
-        // [수정] 시트류 탭에서 고관절 품목을 제외하여 중복 제거
         const sheets = [...BASE_SHEETS];
         container.innerHTML = `<div class="table-wrap"><table><thead><tr><th>품목</th><th>수량</th></tr></thead><tbody>${sheets.map(n=>`<tr><td>${n}</td><td><input type="number" min="0" inputmode="numeric" class="q-sheet" data-item="${n}" value="${state.draftOrders.sheet.get(n)||''}"/></td></tr>`).join('')}</tbody></table></div>`;
         $$('.q-sheet').forEach(i=> i.addEventListener('input', e=>{ const v = toInt(e.target.value); if(v>0) state.draftOrders.sheet.set(e.target.dataset.item, v); else state.draftOrders.sheet.delete(e.target.dataset.item); }));
@@ -518,12 +518,25 @@ const app  = initializeApp(firebaseConfig);
       const ymd = state.entryDate;
       const ym  = ymOf(ymd);
       const day = Number(ymd.split('-')[2]||'1');
+      const updates = {};
       if(state.mode === 'orders'){
-        await batchAddOrders(entriesToSave, ym);
+        entriesToSave.forEach(({itemName, qty, topBottom})=>{
+            const q = toInt(qty); if(q<=0) return;
+            const k = push(ref(rtdb)).key;
+            updates[`purchase_status/${itemName}/name`] = itemName;
+            updates[`purchase_status/${itemName}/orders/${ym}/${k}`] = {qty:q, topBottom: topBottom||'', ts:Date.now()};
+        });
+        await updatePurchaseStatus(updates);
         state.draftOrders.sheet.clear(); state.draftOrders.patient.clear(); state.draftOrders.hip.clear();
         showToast('발주 저장 완료');
       } else {
-        await batchAddReceipts(entriesToSave, ym, day);
+        entriesToSave.forEach(({itemName, qty, topBottom})=>{
+            const q = toInt(qty); if(q<=0) return;
+            const k = push(ref(rtdb)).key;
+            updates[`purchase_status/${itemName}/name`] = itemName;
+            updates[`purchase_status/${itemName}/receipts/${ym}/${k}`] = {day, qty:q, topBottom: topBottom||'', ts:Date.now()};
+        });
+        await updatePurchaseStatus(updates);
         showToast('입고 완료');
       }
       successAudio.play();
@@ -533,6 +546,7 @@ const app  = initializeApp(firebaseConfig);
       renderBody();
       refreshProgress();
     }
+    
     async function onSaveAll() {
       const displayEntries = [];
       if(state.mode === 'orders'){
@@ -577,9 +591,7 @@ const app  = initializeApp(firebaseConfig);
       };
 
       try {
-        const dbRef = ref(rtdb, `purchase_status/${itemKey}`);
-        const snap = await get(dbRef);
-        const itemData = snap.exists() ? snap.val() : {};
+        const itemData = state.snapshot[itemKey] || {};
 
         const orders = Object.entries((itemData.orders || {})[month] || {}).map(([id, data]) => ({ id, type: 'orders', ...data }));
         const receipts = Object.entries((itemData.receipts || {})[month] || {}).map(([id, data]) => ({ id, type: 'receipts', ...data }));
@@ -598,26 +610,11 @@ const app  = initializeApp(firebaseConfig);
           if (t.type === 'receipts') {
             dateStr = `${mon}월 ${t.day}일`;
           } else {
-            if (t.ts && !isNaN(t.ts)) {
-              dateStr = new Date(t.ts).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
-            } else {
-              dateStr = '날짜 정보 없음';
-            }
+            dateStr = t.ts && !isNaN(t.ts) ? new Date(t.ts).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '날짜 정보 없음';
           }
           const typeLabel = t.type === 'orders' ? '발주' : '입고';
           
-          return `
-            <li data-id="${t.id}" data-type="${t.type}" data-item-key="${itemKey}" data-month="${month}">
-              <span class="item-info">${dateStr} ${typeLabel}: <span class="item-qty">${t.qty}개</span></span>
-              <span class="edit-controls" style="display:none;">
-                  <input type="number" class="qty-input" value="${t.qty}" min="0">
-              </span>
-              <span class="buttons">
-                <button class="btn ghost edit-btn">수정</button>
-                <button class="btn ghost red delete-btn">삭제</button>
-              </span>
-            </li>
-          `;
+          return `<li data-id="${t.id}" data-type="${t.type}" data-item-key="${itemKey}" data-month="${month}"> <span class="item-info">${dateStr} ${typeLabel}: <span class="item-qty" data-original-value="${t.qty}">${t.qty}개</span></span> <span class="edit-controls" style="display:none;"> <input type="number" class="qty-input" value="${t.qty}" min="0"> </span> <span class="buttons"> <button class="btn ghost edit-btn">수정</button> <button class="btn ghost red delete-btn">삭제</button> </span> </li>`;
         }).join('');
 
         body.innerHTML = `<ul id="edit-list">${listHtml}</ul>`;
@@ -669,18 +666,16 @@ const app  = initializeApp(firebaseConfig);
           updates[path] = null;
         } else {
           const input = li.querySelector('.qty-input');
-          const originalQtyText = li.querySelector('.item-qty').textContent;
+          const originalQty = toInt(li.querySelector('.item-qty').dataset.originalValue);
           const newQty = toInt(input.value);
-          const displayedQty = toInt(originalQtyText.replace('개',''));
-          const originalDataSnapQty = toInt(li.querySelector('.item-qty').dataset.originalValue || displayedQty);
-          if(newQty !== originalDataSnapQty) {
+          if (newQty !== originalQty) {
              updates[`${path}/qty`] = newQty;
           }
         }
       });
       try {
         if (Object.keys(updates).length > 0) {
-          await update(ref(rtdb), updates);
+          await updatePurchaseStatus(updates);
         }
         $('#editModal').style.display = 'none';
         showToast('수정 완료!');
@@ -762,4 +757,3 @@ const app  = initializeApp(firebaseConfig);
   </script>
 </body>
 </html>
-
