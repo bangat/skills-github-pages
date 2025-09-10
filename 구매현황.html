@@ -508,7 +508,6 @@
       container.classList.toggle('is-orders', state.mode==='orders');
       if(state.mode==='orders') renderOrdersUI(container);
       else await renderReceiptsUI(container);
- if (window.feather) feather.replace({ width:'1em', height:'1em' });
     }
 
     function renderOrdersUI(container){
@@ -740,10 +739,7 @@
         if(rowsM.length){
           const year = m.substring(2, 4); const month = parseInt(m.substring(5, 7), 10);
           parts.push(`
-            <div class="sec-title month-title-editable" data-month="${m}" style="cursor: pointer; display: flex; align-items: center; gap: 6px;" title="${year}년 ${month}월 전체 내역 수정">
-              <span>${year}년 ${month}월 발주</span>
-              <i data-feather="edit-2" style="width:14px; height:14px;"></i>
-            </div>
+            <div class="sec-title month-title-editable" data-month="${m}" style="cursor: pointer;" title="${year}년 ${month}월 전체 내역 수정">${year}년 ${month}월 발주</div>
             <div class="table-wrap">
               <table class="tbl-summary">
                 <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
