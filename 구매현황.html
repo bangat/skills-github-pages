@@ -1,736 +1,755 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta http-equiv="Cache-Control" content="no-store" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>발주·입고 현황</title>
-  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
-  
-
-  <style>
-    :root{
-      --bg:#f4f7fb; --card:#ffffff; --accent:#2563eb; --muted:#5b677a; --text:#0f172a; --border:#e6eaf2;
-      --r-lg:16px; --shadow-1:0 4px 16px rgba(15,23,42,.08);
-      --ok:#16a34a; --danger:#ef4444; --done:#e8f7ee; --light-red:#f43f5e;
-    }
-    *{box-sizing:border-box}
-    html,body{-webkit-text-size-adjust:100%; overflow-x:hidden;}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;}
-    .wrap{max-width:980px;margin:10px auto;padding:10px}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-1);padding-bottom:72px}
-    .card-head{padding:12px;display:grid;gap:10px}
-    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .spacer{flex:1 1 auto}
-    .btn, a.btn{
-      border:1px solid var(--border);background:#fff;border-radius:12px;
-      padding:0 12px;height:34px;font-weight:800;cursor:pointer;font-size:13px;
-      display:inline-flex;align-items:center;justify-content:center;gap:8px;
-      white-space:nowrap; min-width:64px; text-decoration: none; color: var(--text);
-    }
-    .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
-    .btn.green{background:var(--ok);color:#fff;border-color:var(--ok)}
-    .btn.red{background:var(--danger);color:#fff;border-color:var(--danger)}
-    .btn.ghost, a.btn.ghost{background:#f8fafc;border-color:var(--border);color:#334155}
-    .btn:active, a.btn:active{transform:translateY(1px)}
-    input[type="date"], input[type="number"]{
-      border:1px solid var(--border);border-radius:12px;padding:0 8px;height:34px;font-size:13px;background:#fff;outline:none;min-width:0;text-align:center;
-    }
-    input[type="number"]{ width:68px; }
-    input:focus{box-shadow:0 0 0 2px rgba(37,99,235,.22),0 0 0 6px rgba(37,99,235,.1);border-color:transparent}
-    .subtabs{ display:flex; gap:6px; align-items:center; }
-    .subtab{ padding:8px 10px; font-weight:900; color:#5b677a; background:transparent; border:none; border-bottom:3px solid transparent; cursor:pointer;}
-    .subtab.active{ color:var(--accent); border-bottom-color:var(--accent); }
-    .datebar{ display:flex; gap:8px; align-items:center; padding:0 6px; }
-    .itemline{ display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); padding:6px; }
-    .itemtabs{ display:flex; gap:6px; flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    .itemtabs::-webkit-scrollbar{height:6px}
-    .itemtab{ padding:8px 12px; font-weight:900; color:#5b677a; background:transparent; border:none; border-bottom:3px solid transparent; cursor:pointer; white-space:nowrap;}
-    .itemtab.active{ color:var(--accent); border-bottom-color:var(--accent); }
-    .patient-tabs{ display:flex; gap:6px; padding:6px 6px 0 6px;}
-    .ptab{ padding:6px 10px; font-weight:900; color:#5b677a; background:#f8fafc; border:1px solid var(--border); border-bottom:2px solid transparent; border-radius:10px; cursor:pointer; white-space:nowrap;}
-    .ptab.active{ color:#fff; background:var(--accent); border-color:var(--accent); }
-    .table-wrap{border-radius:12px;border:1px solid var(--border);margin:8px 6px;overflow:hidden}
-    table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;}
-    thead th{position:sticky;top:0;background:#f8fafc;border-bottom:1px solid var(--border);font-size:12px;height:30px}
-    td,th{border-bottom:1px solid var(--border);padding:6px 8px;text-align:center;font-size:12px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
-    .tbl-receipts td, .tbl-receipts th { vertical-align: middle; }
-    .tbl-receipts td:nth-child(2), .tbl-receipts th:nth-child(2){ width:80px; }
-    .tbl-receipts td:nth-child(3), .tbl-receipts th:nth-child(3){ width:70px; }
-    .tbl-receipts td:nth-child(4), .tbl-receipts th:nth-child(4){ width:65px; }
-    .tbl-receipts input[type="number"] { width: 52px; }
-    .o-cell, .pcell{ font-variant-numeric: tabular-nums; }
-    .pcell{ text-align:center; overflow:visible; min-width:3.5ch; }
-    .done td{ background:var(--done); }
-    .over td:last-child{ color:var(--light-red); font-weight:800; }
-    .pcell.pc100{ color:var(--accent); font-weight:900; }
-    .name-cell{ position:relative; }
-    .badge-dot{ position:absolute; right:4px; top:4px; width:14px; height:14px; border-radius:999px; background:#ef4444; color:#fff; font-weight:900; font-size:10px; display:flex; align-items:center; justify-content:center; line-height:12px; }
-    .is-hidden{ display:none !important; }
-    .tbl-summary th, .tbl-summary td { padding-left: 4px; padding-right: 4px; }
-    .tbl-summary th:first-child, .tbl-summary td:first-child { width: auto; text-align: left; padding-left: 10px; }
-    .tbl-summary th:not(:first-child), .tbl-summary td:not(:first-child) { width: 65px; }
-    .tbl-summary .editable-row:hover { background-color: #f1f5f9; cursor: pointer; }
-    .progress{height:16px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin:6px}
-    .progress > div{height:100%;background:var(--accent);text-align:center;font-size:11px;color:#fff;line-height:16px}
-    .savebar{
-      position:fixed; left:0; right:0; bottom:0; z-index:300;
-      background:#fff; border-top:1px solid var(--border); box-shadow:0 -6px 16px rgba(15,23,42,.08);
-      padding:10px; display:flex; gap:10px; align-items:center;
-    }
-    .savebar .btn, .savebar a.btn{height:42px; border-radius:12px; font-size:15px; padding:0 16px;}
-    .sec-title{font-weight:900; font-size:13px; color:#334155; padding:8px 10px; margin:6px 6px 0;}
-    .divider-strong{border-top:2px solid #cbd5e1; margin:4px 6px;}
-    .txt-normal{ color:#16a34a; font-weight:800;}
-    .txt-ortho{  color:#2563eb; font-weight:800;}
-    .neg{ color:#f43f5e; font-weight:900;}
-    .loader-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(255, 255, 255, 0.7);
-      display: none; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 9999; backdrop-filter: blur(2px);
-    }
-    .spinner {
-      width: 48px; height: 48px; border: 5px solid #e5e7eb; border-top: 5px solid var(--accent);
-      border-radius: 50%; animation: spin 1s linear infinite;
-    }
-    .loader-overlay p { margin-top: 15px; font-weight: 800; color: var(--text); }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .modal-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(15, 23, 42, 0.6);
-      display: none; align-items: center; justify-content: center;
-      z-index: 1000; backdrop-filter: blur(2px);
-    }
-    .modal-content {
-      background: var(--card); padding: 20px; border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
-      width: 90%; max-width: 480px;
-      animation: modal-appear 0.3s ease-out;
-    }
-    @keyframes modal-appear { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-    .modal-header {
-      display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 15px;
-    }
-    .modal-header h3 { margin: 0; font-size: 18px; }
-    .modal-header .close-btn {
-      background: none; border: none; font-size: 24px; cursor: pointer; color: var(--muted);
-      line-height: 1; padding: 4px;
-    }
-    .modal-body ul {
-      list-style: none; padding: 0; margin: 15px 0; max-height: 300px; overflow-y: auto;
-      border: 1px solid var(--border); border-radius: 10px; padding: 10px;
-    }
-    #confirmationModal .modal-body li {
-      padding: 8px 4px; border-bottom: 1px solid #f1f5f9;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    #confirmationModal .modal-body li:last-child { border-bottom: none; }
-    #confirmationModal .modal-body li .item-name { font-weight: 600; color: var(--text); }
-    #confirmationModal .modal-body li .item-qty { font-weight: 800; color: var(--accent); font-size: 14px; }
-    
-    #editModal .modal-body li {
-      padding: 8px 4px; border-bottom: 1px solid #f1f5f9;
-      display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center;
-    }
-    #editModal .modal-body li:last-child { border-bottom: none; }
-    #editModal .modal-body li.is-deleted { opacity: 0.5; }
-    #editModal .modal-body li.is-deleted .item-info { text-decoration: line-through; }
-    #editModal .modal-body li .item-info { font-weight: 600; color: var(--text); font-size: 13px; }
-    #editModal .modal-body li .item-qty { font-weight: 800; color: var(--accent); font-size: 14px; }
-    #editModal .modal-body li .qty-input { width: 60px; height: 30px; border-radius: 8px; font-size: 13px;}
-    #editModal .modal-body li .btn { min-width: auto; height: 30px; padding: 0 8px; font-size: 12px; }
-    
-    .modal-footer {
-      display: flex; justify-content: space-between; align-items: center;
-      gap: 10px; padding-top: 15px; border-top: 1px solid var(--border);
-    }
-    #editModal .modal-body .spinner { width: 32px; height: 32px; border-width: 4px; margin: 20px auto; }
-  </style>
+  <meta charset="utf-8" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>발주·입고 현황</title>
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  
+  <style>
+    :root{
+      --bg:#f4f7fb; --card:#ffffff; --accent:#2563eb; --muted:#5b677a; --text:#0f172a; --border:#e6eaf2;
+      --r-lg:16px; --shadow-1:0 4px 16px rgba(15,23,42,.08);
+      --ok:#16a34a; --danger:#ef4444; --done:#e8f7ee; --light-red:#f43f5e;
+    }
+    *{box-sizing:border-box}
+    html,body{-webkit-text-size-adjust:100%; overflow-x:hidden;}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;}
+    .wrap{max-width:980px;margin:10px auto;padding:10px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-1);padding-bottom:72px}
+    .card-head{padding:12px;display:grid;gap:10px}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .spacer{flex:1 1 auto}
+    .btn, a.btn{
+      border:1px solid var(--border);background:#fff;border-radius:12px;
+      padding:0 12px;height:34px;font-weight:800;cursor:pointer;font-size:13px;
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;
+      white-space:nowrap; min-width:64px; text-decoration: none; color: var(--text);
+    }
+    .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .btn.green{background:var(--ok);color:#fff;border-color:var(--ok)}
+    .btn.red{background:var(--danger);color:#fff;border-color:var(--danger)}
+    .btn.ghost, a.btn.ghost{background:#f8fafc;border-color:var(--border);color:#334155}
+    .btn:active, a.btn:active{transform:translateY(1px)}
+    input[type="date"], input[type="number"]{
+      border:1px solid var(--border);border-radius:12px;padding:0 8px;height:34px;font-size:13px;background:#fff;outline:none;min-width:0;text-align:center;
+    }
+    input[type="number"]{ width:68px; }
+    input:focus{box-shadow:0 0 0 2px rgba(37,99,235,.22),0 0 0 6px rgba(37,99,235,.1);border-color:transparent}
+    .subtabs{ display:flex; gap:6px; align-items:center; }
+    .subtab{ padding:8px 10px; font-weight:900; color:#5b677a; background:transparent; border:none; border-bottom:3px solid transparent; cursor:pointer;}
+    .subtab.active{ color:var(--accent); border-bottom-color:var(--accent); }
+    .datebar{ display:flex; gap:8px; align-items:center; padding:0 6px; }
+    .itemline{ display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); padding:6px; }
+    .itemtabs{ display:flex; gap:6px; flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .itemtabs::-webkit-scrollbar{height:6px}
+    .itemtab{ padding:8px 12px; font-weight:900; color:#5b677a; background:transparent; border:none; border-bottom:3px solid transparent; cursor:pointer; white-space:nowrap;}
+    .itemtab.active{ color:var(--accent); border-bottom-color:var(--accent); }
+    .patient-tabs{ display:flex; gap:6px; padding:6px 6px 0 6px;}
+    .ptab{ padding:6px 10px; font-weight:900; color:#5b677a; background:#f8fafc; border:1px solid var(--border); border-bottom:2px solid transparent; border-radius:10px; cursor:pointer; white-space:nowrap;}
+    .ptab.active{ color:#fff; background:var(--accent); border-color:var(--accent); }
+    .table-wrap{border-radius:12px;border:1px solid var(--border);margin:8px 6px;overflow:hidden}
+    table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;}
+    thead th{position:sticky;top:0;background:#f8fafc;border-bottom:1px solid var(--border);font-size:12px;height:30px}
+    td,th{border-bottom:1px solid var(--border);padding:6px 8px;text-align:center;font-size:12px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+    .tbl-receipts td, .tbl-receipts th { vertical-align: middle; }
+    .tbl-receipts td:nth-child(2), .tbl-receipts th:nth-child(2){ width:80px; }
+    .tbl-receipts td:nth-child(3), .tbl-receipts th:nth-child(3){ width:70px; }
+    .tbl-receipts td:nth-child(4), .tbl-receipts th:nth-child(4){ width:65px; }
+    .tbl-receipts input[type="number"] { width: 52px; }
+    .o-cell, .pcell{ font-variant-numeric: tabular-nums; }
+    .pcell{ text-align:center; overflow:visible; min-width:3.5ch; }
+    .done td{ background:var(--done); }
+    .over td:last-child{ color:var(--light-red); font-weight:800; }
+    .pcell.pc100{ color:var(--accent); font-weight:900; }
+    .name-cell{ position:relative; }
+    .badge-dot{ position:absolute; right:4px; top:4px; width:14px; height:14px; border-radius:999px; background:#ef4444; color:#fff; font-weight:900; font-size:10px; display:flex; align-items:center; justify-content:center; line-height:12px; }
+    .is-hidden{ display:none !important; }
+    .tbl-summary th, .tbl-summary td { padding-left: 4px; padding-right: 4px; }
+    .tbl-summary th:first-child, .tbl-summary td:first-child { width: auto; text-align: left; padding-left: 10px; }
+    .tbl-summary th:not(:first-child), .tbl-summary td:not(:first-child) { width: 65px; }
+    .tbl-summary .editable-row:hover { background-color: #f1f5f9; cursor: pointer; }
+    .progress{height:16px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin:6px}
+    .progress > div{height:100%;background:var(--accent);text-align:center;font-size:11px;color:#fff;line-height:16px}
+    .savebar{
+      position:fixed; left:0; right:0; bottom:0; z-index:300;
+      background:#fff; border-top:1px solid var(--border); box-shadow:0 -6px 16px rgba(15,23,42,.08);
+      padding:10px; display:flex; gap:10px; align-items:center;
+    }
+    .savebar .btn, .savebar a.btn{height:42px; border-radius:12px; font-size:15px; padding:0 16px;}
+    .sec-title{font-weight:900; font-size:13px; color:#334155; padding:8px 10px; margin:6px 6px 0;}
+    .divider-strong{border-top:2px solid #cbd5e1; margin:4px 6px;}
+    .txt-normal{ color:#16a34a; font-weight:800;}
+    .txt-ortho{  color:#2563eb; font-weight:800;}
+    .neg{ color:#f43f5e; font-weight:900;}
+    .loader-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(255, 255, 255, 0.7);
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 9999; backdrop-filter: blur(2px);
+    }
+    .spinner {
+      width: 48px; height: 48px; border: 5px solid #e5e7eb; border-top: 5px solid var(--accent);
+      border-radius: 50%; animation: spin 1s linear infinite;
+    }
+    .loader-overlay p { margin-top: 15px; font-weight: 800; color: var(--text); }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      display: none; align-items: center; justify-content: center;
+      z-index: 1000; backdrop-filter: blur(2px);
+    }
+    .modal-content {
+      background: var(--card); padding: 20px; border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
+      width: 90%; max-width: 480px;
+      animation: modal-appear 0.3s ease-out;
+    }
+    @keyframes modal-appear { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 15px;
+    }
+    .modal-header h3 { margin: 0; font-size: 18px; }
+    .modal-header .close-btn {
+      background: none; border: none; font-size: 24px; cursor: pointer; color: var(--muted);
+      line-height: 1; padding: 4px;
+    }
+    .modal-body ul {
+      list-style: none; padding: 0; margin: 15px 0; max-height: 300px; overflow-y: auto;
+      border: 1px solid var(--border); border-radius: 10px; padding: 10px;
+    }
+    #confirmationModal .modal-body li {
+      padding: 8px 4px; border-bottom: 1px solid #f1f5f9;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    #confirmationModal .modal-body li:last-child { border-bottom: none; }
+    #confirmationModal .modal-body li .item-name { font-weight: 600; color: var(--text); }
+    #confirmationModal .modal-body li .item-qty { font-weight: 800; color: var(--accent); font-size: 14px; }
+    
+    #editModal .modal-body li {
+      padding: 8px 4px; border-bottom: 1px solid #f1f5f9;
+      display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center;
+    }
+    #editModal .modal-body li:last-child { border-bottom: none; }
+    #editModal .modal-body li.is-deleted { opacity: 0.5; }
+    #editModal .modal-body li.is-deleted .item-info { text-decoration: line-through; }
+    #editModal .modal-body li .item-info { font-weight: 600; color: var(--text); font-size: 13px; }
+    #editModal .modal-body li .item-qty { font-weight: 800; color: var(--accent); font-size: 14px; }
+    #editModal .modal-body li .qty-input { width: 60px; height: 30px; border-radius: 8px; font-size: 13px;}
+    #editModal .modal-body li .btn { min-width: auto; height: 30px; padding: 0 8px; font-size: 12px; }
+    
+    .modal-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 10px; padding-top: 15px; border-top: 1px solid var(--border);
+    }
+    #editModal .modal-body .spinner { width: 32px; height: 32px; border-width: 4px; margin: 20px auto; }
+  </style>
 </head>
 <body>
-  <div id="loader" class="loader-overlay"><div class="spinner"></div><p>데이터 불러오는중...</p></div>
-  <div class="wrap">
-    <div class="card">
-      <div class="card-head">
-        <div class="row">
-          <div class="subtabs" role="tablist"><button id="tab-orders" class="subtab active" data-mode="orders">발주현황</button><button id="tab-receipts" class="subtab" data-mode="receipts">입고현황</button></div>
-        </div>
-        <div class="datebar"><input id="entryDate" type="date" aria-label="기록 날짜" /></div>
-        <div style="padding:6px 6px 0">
-          <div id="gaugeStats" style="font-size:12px;color:#475569;margin:4px 0 2px">발주수량 0개 · 입고수량 0개 — 0% 입고됨</div>
-          <div class="progress" aria-label="진행률"><div id="progressBarInner" style="width:0%">0%</div></div>
-        </div>
-        <div id="ordersTopLine" class="itemline">
-          <div id="tabsWrap" class="itemtabs" role="tablist"><button class="itemtab active" data-tab="sheet">시트류</button><button class="itemtab" data-tab="patient">환자복</button><button class="itemtab" data-tab="summary">발주내역</button></div>
-          <div class="spacer"></div>
-        </div>
-        <div id="patientTabs" class="patient-tabs" style="display:none"><button class="ptab active" data-kind="normal">일반환의</button><button class="ptab" data-kind="ortho">정형환의</button><button class="ptab" data-kind="hip">고관절</button></div>
-      </div>
-      <div id="formBox"></div>
-    </div>
-  </div>
-  <div class="savebar">
-    <a href="뉴업로더.html" target="_blank" class="btn ghost"><i data-feather="upload"></i> 엑셀 업로드</a>
-    <button id="btnExcelBottom" class="btn green"><i data-feather="download"></i> 엑셀로 내려받기</button>
-    <div class="spacer"></div>
-    <button id="btnSaveBottom" class="btn primary"><i data-feather="save"></i> <span id="saveLabel">발주 저장</span></button>
-  </div>
-  <div id="toast" role="status" aria-live="polite" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:80px;background:#111827;color:#fff;padding:8px 12px;border-radius:10px;font-size:12px;z-index:1100;"></div>
-  
-  <div id="confirmationModal" class="modal-overlay">
-    <div class="modal-content"><div class="modal-header"><h3 id="modalTitle">저장 내역 확인</h3><button id="modalCloseBtn" class="close-btn" aria-label="닫기">&times;</button></div><div class="modal-body"><p>아래 내역으로 저장하시겠습니까?</p><ul id="modalSummaryList"></ul></div><div class="modal-footer"><button id="modalCancelBtn" class="btn ghost">취소</button><button id="modalConfirmBtn" class="btn primary">확인</button></div></div>
-  </div>
+  <div id="loader" class="loader-overlay"><div class="spinner"></div><p>서버에 연결중입니다..</p></div>
+  <div class="wrap">
+    <div class="card">
+      <div class="card-head">
+        <div class="row">
+          <div class="subtabs" role="tablist"><button id="tab-orders" class="subtab active" data-mode="orders">발주현황</button><button id="tab-receipts" class="subtab" data-mode="receipts">입고현황</button></div>
+        </div>
+        <div class="datebar"><input id="entryDate" type="date" aria-label="기록 날짜" /></div>
+        <div style="padding:6px 6px 0">
+          <div id="gaugeStats" style="font-size:12px;color:#475569;margin:4px 0 2px">발주수량 0개 · 입고수량 0개 — 0% 입고됨</div>
+          <div class="progress" aria-label="진행률"><div id="progressBarInner" style="width:0%">0%</div></div>
+        </div>
+        <div id="ordersTopLine" class="itemline">
+          <div id="tabsWrap" class="itemtabs" role="tablist"><button class="itemtab active" data-tab="sheet">시트류</button><button class="itemtab" data-tab="patient">환자복</button><button class="itemtab" data-tab="summary">발주내역</button></div>
+          <div class="spacer"></div>
+        </div>
+        <div id="patientTabs" class="patient-tabs" style="display:none"><button class="ptab active" data-kind="normal">일반환의</button><button class="ptab" data-kind="ortho">정형환의</button><button class="ptab" data-kind="hip">고관절</button></div>
+      </div>
+      <div id="formBox"></div>
+    </div>
+  </div>
+  <div class="savebar">
+    <a href="뉴업로더.html" target="_blank" class="btn ghost"><i data-feather="upload"></i> 엑셀 업로드</a>
+    <button id="btnExcelBottom" class="btn green"><i data-feather="download"></i> 엑셀로 내려받기</button>
+    <div class="spacer"></div>
+    <button id="btnSaveBottom" class="btn primary"><i data-feather="save"></i> <span id="saveLabel">발주 저장</span></button>
+  </div>
+  <div id="toast" role="status" aria-live="polite" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:80px;background:#111827;color:#fff;padding:8px 12px;border-radius:10px;font-size:12px;z-index:1100;"></div>
+  
+  <div id="confirmationModal" class="modal-overlay">
+    <div class="modal-content"><div class="modal-header"><h3 id="modalTitle">저장 내역 확인</h3><button id="modalCloseBtn" class="close-btn" aria-label="닫기">&times;</button></div><div class="modal-body"><p>아래 내역으로 저장하시겠습니까?</p><ul id="modalSummaryList"></ul></div><div class="modal-footer"><button id="modalCancelBtn" class="btn ghost">취소</button><button id="modalConfirmBtn" class="btn primary">확인</button></div></div>
+  </div>
 
-  <div id="editModal" class="modal-overlay">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 id="editModalTitle">상세내역 수정</h3>
-        <button class="close-btn" aria-label="닫기">&times;</button>
-      </div>
-      <div id="editModalBody" class="modal-body">
-         <div class="spinner"></div>
-      </div>
-      <div class="modal-footer">
-        <button class="close-btn btn ghost">취소</button>
-        <button id="saveEditsBtn" class="btn primary"><i data-feather="save"></i> 변경사항 저장</button>
-      </div>
-    </div>
-  </div>
+  <div id="editModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="editModalTitle">상세내역 수정</h3>
+        <button class="close-btn" aria-label="닫기">&times;</button>
+      </div>
+      <div id="editModalBody" class="modal-body">
+         <div class="spinner"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="close-btn btn ghost">취소</button>
+        <button id="saveEditsBtn" class="btn primary"><i data-feather="save"></i> 변경사항 저장</button>
+      </div>
+    </div>
+  </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    // 클라이언트에서 고유 ID 생성을 위해 ref, push는 남겨둡니다.
-    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
-      authDomain: "hallymlinen.firebaseapp.com",
-      databaseURL: "https://hallymlinen-default-rtdb.firebaseio.com",
-      projectId: "hallymlinen",
-      storageBucket: "hallymlinen.appspot.com",
-      messagingSenderId: "867775830688",
-      appId: "1:867775830688:web:cef3ed4e70ae9818f347c5",
-      measurementId: "G-T02ZFK18L3"
-    };
-    
-    const app  = initializeApp(firebaseConfig);
-    const rtdb = getDatabase(app);
-    const auth = getAuth(app);
+    const firebaseConfig = {
+      apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
+      authDomain: "hallymlinen.firebaseapp.com",
+      databaseURL: "https://hallymlinen-default-rtdb.firebaseio.com",
+      projectId: "hallymlinen",
+      storageBucket: "hallymlinen.appspot.com",
+      messagingSenderId: "867775830688",
+      appId: "1:867775830688:web:cef3ed4e70ae9818f347c5",
+      measurementId: "G-T02ZFK18L3"
+    };
+    
+    const app  = initializeApp(firebaseConfig);
+    const rtdb = getDatabase(app);
+    const auth = getAuth(app);
 
-    signInAnonymously(auth).catch((error) => {
-      console.error("Anonymous sign-in failed:", error);
-      alert("데이터베이스 접근 권한을 얻는 데 실패했습니다. 새로고침 해주세요.");
-    });
-   
-    // [3/4] 서버 통신 함수로 교체
-    async function getStatusOnce(){
-        const token = localStorage.getItem('adminToken');
-        if (!token) {
-            alert("인증 토큰이 없습니다. 다시 로그인해주세요.");
-            window.location.href = './index.html';
-            return {};
-        }
-        
-        // 🚨 중요: 실제 배포된 getPurchaseData 함수 URL로 변경하세요!
-        const url = 'https://us-central1-hallymlinen.cloudfunctions.net/getPurchaseData';
+    signInAnonymously(auth).catch((error) => {
+      console.error("Anonymous sign-in failed:", error);
+      alert("데이터베이스 접근 권한을 얻는 데 실패했습니다. 새로고침 해주세요.");
+    });
+   
+    async function getStatusOnce(){
+        const token = localStorage.getItem('adminToken');
+        if (!token) {
+            alert("인증 토큰이 없습니다. 다시 로그인해주세요.");
+            window.location.href = './index.html';
+            return {};
+        }
+        
+        const url = 'https://us-central1-hallymlinen.cloudfunctions.net/getPurchaseData';
+        const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!response.ok) {
+            if (response.status === 403) {
+                localStorage.removeItem('adminToken');
+                window.location.href = './index.html';
+            }
+            throw new Error(`Server error: ${response.status}`);
+        }
+        return await response.json();
+    }
 
-        const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
-        if (!response.ok) {
-            if (response.status === 403) {
-                localStorage.removeItem('adminToken');
-                window.location.href = './index.html';
-            }
-            throw new Error(`Server error: ${response.status}`);
-        }
-        return await response.json();
-    }
-    
-    async function updatePurchaseStatus(updates) {
-        const token = localStorage.getItem('adminToken');
-        if (!token) { return alert("인증 토큰이 없습니다. 다시 로그인해주세요."); }
+    // [수정됨] 재시도 로직을 포함한 fetch 헬퍼 함수
+    async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const response = await fetch(url, options);
+          if (response.ok) return response; // 성공 시 즉시 반환
+          // 4xx 에러는 재시도하지 않음 (예: 권한 없음)
+          if (response.status >= 400 && response.status < 500) {
+             throw new Error(`Client-side error: ${response.status}`);
+          }
+          // 5xx 서버 에러나 네트워크 문제는 재시도
+          console.warn(`Attempt ${i + 1} failed. Retrying in ${delay}ms...`);
+        } catch (error) {
+          console.warn(`Attempt ${i + 1} failed with error: ${error}. Retrying...`);
+        }
+        if (i < retries - 1) await new Promise(res => setTimeout(res, delay));
+      }
+      throw new Error(`Failed to update after ${retries} attempts.`);
+    }
+    
+    // [수정됨] updatePurchaseStatus가 fetchWithRetry를 사용하도록 변경
+    async function updatePurchaseStatus(updates) {
+        const token = localStorage.getItem('adminToken');
+        if (!token) { return alert("인증 토큰이 없습니다. 다시 로그인해주세요."); }
 
-        // 🚨 중요: 실제 배포된 updatePurchaseData 함수 URL로 변경하세요!
-        const url = 'https://us-central1-hallymlinen.cloudfunctions.net/updatePurchaseData';
+        const url = 'https://us-central1-hallymlinen.cloudfunctions.net/updatePurchaseData';
+        if (Object.keys(updates).length === 0) return;
 
-        if (Object.keys(updates).length === 0) return;
+        const options = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ updates })
+        };
+        
+        // 재시도 로직이 포함된 함수를 호출합니다.
+        await fetchWithRetry(url, options);
+    }
 
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ updates })
-        });
-        if (!response.ok) throw new Error(`Server error: ${response.status}`);
-    }
+    const $ = s=>document.querySelector(s);
+    const $$ = s=>Array.from(document.querySelectorAll(s));
+    const pad2 = n => String(n).padStart(2,'0');
+    const ymOf = (d)=> (d||'').slice(0,7);
+    const toInt = v => Math.round(Number(v)||0);
+    const isYM = k => /^\d{4}-\d{2}$/.test(k);
+    const successAudio = new Audio('제출성공.mp3');
+    function showToast(msg='완료'){
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.style.display='block';
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(()=> t.style.display='none', 1600);
+    }
+    function collectAllMonths(data){
+      const set = new Set();
+      Object.values(data||{}).forEach(it=>{
+        Object.keys(it.orders||{}).forEach(m=>{ if(isYM(m)) set.add(m); });
+        Object.keys(it.receipts||{}).forEach(m=>{ if(isYM(m)) set.add(m); });
+      });
+      return Array.from(set).sort();
+    }
+    const sortDescYM = list => [...list].sort((a,b)=> a<b ? 1 : (a>b ? -1 : 0));
+    const labelOf = (kind, tb, size) => `${kind}${tb==='상의'?'상의':'하의'}${size}`;
 
-    // [4/4] 기존 UI 로직 스크립트 (서버 함수를 호출하도록 일부 수정)
-    const $ = s=>document.querySelector(s);
-    const $$ = s=>Array.from(document.querySelectorAll(s));
-    const pad2 = n => String(n).padStart(2,'0');
-    const ymOf = (d)=> (d||'').slice(0,7);
-    const toInt = v => Math.round(Number(v)||0);
-    const isYM = k => /^\d{4}-\d{2}$/.test(k);
-    const successAudio = new Audio('제출성공.mp3');
-    function showToast(msg='완료'){
-      const t = document.getElementById('toast');
-      t.textContent = msg; t.style.display='block';
-      clearTimeout(window.__toastTimer);
-      window.__toastTimer = setTimeout(()=> t.style.display='none', 1600);
-    }
-    function collectAllMonths(data){
-      const set = new Set();
-      Object.values(data||{}).forEach(it=>{
-        Object.keys(it.orders||{}).forEach(m=>{ if(isYM(m)) set.add(m); });
-        Object.keys(it.receipts||{}).forEach(m=>{ if(isYM(m)) set.add(m); });
-      });
-      return Array.from(set).sort();
-    }
-    const sortDescYM = list => [...list].sort((a,b)=> a<b ? 1 : (a>b ? -1 : 0));
-    const labelOf = (kind, tb, size) => `${kind}${tb==='상의'?'상의':'하의'}${size}`;
+    const state = {
+      mode:'orders', tab:'sheet',
+      entryDate:'', snapshot:null,
+      draftOrders:{ sheet:new Map(), patient:new Map(), hip:new Map() },
+      patientKind:'normal'
+    };
+    
+    const BASE_SHEETS = ["대시트","반시트","베갯잇","수건","중환의","얼음포","억제대"];
+    const HIP_NEW     = ["고관절XL","고관절L","고관절M"];
+    const NORMAL_SIZES = ["4XL","3XL","2XL","XL","L","M","S"];
+    const ORTHO_SIZES  = ["3XL","2XL","XL","L","M","S"];
 
-    const state = {
-      mode:'orders', tab:'sheet',
-      entryDate:'', snapshot:null,
-      draftOrders:{ sheet:new Map(), patient:new Map(), hip:new Map() },
-      patientKind:'normal'
-    };
-    
-    const BASE_SHEETS = ["대시트","반시트","베갯잇","수건","중환의","얼음포","억제대"];
-    const HIP_NEW     = ["고관절XL","고관절L","고관절M"];
-    const NORMAL_SIZES = ["4XL","3XL","2XL","XL","L","M","S"];
-    const ORTHO_SIZES  = ["3XL","2XL","XL","L","M","S"];
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      const loader = $('#loader');
+      loader.style.display = 'flex';
+      try {
+        const t = new Date();
+        const ymd = `${t.getFullYear()}-${pad2(t.getMonth()+1)}-${pad2(t.getDate())}`;
+        $('#entryDate').value = ymd; state.entryDate=ymd;
+        
+        $$('.subtab').forEach(btn=>{
+          btn.addEventListener('click', ()=>{
+            $$('.subtab').forEach(b=>b.classList.remove('active'));
+            btn.classList.add('active');
+            state.mode = btn.dataset.mode;
+            const showOrdersUI = (state.mode === 'orders');
+            $('#ordersTopLine').style.display = showOrdersUI ? 'flex' : 'none';
+            $('#patientTabs').style.display   = (showOrdersUI && state.tab==='patient') ? 'flex' : 'none';
+            $('#saveLabel').textContent = (state.mode==='orders') ? '발주 저장' : '입고 완료';
+            renderBody(); refreshProgress();
+          });
+        });
+        $$('.itemtab').forEach(btn=>{
+          btn.addEventListener('click', ()=>{
+            $$('.itemtab').forEach(b=> b.classList.toggle('active', b===btn));
+            state.tab = btn.dataset.tab;
+            $('#patientTabs').style.display = (state.mode==='orders' && state.tab==='patient') ? 'flex' : 'none';
+            renderBody();
+          });
+        });
+        $$('.ptab').forEach(btn=>{
+          btn.addEventListener('click', ()=>{
+            $$('.ptab').forEach(b=> b.classList.toggle('active', b===btn));
+            state.patientKind = btn.dataset.kind;
+            if(state.tab==='patient' && state.mode==='orders') renderBody();
+          });
+        });
 
-    document.addEventListener('DOMContentLoaded', async ()=>{
-      const loader = $('#loader');
-      loader.style.display = 'flex';
-      try {
-        const t = new Date();
-        const ymd = `${t.getFullYear()}-${pad2(t.getMonth()+1)}-${pad2(t.getDate())}`;
-        $('#entryDate').value = ymd; state.entryDate=ymd;
-        
-        $$('.subtab').forEach(btn=>{
-          btn.addEventListener('click', ()=>{
-            $$('.subtab').forEach(b=>b.classList.remove('active'));
-            btn.classList.add('active');
-            state.mode = btn.dataset.mode;
-            const showOrdersUI = (state.mode === 'orders');
-            $('#ordersTopLine').style.display = showOrdersUI ? 'flex' : 'none';
-            $('#patientTabs').style.display   = (showOrdersUI && state.tab==='patient') ? 'flex' : 'none';
-            $('#saveLabel').textContent = (state.mode==='orders') ? '발주 저장' : '입고 완료';
-            renderBody(); refreshProgress();
-          });
-        });
-        $$('.itemtab').forEach(btn=>{
-          btn.addEventListener('click', ()=>{
-            $$('.itemtab').forEach(b=> b.classList.toggle('active', b===btn));
-            state.tab = btn.dataset.tab;
-            $('#patientTabs').style.display = (state.mode==='orders' && state.tab==='patient') ? 'flex' : 'none';
-            renderBody();
-          });
-        });
-        $$('.ptab').forEach(btn=>{
-          btn.addEventListener('click', ()=>{
-            $$('.ptab').forEach(b=> b.classList.toggle('active', b===btn));
-            state.patientKind = btn.dataset.kind;
-            if(state.tab==='patient' && state.mode==='orders') renderBody();
-          });
-        });
+        $('#entryDate').addEventListener('change', ()=>{ state.entryDate = $('#entryDate').value; });
+        $('#btnSaveBottom').addEventListener('click', onSaveAll);
+        $('#btnExcelBottom').addEventListener('click', onExportExcel_AllData);
+        
+        const confirmModal = $('#confirmationModal');
+        $('#modalConfirmBtn').addEventListener('click', proceedWithSave);
+        $('#modalCancelBtn').addEventListener('click', () => { confirmModal.style.display = 'none'; });
+        $('#modalCloseBtn').addEventListener('click', () => { confirmModal.style.display = 'none'; });
 
-        $('#entryDate').addEventListener('change', ()=>{ state.entryDate = $('#entryDate').value; });
-        $('#btnSaveBottom').addEventListener('click', onSaveAll);
-        $('#btnExcelBottom').addEventListener('click', onExportExcel_AllData);
-        
-        const confirmModal = $('#confirmationModal');
-        $('#modalConfirmBtn').addEventListener('click', proceedWithSave);
-        $('#modalCancelBtn').addEventListener('click', () => { confirmModal.style.display = 'none'; });
-        $('#modalCloseBtn').addEventListener('click', () => { confirmModal.style.display = 'none'; });
+        const editModal = $('#editModal');
+        editModal.querySelectorAll('.close-btn').forEach(btn => btn.addEventListener('click', () => { editModal.style.display = 'none'; }));
+        $('#saveEditsBtn').addEventListener('click', saveEdits);
+        
+        $('#formBox').addEventListener('click', (e) => {
+          if (state.tab !== 'summary') return;
+          const row = e.target.closest('.editable-row');
+          if (row) {
+            const { itemKey, itemLabel, itemTb, month } = row.dataset;
+            openEditModal({ itemKey, itemLabel, itemTb, month });
+          }
+        });
 
-        const editModal = $('#editModal');
-        editModal.querySelectorAll('.close-btn').forEach(btn => btn.addEventListener('click', () => { editModal.style.display = 'none'; }));
-        $('#saveEditsBtn').addEventListener('click', saveEdits);
-        
-        $('#formBox').addEventListener('click', (e) => {
-          if (state.tab !== 'summary') return;
-          const row = e.target.closest('.editable-row');
-          if (row) {
-            const { itemKey, itemLabel, itemTb, month } = row.dataset;
-            openEditModal({ itemKey, itemLabel, itemTb, month });
-          }
-        });
+        state.snapshot = await getStatusOnce();
+        renderBody();
+        refreshProgress();
+        if (window.feather && typeof feather.replace === 'function') { feather.replace({ width:'1em', height:'1em' }); }
+      } catch (error) {
+        console.error("초기화 실패:", error);
+        alert("데이터를 불러오는 중 오류가 발생했습니다.");
+      } finally {
+        loader.style.display = 'none';
+      }
+    });
 
-        state.snapshot = await getStatusOnce();
-        renderBody();
-        refreshProgress();
-        if (window.feather && typeof feather.replace === 'function') { feather.replace({ width:'1em', height:'1em' }); }
-      } catch (error) {
-        console.error("초기화 실패:", error);
-        alert("데이터를 불러오는 중 오류가 발생했습니다.");
-      } finally {
-        loader.style.display = 'none';
-      }
-    });
+    function buildItems(snapshot){
+      const hasHipNew = HIP_NEW.some(k=> snapshot[k]);
+      const hasHipOld = !!snapshot['고관절'];
+      const sheetList = [...BASE_SHEETS, ...(hasHipNew ? HIP_NEW : (hasHipOld ? ['고관절'] : HIP_NEW))];
+      const items = [];
+      sheetList.forEach(n=> items.push({label:n, key:n, tb:'', group:'sheet'}));
+      NORMAL_SIZES.forEach(sz=>{
+        ['상의','하의'].forEach(tb=> items.push({label:labelOf('일반',tb,sz), key:`일반환의${sz}`, tb, group:'normal'}));
+      });
+      ORTHO_SIZES.forEach(sz=>{
+        ['상의','하의'].forEach(tb=> items.push({label:labelOf('정형',tb,sz), key:`정형환의${sz}`, tb, group:'ortho'}));
+      });
+      return items;
+    }
 
-    function buildItems(snapshot){
-      const hasHipNew = HIP_NEW.some(k=> snapshot[k]);
-      const hasHipOld = !!snapshot['고관절'];
-      const sheetList = [...BASE_SHEETS, ...(hasHipNew ? HIP_NEW : (hasHipOld ? ['고관절'] : HIP_NEW))];
-      const items = [];
-      sheetList.forEach(n=> items.push({label:n, key:n, tb:'', group:'sheet'}));
-      NORMAL_SIZES.forEach(sz=>{
-        ['상의','하의'].forEach(tb=> items.push({label:labelOf('일반',tb,sz), key:`일반환의${sz}`, tb, group:'normal'}));
-      });
-      ORTHO_SIZES.forEach(sz=>{
-        ['상의','하의'].forEach(tb=> items.push({label:labelOf('정형',tb,sz), key:`정형환의${sz}`, tb, group:'ortho'}));
-      });
-      return items;
-    }
+    async function renderBody(){
+      if(!state.snapshot) state.snapshot = await getStatusOnce();
+      const container = $('#formBox'); container.innerHTML='';
+      container.classList.toggle('is-orders', state.mode==='orders');
+      if(state.mode==='orders') renderOrdersUI(container);
+      else await renderReceiptsUI(container);
+    }
 
-    async function renderBody(){
-      if(!state.snapshot) state.snapshot = await getStatusOnce();
-      const container = $('#formBox'); container.innerHTML='';
-      container.classList.toggle('is-orders', state.mode==='orders');
-      if(state.mode==='orders') renderOrdersUI(container);
-      else await renderReceiptsUI(container);
-    }
+    function renderOrdersUI(container){
+      if(state.tab==='sheet'){
+        const sheets = [...BASE_SHEETS];
+        container.innerHTML = `<div class="table-wrap"><table><thead><tr><th>품목</th><th>수량</th></tr></thead><tbody>${sheets.map(n=>`<tr><td>${n}</td><td><input type="number" min="0" inputmode="numeric" class="q-sheet" data-item="${n}" value="${state.draftOrders.sheet.get(n)||''}"/></td></tr>`).join('')}</tbody></table></div>`;
+        $$('.q-sheet').forEach(i=> i.addEventListener('input', e=>{ const v = toInt(e.target.value); if(v>0) state.draftOrders.sheet.set(e.target.dataset.item, v); else state.draftOrders.sheet.delete(e.target.dataset.item); }));
+      }else if(state.tab==='patient'){
+        if(state.patientKind==='hip'){
+          const rows = HIP_NEW.map(n=>({label:n, key:n}));
+          container.innerHTML = `<div class="table-wrap"><table><thead><tr><th>품목</th><th>수량</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.label}</td><td><input type="number" min="0" inputmode="numeric" class="q-hip" data-item="${r.key}" value="${state.draftOrders.hip.get(r.key)||''}" /></td></tr>`).join('')}</tbody></table></div>`;
+          $$('.q-hip').forEach(i=> i.addEventListener('input', e=>{ const v = toInt(e.target.value); if(v>0) state.draftOrders.hip.set(e.target.dataset.item, v); else state.draftOrders.hip.delete(e.target.dataset.item); }));
+        }else{
+          const sizes = state.patientKind==='normal' ? NORMAL_SIZES : ORTHO_SIZES;
+          const kindLabel = state.patientKind==='normal' ? '일반' : '정형';
+          const colorCls  = state.patientKind==='normal' ? 'txt-normal' : 'txt-ortho';
+          const rows = [];
+          sizes.forEach(sz=>{ ['상의','하의'].forEach(tb=>{ const itemKey = `${state.patientKind==='normal'?'일반환의':'정형환의'}${sz}__${tb}`; rows.push({label: `${kindLabel}${tb}${sz}`, key:itemKey}); }); });
+          container.innerHTML = `<div class="table-wrap"><table><thead><tr><th>품목</th><th>수량</th></tr></thead><tbody>${rows.map(r=>`<tr><td class="${colorCls}">${r.label}</td><td><input type="number" min="0" inputmode="numeric" class="q-pt" data-key="${r.key}" value="${state.draftOrders.patient.get(r.key)||''}" /></td></tr>`).join('')}</tbody></table></div>`;
+          $$('.q-pt').forEach(i=> i.addEventListener('input', e=>{ const v = toInt(e.target.value); if(v>0) state.draftOrders.patient.set(e.target.dataset.key, v); else state.draftOrders.patient.delete(e.target.dataset.key); }));
+        }
+      }else{
+        renderOrderSummary(container);
+      }
+    }
 
-    function renderOrdersUI(container){
-      if(state.tab==='sheet'){
-        const sheets = [...BASE_SHEETS];
-        container.innerHTML = `<div class="table-wrap"><table><thead><tr><th>품목</th><th>수량</th></tr></thead><tbody>${sheets.map(n=>`<tr><td>${n}</td><td><input type="number" min="0" inputmode="numeric" class="q-sheet" data-item="${n}" value="${state.draftOrders.sheet.get(n)||''}"/></td></tr>`).join('')}</tbody></table></div>`;
-        $$('.q-sheet').forEach(i=> i.addEventListener('input', e=>{ const v = toInt(e.target.value); if(v>0) state.draftOrders.sheet.set(e.target.dataset.item, v); else state.draftOrders.sheet.delete(e.target.dataset.item); }));
-      }else if(state.tab==='patient'){
-        if(state.patientKind==='hip'){
-          const rows = HIP_NEW.map(n=>({label:n, key:n}));
-          container.innerHTML = `<div class="table-wrap"><table><thead><tr><th>품목</th><th>수량</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.label}</td><td><input type="number" min="0" inputmode="numeric" class="q-hip" data-item="${r.key}" value="${state.draftOrders.hip.get(r.key)||''}" /></td></tr>`).join('')}</tbody></table></div>`;
-          $$('.q-hip').forEach(i=> i.addEventListener('input', e=>{ const v = toInt(e.target.value); if(v>0) state.draftOrders.hip.set(e.target.dataset.item, v); else state.draftOrders.hip.delete(e.target.dataset.item); }));
-        }else{
-          const sizes = state.patientKind==='normal' ? NORMAL_SIZES : ORTHO_SIZES;
-          const kindLabel = state.patientKind==='normal' ? '일반' : '정형';
-          const colorCls  = state.patientKind==='normal' ? 'txt-normal' : 'txt-ortho';
-          const rows = [];
-          sizes.forEach(sz=>{ ['상의','하의'].forEach(tb=>{ const itemKey = `${state.patientKind==='normal'?'일반환의':'정형환의'}${sz}__${tb}`; rows.push({label: `${kindLabel}${tb}${sz}`, key:itemKey}); }); });
-          container.innerHTML = `<div class="table-wrap"><table><thead><tr><th>품목</th><th>수량</th></tr></thead><tbody>${rows.map(r=>`<tr><td class="${colorCls}">${r.label}</td><td><input type="number" min="0" inputmode="numeric" class="q-pt" data-key="${r.key}" value="${state.draftOrders.patient.get(r.key)||''}" /></td></tr>`).join('')}</tbody></table></div>`;
-          $$('.q-pt').forEach(i=> i.addEventListener('input', e=>{ const v = toInt(e.target.value); if(v>0) state.draftOrders.patient.set(e.target.dataset.key, v); else state.draftOrders.patient.delete(e.target.dataset.key); }));
-        }
-      }else{
-        renderOrderSummary(container);
-      }
-    }
+    async function renderReceiptsUI(container){
+      const data = state.snapshot||{};
+      const months = collectAllMonths(data);
+      if(months.length===0){ container.innerHTML=''; return; }
+      const ITEMS = buildItems(data);
+      const sumBy = (name, path, tb='')=>{ return months.reduce((acc, m)=>{ const node = (((data[name]||{})[path]||{})[m])||{}; const arr = Object.values(node).filter(e=> (tb? (e.topBottom||'')===tb : true)); return acc + arr.reduce((s,e)=> s+toInt(e.qty),0); },0); };
+      const sheetRows = ITEMS.filter(x=>x.group==='sheet').map(r=>{ const o = sumBy(r.key,'orders',r.tb), rv = sumBy(r.key,'receipts',r.tb); if(o<=0 && rv<=0) return ''; const done = rv>=o ? 'done' : ''; const over = rv>o ? 'over' : ''; const prDisp = (o>0) ? (rv<=o ? `${Math.round((rv/o)*100)}%` : `-${Math.round((rv-o)/o*100)}%`) : (rv>0?'100%':'0%'); const overCnt = Math.max(0, rv - o); const badgeClass = overCnt ? '' : 'is-hidden'; const pc100Class = (o>0 && rv>=o && (rv-o)===0) ? 'pc100' : ''; return `<tr class="rec-row ${done} ${over}" data-item="${r.key}" data-tb=""><td class="name-cell"><span class="name">${r.label}</span><span class="badge-dot ${badgeClass}" title="추가입고 ${overCnt}개">+</span></td><td class="o-cell"><span class="o" data-o="${o}" data-r="${rv}">${o}/${rv}</span></td><td><input type="number" min="0" inputmode="numeric" class="rq" data-item="${r.key}" data-tb="" /></td><td class="pcell ${pc100Class}">${prDisp}</td></tr>`; }).filter(Boolean).join('');
+      const buildPatientTable = (group, colorClass)=>{
+        const rows=[];
+        ITEMS.filter(x=>x.group===group).forEach(r=>{ const o = sumBy(r.key,'orders',r.tb); const i = sumBy(r.key,'receipts',r.tb); if(o>0 || i>0){ const prDisp = (o>0) ? (i<=o? `${Math.round((i/o)*100)}%` : `-${Math.round((i-o)/o*100)}%`) : (i>0?'100%':'0%'); const done = i>=o ? 'done' : ''; const over = i>o ? 'over' : ''; const overCnt = Math.max(0, i - o); const badgeClass = overCnt ? '' : 'is-hidden'; const pc100Class = (o>0 && i>=o && (i-o)===0) ? 'pc100' : ''; rows.push(`<tr class="rec-row ${done} ${over}" data-item="${r.key}" data-tb="${r.tb}"><td class="name-cell"><span class="name ${colorClass}">${r.label}</span><span class="badge-dot ${badgeClass}" title="추가입고 ${overCnt}개">+</span></td><td class="o-cell"><span class="o" data-o="${o}" data-r="${i}">${o}/${i}</span></td><td><input type="number" min="0" inputmode="numeric" class="rq" data-item="${r.key}" data-tb="${r.tb}" /></td><td class="pcell ${pc100Class}">${prDisp}</td></tr>`); } });
+        if(rows.length===0) return '';
+        return `<div class="table-wrap"><table class="tbl-receipts"><thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>진행률</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+      };
+      container.innerHTML = `<div class="table-wrap"><table class="tbl-receipts"><thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>진행률</th></tr></thead><tbody>${sheetRows}</tbody></table></div><div class="divider-strong"></div>${buildPatientTable('normal','txt-normal')}<div class="divider-strong"></div>${buildPatientTable('ortho','txt-ortho')}`;
+      $$('.rq').forEach(inp=>{ inp.addEventListener('input', (e)=>{ const tr = e.target.closest('tr'); const oEl = tr.querySelector('.o'); const o = toInt(oEl.dataset.o), r0 = toInt(oEl.dataset.r); const v = toInt(e.target.value); const rNew = r0 + v; oEl.textContent = `${o}/${rNew}`; const pcell = tr.querySelector('.pcell'); tr.classList.toggle('done', rNew>=o); const isOver = rNew>o; tr.classList.toggle('over', isOver); const badge = tr.querySelector('.badge-dot'); if(isOver){ const over = rNew - o; pcell.textContent = `-${Math.round((over/o)*100)}%`; pcell.classList.remove('pc100'); badge.classList.remove('is-hidden'); badge.title = `추가입고 ${over}개`; }else{ const pct = o>0 ? Math.round((rNew/o)*100) : (rNew>0?100:0); pcell.textContent = `${pct}%`; pcell.classList.toggle('pc100', pct===100); badge.classList.add('is-hidden'); } }); });
+    }
 
-    async function renderReceiptsUI(container){
-      const data = state.snapshot||{};
-      const months = collectAllMonths(data);
-      if(months.length===0){ container.innerHTML=''; return; }
-      const ITEMS = buildItems(data);
-      const sumBy = (name, path, tb='')=>{ return months.reduce((acc, m)=>{ const node = (((data[name]||{})[path]||{})[m])||{}; const arr = Object.values(node).filter(e=> (tb? (e.topBottom||'')===tb : true)); return acc + arr.reduce((s,e)=> s+toInt(e.qty),0); },0); };
-      const sheetRows = ITEMS.filter(x=>x.group==='sheet').map(r=>{ const o = sumBy(r.key,'orders',r.tb), rv = sumBy(r.key,'receipts',r.tb); if(o<=0 && rv<=0) return ''; const done = rv>=o ? 'done' : ''; const over = rv>o ? 'over' : ''; const prDisp = (o>0) ? (rv<=o ? `${Math.round((rv/o)*100)}%` : `-${Math.round((rv-o)/o*100)}%`) : (rv>0?'100%':'0%'); const overCnt = Math.max(0, rv - o); const badgeClass = overCnt ? '' : 'is-hidden'; const pc100Class = (o>0 && rv>=o && (rv-o)===0) ? 'pc100' : ''; return `<tr class="rec-row ${done} ${over}" data-item="${r.key}" data-tb=""><td class="name-cell"><span class="name">${r.label}</span><span class="badge-dot ${badgeClass}" title="추가입고 ${overCnt}개">+</span></td><td class="o-cell"><span class="o" data-o="${o}" data-r="${rv}">${o}/${rv}</span></td><td><input type="number" min="0" inputmode="numeric" class="rq" data-item="${r.key}" data-tb="" /></td><td class="pcell ${pc100Class}">${prDisp}</td></tr>`; }).filter(Boolean).join('');
-      const buildPatientTable = (group, colorClass)=>{
-        const rows=[];
-        ITEMS.filter(x=>x.group===group).forEach(r=>{ const o = sumBy(r.key,'orders',r.tb); const i = sumBy(r.key,'receipts',r.tb); if(o>0 || i>0){ const prDisp = (o>0) ? (i<=o? `${Math.round((i/o)*100)}%` : `-${Math.round((i-o)/o*100)}%`) : (i>0?'100%':'0%'); const done = i>=o ? 'done' : ''; const over = i>o ? 'over' : ''; const overCnt = Math.max(0, i - o); const badgeClass = overCnt ? '' : 'is-hidden'; const pc100Class = (o>0 && i>=o && (i-o)===0) ? 'pc100' : ''; rows.push(`<tr class="rec-row ${done} ${over}" data-item="${r.key}" data-tb="${r.tb}"><td class="name-cell"><span class="name ${colorClass}">${r.label}</span><span class="badge-dot ${badgeClass}" title="추가입고 ${overCnt}개">+</span></td><td class="o-cell"><span class="o" data-o="${o}" data-r="${i}">${o}/${i}</span></td><td><input type="number" min="0" inputmode="numeric" class="rq" data-item="${r.key}" data-tb="${r.tb}" /></td><td class="pcell ${pc100Class}">${prDisp}</td></tr>`); } });
-        if(rows.length===0) return '';
-        return `<div class="table-wrap"><table class="tbl-receipts"><thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>진행률</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
-      };
-      container.innerHTML = `<div class="table-wrap"><table class="tbl-receipts"><thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>진행률</th></tr></thead><tbody>${sheetRows}</tbody></table></div><div class="divider-strong"></div>${buildPatientTable('normal','txt-normal')}<div class="divider-strong"></div>${buildPatientTable('ortho','txt-ortho')}`;
-      $$('.rq').forEach(inp=>{ inp.addEventListener('input', (e)=>{ const tr = e.target.closest('tr'); const oEl = tr.querySelector('.o'); const o = toInt(oEl.dataset.o), r0 = toInt(oEl.dataset.r); const v = toInt(e.target.value); const rNew = r0 + v; oEl.textContent = `${o}/${rNew}`; const pcell = tr.querySelector('.pcell'); tr.classList.toggle('done', rNew>=o); const isOver = rNew>o; tr.classList.toggle('over', isOver); const badge = tr.querySelector('.badge-dot'); if(isOver){ const over = rNew - o; pcell.textContent = `-${Math.round((over/o)*100)}%`; pcell.classList.remove('pc100'); badge.classList.remove('is-hidden'); badge.title = `추가입고 ${over}개`; }else{ const pct = o>0 ? Math.round((rNew/o)*100) : (rNew>0?100:0); pcell.textContent = `${pct}%`; pcell.classList.toggle('pc100', pct===100); badge.classList.add('is-hidden'); } }); });
-    }
+    function renderOrderSummary(container){
+      const data = state.snapshot||{};
+      const monthsAsc = collectAllMonths(data);
+      const monthsDesc = sortDescYM(monthsAsc);
+      const ITEMS = buildItems(data);
+      const sumAcross=(name,tb='',kind='orders')=>monthsAsc.reduce((acc,m)=>{ const node=(((data[name]||{})[kind]||{})[m])||{}; const arr=Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true); return acc+arr.reduce((s,e)=> s+toInt(e.qty),0); },0);
+      const sumMonth=(name,month,tb='',kind='orders')=>{ const node=(((data[name]||{})[kind]||{})[month])||{}; const arr=Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true); return arr.reduce((s,e)=> s+toInt(e.qty),0); };
+      
+      const rowHtml=(r, o, i, m) => {
+        const n=o-i; const negCls = n<0 ? 'neg' : '';
+        const color = r.group==='normal' ? 'txt-normal' : (r.group==='ortho' ? 'txt-ortho' : '');
+        const dataAttrs = m ? `class="editable-row" data-item-key="${r.key}" data-item-label="${r.label}" data-item-tb="${r.tb}" data-month="${m}"` : '';
+        return `<tr ${dataAttrs}><td class="${color}">${r.label}</td><td>${o}</td><td>${i}</td><td class="${negCls}">${n}</td></tr>`;
+      };
 
-    function renderOrderSummary(container){
-      const data = state.snapshot||{};
-      const monthsAsc = collectAllMonths(data);
-      const monthsDesc = sortDescYM(monthsAsc);
-      const ITEMS = buildItems(data);
-      const sumAcross=(name,tb='',kind='orders')=>monthsAsc.reduce((acc,m)=>{ const node=(((data[name]||{})[kind]||{})[m])||{}; const arr=Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true); return acc+arr.reduce((s,e)=> s+toInt(e.qty),0); },0);
-      const sumMonth=(name,month,tb='',kind='orders')=>{ const node=(((data[name]||{})[kind]||{})[month])||{}; const arr=Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true); return arr.reduce((s,e)=> s+toInt(e.qty),0); };
-      
-      const rowHtml=(r, o, i, m) => {
-        const n=o-i; const negCls = n<0 ? 'neg' : '';
-        const color = r.group==='normal' ? 'txt-normal' : (r.group==='ortho' ? 'txt-ortho' : '');
-        const dataAttrs = m ? `class="editable-row" data-item-key="${r.key}" data-item-label="${r.label}" data-item-tb="${r.tb}" data-month="${m}"` : '';
-        return `<tr ${dataAttrs}><td class="${color}">${r.label}</td><td>${o}</td><td>${i}</td><td class="${negCls}">${n}</td></tr>`;
-      };
+      const parts=[];
+      let rows=[];
+      ITEMS.forEach(r=>{
+        const o=sumAcross(r.key,r.tb,'orders'), i=sumAcross(r.key,r.tb,'receipts');
+        if(o||i) rows.push(rowHtml(r,o,i,null));
+      });
+      parts.push(`<div class="sec-title">전체 요약</div><div class="table-wrap"><table class="tbl-summary"><thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`);
 
-      const parts=[];
-      let rows=[];
-      ITEMS.forEach(r=>{
-        const o=sumAcross(r.key,r.tb,'orders'), i=sumAcross(r.key,r.tb,'receipts');
-        if(o||i) rows.push(rowHtml(r,o,i,null));
-      });
-      parts.push(`<div class="sec-title">전체 요약</div><div class="table-wrap"><table class="tbl-summary"><thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`);
+      monthsDesc.forEach(m=>{
+        const rowsM=[];
+        ITEMS.forEach(r=>{
+          const o=sumMonth(r.key,m,r.tb,'orders'); const i=sumMonth(r.key,m,r.tb,'receipts');
+          if(o||i) rowsM.push(rowHtml(r,o,i,m));
+        });
+        if(rowsM.length){
+          const year = m.substring(2, 4); const month = parseInt(m.substring(5, 7), 10);
+          parts.push(`<div class="sec-title">${year}년 ${month}월 발주</div><div class="table-wrap"><table class="tbl-summary"><thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead><tbody>${rowsM.join('')}</tbody></table></div>`);
+        }
+      });
+      container.innerHTML = parts.join('');
+    }
+    
+    async function refreshProgress(){
+      if(!state.snapshot) state.snapshot = await getStatusOnce();
+      const data = state.snapshot||{};
+      const months = collectAllMonths(data);
+      const ITEMS = buildItems(data);
+      let totO=0, totR=0;
+      months.forEach(m=>{ ITEMS.forEach(it=>{ const o = Object.values((((data[it.key]||{}).orders||{})[m])||{}).filter(e=> it.tb? (e.topBottom||'')===it.tb : true).reduce((s,e)=> s+toInt(e.qty),0); const r = Object.values((((data[it.key]||{}).receipts||{})[m])||{}).filter(e=> it.tb? (e.topBottom||'')===it.tb : true).reduce((s,e)=> s+toInt(e.qty),0); totO += o; totR += r; }); });
+      const p = totO>0 ? Math.round((totR/totO)*100) : (totR>0?100:0);
+      const bar = $('#progressBarInner'); bar.style.width = Math.min(100,p)+'%'; bar.textContent = Math.min(100,p)+'%';
+      const overTxt = (totR<=totO)? `${p}%` : `-${Math.round((totR-totO)/totO*100)}%`;
+      $('#gaugeStats').textContent = `전체 발주 ${totO}개 · 전체 입고 ${totR}개 — ${overTxt} 입고됨`;
+    }
 
-      monthsDesc.forEach(m=>{
-        const rowsM=[];
-        ITEMS.forEach(r=>{
-          const o=sumMonth(r.key,m,r.tb,'orders'); const i=sumMonth(r.key,m,r.tb,'receipts');
-          if(o||i) rowsM.push(rowHtml(r,o,i,m));
-        });
-        if(rowsM.length){
-          const year = m.substring(2, 4); const month = parseInt(m.substring(5, 7), 10);
-          parts.push(`<div class="sec-title">${year}년 ${month}월 발주</div><div class="table-wrap"><table class="tbl-summary"><thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead><tbody>${rowsM.join('')}</tbody></table></div>`);
-        }
-      });
-      container.innerHTML = parts.join('');
-    }
-    
-    async function refreshProgress(){
-      if(!state.snapshot) state.snapshot = await getStatusOnce();
-      const data = state.snapshot||{};
-      const months = collectAllMonths(data);
-      const ITEMS = buildItems(data);
-      let totO=0, totR=0;
-      months.forEach(m=>{ ITEMS.forEach(it=>{ const o = Object.values((((data[it.key]||{}).orders||{})[m])||{}).filter(e=> it.tb? (e.topBottom||'')===it.tb : true).reduce((s,e)=> s+toInt(e.qty),0); const r = Object.values((((data[it.key]||{}).receipts||{})[m])||{}).filter(e=> it.tb? (e.topBottom||'')===it.tb : true).reduce((s,e)=> s+toInt(e.qty),0); totO += o; totR += r; }); });
-      const p = totO>0 ? Math.round((totR/totO)*100) : (totR>0?100:0);
-      const bar = $('#progressBarInner'); bar.style.width = Math.min(100,p)+'%'; bar.textContent = Math.min(100,p)+'%';
-      const overTxt = (totR<=totO)? `${p}%` : `-${Math.round((totR-totO)/totO*100)}%`;
-      $('#gaugeStats').textContent = `전체 발주 ${totO}개 · 전체 입고 ${totR}개 — ${overTxt} 입고됨`;
-    }
+    let entriesToSave = [];
+    async function proceedWithSave() {
+      const ymd = state.entryDate;
+      const ym  = ymOf(ymd);
+      const day = Number(ymd.split('-')[2]||'1');
+      const updates = {};
+      if(state.mode === 'orders'){
+        entriesToSave.forEach(({itemName, qty, topBottom})=>{
+            const q = toInt(qty); if(q<=0) return;
+            const k = push(ref(rtdb)).key;
+            updates[`purchase_status/${itemName}/name`] = itemName;
+            updates[`purchase_status/${itemName}/orders/${ym}/${k}`] = {qty:q, topBottom: topBottom||'', ts:Date.now()};
+        });
+        await updatePurchaseStatus(updates);
+        state.draftOrders.sheet.clear(); state.draftOrders.patient.clear(); state.draftOrders.hip.clear();
+        showToast('발주 저장 완료');
+      } else {
+        entriesToSave.forEach(({itemName, qty, topBottom})=>{
+            const q = toInt(qty); if(q<=0) return;
+            const k = push(ref(rtdb)).key;
+            updates[`purchase_status/${itemName}/name`] = itemName;
+            updates[`purchase_status/${itemName}/receipts/${ym}/${k}`] = {day, qty:q, topBottom: topBottom||'', ts:Date.now()};
+        });
+        await updatePurchaseStatus(updates);
+        showToast('입고 완료');
+      }
+      successAudio.play();
+      $('#confirmationModal').style.display = 'none';
+      entriesToSave = [];
+      state.snapshot = await getStatusOnce();
+      renderBody();
+      refreshProgress();
+    }
+    
+    async function onSaveAll() {
+      const displayEntries = [];
+      if(state.mode === 'orders'){
+        state.draftOrders.sheet.forEach((qty, item) => { if(qty>0) displayEntries.push({name: item, qty}); });
+        state.draftOrders.patient.forEach((qty, key) => {
+          const [itemName, tb] = key.split('__');
+          const kindLabel = itemName.includes('일반') ? '일반' : '정형';
+          const size = itemName.replace('일반환의','').replace('정형환의','');
+          const name = labelOf(kindLabel, tb, size);
+          if(qty>0) displayEntries.push({name, qty});
+        });
+        state.draftOrders.hip.forEach((qty, item)=>{ if(qty>0) displayEntries.push({name: item, qty}); });
+      } else {
+        $$('.rq').forEach(inp => {
+          const qty = toInt(inp.value);
+          if(qty > 0){ const name = inp.closest('tr').querySelector('.name').textContent; displayEntries.push({name, qty}); }
+        });
+      }
+      if(displayEntries.length === 0){ alert((state.mode === 'orders' ? '발주' : '입고') + ' 입력값이 없습니다.'); return; }
+      entriesToSave = state.mode === 'orders' ? [...state.draftOrders.sheet.entries(), ...state.draftOrders.patient.entries(), ...state.draftOrders.hip.entries()].map(([key, qty]) => { if(key.includes('__')) { const [itemName, topBottom] = key.split('__'); return {itemName, qty, topBottom}; } return {itemName: key, qty, topBottom:''}; }).filter(e => e.qty > 0) : $$('.rq').filter(inp => toInt(inp.value) > 0).map(inp => ({ itemName: inp.dataset.item, topBottom: inp.dataset.tb || '', qty: toInt(inp.value) }));
+      const modal = $('#confirmationModal');
+      $('#modalSummaryList').innerHTML = displayEntries.map(e => `<li><span class="item-name">${e.name}</span> <span class="item-qty">${e.qty}개</span></li>`).join('');
+      $('#modalTitle').textContent = state.mode === 'orders' ? '발주 내역 확인' : '입고 내역 확인';
+      modal.style.display = 'flex';
+    }
 
-    let entriesToSave = [];
-    async function proceedWithSave() {
-      const ymd = state.entryDate;
-      const ym  = ymOf(ymd);
-      const day = Number(ymd.split('-')[2]||'1');
-      const updates = {};
-      if(state.mode === 'orders'){
-        entriesToSave.forEach(({itemName, qty, topBottom})=>{
-            const q = toInt(qty); if(q<=0) return;
-            const k = push(ref(rtdb)).key;
-            updates[`purchase_status/${itemName}/name`] = itemName;
-            updates[`purchase_status/${itemName}/orders/${ym}/${k}`] = {qty:q, topBottom: topBottom||'', ts:Date.now()};
-        });
-        await updatePurchaseStatus(updates);
-        state.draftOrders.sheet.clear(); state.draftOrders.patient.clear(); state.draftOrders.hip.clear();
-        showToast('발주 저장 완료');
-      } else {
-        entriesToSave.forEach(({itemName, qty, topBottom})=>{
-            const q = toInt(qty); if(q<=0) return;
-            const k = push(ref(rtdb)).key;
-            updates[`purchase_status/${itemName}/name`] = itemName;
-            updates[`purchase_status/${itemName}/receipts/${ym}/${k}`] = {day, qty:q, topBottom: topBottom||'', ts:Date.now()};
-        });
-        await updatePurchaseStatus(updates);
-        showToast('입고 완료');
-      }
-      successAudio.play();
-      $('#confirmationModal').style.display = 'none';
-      entriesToSave = [];
-      state.snapshot = await getStatusOnce();
-      renderBody();
-      refreshProgress();
-    }
-    
-    async function onSaveAll() {
-      const displayEntries = [];
-      if(state.mode === 'orders'){
-        state.draftOrders.sheet.forEach((qty, item) => { if(qty>0) displayEntries.push({name: item, qty}); });
-        state.draftOrders.patient.forEach((qty, key) => {
-          const [itemName, tb] = key.split('__');
-          const kindLabel = itemName.includes('일반') ? '일반' : '정형';
-          const size = itemName.replace('일반환의','').replace('정형환의','');
-          const name = labelOf(kindLabel, tb, size);
-          if(qty>0) displayEntries.push({name, qty});
-        });
-        state.draftOrders.hip.forEach((qty, item)=>{ if(qty>0) displayEntries.push({name: item, qty}); });
-      } else {
-        $$('.rq').forEach(inp => {
-          const qty = toInt(inp.value);
-          if(qty > 0){ const name = inp.closest('tr').querySelector('.name').textContent; displayEntries.push({name, qty}); }
-        });
-      }
-      if(displayEntries.length === 0){ alert((state.mode === 'orders' ? '발주' : '입고') + ' 입력값이 없습니다.'); return; }
-      entriesToSave = state.mode === 'orders' ? [...state.draftOrders.sheet.entries(), ...state.draftOrders.patient.entries(), ...state.draftOrders.hip.entries()].map(([key, qty]) => { if(key.includes('__')) { const [itemName, topBottom] = key.split('__'); return {itemName, qty, topBottom}; } return {itemName: key, qty, topBottom:''}; }).filter(e => e.qty > 0) : $$('.rq').filter(inp => toInt(inp.value) > 0).map(inp => ({ itemName: inp.dataset.item, topBottom: inp.dataset.tb || '', qty: toInt(inp.value) }));
-      const modal = $('#confirmationModal');
-      $('#modalSummaryList').innerHTML = displayEntries.map(e => `<li><span class="item-name">${e.name}</span> <span class="item-qty">${e.qty}개</span></li>`).join('');
-      $('#modalTitle').textContent = state.mode === 'orders' ? '발주 내역 확인' : '입고 내역 확인';
-      modal.style.display = 'flex';
-    }
+    async function openEditModal({ itemKey, itemLabel, itemTb, month }) {
+      const modal = $('#editModal');
+      const body = $('#editModalBody');
+      modal.style.display = 'flex';
+      body.innerHTML = '<div class="spinner"></div>';
 
-    async function openEditModal({ itemKey, itemLabel, itemTb, month }) {
-      const modal = $('#editModal');
-      const body = $('#editModalBody');
-      modal.style.display = 'flex';
-      body.innerHTML = '<div class="spinner"></div>';
+      const year = month.substring(2, 4);
+      const mon = parseInt(month.substring(5, 7), 10);
+      $('#editModalTitle').textContent = `${itemLabel} (${year}년 ${mon}월) 내역 수정`;
 
-      const year = month.substring(2, 4);
-      const mon = parseInt(month.substring(5, 7), 10);
-      $('#editModalTitle').textContent = `${itemLabel} (${year}년 ${mon}월) 내역 수정`;
+      const getTransactionTimestamp = (transaction, monthStr) => {
+        if (transaction.type === 'receipts' && transaction.day) {
+          return new Date(`${monthStr}-${String(transaction.day).padStart(2, '0')}`).getTime();
+        }
+        return transaction.ts || 0; 
+      };
 
-      const getTransactionTimestamp = (transaction, monthStr) => {
-        if (transaction.type === 'receipts' && transaction.day) {
-          return new Date(`${monthStr}-${String(transaction.day).padStart(2, '0')}`).getTime();
-        }
-        return transaction.ts || 0; 
-      };
+      try {
+        const itemData = state.snapshot[itemKey] || {};
 
-      try {
-        const itemData = state.snapshot[itemKey] || {};
+        const orders = Object.entries((itemData.orders || {})[month] || {}).map(([id, data]) => ({ id, type: 'orders', ...data }));
+        const receipts = Object.entries((itemData.receipts || {})[month] || {}).map(([id, data]) => ({ id, type: 'receipts', ...data }));
+        
+        const transactions = [...orders, ...receipts]
+          .filter(t => itemTb ? (t.topBottom || '') === itemTb : true)
+          .sort((a, b) => getTransactionTimestamp(a, month) - getTransactionTimestamp(b, month));
 
-        const orders = Object.entries((itemData.orders || {})[month] || {}).map(([id, data]) => ({ id, type: 'orders', ...data }));
-        const receipts = Object.entries((itemData.receipts || {})[month] || {}).map(([id, data]) => ({ id, type: 'receipts', ...data }));
-        
-        const transactions = [...orders, ...receipts]
-          .filter(t => itemTb ? (t.topBottom || '') === itemTb : true)
-          .sort((a, b) => getTransactionTimestamp(a, month) - getTransactionTimestamp(b, month));
+        if (transactions.length === 0) {
+          body.innerHTML = '<p style="text-align:center;padding:20px 0;">수정할 상세 내역이 없습니다.</p>';
+          return;
+        }
 
-        if (transactions.length === 0) {
-          body.innerHTML = '<p style="text-align:center;padding:20px 0;">수정할 상세 내역이 없습니다.</p>';
-          return;
-        }
+        const listHtml = transactions.map(t => {
+          let dateStr;
+          if (t.type === 'receipts') {
+            dateStr = `${mon}월 ${t.day}일`;
+          } else {
+            dateStr = t.ts && !isNaN(t.ts) ? new Date(t.ts).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '날짜 정보 없음';
+          }
+          const typeLabel = t.type === 'orders' ? '발주' : '입고';
+          
+          return `<li data-id="${t.id}" data-type="${t.type}" data-item-key="${itemKey}" data-month="${month}"> <span class="item-info">${dateStr} ${typeLabel}: <span class="item-qty" data-original-value="${t.qty}">${t.qty}개</span></span> <span class="edit-controls" style="display:none;"> <input type="number" class="qty-input" value="${t.qty}" min="0"> </span> <span class="buttons"> <button class="btn ghost edit-btn">수정</button> <button class="btn ghost red delete-btn">삭제</button> </span> </li>`;
+        }).join('');
 
-        const listHtml = transactions.map(t => {
-          let dateStr;
-          if (t.type === 'receipts') {
-            dateStr = `${mon}월 ${t.day}일`;
-          } else {
-            dateStr = t.ts && !isNaN(t.ts) ? new Date(t.ts).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '날짜 정보 없음';
-          }
-          const typeLabel = t.type === 'orders' ? '발주' : '입고';
-          
-          return `<li data-id="${t.id}" data-type="${t.type}" data-item-key="${itemKey}" data-month="${month}"> <span class="item-info">${dateStr} ${typeLabel}: <span class="item-qty" data-original-value="${t.qty}">${t.qty}개</span></span> <span class="edit-controls" style="display:none;"> <input type="number" class="qty-input" value="${t.qty}" min="0"> </span> <span class="buttons"> <button class="btn ghost edit-btn">수정</button> <button class="btn ghost red delete-btn">삭제</button> </span> </li>`;
-        }).join('');
+        body.innerHTML = `<ul id="edit-list">${listHtml}</ul>`;
 
-        body.innerHTML = `<ul id="edit-list">${listHtml}</ul>`;
+        $('#edit-list').addEventListener('click', e => {
+          const target = e.target;
+          const li = target.closest('li');
+          if (!li) return;
 
-        $('#edit-list').addEventListener('click', e => {
-          const target = e.target;
-          const li = target.closest('li');
-          if (!li) return;
+          if (target.classList.contains('delete-btn')) {
+            li.classList.toggle('is-deleted');
+            li.querySelector('.edit-controls').style.display = 'none';
+            li.querySelector('.item-info').style.display = 'inline';
+            li.querySelector('.edit-btn').textContent = '수정';
+          } else if (target.classList.contains('edit-btn')) {
+            const controls = li.querySelector('.edit-controls');
+            const info = li.querySelector('.item-info');
+            const isEditing = controls.style.display !== 'none';
+            if (li.classList.contains('is-deleted')) return;
 
-          if (target.classList.contains('delete-btn')) {
-            li.classList.toggle('is-deleted');
-            li.querySelector('.edit-controls').style.display = 'none';
-            li.querySelector('.item-info').style.display = 'inline';
-            li.querySelector('.edit-btn').textContent = '수정';
-          } else if (target.classList.contains('edit-btn')) {
-            const controls = li.querySelector('.edit-controls');
-            const info = li.querySelector('.item-info');
-            const isEditing = controls.style.display !== 'none';
-            if (li.classList.contains('is-deleted')) return;
+            if (isEditing) {
+                const input = li.querySelector('.qty-input');
+                const newQty = toInt(input.value);
+                if (newQty < 0) { input.value = 0; }
+                const qtySpan = li.querySelector('.item-qty');
+                qtySpan.textContent = `${newQty < 0 ? 0 : newQty}개`;
+            }
 
-            if (isEditing) {
-                const input = li.querySelector('.qty-input');
-                const newQty = toInt(input.value);
-                if (newQty < 0) { input.value = 0; }
-                const qtySpan = li.querySelector('.item-qty');
-                qtySpan.textContent = `${newQty < 0 ? 0 : newQty}개`;
-            }
+            controls.style.display = isEditing ? 'none' : 'inline-flex';
+            info.style.display = isEditing ? 'inline' : 'none';
+            target.textContent = isEditing ? '수정' : '완료';
+          }
+        });
 
-            controls.style.display = isEditing ? 'none' : 'inline-flex';
-            info.style.display = isEditing ? 'inline' : 'none';
-            target.textContent = isEditing ? '수정' : '완료';
-          }
-        });
+      } catch (err) {
+        console.error("상세 내역 로딩 실패:", err);
+        body.innerHTML = '<p style="text-align:center;padding:20px 0;">오류가 발생했습니다.</p>';
+      }
+    }
 
-      } catch (err) {
-        console.error("상세 내역 로딩 실패:", err);
-        body.innerHTML = '<p style="text-align:center;padding:20px 0;">오류가 발생했습니다.</p>';
-      }
-    }
+    // [수정됨] 로딩 문구 변경 및 초기화 로직 추가
+    async function saveEdits() {
+      const loader = $('#loader');
+      const loaderText = loader.querySelector('p');
+      
+      if (loaderText) loaderText.textContent = '변경내용 저장중...';
+      loader.style.display = 'flex';
+      
+      const updates = {};
+      $$('#edit-list li').forEach(li => {
+        const { id, type, itemKey, month } = li.dataset;
+        const path = `purchase_status/${itemKey}/${type}/${month}/${id}`;
+        if (li.classList.contains('is-deleted')) {
+          updates[path] = null;
+        } else {
+          const input = li.querySelector('.qty-input');
+          const originalQty = toInt(li.querySelector('.item-qty').dataset.originalValue);
+          const newQty = toInt(input.value);
+          if (newQty !== originalQty) {
+             updates[`${path}/qty`] = newQty;
+          }
+        }
+      });
+      try {
+        if (Object.keys(updates).length > 0) {
+          await updatePurchaseStatus(updates);
+        }
+        $('#editModal').style.display = 'none';
+        showToast('수정 완료!');
+        successAudio.play();
+        state.snapshot = await getStatusOnce();
+        renderBody();
+        refreshProgress();
+      } catch (err) {
+        console.error("수정사항 저장 실패:", err);
+        alert('저장 중 오류가 발생했습니다.');
+      } finally {
+        loader.style.display = 'none';
+        if (loaderText) loaderText.textContent = '데이터 불러오는중...'; // 문구 원상 복귀
+      }
+    }
 
-    async function saveEdits() {
-      const loader = $('#loader');
-      loader.style.display = 'flex';
-      const updates = {};
-      $$('#edit-list li').forEach(li => {
-        const { id, type, itemKey, month } = li.dataset;
-        const path = `purchase_status/${itemKey}/${type}/${month}/${id}`;
-        if (li.classList.contains('is-deleted')) {
-          updates[path] = null;
-        } else {
-          const input = li.querySelector('.qty-input');
-          const originalQty = toInt(li.querySelector('.item-qty').dataset.originalValue);
-          const newQty = toInt(input.value);
-          if (newQty !== originalQty) {
-             updates[`${path}/qty`] = newQty;
-          }
-        }
-      });
-      try {
-        if (Object.keys(updates).length > 0) {
-          await updatePurchaseStatus(updates);
-        }
-        $('#editModal').style.display = 'none';
-        showToast('수정 완료!');
-        successAudio.play();
-        state.snapshot = await getStatusOnce();
-        renderBody();
-        refreshProgress();
-      } catch (err) {
-        console.error("수정사항 저장 실패:", err);
-        alert('저장 중 오류가 발생했습니다.');
-      } finally {
-        loader.style.display = 'none';
-      }
-    }
-
-    async function onExportExcel_AllData(){
-      const loader = $('#loader');
-      loader.style.display = 'flex';
-      try {
-        if(!state.snapshot) state.snapshot=await getStatusOnce();
-        const all=state.snapshot||{};
-        const monthsAll=collectAllMonths(all);
-        const ITEMS = buildItems(all);
-        const wb=new ExcelJS.Workbook();
-        const sumMonth = (it, kind, m, tb='')=>{ const node=((it[kind]||{})[m])||{}; return Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true).reduce((s,e)=> s+toInt(e.qty),0); };
-        const sumRange = (it, kind, months, tb='')=> months.reduce((acc,m)=> acc + sumMonth(it,kind,m,tb), 0);
-        const wsSum=wb.addWorksheet('요약');
-        wsSum.addRow(['품목','발주량','입고량','미입고','진행률']);
-        wsSum.views = [{state:'frozen', xSplit:1, ySplit:1}];
-        let totO=0, totR=0;
-        ITEMS.forEach(r=>{
-          const it=all[r.key]||{};
-          const o=sumRange(it,'orders',monthsAll,r.tb);
-          const v=sumRange(it,'receipts',monthsAll,r.tb);
-          const n=o-v; totO+=o; totR+=v;
-          if(o!==0 || v!==0){
-            const pct = (o>0) ? (v<=o? `${Math.round(v/o*100)}%` : `-${Math.round((v-o)/o*100)}%`) : (v>0?'100%':'0%');
-            const row=wsSum.addRow([r.label,o,v,n,pct]);
-            if(r.group==='normal') row.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
-            if(r.group==='ortho')  row.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
-            if(n<0) row.getCell(4).font={color:{argb:'FFF43F5E'},bold:true};
-            if(pct.startsWith('-')) row.getCell(5).font={color:{argb:'FFF43F5E'},bold:true};
-            if(o>0 && n===0){ row.eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE8F7EE'}}; }); row.getCell(5).font={bold:true, color:{argb:'FF2563EB'}}; }
-          }
-        });
-        const totN = totO - totR;
-        const totalPctText = (totO>0? (totR<=totO? `${Math.round(totR/totO*100)}%` : `-${Math.round((totR-totO)/totO*100)}%`) : (totR>0?'100%':'0%'));
-        const totalRow = wsSum.addRow(['종합(전체)', totO, totR, totN, totalPctText]);
-        totalRow.eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF2563EB'}}; c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center'}; });
-        const wsOrd=wb.addWorksheet('발주월별');
-        const ordHeaders = ['품목', ...monthsAll.map(m => { const year = m.substring(2, 4); const month = parseInt(m.substring(5, 7), 10); return `${year}년 ${month}월`; })];
-        wsOrd.addRow(ordHeaders);
-        wsOrd.views = [{state:'frozen', xSplit:1, ySplit:1}];
-        ITEMS.forEach(r=>{ const it=all[r.key]||{}; const vals=monthsAll.map(m=> sumMonth(it,'orders',m,r.tb)); if(vals.some(v=>v!==0)){ const added=wsOrd.addRow([r.label, ...vals]); if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true}; if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true}; } });
-        const monthToDays = {};
-        monthsAll.forEach(m=>{ const daysSet = new Set(); ITEMS.forEach(r=>{ const recs = (((all[r.key]||{}).receipts||{})[m])||{}; Object.values(recs).forEach(e=>{ const d = Number(e.day||''); if(!Number.isNaN(d)) daysSet.add(d); }); }); monthToDays[m] = Array.from(daysSet).sort((a,b)=>a-b); });
-        const wsRecv=wb.addWorksheet('입고(날짜별)');
-        const recvHeaders = ['품목', ...monthsAll.flatMap(m=> monthToDays[m].map(d=>`${parseInt(m.slice(5,7),10)}월 ${d}일`))];
-        wsRecv.addRow(recvHeaders);
-        wsRecv.views = [{state:'frozen', xSplit:1, ySplit:1}];
-        const daySum = (it, m, d, tb='')=>{ const node=((it.receipts||{})[m])||{}; return Object.values(node).filter(e=> (tb? (e.topBottom||'')===tb : true) && Number(e.day||'')===d).reduce((s,e)=> s+toInt(e.qty),0); };
-        ITEMS.forEach(r=>{ const it=all[r.key]||{}; const vals = monthsAll.flatMap(m=> monthToDays[m].map(d=> daySum(it, m, d, r.tb))); if(vals.some(v=>v!==0)){ const added=wsRecv.addRow([r.label, ...vals]); if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true}; if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true}; } });
-        [wsSum, wsOrd, wsRecv].forEach(ws => {
-          ws.getRow(1).eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1E293B'}}; c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center'}; });
-          for(let r=2; r<=ws.rowCount; r++){ ws.getRow(r).eachCell((c,ci)=>{ c.alignment={vertical:'middle',horizontal:(ci===1?'left':'center')}; }); }
-          ws.columns.forEach(column => { let max_length = 0; column.eachCell({ includeEmpty: true }, cell => { let cell_length = (cell.value || '').toString().length; if (cell_length > max_length) { max_length = cell_length; } }); column.width = Math.max(10, max_length + 2); });
-          ws.getColumn(1).width = 20;
-        });
-        const buf=await wb.xlsx.writeBuffer();
-        const y = new Date().getFullYear().toString().slice(2);
-        saveAs(new Blob([buf]), `구매현황(${y}년).xlsx`);
-      } catch (e) {
-        console.error("엑셀 생성 실패:", e);
-        alert("엑셀 파일을 생성하는 중 오류가 발생했습니다.");
-      } finally {
-        loader.style.display = 'none';
-      }
-    }
-  </script>
+    async function onExportExcel_AllData(){
+      const loader = $('#loader');
+      loader.style.display = 'flex';
+      try {
+        if(!state.snapshot) state.snapshot=await getStatusOnce();
+        const all=state.snapshot||{};
+        const monthsAll=collectAllMonths(all);
+        const ITEMS = buildItems(all);
+        const wb=new ExcelJS.Workbook();
+        const sumMonth = (it, kind, m, tb='')=>{ const node=((it[kind]||{})[m])||{}; return Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true).reduce((s,e)=> s+toInt(e.qty),0); };
+        const sumRange = (it, kind, months, tb='')=> months.reduce((acc,m)=> acc + sumMonth(it,kind,m,tb), 0);
+        const wsSum=wb.addWorksheet('요약');
+        wsSum.addRow(['품목','발주량','입고량','미입고','진행률']);
+        wsSum.views = [{state:'frozen', xSplit:1, ySplit:1}];
+        let totO=0, totR=0;
+        ITEMS.forEach(r=>{
+          const it=all[r.key]||{};
+          const o=sumRange(it,'orders',monthsAll,r.tb);
+          const v=sumRange(it,'receipts',monthsAll,r.tb);
+          const n=o-v; totO+=o; totR+=v;
+          if(o!==0 || v!==0){
+            const pct = (o>0) ? (v<=o? `${Math.round(v/o*100)}%` : `-${Math.round((v-o)/o*100)}%`) : (v>0?'100%':'0%');
+            const row=wsSum.addRow([r.label,o,v,n,pct]);
+            if(r.group==='normal') row.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
+            if(r.group==='ortho')  row.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
+            if(n<0) row.getCell(4).font={color:{argb:'FFF43F5E'},bold:true};
+            if(pct.startsWith('-')) row.getCell(5).font={color:{argb:'FFF43F5E'},bold:true};
+            if(o>0 && n===0){ row.eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE8F7EE'}}; }); row.getCell(5).font={bold:true, color:{argb:'FF2563EB'}}; }
+          }
+        });
+        const totN = totO - totR;
+        const totalPctText = (totO>0? (totR<=totO? `${Math.round(totR/totO*100)}%` : `-${Math.round((totR-totO)/totO*100)}%`) : (totR>0?'100%':'0%'));
+        const totalRow = wsSum.addRow(['종합(전체)', totO, totR, totN, totalPctText]);
+        totalRow.eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF2563EB'}}; c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center'}; });
+        const wsOrd=wb.addWorksheet('발주월별');
+        const ordHeaders = ['품목', ...monthsAll.map(m => { const year = m.substring(2, 4); const month = parseInt(m.substring(5, 7), 10); return `${year}년 ${month}월`; })];
+        wsOrd.addRow(ordHeaders);
+        wsOrd.views = [{state:'frozen', xSplit:1, ySplit:1}];
+        ITEMS.forEach(r=>{ const it=all[r.key]||{}; const vals=monthsAll.map(m=> sumMonth(it,'orders',m,r.tb)); if(vals.some(v=>v!==0)){ const added=wsOrd.addRow([r.label, ...vals]); if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true}; if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true}; } });
+        const monthToDays = {};
+        monthsAll.forEach(m=>{ const daysSet = new Set(); ITEMS.forEach(r=>{ const recs = (((all[r.key]||{}).receipts||{})[m])||{}; Object.values(recs).forEach(e=>{ const d = Number(e.day||''); if(!Number.isNaN(d)) daysSet.add(d); }); }); monthToDays[m] = Array.from(daysSet).sort((a,b)=>a-b); });
+        const wsRecv=wb.addWorksheet('입고(날짜별)');
+        const recvHeaders = ['품목', ...monthsAll.flatMap(m=> monthToDays[m].map(d=>`${parseInt(m.slice(5,7),10)}월 ${d}일`))];
+        wsRecv.addRow(recvHeaders);
+        wsRecv.views = [{state:'frozen', xSplit:1, ySplit:1}];
+        const daySum = (it, m, d, tb='')=>{ const node=((it.receipts||{})[m])||{}; return Object.values(node).filter(e=> (tb? (e.topBottom||'')===tb : true) && Number(e.day||'')===d).reduce((s,e)=> s+toInt(e.qty),0); };
+        ITEMS.forEach(r=>{ const it=all[r.key]||{}; const vals = monthsAll.flatMap(m=> monthToDays[m].map(d=> daySum(it, m, d, r.tb))); if(vals.some(v=>v!==0)){ const added=wsRecv.addRow([r.label, ...vals]); if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A3A4'},bold:true}; if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true}; } });
+        [wsSum, wsOrd, wsRecv].forEach(ws => {
+          ws.getRow(1).eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1E293B'}}; c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center'}; });
+          for(let r=2; r<=ws.rowCount; r++){ ws.getRow(r).eachCell((c,ci)=>{ c.alignment={vertical:'middle',horizontal:(ci===1?'left':'center')}; }); }
+          ws.columns.forEach(column => { let max_length = 0; column.eachCell({ includeEmpty: true }, cell => { let cell_length = (cell.value || '').toString().length; if (cell_length > max_length) { max_length = cell_length; } }); column.width = Math.max(10, max_length + 2); });
+          ws.getColumn(1).width = 20;
+        });
+        const buf=await wb.xlsx.writeBuffer();
+        const y = new Date().getFullYear().toString().slice(2);
+        saveAs(new Blob([buf]), `구매현황(${y}년).xlsx`);
+      } catch (e) {
+        console.error("엑셀 생성 실패:", e);
+        alert("엑셀 파일을 생성하는 중 오류가 발생했습니다.");
+      } finally {
+        loader.style.display = 'none';
+      }
+    }
+  </script>
 </body>
 </html>
-
-
