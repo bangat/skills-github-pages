@@ -683,7 +683,7 @@
         alert('저장 중 오류가 발생했습니다.');
       } finally {
         loader.style.display = 'none';
-        if (loaderText) loaderText.textContent = '데이터 불러오는중...'; // 문구 원상 복귀
+        if (loaderText) loaderText.textContent = '서버와 연결중...'; // 문구 원상 복귀
       }
     }
 
@@ -733,7 +733,7 @@
         wsRecv.addRow(recvHeaders);
         wsRecv.views = [{state:'frozen', xSplit:1, ySplit:1}];
         const daySum = (it, m, d, tb='')=>{ const node=((it.receipts||{})[m])||{}; return Object.values(node).filter(e=> (tb? (e.topBottom||'')===tb : true) && Number(e.day||'')===d).reduce((s,e)=> s+toInt(e.qty),0); };
-        ITEMS.forEach(r=>{ const it=all[r.key]||{}; const vals = monthsAll.flatMap(m=> monthToDays[m].map(d=> daySum(it, m, d, r.tb))); if(vals.some(v=>v!==0)){ const added=wsRecv.addRow([r.label, ...vals]); if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A3A4'},bold:true}; if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true}; } });
+        ITEMS.forEach(r=>{ const it=all[r.key]||{}; const vals = monthsAll.flatMap(m=> monthToDays[m].map(d=> daySum(it, m, d, r.tb))); if(vals.some(v=>v!==0)){ const added=wsRecv.addRow([r.label, ...vals]); if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true}; if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true}; } });
         [wsSum, wsOrd, wsRecv].forEach(ws => {
           ws.getRow(1).eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1E293B'}}; c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center'}; });
           for(let r=2; r<=ws.rowCount; r++){ ws.getRow(r).eachCell((c,ci)=>{ c.alignment={vertical:'middle',horizontal:(ci===1?'left':'center')}; }); }
