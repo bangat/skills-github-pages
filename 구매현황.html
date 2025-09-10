@@ -187,6 +187,39 @@
   text-decoration: line-through;
 }
 
+/* 탭 UI 스타일 */
+.modal-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 0 10px;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 10px;
+}
+.modal-tab {
+  padding: 8px 12px;
+  font-weight: 900;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+}
+.modal-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* 기존 ul 스타일 수정 */
+#editModal .modal-body ul {
+  list-style: none;
+  padding: 0;
+  margin: 0; /* margin: 15px 0; 에서 변경 */
+  max-height: 350px; /* max-height를 조금 늘려도 좋습니다. */
+  overflow-y: auto;
+  /* border와 padding 관련 속성은 제거합니다. */
+}
+
+
   </style>
   <!-- ▷▷▷ 전역 스타일 종료 ▷▷▷ -->
 </head>
@@ -896,6 +929,8 @@ $('#formBox').addEventListener('click', (e) => {
 
 // 기존 openEditModalForMonth 함수를 삭제하고 아래 코드로 교체하세요.
 
+// 기존 openEditModalForMonth 함수를 삭제하고 아래 코드로 교체하세요.
+
 async function openEditModalForMonth(month) {
   const modal = $('#editModal');
   const body = $('#editModalBody');
@@ -925,23 +960,24 @@ async function openEditModalForMonth(month) {
     });
 
     const sortedTransactions = allTransactions.sort((a, b) => getTransactionTimestamp(a, month) - getTransactionTimestamp(b, month));
+    
+    // 발주(orders)와 입고(receipts) 데이터 분리
+    const ordersList = sortedTransactions.filter(t => t.type === 'orders');
+    const receiptsList = sortedTransactions.filter(t => t.type === 'receipts');
 
     if (sortedTransactions.length === 0) {
       body.innerHTML = '<p style="text-align:center;padding:20px 0;">해당 월에 수정할 상세 내역이 없습니다.</p>';
       return;
     }
 
-    const listHtml = sortedTransactions.map(t => {
-      let dateStr;
-      if (t.type === 'receipts') {
-        dateStr = `${mon}월 ${t.day}일`;
-      } else {
-        dateStr = t.ts && !isNaN(t.ts) ? new Date(t.ts).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '날짜 정보 없음';
-      }
+    // 리스트 아이템 HTML을 생성하는 헬퍼 함수
+    const createListItemHtml = (t) => {
+      const dateStr = t.type === 'receipts'
+        ? `${mon}월 ${t.day}일`
+        : (t.ts && !isNaN(t.ts) ? new Date(t.ts).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '날짜 정보 없음');
       const typeLabel = t.type === 'orders' ? '발주' : '입고';
       const colorCls = t.itemLabel.includes('일반') ? 'txt-normal' : (t.itemLabel.includes('정형') ? 'txt-ortho' : '');
-
-      // 새로운 HTML 구조
+      
       return `
         <li data-id="${t.id}" data-type="${t.type}" data-item-key="${t.itemKey}" data-month="${month}" data-original-qty="${t.qty}">
           <div class="item-details">
@@ -951,12 +987,36 @@ async function openEditModalForMonth(month) {
           <input type="number" class="qty-input" value="${t.qty}" min="0">
           <button class="btn ghost red delete-btn">삭제</button>
         </li>`;
-    }).join('');
-    
-    body.innerHTML = `<ul id="edit-list">${listHtml}</ul>`;
+    };
 
-    // 삭제 버튼 이벤트 리스너 (더 간결해짐)
-    $('#edit-list').addEventListener('click', e => {
+    const ordersHtml = ordersList.map(createListItemHtml).join('');
+    const receiptsHtml = receiptsList.map(createListItemHtml).join('');
+    
+    // 탭과 리스트를 포함한 전체 모달 body HTML
+    body.innerHTML = `
+      <div class="modal-tabs">
+        <button class="modal-tab active" data-tab="orders-list">발주 (${ordersList.length}건)</button>
+        <button class="modal-tab" data-tab="receipts-list">입고 (${receiptsList.length}건)</button>
+      </div>
+      <ul id="orders-list">${ordersHtml}</ul>
+      <ul id="receipts-list" class="is-hidden">${receiptsHtml}</ul>
+    `;
+    
+    // 탭 클릭 이벤트 리스너
+    body.querySelector('.modal-tabs').addEventListener('click', e => {
+      const target = e.target;
+      if (target.classList.contains('modal-tab')) {
+        body.querySelectorAll('.modal-tab').forEach(tab => tab.classList.remove('active'));
+        target.classList.add('active');
+        
+        body.querySelectorAll('ul').forEach(ul => ul.classList.add('is-hidden'));
+        const tabContentId = target.dataset.tab;
+        body.querySelector(`#${tabContentId}`).classList.remove('is-hidden');
+      }
+    });
+
+    // 삭제 버튼 이벤트 리스너 (ul 두 개를 모두 대상으로 함)
+    body.addEventListener('click', e => {
       const target = e.target;
       if (target.classList.contains('delete-btn')) {
         const li = target.closest('li');
@@ -975,7 +1035,7 @@ async function saveEdits() {
     showLoader('변경내용 저장중…');
 
     const updates = {};
-    $$('#edit-list li').forEach(li => {
+ $$('#editModalBody li').forEach(li => {
       const { id, type, itemKey, month } = li.dataset;
       const path = `purchase_status/${itemKey}/${type}/${month}/${id}`;
       
