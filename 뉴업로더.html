@@ -34,8 +34,6 @@
         border: 1px solid var(--border); border-radius: 8px; margin-top: 8px;
     }
     #preview table { margin-top: 0; border: none; width: auto; min-width: 100%; }
-
-    /* [추가] 새로운 파일 업로드 영역 스타일 */
     #file-upload-area {
         margin-top: 16px;
         border: 2px dashed var(--border);
@@ -65,8 +63,6 @@
         font-size: 14px;
     }
     input[type="file"] { display: none; }
-
-    /* 모바일 화면 대응 미디어 쿼리 */
     @media (max-width: 640px) {
         .wrap { margin: 0; padding: 0; }
         .card { border-radius: 0; border-left:0; border-right:0; padding: 18px; }
@@ -86,7 +82,7 @@
       <input id="dbURL" type="text" value="https://hallymlinen-default-rtdb.firebaseio.com">
       <input id="basePath" type="text" value="/purchase_status">
     </div>
-    
+
     <input type="file" id="filePick" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
     <label for="filePick" id="file-upload-area">
         <div class="upload-icon">
@@ -97,7 +93,7 @@
     </label>
 
     <button id="runBtn" class="btn" disabled>업로드 시작</button>
-    
+
     <label style="margin-top:16px">진행 로그</label>
     <div id="log" class="log"></div>
 
@@ -126,11 +122,10 @@ const fileInput = $("#filePick");
 const uploadArea = $("#file-upload-area");
 const fileNameEl = $("#fileName");
 
-// 파일 선택 시 처리
 const handleFileSelect = (file) => {
     if (!file) return;
     fileNameEl.textContent = file.name;
-    
+
     $("#preview").innerHTML = ""; 
     $("#sheetArea").style.display = "none"; 
     workbook = null; 
@@ -162,7 +157,6 @@ const handleFileSelect = (file) => {
 fileInput.addEventListener('change', (e) => handleFileSelect(e.target.files[0]));
 $("#sheetSel").addEventListener('change', () => renderPreview($("#sheetSel").value));
 
-// 드래그 앤 드롭 이벤트 처리
 uploadArea.addEventListener('dragover', (e) => {
     e.preventDefault();
     uploadArea.classList.add('dragover');
@@ -175,11 +169,10 @@ uploadArea.addEventListener('drop', (e) => {
     uploadArea.classList.remove('dragover');
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-        fileInput.files = files; // 중요: 드롭된 파일을 input에 할당
+        fileInput.files = files;
         handleFileSelect(files[0]);
     }
 });
-
 
 function renderPreview(name) {
   if (!workbook) return;
@@ -192,7 +185,6 @@ function renderPreview(name) {
 }
 
 /* ------------ Schema Mapping & Data Processing ------------ */
-// ... (이하 로직은 이전과 동일) ...
 function mapLabelToApp(label) {
     const s = String(label || '').trim();
     const sheetItems = ["대시트","반시트","베갯잇","수건","중환의","얼음포","억제대","고관절XL","고관절L","고관절M"];
@@ -224,7 +216,7 @@ function buildRecordsFromSheet(ws, sheetName, year) {
         if (!label) continue;
         const { item, topBottom } = mapLabelToApp(label);
         itemsInSheet.add(item);
-        
+
         for (let c = 1; c < header.length; c++) {
             const qty = Number(row[c]);
             if (!qty || !Number.isFinite(qty)) continue;
@@ -257,12 +249,13 @@ function buildRecordsFromSheet(ws, sheetName, year) {
 }
 
 /* ------------ Uploader (REST API) ------------ */
+// [수정됨] 이 함수가 변경되었습니다.
 async function deleteExistingData(section, monthsToDelete, itemsToDelete, basePath) {
     if (monthsToDelete.size === 0 || itemsToDelete.size === 0) return;
     const rootBase = $("#dbURL").value.replace(/\/$/, '');
     const updates = {};
     const sectionLabel = section === 'orders' ? '발주' : '입고';
-    
+
     log(`[데이터 삭제] 엑셀에 포함된 ${sectionLabel} 데이터(${monthsToDelete.size}개월치)를 삭제합니다...`, 'warn');
 
     for (const item of itemsToDelete) {
@@ -270,10 +263,16 @@ async function deleteExistingData(section, monthsToDelete, itemsToDelete, basePa
             updates[`${basePath}/${item}/${section}/${month}`] = null;
         }
     }
-    
+
     const res = await fetch(`${rootBase}/.json`, { method: 'PATCH', body: JSON.stringify(updates) });
-    if (!res.ok) throw new Error(`기존 ${sectionLabel} 데이터 삭제 실패: ${res.statusText}`);
-    log(`> 기존 ${sectionLabel} 데이터 삭제 완료.`, 'ok');
+    
+    // 이 부분이 수정되었습니다.
+    if (!res.ok) {
+        // 오류를 발생시키는 대신, 경고 로그를 남기고 함수를 종료합니다.
+        log(`> 기존 ${sectionLabel} 데이터 삭제에 실패했거나 삭제할 데이터가 없습니다. (오류: ${res.statusText}) 업로드를 계속 진행합니다.`, 'warn');
+    } else {
+        log(`> 기존 ${sectionLabel} 데이터 삭제 완료.`, 'ok');
+    }
 }
 
 async function uploadSheetData(records, basePath) {
@@ -295,7 +294,7 @@ async function uploadSheetData(records, basePath) {
 /* ------------ Run Handler (Main Logic) ------------ */
 $("#runBtn").addEventListener('click', async () => {
   if (!workbook) { log("엑셀을 먼저 선택하세요.", 'err'); return; }
-  
+
   const basePath = $("#basePath").value.trim();
   $("#runBtn").disabled = true;
   logEl.textContent = "";
