@@ -453,14 +453,21 @@
         $('#saveEditsBtn').addEventListener('click', saveEdits);
 
         // 요약표 클릭(행 단위 편집)
-        $('#formBox').addEventListener('click', (e) => {
-          if (state.tab !== 'summary') return;
-          const row = e.target.closest('.editable-row');
-          if (row) {
-            const { itemKey, itemLabel, itemTb, month } = row.dataset;
-            openEditModal({ itemKey, itemLabel, itemTb, month });
-          }
-        });
+        // 수정된 코드
+$('#formBox').addEventListener('click', (e) => {
+  if (state.tab !== 'summary') return;
+
+  const row = e.target.closest('.editable-row');
+  const monthTitle = e.target.closest('.month-title-editable');
+
+  if (row) {
+    const { itemKey, itemLabel, itemTb, month } = row.dataset;
+    openEditModal({ itemKey, itemLabel, itemTb, month });
+  } else if (monthTitle) {
+    const month = monthTitle.dataset.month;
+    openEditModalForMonth(month); // 새로운 함수 호출
+  }
+});
 
         // 스냅샷 로드
         state.snapshot = await getStatusOnce();
@@ -741,7 +748,8 @@
         if(rowsM.length){
           const year = m.substring(2, 4); const month = parseInt(m.substring(5, 7), 10);
           parts.push(`
-            <div class="sec-title">${year}년 ${month}월 발주</div>
+            <div class="sec-title month-title-editable" data-month="${m}" style="cursor: pointer;" title="${year}년 ${month}월 전체 내역 수정">${year}년 ${month}월 발주</div>
+
             <div class="table-wrap">
               <table class="tbl-summary">
                 <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
@@ -857,6 +865,112 @@
     /* ▷▷▷ 저장(발주/입고) 플로우 종료 ▷▷▷ */
 
     /* ▷▷▷ 상세 수정(모달) 시작 ▷▷▷ */
+
+/* ▷▷▷ 상세 수정(모달) 시작 ▷▷▷ */
+// 바로 이 아래에 새 함수를 추가하세요.
+
+async function openEditModalForMonth(month) {
+  const modal = $('#editModal');
+  const body = $('#editModalBody');
+  modal.style.display = 'flex';
+  body.innerHTML = '<div class="spinner"></div>';
+
+  const year = month.substring(2, 4);
+  const mon = parseInt(month.substring(5, 7), 10);
+  $('#editModalTitle').textContent = `${year}년 ${mon}월 전체 내역 수정`;
+
+  const getTransactionTimestamp = (transaction, monthStr) => {
+    if (transaction.type === 'receipts' && transaction.day) {
+      return new Date(`${monthStr}-${String(transaction.day).padStart(2, '0')}`).getTime();
+    }
+    return transaction.ts || 0;
+  };
+
+  try {
+    const allTransactions = [];
+    const ITEMS = buildItems(state.snapshot);
+
+    ITEMS.forEach(item => {
+      const itemData = state.snapshot[item.key] || {};
+      
+      const orders = Object.entries((itemData.orders || {})[month] || {}).map(([id, data]) => ({ 
+        id, type: 'orders', itemKey: item.key, itemLabel: item.label, ...data 
+      }));
+      
+      const receipts = Object.entries((itemData.receipts || {})[month] || {}).map(([id, data]) => ({ 
+        id, type: 'receipts', itemKey: item.key, itemLabel: item.label, ...data 
+      }));
+
+      allTransactions.push(...orders, ...receipts);
+    });
+
+    const sortedTransactions = allTransactions.sort((a, b) => getTransactionTimestamp(a, month) - getTransactionTimestamp(b, month));
+
+    if (sortedTransactions.length === 0) {
+      body.innerHTML = '<p style="text-align:center;padding:20px 0;">해당 월에 수정할 상세 내역이 없습니다.</p>';
+      return;
+    }
+
+    const listHtml = sortedTransactions.map(t => {
+      let dateStr;
+      if (t.type === 'receipts') {
+        dateStr = `${mon}월 ${t.day}일`;
+      } else {
+        dateStr = t.ts && !isNaN(t.ts) ? new Date(t.ts).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '날짜 정보 없음';
+      }
+      const typeLabel = t.type === 'orders' ? '발주' : '입고';
+      const colorCls = t.itemLabel.includes('일반') ? 'txt-normal' : (t.itemLabel.includes('정형') ? 'txt-ortho' : '');
+
+      return `
+        <li data-id="${t.id}" data-type="${t.type}" data-item-key="${t.itemKey}" data-month="${month}">
+          <span class="item-info"><strong class="${colorCls}">${t.itemLabel}</strong> | ${dateStr} ${typeLabel}: <span class="item-qty" data-original-value="${t.qty}">${t.qty}개</span></span>
+          <span class="edit-controls" style="display:none;">
+            <input type="number" class="qty-input" value="${t.qty}" min="0">
+          </span>
+          <span class="buttons">
+            <button class="btn ghost edit-btn">수정</button>
+            <button class="btn ghost red delete-btn">삭제</button>
+          </span>
+        </li>`;
+    }).join('');
+    
+    body.innerHTML = `<ul id="edit-list">${listHtml}</ul>`;
+
+    // 이벤트 리스너는 기존 openEditModal과 동일하게 사용합니다.
+    $('#edit-list').addEventListener('click', e => {
+      const target = e.target;
+      const li = target.closest('li');
+      if (!li) return;
+
+      if (target.classList.contains('delete-btn')) {
+        li.classList.toggle('is-deleted');
+        li.querySelector('.edit-controls').style.display = 'none';
+        li.querySelector('.item-info').style.display = 'inline';
+        li.querySelector('.edit-btn').textContent = '수정';
+      } else if (target.classList.contains('edit-btn')) {
+        const controls = li.querySelector('.edit-controls');
+        const info = li.querySelector('.item-info');
+        const isEditing = controls.style.display !== 'none';
+        if (li.classList.contains('is-deleted')) return;
+
+        if (isEditing) {
+          const input = li.querySelector('.qty-input');
+          const newQty = toInt(input.value);
+          if (newQty < 0) { input.value = 0; }
+          const qtySpan = li.querySelector('.item-qty');
+          qtySpan.textContent = `${newQty < 0 ? 0 : newQty}개`;
+        }
+        controls.style.display = isEditing ? 'none' : 'inline-flex';
+        info.style.display = isEditing ? 'inline' : 'none';
+        target.textContent = isEditing ? '수정' : '완료';
+      }
+    });
+
+  } catch (err) {
+    console.error("월별 상세 내역 로딩 실패:", err);
+    body.innerHTML = '<p style="text-align:center;padding:20px 0;">오류가 발생했습니다.</p>';
+  }
+}
     async function openEditModal({ itemKey, itemLabel, itemTb, month }) {
       const modal = $('#editModal');
       const body = $('#editModalBody');
@@ -1105,4 +1219,3 @@
   <!-- ▷▷▷ 앱 스크립트 종료 ▷▷▷ -->
 </body>
 </html>
-
