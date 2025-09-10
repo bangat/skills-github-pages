@@ -774,7 +774,7 @@
       const bar = $('#progressBarInner');
       bar.style.width = Math.min(100,p)+'%'; bar.textContent = Math.min(100,p)+'%';
       const overTxt = (totR<=totO)? `${p}%` : `-${Math.round((totR-totO)/totO*100)}%`;
-      $('#gaugeStats').textContent = `전체 발주 ${totO}개 · 전체 입고 ${totR}개 — ${overTxt} 입고됨`;
+      $('#gaugeStats').textContent = `전체발주 ${totO}개 · 전체입고 ${totR}개 ${overTxt} 입고됨`;
     }
     /* ▷▷▷ 진행률 갱신 종료 ▷▷▷ */
 
@@ -1105,3 +1105,4 @@
   <!-- ▷▷▷ 앱 스크립트 종료 ▷▷▷ -->
 </body>
 </html>
+
