@@ -462,7 +462,7 @@
       const sumMonth=(name,month,tb='',kind='orders')=>{ const node=(((data[name]||{})[kind]||{})[month])||{}; const arr=Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true); return arr.reduce((s,e)=> s+toInt(e.qty),0); };
       
       const rowHtml=(r, o, i, m) => {
-        const n=o-i; const negCls = n<0 ? 'neg' : '';
+        const n = Math.max(0, o - i); const negCls = n<0 ? 'neg' : '';
         const color = r.group==='normal' ? 'txt-normal' : (r.group==='ortho' ? 'txt-ortho' : '');
         const dataAttrs = m ? `class="editable-row" data-item-key="${r.key}" data-item-label="${r.label}" data-item-tb="${r.tb}" data-month="${m}"` : '';
         return `<tr ${dataAttrs}><td class="${color}">${r.label}</td><td>${o}</td><td>${i}</td><td class="${negCls}">${n}</td></tr>`;
@@ -706,7 +706,7 @@
           const it=all[r.key]||{};
           const o=sumRange(it,'orders',monthsAll,r.tb);
           const v=sumRange(it,'receipts',monthsAll,r.tb);
-          const n=o-v; totO+=o; totR+=v;
+          const n = Math.max(0, o - v); totO+=o; totR+=v;
           if(o!==0 || v!==0){
             const pct = (o>0) ? (v<=o? `${Math.round(v/o*100)}%` : `-${Math.round((v-o)/o*100)}%`) : (v>0?'100%':'0%');
             const row=wsSum.addRow([r.label,o,v,n,pct]);
@@ -753,3 +753,4 @@
   </script>
 </body>
 </html>
+
