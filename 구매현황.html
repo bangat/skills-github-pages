@@ -159,6 +159,34 @@
     }
     #editModal .modal-body .spinner { width: 32px; height: 32px; border-width: 4px; margin: 20px auto; }
     /* ▷▷▷ 모달 공통 종료 ▷▷▷ */
+
+#editModal .modal-body li {
+  display: grid;
+  grid-template-columns: 1fr auto auto; /* 품목정보 | 수량입력 | 삭제버튼 */
+  gap: 8px;
+  align-items: center;
+  padding: 10px 4px;
+}
+#editModal .modal-body li .item-details {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  line-height: 1.3;
+  white-space: nowrap; /* 줄바꿈 방지 */
+}
+#editModal .modal-body li .item-details .item-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+#editModal .modal-body li .item-details .sub-info {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+#editModal .modal-body li.is-deleted .item-details {
+  text-decoration: line-through;
+}
+
   </style>
   <!-- ▷▷▷ 전역 스타일 종료 ▷▷▷ -->
 </head>
@@ -866,8 +894,7 @@ $('#formBox').addEventListener('click', (e) => {
 
     /* ▷▷▷ 상세 수정(모달) 시작 ▷▷▷ */
 
-/* ▷▷▷ 상세 수정(모달) 시작 ▷▷▷ */
-// 바로 이 아래에 새 함수를 추가하세요.
+// 기존 openEditModalForMonth 함수를 삭제하고 아래 코드로 교체하세요.
 
 async function openEditModalForMonth(month) {
   const modal = $('#editModal');
@@ -892,15 +919,8 @@ async function openEditModalForMonth(month) {
 
     ITEMS.forEach(item => {
       const itemData = state.snapshot[item.key] || {};
-      
-      const orders = Object.entries((itemData.orders || {})[month] || {}).map(([id, data]) => ({ 
-        id, type: 'orders', itemKey: item.key, itemLabel: item.label, ...data 
-      }));
-      
-      const receipts = Object.entries((itemData.receipts || {})[month] || {}).map(([id, data]) => ({ 
-        id, type: 'receipts', itemKey: item.key, itemLabel: item.label, ...data 
-      }));
-
+      const orders = Object.entries((itemData.orders || {})[month] || {}).map(([id, data]) => ({ id, type: 'orders', itemKey: item.key, itemLabel: item.label, ...data }));
+      const receipts = Object.entries((itemData.receipts || {})[month] || {}).map(([id, data]) => ({ id, type: 'receipts', itemKey: item.key, itemLabel: item.label, ...data }));
       allTransactions.push(...orders, ...receipts);
     });
 
@@ -921,48 +941,26 @@ async function openEditModalForMonth(month) {
       const typeLabel = t.type === 'orders' ? '발주' : '입고';
       const colorCls = t.itemLabel.includes('일반') ? 'txt-normal' : (t.itemLabel.includes('정형') ? 'txt-ortho' : '');
 
+      // 새로운 HTML 구조
       return `
-        <li data-id="${t.id}" data-type="${t.type}" data-item-key="${t.itemKey}" data-month="${month}">
-          <span class="item-info"><strong class="${colorCls}">${t.itemLabel}</strong> | ${dateStr} ${typeLabel}: <span class="item-qty" data-original-value="${t.qty}">${t.qty}개</span></span>
-          <span class="edit-controls" style="display:none;">
-            <input type="number" class="qty-input" value="${t.qty}" min="0">
-          </span>
-          <span class="buttons">
-            <button class="btn ghost edit-btn">수정</button>
-            <button class="btn ghost red delete-btn">삭제</button>
-          </span>
+        <li data-id="${t.id}" data-type="${t.type}" data-item-key="${t.itemKey}" data-month="${month}" data-original-qty="${t.qty}">
+          <div class="item-details">
+            <span class="item-name ${colorCls}">${t.itemLabel}</span>
+            <small class="sub-info">${dateStr} ${typeLabel}</small>
+          </div>
+          <input type="number" class="qty-input" value="${t.qty}" min="0">
+          <button class="btn ghost red delete-btn">삭제</button>
         </li>`;
     }).join('');
     
     body.innerHTML = `<ul id="edit-list">${listHtml}</ul>`;
 
-    // 이벤트 리스너는 기존 openEditModal과 동일하게 사용합니다.
+    // 삭제 버튼 이벤트 리스너 (더 간결해짐)
     $('#edit-list').addEventListener('click', e => {
       const target = e.target;
-      const li = target.closest('li');
-      if (!li) return;
-
       if (target.classList.contains('delete-btn')) {
-        li.classList.toggle('is-deleted');
-        li.querySelector('.edit-controls').style.display = 'none';
-        li.querySelector('.item-info').style.display = 'inline';
-        li.querySelector('.edit-btn').textContent = '수정';
-      } else if (target.classList.contains('edit-btn')) {
-        const controls = li.querySelector('.edit-controls');
-        const info = li.querySelector('.item-info');
-        const isEditing = controls.style.display !== 'none';
-        if (li.classList.contains('is-deleted')) return;
-
-        if (isEditing) {
-          const input = li.querySelector('.qty-input');
-          const newQty = toInt(input.value);
-          if (newQty < 0) { input.value = 0; }
-          const qtySpan = li.querySelector('.item-qty');
-          qtySpan.textContent = `${newQty < 0 ? 0 : newQty}개`;
-        }
-        controls.style.display = isEditing ? 'none' : 'inline-flex';
-        info.style.display = isEditing ? 'inline' : 'none';
-        target.textContent = isEditing ? '수정' : '완료';
+        const li = target.closest('li');
+        if (li) li.classList.toggle('is-deleted');
       }
     });
 
@@ -971,133 +969,47 @@ async function openEditModalForMonth(month) {
     body.innerHTML = '<p style="text-align:center;padding:20px 0;">오류가 발생했습니다.</p>';
   }
 }
-    async function openEditModal({ itemKey, itemLabel, itemTb, month }) {
-      const modal = $('#editModal');
-      const body = $('#editModalBody');
-      modal.style.display = 'flex';
-      body.innerHTML = '<div class="spinner"></div>';
+    // 수정된 saveEdits 함수
+async function saveEdits() {
+  try {
+    showLoader('변경내용 저장중…');
 
-      const year = month.substring(2, 4);
-      const mon = parseInt(month.substring(5, 7), 10);
-      $('#editModalTitle').textContent = `${itemLabel} (${year}년 ${mon}월) 내역 수정`;
-
-      const getTransactionTimestamp = (transaction, monthStr) => {
-        if (transaction.type === 'receipts' && transaction.day) {
-          return new Date(`${monthStr}-${String(transaction.day).padStart(2, '0')}`).getTime();
+    const updates = {};
+    $$('#edit-list li').forEach(li => {
+      const { id, type, itemKey, month } = li.dataset;
+      const path = `purchase_status/${itemKey}/${type}/${month}/${id}`;
+      
+      if (li.classList.contains('is-deleted')) {
+        updates[path] = null;
+      } else {
+        const input = li.querySelector('.qty-input');
+        // ▼▼▼ 이렇게 수정되었습니다 ▼▼▼
+        const originalQty = toInt(li.dataset.originalQty); 
+        const newQty = toInt(input.value);
+        
+        if (newQty !== originalQty) {
+          updates[`${path}/qty`] = newQty;
         }
-        return transaction.ts || 0;
-      };
-
-      try {
-        const itemData = state.snapshot[itemKey] || {};
-        const orders = Object.entries((itemData.orders || {})[month] || {}).map(([id, data]) => ({ id, type: 'orders', ...data }));
-        const receipts = Object.entries((itemData.receipts || {})[month] || {}).map(([id, data]) => ({ id, type: 'receipts', ...data }));
-
-        const transactions = [...orders, ...receipts]
-          .filter(t => itemTb ? (t.topBottom || '') === itemTb : true)
-          .sort((a, b) => getTransactionTimestamp(a, month) - getTransactionTimestamp(b, month));
-
-        if (transactions.length === 0) {
-          body.innerHTML = '<p style="text-align:center;padding:20px 0;">수정할 상세 내역이 없습니다.</p>';
-          return;
-        }
-
-        const listHtml = transactions.map(t => {
-          let dateStr;
-          if (t.type === 'receipts') {
-            dateStr = `${mon}월 ${t.day}일`;
-          } else {
-            dateStr = t.ts && !isNaN(t.ts) ? new Date(t.ts).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '날짜 정보 없음';
-          }
-          const typeLabel = t.type === 'orders' ? '발주' : '입고';
-
-          return `
-            <li data-id="${t.id}" data-type="${t.type}" data-item-key="${itemKey}" data-month="${month}">
-              <span class="item-info">${dateStr} ${typeLabel}: <span class="item-qty" data-original-value="${t.qty}">${t.qty}개</span></span>
-              <span class="edit-controls" style="display:none;">
-                <input type="number" class="qty-input" value="${t.qty}" min="0">
-              </span>
-              <span class="buttons">
-                <button class="btn ghost edit-btn">수정</button>
-                <button class="btn ghost red delete-btn">삭제</button>
-              </span>
-            </li>`;
-        }).join('');
-
-        body.innerHTML = `<ul id="edit-list">${listHtml}</ul>`;
-
-        $('#edit-list').addEventListener('click', e => {
-          const target = e.target;
-          const li = target.closest('li');
-          if (!li) return;
-
-          if (target.classList.contains('delete-btn')) {
-            li.classList.toggle('is-deleted');
-            li.querySelector('.edit-controls').style.display = 'none';
-            li.querySelector('.item-info').style.display = 'inline';
-            li.querySelector('.edit-btn').textContent = '수정';
-          } else if (target.classList.contains('edit-btn')) {
-            const controls = li.querySelector('.edit-controls');
-            const info = li.querySelector('.item-info');
-            const isEditing = controls.style.display !== 'none';
-            if (li.classList.contains('is-deleted')) return;
-
-            if (isEditing) {
-              const input = li.querySelector('.qty-input');
-              const newQty = toInt(input.value);
-              if (newQty < 0) { input.value = 0; }
-              const qtySpan = li.querySelector('.item-qty');
-              qtySpan.textContent = `${newQty < 0 ? 0 : newQty}개`;
-            }
-            controls.style.display = isEditing ? 'none' : 'inline-flex';
-            info.style.display = isEditing ? 'inline' : 'none';
-            target.textContent = isEditing ? '수정' : '완료';
-          }
-        });
-
-      } catch (err) {
-        console.error("상세 내역 로딩 실패:", err);
-        body.innerHTML = '<p style="text-align:center;padding:20px 0;">오류가 발생했습니다.</p>';
       }
+    });
+
+    if (Object.keys(updates).length > 0) {
+      await updatePurchaseStatus(updates);
     }
 
-    async function saveEdits() {
-      try{
-        showLoader('변경내용 저장중…');
-
-        const updates = {};
-        $$('#edit-list li').forEach(li => {
-          const { id, type, itemKey, month } = li.dataset;
-          const path = `purchase_status/${itemKey}/${type}/${month}/${id}`;
-          if (li.classList.contains('is-deleted')) {
-            updates[path] = null;
-          } else {
-            const input = li.querySelector('.qty-input');
-            const originalQty = toInt(li.querySelector('.item-qty').dataset.originalValue);
-            const newQty = toInt(input.value);
-            if (newQty !== originalQty) {
-              updates[`${path}/qty`] = newQty;
-            }
-          }
-        });
-
-        if (Object.keys(updates).length > 0) {
-          await updatePurchaseStatus(updates);
-        }
-
-        $('#editModal').style.display = 'none';
-        showToast('수정 완료!');
-        successAudio.play();
-        state.snapshot = await getStatusOnce();
-        renderBody();
-        refreshProgress();
-      } catch (err) {
-        console.error("수정사항 저장 실패:", err);
-        showToast('수정 저장 실패: 잠시 후 재시도해주세요.');
-      } finally{
-        hideLoader();
-      }
-    }
+    $('#editModal').style.display = 'none';
+    showToast('수정 완료!');
+    successAudio.play();
+    state.snapshot = await getStatusOnce();
+    renderBody();
+    refreshProgress();
+  } catch (err) {
+    console.error("수정사항 저장 실패:", err);
+    showToast('수정 저장 실패: 잠시 후 재시도해주세요.');
+  } finally {
+    hideLoader();
+  }
+}
     /* ▷▷▷ 상세 수정(모달) 종료 ▷▷▷ */
 
     /* ▷▷▷ 엑셀 내보내기 시작 ▷▷▷ */
