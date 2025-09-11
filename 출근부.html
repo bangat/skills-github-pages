@@ -251,7 +251,37 @@
 }
 /* 신규CSS추가 종료 — 공지 날짜 YY 라벨 */
 
+    /* ▷▷ 공지 저장 오버레이 시작 ▷▷ */
+  #noticeSaving {
+    position: fixed; inset: 0; display: none;
+    align-items: center; justify-content: center; flex-direction: column;
+    background: rgba(15,23,42,.55); z-index: 999999;
+    color:#fff; font-weight:900; letter-spacing:.2px;
+  }
+  #noticeSaving .clock {
+    width: 54px; height: 54px; border-radius: 50%;
+    border: 5px solid rgba(255,255,255,.35);
+    border-top-color: #fff;
+    animation: ns-rot 1s linear infinite;
+    margin-bottom: 12px;
+  }
+  @keyframes ns-rot { from {transform: rotate(0)} to {transform: rotate(360deg)} }
+
+  /* ▷▷ 토스트 비주얼 업그레이드 시작 ▷▷ */
+  #toast {
+    position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(14px);
+    background: linear-gradient(180deg,#10b981,#059669); color: #fff;
+    padding: 12px 16px; border-radius: 14px; box-shadow: 0 18px 42px rgba(5,150,105,.35);
+    display: none; z-index: 250; font-weight: 900; font-size: 14px;
+  }
+  #toast.show { display:block; transform: translateX(-50%) translateY(0); transition: transform .18s ease, opacity .18s ease; }
+  #toast.error { background: linear-gradient(180deg,#ef4444,#b91c1c); box-shadow: 0 18px 42px rgba(185,28,28,.35); }
+  #toast.info  { background: linear-gradient(180deg,#60a5fa,#2563eb); box-shadow: 0 18px 42px rgba(37,99,235,.35); }
+  /* ▷▷ 토스트 비주얼 업그레이드 종료 ▷▷ */
+
+  /* ▷▷ 공지 저장 오버레이 종료 ▷▷ */
   </style>
+
 
   <!-- ExcelJS / FileSaver -->
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
@@ -776,29 +806,72 @@
     function closeNoticeAdmin(){ const m=$('#noticeAdminModal'); if(m) m.style.display='none'; }
     $('#naCancel').onclick = closeNoticeAdmin;
 
-    $('#naSave').onclick = async () => {
-      try{
-        const id     = ($('#naId').value || '').trim();
-        const ward   = ($('#naWard').value || '전체').trim();
-        const title  = ($('#naTitle').value || '').trim();
-        const body   = ($('#naBody').value || '').trim();
-        const from   = $('#naFrom').value;
-        const to     = $('#naTo').value;
-        const active = $('#naActiveToggle').checked;
-        if(!title || !body || !from || !to){ alert('대상/제목/내용/유효기간을 모두 입력하세요.'); return; }
+    // ▷▷ 공지 저장 핸들러(오버레이+토스트+자동닫기) 시작 ▷▷
+$('#naSave').onclick = async () => {
+  const overlay = document.getElementById('noticeSaving');
+  const toast   = document.getElementById('toast');
 
-        const { rtdb, ref, push, update } = (window.__noticeRTDB || {});
-        if(!rtdb){ alert('데이터베이스 연결 실패'); return; }
+  const showOverlay = ()=> { if (overlay) overlay.style.display = 'flex'; };
+  const hideOverlay = ()=> { if (overlay) overlay.style.display = 'none'; };
 
-        const now = Date.now();
-        const post = { ward, title, body, from, to, active, ts: now };
-        if (id) await update(ref(rtdb, `notices/${id}`), post);
-        else { const newRef = await push(ref(rtdb,'notices'), post); await update(newRef, { id:newRef.key }); }
+  const toastMsg = (msg, type='success', ms=2200)=>{
+    if (!toast) return;
+    toast.className = ''; // reset
+    toast.textContent = msg;
+    if (type==='error') toast.classList.add('error');
+    else if (type==='info') toast.classList.add('info');
+    toast.classList.add('show');
+    setTimeout(()=>{ toast.classList.remove('show'); }, ms);
+  };
 
-        alert('저장 완료');
-        if (!$('#paneHistory').classList.contains('hidden')) await loadNoticeHistory();
-      }catch(err){ console.error('notice-save error:', err); alert('공지 저장 중 오류가 발생했습니다.'); }
-    };
+  try{
+    const id     = ($('#naId').value || '').trim();
+    const ward   = ($('#naWard').value || '전체').trim();
+    const title  = ($('#naTitle').value || '').trim();
+    const body   = ($('#naBody').value || '').trim();
+    const from   = $('#naFrom').value;
+    const to     = $('#naTo').value;
+    const active = $('#naActiveToggle').checked;
+
+    if(!title || !body || !from || !to){
+      toastMsg('빠진 항목이 있어요', 'error', 1800);
+      return;
+    }
+
+    const { rtdb, ref, push, update } = (window.__noticeRTDB || {});
+    if(!rtdb){
+      toastMsg('DB 연결 실패', 'error', 2000);
+      return;
+    }
+
+    showOverlay(); // ← 등록중 오버레이 ON
+
+    const now = Date.now();
+    const post = { ward, title, body, from, to, active, ts: now };
+
+    if (id) {
+      await update(ref(rtdb, `notices/${id}`), post);
+    } else {
+      const newRef = await push(ref(rtdb,'notices'), post);
+      await update(newRef, { id:newRef.key });
+    }
+
+    hideOverlay();                       // ← 성공 후 오버레이 OFF
+    toastMsg('공지 저장 완료 ✅', 'success', 1800); // ← 성공 토스트
+    closeNoticeAdmin();                  // ← 모달 자동 닫기
+
+    // 히스토리 탭이 열려있다면 갱신
+    if (!$('#paneHistory').classList.contains('hidden')) {
+      await loadNoticeHistory();
+    }
+  }catch(err){
+    console.error('notice-save error:', err);
+    hideOverlay();
+    toastMsg('저장 실패. 잠시 후 다시 시도', 'error', 2400);
+  }
+};
+// ▷▷ 공지 저장 핸들러(오버레이+토스트+자동닫기) 종료 ▷▷
+
 
     // 내역 로딩 + 만료 자동삭제
     async function loadNoticeHistory(){
@@ -901,5 +974,12 @@
   updateShortLabel(document.getElementById('naTo'));
     }
   </script>
+<!-- ▷▷ 공지 저장 오버레이 DOM 시작 ▷▷ -->
+<div id="noticeSaving" aria-live="polite" aria-label="공지사항 등록중...">
+  <div class="clock" aria-hidden="true"></div>
+  <div>공지사항 등록중…</div>
+</div>
+<!-- ▷▷ 공지 저장 오버레이 DOM 종료 ▷▷ -->
+
 </body>
 </html>
