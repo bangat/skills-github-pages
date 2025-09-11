@@ -21,13 +21,14 @@
   .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-1)}
 
   /* 상단 탭: 세 개 동일 폭 + 줄바꿈 방지 */
-  .topTabs{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:8px;
-    margin:0 0 10px 0;
-    padding:0 2px;
-  }
+.topTabs{
+  display:grid;
+  grid-template-columns:repeat(4,1fr); /* ← 3 → 4로 변경 */
+  gap:8px;
+  margin:0 0 10px 0;
+  padding:0 2px;
+}
+
   .topTabs a{
     display:inline-flex;
     align-items:center;
@@ -131,6 +132,86 @@
     z-index:250;
     font-weight:700;
   }
+
+/* 공지내역 모달 개선 */
+.nh-modal{
+  width:min(860px,96vw);
+  border-radius:18px;
+}
+.nh-bd{
+  padding:0;
+}
+.nh-ft{
+  position:sticky;
+  bottom:0;
+  background:#fff;
+}
+.nh-table{
+  max-height:min(60vh, 520px);   /* 내용 길면 본문만 스크롤 */
+  overflow:auto;
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+}
+.nh-table table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  table-layout:fixed;            /* 말줄임 적용 */
+  font-size:13.5px;
+}
+.nh-table thead th{
+  position:sticky; top:0;
+  background:#f8fafc;
+  z-index:1;
+  height:36px;
+  padding:8px 10px;
+  text-align:left;
+  color:#334155;
+  border-bottom:1px solid var(--border);
+}
+.nh-table tbody td{
+  height:40px;
+  padding:8px 10px;
+  border-bottom:1px solid var(--border);
+  vertical-align:middle;
+}
+.nh-table tbody tr:hover{
+  background:#f7fbff;
+}
+.nh-table td, .nh-table th{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.nh-badge{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:#fff;
+  font-weight:700;
+  font-size:12px;
+}
+.nh-badge.on{
+  border-color:#dbeafe;
+  background:#eff6ff;
+  color:#1d4ed8;
+}
+.nh-period{
+  color:#334155;
+  font-variant-numeric:tabular-nums;
+}
+
+/* 모바일 최적화 */
+@media (max-width:520px){
+  .nh-table thead th:nth-child(3){ display:none; }  /* 상태 */
+  .nh-table tbody td:nth-child(3){ display:none; }
+  .nh-table colgroup col:nth-child(1){ width:128px !important; } /* 작성시각 */
+  .nh-table colgroup col:nth-child(2){ width:64px  !important; } /* 대상 */
+  .nh-table colgroup col:nth-child(5){ width:180px !important; } /* 기간 */
+}
+
+
 </style>
 
   <!-- ▷▷▷ 전역 스타일 종료 ▷▷▷ -->
@@ -241,8 +322,9 @@
 <script type="module">
   import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getDatabase, ref, push, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
+  import {
+    getDatabase, ref, push, update, get, child, query, orderByChild, limitToLast, remove
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
@@ -255,15 +337,21 @@
     measurementId: "G-T02ZFK18L3"
   };
 
- // 이미 초기화된 앱 재사용
   const app  = getApps().length ? getApp() : initializeApp(firebaseConfig);
   const auth = getAuth(app);
   if (!auth.currentUser) {
-    signInAnonymously(auth).catch(e => console.error("notice auth fail:", e));
+    signInAnonymously(auth).catch(e => console.error('notice auth fail:', e));
   }
 
   const rtdb = getDatabase(app);
-  window.__noticeRTDB = { rtdb, ref, push, update };
+
+  // ✅ 여기 꼭 이렇게 내보내기
+  window.__noticeRTDB = {
+    rtdb, ref, push, update,
+    get, child,               // child는 안 써도 무방
+    query, orderByChild, limitToLast,
+    remove
+  };
 </script>
 
 
@@ -276,7 +364,9 @@
   <a href="#" aria-current="page"><i class="icon" data-feather="calendar"></i>출근부</a>
   <a href="./구매현황.html"><i class="icon" data-feather="bar-chart-2"></i>구매관리</a>
   <a href="#" id="openNoticeAdmin"><i class="icon" data-feather="megaphone"></i>공지관리</a>
+  <a href="#" id="openNoticeHistory"><i class="icon" data-feather="list"></i>공지내역</a>
 </nav>
+
 
 
 
@@ -492,6 +582,7 @@
     })();
   </script>
 <!-- ▷▷▷ 공지관리 모달 UI 시작 ▷▷▷ -->
+<input id="naId" type="hidden" />
 <div id="noticeAdminModal" class="modal-backdrop" style="display:none; z-index:99999;">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="noticeAdminTitle" style="max-width:560px;">
     <div class="modal-hd" id="noticeAdminTitle">공지관리</div>
@@ -536,72 +627,216 @@
 </div>
 <!-- ▷▷▷ 공지관리 모달 UI 종료 ▷▷▷ -->
 
+<!-- ▷▷▷ 공지내역 모달 UI 시작 ▷▷▷ -->
+<div id="noticeHistoryModal" class="modal-backdrop" style="display:none; z-index:99998;">
+  <div class="modal nh-modal" role="dialog" aria-modal="true" aria-labelledby="nhTitle">
+    <div class="modal-hd" id="nhTitle">공지내역</div>
+
+    <div class="modal-bd nh-bd">
+      <div class="nh-table">
+        <table>
+          <colgroup>
+            <col style="width:140px" />
+            <col style="width:80px" />
+            <col style="width:88px" />
+            <col /> <!-- 제목: 가변 -->
+            <col style="width:220px" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>작성시각</th>
+              <th>대상</th>
+              <th>상태</th>
+              <th>제목</th>
+              <th>기간</th>
+            </tr>
+          </thead>
+          <tbody id="nhBody">
+            <!-- JS로 행이 들어갑니다 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-ft nh-ft">
+      <button type="button" class="btn" id="nhClose">닫기</button>
+    </div>
+  </div>
+</div>
+<!-- ▷▷▷ 공지내역 모달 UI 종료 ▷▷▷ -->
+
+
 <!-- ▷▷▷ 공지관리 로직 시작 ▷▷▷ -->
 <script>
-  // 버튼 연결
+  const $ = (s)=>document.querySelector(s);
+
+  // 탭/버튼 위임
   document.addEventListener('click', (e) => {
-    const id = (e.target && e.target.id) || '';
-    if (id === 'openNoticeAdmin') {
-      e.preventDefault();
-      openNoticeAdmin();
-    }
+    const id = (e.target && e.target.id) || (e.target.closest?.('[id]')?.id) || '';
+    if (id === 'openNoticeAdmin')   { e.preventDefault(); openNoticeAdmin(); }
+    if (id === 'openNoticeHistory') { e.preventDefault(); openNoticeHistory(); }
   });
 
-  // 모달 열기/닫기
-  function openNoticeAdmin() {
-    const m = document.getElementById('noticeAdminModal');
-    if (!m) return;
+  // ── 공지 작성/수정 모달 ──────────────────────────────────────────
+  function openNoticeAdmin(editData){
+    const m = $('#noticeAdminModal');
+    if(!m) return;
+
     const today = new Date().toISOString().slice(0,10);
-    document.getElementById('naFrom').value = today;
-    document.getElementById('naTo').value = today;
+    $('#naId').value      = editData?.id || '';
+    $('#naWard').value    = editData?.ward || '전체';
+    $('#naTitle').value   = editData?.title || '';
+    $('#naBody').value    = editData?.body || '';
+    $('#naFrom').value    = editData?.from || today;
+    $('#naTo').value      = editData?.to   || today;
+    $('#naActive').value  = (editData?.active ?? true) ? '1' : '0';
+
     m.style.display = 'block';
   }
-  function closeNoticeAdmin() {
-    const m = document.getElementById('noticeAdminModal');
-    if (m) m.style.display = 'none';
-  }
-  document.getElementById('naCancel').onclick = closeNoticeAdmin;
+  function closeNoticeAdmin(){ const m=$('#noticeAdminModal'); if(m) m.style.display='none'; }
+  $('#naCancel').onclick = closeNoticeAdmin;
 
-  // 저장
-  document.getElementById('naSave').onclick = async () => {
-    try {
-      const ward   = (document.getElementById('naWard').value || '전체').trim();
-      const title  = (document.getElementById('naTitle').value || '').trim();
-      const body   = (document.getElementById('naBody').value || '').trim();
-      const from   = document.getElementById('naFrom').value;
-      const to     = document.getElementById('naTo').value;
-      const active = document.getElementById('naActive').value === '1';
+  // 저장(신규/수정 통합)
+  $('#naSave').onclick = async () => {
+    try{
+      const id     = ($('#naId').value || '').trim();
+      const ward   = ($('#naWard').value || '전체').trim();
+      const title  = ($('#naTitle').value || '').trim();
+      const body   = ($('#naBody').value || '').trim();
+      const from   = $('#naFrom').value;
+      const to     = $('#naTo').value;
+      const active = $('#naActive').value === '1';
 
-      if (!title || !body || !from || !to) {
+      if(!title || !body || !from || !to){
         alert('대상/제목/내용/유효기간을 모두 입력하세요.');
         return;
       }
 
-      const { rtdb, ref, push, update } = (window.__noticeRTDB || {});
-      if (!rtdb) { alert('데이터베이스 연결 실패'); return; }
+      const ctx = (window.__noticeRTDB || {});
+      const { rtdb, ref, push, update } = ctx;
+      if(!rtdb){ alert('데이터베이스 연결 실패'); return; }
 
       const baseRef = ref(rtdb, 'notices');
       const now = Date.now();
-      const post = {
-        ward,                   // '전체' or '93' 등
-        title,
-        body,
-        from,                   // 'YYYY-MM-DD'
-        to,                     // 'YYYY-MM-DD'
-        active,                 // true/false
-        ts: now
-      };
-      const newRef = await push(baseRef, post);
-      // 키를 id 필드로 넣어두면 클라이언트에서 처리 쉬움
-      await update(newRef, { id: newRef.key });
+      const post = { ward, title, body, from, to, active, ts: now };
 
-      alert('공지 저장 완료');
+      if (id) {
+        await update(ref(rtdb, `notices/${id}`), post);
+      } else {
+        const newRef = await push(baseRef, post);
+        await update(newRef, { id: newRef.key });
+      }
+
+      alert('저장 완료');
       closeNoticeAdmin();
-    } catch (err) {
-      console.error('notice-save error:', err?.code, err?.message, err);
+
+      // 내역 모달 열려 있으면 새로고침
+      if ($('#noticeHistoryModal')?.style.display === 'block') await loadNoticeHistory();
+    }catch(err){
+      console.error('notice-save error:', err);
       alert('공지 저장 중 오류가 발생했습니다.');
     }
   };
+
+  // ── 공지내역 모달 ───────────────────────────────────────────────
+  function openNoticeHistory(){
+    const m = $('#noticeHistoryModal');
+    if(!m) return;
+    m.style.display = 'block';
+    loadNoticeHistory().catch(console.error);
+  }
+  function closeNoticeHistory(){ const m=$('#noticeHistoryModal'); if(m) m.style.display='none'; }
+  $('#nhClose').onclick = closeNoticeHistory;
+
+  async function loadNoticeHistory(){
+    const ctx = (window.__noticeRTDB || {});
+    const { rtdb, ref, query, orderByChild, limitToLast, get } = ctx;
+    if (!rtdb) { alert('데이터베이스 연결 실패'); return; }
+
+    const q = query(ref(rtdb, 'notices'), orderByChild('ts'), limitToLast(300));
+    const snap = await get(q);
+
+    const list = [];
+    if (snap.exists()) {
+      const obj = snap.val();
+      for (const k in obj) list.push(obj[k]);
+      list.sort((a,b)=> b.ts - a.ts);
+    }
+    renderNoticeHistory(list);
+  }
+
+  function renderNoticeHistory(items){
+    const tb = $('#nhBody');
+    tb.innerHTML = '';
+
+    const fmt = (n)=> {
+      const d = new Date(n||0);
+      if (!n || isNaN(d)) return '-';
+      const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
+      const hh=String(d.getHours()).padStart(2,'0'), mm=String(d.getMinutes()).padStart(2,'0');
+      return `${y}-${m}-${dd} ${hh}:${mm}`;
+    };
+
+    items.forEach(it=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${fmt(it.ts)}</td>
+        <td>${escapeHtml(it.ward || '전체')}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px;justify-content:flex-start">
+            <span class="nh-badge ${it.active?'on':''}">${it.active?'활성':'비활성'}</span>
+            <div class="nh-title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:320px">${escapeHtml(it.title||'')}</div>
+          </div>
+          <div class="nh-period">${escapeHtml(it.from||'')} ~ ${escapeHtml(it.to||'')}</div>
+        </td>
+        <td style="min-width:220px">
+          <button class="btn" data-act="edit"   data-id="${it.id||''}">수정</button>
+          <button class="btn" data-act="toggle" data-id="${it.id||''}" data-active="${it.active?1:0}">${it.active?'비활성화':'활성화'}</button>
+          <button class="btn" data-act="delete" data-id="${it.id||''}">삭제</button>
+        </td>
+      `;
+      tb.appendChild(tr);
+    });
+
+    // 행 내 버튼 액션
+    tb.onclick = async (e)=>{
+      const btn = e.target.closest('button'); if(!btn) return;
+      const act = btn.dataset.act; const id = btn.dataset.id;
+      if (!id) return;
+
+      const ctx = window.__noticeRTDB || {};
+      const { rtdb, ref, update, remove, get } = ctx;
+
+      if (act === 'edit'){
+        // 최신 단건 읽어서 수정 모달 오픈
+        const snap = await get(ref(rtdb, `notices/${id}`));
+        const item = snap.exists() ? snap.val() : null;
+        if (item) openNoticeAdmin(item);
+        return;
+      }
+      if (act === 'toggle'){
+        const cur = btn.dataset.active === '1';
+        await update(ref(rtdb, `notices/${id}`), { active: !cur });
+        await loadNoticeHistory();
+        return;
+      }
+      if (act === 'delete'){
+        if (!confirm('정말 삭제할까요? 되돌릴 수 없습니다.')) return;
+        await remove(ref(rtdb, `notices/${id}`));
+        await loadNoticeHistory();
+        return;
+      }
+    };
+  }
+
+  function escapeHtml(s){
+    return String(s||'')
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'","&#39;");
+  }
 </script>
 <!-- ▷▷▷ 공지관리 로직 종료 ▷▷▷ -->
 
