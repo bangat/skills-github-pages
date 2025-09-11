@@ -136,11 +136,9 @@
   }
   </style>
 
-  <!-- ExcelJS / FileSaver -->
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 
-  <!-- 출근부: Firebase Auth + Cloud Functions 연동 -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -203,7 +201,6 @@
     window.applyMonthDataToTable = applyMonthDataToTable;
   </script>
 
-  <!-- 공지: RTDB 클라이언트 -->
   <script type="module">
     import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -271,7 +268,6 @@
     </div>
   </div>
 
-  <!-- 편집 모달 -->
   <div id="editBackdrop" class="modal-backdrop">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
       <div class="modal-hd" id="editTitle">근무 상태 편집</div>
@@ -306,7 +302,6 @@
     </div>
   </div>
 
-  <!-- 메일 모달 -->
   <div id="emailBackdrop" class="modal-backdrop">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="emailTitle" style="width:min(420px,92vw)">
       <div class="modal-hd" id="emailTitle">메일로 전송</div>
@@ -317,7 +312,6 @@
     </div>
   </div>
 
-  <!-- 스피너/토스트 -->
   <div id="bootSpinner" class="modal-backdrop" style="z-index:190; background:rgba(255,255,255,0.7); display:none">
     <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
       <div class="spinner" style="width:44px;height:44px;border:5px solid #ccc;border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite"></div>
@@ -337,7 +331,6 @@
     (function(){ if(window.feather && typeof feather.replace==='function'){ feather.replace({width:'1em',height:'1em'}); }})();
   </script>
 
-  <!-- ▷ 공지관리 모달 (작성/내역 탭 내장) -->
   <input id="naId" type="hidden" />
   <div id="noticeAdminModal" class="modal-backdrop" style="display:none; z-index:99999;">
     <div class="modal nh-modal" role="dialog" aria-modal="true" aria-labelledby="noticeAdminTitle">
@@ -348,7 +341,6 @@
           <button id="tabHistory" data-tab="history">내역</button>
         </div>
 
-        <!-- 작성 탭 -->
         <section id="paneCompose">
           <div class="row-inline" style="gap:10px;">
             <label style="min-width:72px; font-weight:800;">대상</label>
@@ -378,15 +370,11 @@
           </div>
         </section>
 
-        <!-- 내역 탭 -->
         <section id="paneHistory" class="hidden">
           <div class="nh-table">
             <table>
               <colgroup>
-                <col />               <!-- 제목 -->
-                <col style="width:90px" />  <!-- 대상 -->
-                <col style="width:160px" /> <!-- 상태 -->
-              </colgroup>
+                <col />               <col style="width:90px" />  <col style="width:160px" /> </colgroup>
               <thead>
                 <tr><th>제목</th><th>대상</th><th>상태</th></tr>
               </thead>
@@ -402,7 +390,6 @@
     </div>
   </div>
 
-  <!-- 출근부 로직 (원본 유지) -->
   <script>
     const pad2 = n => String(n).padStart(2,'0');
     const DEFAULT_IN  = '06 : 00';
@@ -551,7 +538,6 @@
     (async ()=>{ showBootSpinner(); try{ const cached0 = getLastNameCache(); if (cached0) nameInput.value = cached0; buildTable(monthInput.value, nameInput.value.trim()); const [y,mm] = (monthInput.value || '').split('-').map(Number); if (y) { await loadHolidays(y); qsa('#tbody tr').forEach((tr, idx)=>{ const day = idx+1; const [dateCell, , , , , noteCell] = tr.children; const hlabel = dynamicHolidayLabel(y,mm,day); if(hlabel){ noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel); dateCell.classList.add('sun'); } }); } const nm0 = (nameInput.value||'').trim(); if (y && mm && nm0){ const data0 = await window.loadMonthFromFirebase(y, mm, nm0); window.applyMonthDataToTable(y, mm, data0); } } finally { hideBootSpinner(); } })();
   </script>
 
-  <!-- 공지 관리 로직 -->
   <script>
     const $ = (s)=>document.querySelector(s);
 
@@ -659,15 +645,18 @@
         // 대상
         const tdWard = document.createElement('td');
         tdWard.textContent = it.ward || '전체';
+        tdWard.style.textAlign = 'center';
 
         // 상태(토글 + 삭제)
         const tdState = document.createElement('td');
         tdState.innerHTML = `
-          <label class="switch">
-            <input type="checkbox" ${it.active?'checked':''} data-act="toggle" data-id="${it.id||''}">
-            <span class="slider"></span>
-          </label>
-          <button class="btn" data-act="delete" data-id="${it.id||''}" style="margin-left:8px;height:32px">삭제</button>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label class="switch">
+              <input type="checkbox" ${it.active?'checked':''} data-act="toggle" data-id="${it.id||''}">
+              <span class="slider"></span>
+            </label>
+            <button class="btn" data-act="delete" data-id="${it.id||''}" style="height:32px">삭제</button>
+          </div>
         `;
 
         tr.append(tdTitle, tdWard, tdState);
