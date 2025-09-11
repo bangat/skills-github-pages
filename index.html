@@ -2024,30 +2024,26 @@ function wireMiniHeader(){
 
   const save = el("#heSave");
   if (save){
-   save.onclick = () => {
+   save.onclick = ()=>{
   const selectedWard = el("#wardSelect").value || "";
   state.ward = selectedWard.toString().trim();
   localStorage.setItem(LS.ward, state.ward);
 
-  // ✅ 선택 직후, 해당 병동의 오늘-숨김 / 세션-중복 방지 키 초기화
+  // 병동 선택 직후에는 세션키, 오늘키 삭제 → 다시 뜨게 보장
   try {
-    const today = new Date().toISOString().slice(0, 10);
-    const seenKey = (w) => `seenNotices/${today}/${w || 'ALL'}`;
-    const dontKey = (w) => `dontShowToday/${today}/${w || 'ALL'}`;
-    sessionStorage.removeItem(seenKey(state.ward));
-    localStorage.removeItem(dontKey(state.ward));
-  } catch (_) {}
+    const today = new Date().toISOString().slice(0,10);
+    sessionStorage.removeItem(`seenNotices/${today}/${state.ward}`);
+    localStorage.removeItem(`dontShowToday/${today}/${state.ward}`);
+  } catch(_) {}
 
-  buildTable();
-  fitCardToFooter();
   closeModal("#headerEditModal");
   syncMiniHeader();
 
-  // 저장 직후 공지 재검사
   if (typeof window.maybeShowNotices === "function") {
-    setTimeout(maybeShowNotices, 50);
+    setTimeout(maybeShowNotices, 100);
   }
 };
+
 
   }
 
@@ -2391,7 +2387,7 @@ document.addEventListener("click", (e) => {
   function matchesWard(targetWard, userWard){
     const tw = String(targetWard ?? '').trim();
     const uw = String(userWard ?? '').trim();
-    return tw === '전체' || tw === uw;
+    return tw === '전체' || (uw && tw === uw);
   }
 
   // RTDB에서 공지 읽기(신규 → 레거시 fallback)
