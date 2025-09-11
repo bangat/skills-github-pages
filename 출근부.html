@@ -70,14 +70,27 @@
   .sat{color:#2563eb}
   .app-hide{display:none}
   .card-foot{display:none}
-.modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:12px 0;z-index:100;background:rgba(15,23,42,.5)}
+/* 가운데 정렬 정확도 개선 + 안전영역 대응 + 내부 스크롤 허용 */
+.modal-backdrop{
+  position:fixed; inset:0; display:none;
+  align-items:center; justify-content:center;
+  /* 좌우 패딩 추가 (노치/제스처 영역 포함) */
+  padding:12px;
+  padding-left:calc(12px + env(safe-area-inset-left, 0px));
+  padding-right:calc(12px + env(safe-area-inset-right, 0px));
+  z-index:100; background:rgba(15,23,42,.5);
+  overflow:auto; /* 컨텐츠 길 때도 정중앙 유지 */
+}
+/* 혹시 모를 좌우 치우침 방지용(여분) */
+.modal{ margin:0 auto; }
+
   .modal{width:min(560px, 94vw);background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:0 10px 30px rgba(15,23,42,.12);overflow:hidden}
   .modal-hd{padding:14px 18px;border-bottom:1px solid var(--border);font-weight:800;font-size:18px}
   .modal-bd{padding:16px 18px;display:grid;gap:12px}
   .modal-ft{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
 .row-inline {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 88px minmax(0, 1fr); /* ← 라벨 폭 통일, 입력은 균등 확장 */
   gap: 10px;
   align-items: center;
 }
@@ -144,7 +157,11 @@
   }
   .subTabs button.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
 
-  .nh-modal{ width:min(860px,96vw); }
+  .nh-modal{
+  width:92vw;   /* 96vw → 92vw 정도로 줄임 */
+  max-width:860px;
+  margin:0 auto;  /* 자동 가운데 정렬 */
+}
   .nh-bd{ padding:0; }
   .nh-table{ max-height:min(62vh,540px); overflow:auto; border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
   .nh-table table{ width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed; font-size:13.5px; }
@@ -177,14 +194,13 @@
     .nh-table thead th:nth-child(3){ width:120px }
   }
 
-/* === 잘림 방지 & 균등 정렬 보정 === */
+/* 잘림 방지 + 내부 래퍼 대응 */
 .row-inline > :nth-child(2){ min-width:0; }      /* 2번째 컬럼(입력 영역) 축소 허용 */
-.row-inline .row{ min-width:0; flex:1; }         /* '유효기간'처럼 내부에 .row 래퍼가 있을 때 */
-.row-inline .row > *{ min-width:0; }             /* 내부 input/select/textarea도 축소 허용 */
+.row-inline .row{ min-width:0; flex:1; }
+.row-inline .row > *{ min-width:0; }
 .row-inline input,
 .row-inline select,
-.row-inline textarea{ width:100%; }              /* 폭은 100% 유지 */
-
+.row-inline textarea{ width:100%; }
   </style>
 
   <!-- ExcelJS / FileSaver -->
@@ -284,7 +300,8 @@
     <nav class="topTabs" aria-label="상단 탭">
       <a href="#" aria-current="page"><i class="icon" data-feather="calendar"></i>출근부</a>
       <a href="./구매현황.html"><i class="icon" data-feather="bar-chart-2"></i>구매관리</a>
-      <a href="#" id="openNoticeAdmin"><i class="icon" data-feather="megaphone"></i>공지관리</a>
+     <a href="#" id="openNoticeAdmin"><i class="icon" data-feather="bell"></i>공지관리</a>
+
     </nav>
 
     <div class="card">
