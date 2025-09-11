@@ -2119,8 +2119,12 @@ window.addEventListener("DOMContentLoaded",()=>{
     btn.addEventListener('click', ()=> goSection(btn.dataset.section));
   });
 
+
+
   const urlTab = new URL(location.href).searchParams.get("tab");
   goSection(urlTab === "stats" ? "stats" : "input");
+
+
 });
 </script>
 <script>
@@ -2311,6 +2315,128 @@ document.addEventListener("click", (e) => {
   <div>잠시만 기다려주세요…</div>
 </div>
 </script>
+
+<!-- ▷▷▷ 인덱스 공지 모달 UI 시작 ▷▷▷ -->
+<div id="indexNoticeModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="inTitle" style="display:none">
+  <div class="modalCard" role="document">
+    <div class="modalHead" id="inTitle">공지사항</div>
+    <div class="modalBody">
+      <div id="inList">불러오는 중…</div>
+    </div>
+    <div class="modalActions">
+      <button type="button" class="btn cancel" id="inClose">닫기</button>
+    </div>
+  </div>
+</div>
+<!-- ▷▷▷ 인덱스 공지 모달 UI 종료 ▷▷▷ -->
+
+<!-- ▷▷▷ 인덱스 공지 로딩/표시 로직 시작 ▷▷▷ -->
+<script>
+(function(){
+  /* ▷▷▷ 본문 생략 없이 그대로: 네가 보낸 스크립트 전체 시작 ▷▷▷ */
+  function yyyymmdd(d){ return d.toISOString().slice(0,10); }
+  function inRange(today, s, e){
+    if (!s && !e) return true;
+    const t = today;
+    if (s && t < s) return false;
+    if (e && t > e) return false;
+    return true;
+  }
+  function matchesWard(targetWard, userWard){
+    return targetWard === '전체' || String(targetWard||'').trim() === String(userWard||'').trim();
+  }
+  function readOnceNotices(cb){
+  const base = "https://hallymlinen-default-rtdb.firebaseio.com";
+  // 1) 신규 구조
+  fetch(base + "/notices.json", { cache:"no-store" })
+    .then(r=>r.json())
+    .then(list=>{
+      if (list && Object.keys(list).length) return cb(list);
+      // 2) 없다면 레거시 단일 공지 fallback
+      return fetch(base + "/notice.json", { cache:"no-store" })
+        .then(r=>r.json())
+        .then(n=>{
+          if (!n || !n.text) return cb({});
+          const today = new Date().toISOString().slice(0,10);
+          // 레거시를 전체공지 1건처럼 변환
+          cb({
+            __legacy__: {
+              id: "__legacy__",
+              ward: "전체",
+              title: "공지",
+              body: n.text,
+              from: today,
+              to: today,
+              active: true,
+              ts: n.updatedAt || Date.now()
+            }
+          });
+        });
+    })
+    .catch(_=> cb({}));
+}
+
+  function renderNoticeList(list){
+    const wrap = document.getElementById('inList');
+    if (!wrap) return;
+    if (!list.length){
+      wrap.innerHTML = `<div style="color:#64748b;">표시할 공지가 없습니다.</div>`;
+      return;
+    }
+    wrap.innerHTML = list.map(n => `
+      <div style="border:1px solid var(--border); border-radius:12px; padding:10px; margin-bottom:10px; background:#fff;">
+        <div style="font-weight:900; color:#0b3fb8; margin-bottom:4px;">${n.title||''}</div>
+        <div style="white-space:pre-wrap; line-height:1.5; color:#334155;">${(n.body||'').replace(/</g,'&lt;')}</div>
+        <div style="margin-top:6px; font-size:12px; color:#64748b;">
+          대상: ${n.ward==='전체'?'전체':(n.ward+'병동')} · 유효기간: ${(n.from||'')}${n.to?(' ~ '+n.to):''}
+        </div>
+      </div>
+    `).join('');
+  }
+  function showIndexNoticeModal(notices){
+    renderNoticeList(notices);
+    if (notices.length){
+      openModal("#indexNoticeModal", "#inClose");
+    }
+  }
+  function seenKey(ward){
+    const today = yyyymmdd(new Date());
+    return `seenNotices/${today}/${ward||'ALL'}`;
+  }
+  async function maybeShowNotices(){
+    try{
+      const curWard = (window.state && window.state.ward) ? String(window.state.ward).trim() : '';
+      const skey = seenKey(curWard || 'ALL');
+      if (localStorage.getItem(skey)==='1') return;
+      const today = yyyymmdd(new Date());
+      readOnceNotices((obj)=>{
+        const arr = Object.values(obj||{});
+        const actives = arr.filter(n => n && n.active === true);
+        const filtered = actives.filter(n => matchesWard(n.ward, curWard||'') && inRange(today, n.from||'', n.to||''));
+        filtered.sort((a,b)=>(b.ts||0)-(a.ts||0));
+        showIndexNoticeModal(filtered);
+        if (filtered.length){
+          localStorage.setItem(skey,'1');
+        }
+      });
+    }catch(_){}
+  }
+  const closeBtn = document.getElementById('inClose');
+  if (closeBtn) closeBtn.onclick = ()=> closeModal('#indexNoticeModal');
+  document.addEventListener('DOMContentLoaded', ()=> {
+    setTimeout(maybeShowNotices, 300);
+  });
+  const wardSelect = document.querySelector('#wardSelect');
+  if (wardSelect){
+    wardSelect.addEventListener('change', ()=>{
+      setTimeout(maybeShowNotices, 200);
+    });
+  }
+  /* ▷▷▷ 본문 생략 없이 그대로: 네가 보낸 스크립트 전체 종료 ▷▷▷ */
+})();
+</script>
+<!-- ▷▷▷ 인덱스 공지 로딩/표시 로직 종료 ▷▷▷ -->
+
 
 </body>
 </html>
