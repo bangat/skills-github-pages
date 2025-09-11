@@ -2024,26 +2024,31 @@ function wireMiniHeader(){
 
   const save = el("#heSave");
   if (save){
-    save.onclick = ()=>{
-      // 🔽🔽🔽 이 부분이 핵심 수정사항입니다 🔽🔽🔽
-      // 1. 선택된 병동 값을 실제로 읽어옵니다.
-      const selectedWard = el("#wardSelect").value || "";
-      
-      // 2. 앱의 상태(state)와 브라우저 저장소(localStorage)에 반영합니다.
-      state.ward = selectedWard.toString().trim();
-      localStorage.setItem(LS.ward, state.ward);
+   save.onclick = () => {
+  const selectedWard = el("#wardSelect").value || "";
+  state.ward = selectedWard.toString().trim();
+  localStorage.setItem(LS.ward, state.ward);
 
-      // 3. 기존 로직 실행
-      buildTable();       // 테이블 다시 그리기
-      fitCardToFooter();  // 푸터 간격 맞추기
-      closeModal("#headerEditModal");
-      syncMiniHeader();
-      
-      // 4. 병동 저장 직후 공지 재검사
-      if (typeof window.maybeShowNotices === "function") {
-          setTimeout(maybeShowNotices, 50); // 약간의 딜레이 후 실행
-      }
-    };
+  // ✅ 선택 직후, 해당 병동의 오늘-숨김 / 세션-중복 방지 키 초기화
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const seenKey = (w) => `seenNotices/${today}/${w || 'ALL'}`;
+    const dontKey = (w) => `dontShowToday/${today}/${w || 'ALL'}`;
+    sessionStorage.removeItem(seenKey(state.ward));
+    localStorage.removeItem(dontKey(state.ward));
+  } catch (_) {}
+
+  buildTable();
+  fitCardToFooter();
+  closeModal("#headerEditModal");
+  syncMiniHeader();
+
+  // 저장 직후 공지 재검사
+  if (typeof window.maybeShowNotices === "function") {
+    setTimeout(maybeShowNotices, 50);
+  }
+};
+
   }
 
   // 날짜 변경 시 헤더 업데이트 (이 부분은 그대로 둡니다)
@@ -2371,128 +2376,135 @@ document.addEventListener("click", (e) => {
 <!-- ▷▷▷ 인덱스 공지 로딩/표시 로직 시작 ▷▷▷ -->
 <script>
 (function(){
-  /* ▷▷▷ 본문 생략 없이 그대로: 네가 보낸 스크립트 전체 시작 ▷▷▷ */
-  function yyyymmdd(d){ return d.toISOString().slice(0,10); }
+  // YYYY-MM-DD
+  const ymd = d => d.toISOString().slice(0,10);
+
+  // 날짜 범위(문자열 비교: ISO형식이므로 안전)
   function inRange(today, s, e){
-    if (!s && !e) return true;
     const t = today;
     if (s && t < s) return false;
     if (e && t > e) return false;
     return true;
   }
-  function matchesWard(targetWard, userWard){
-    return targetWard === '전체' || String(targetWard||'').trim() === String(userWard||'').trim();
-  }
-  function readOnceNotices(cb){
-  const base = "https://hallymlinen-default-rtdb.firebaseio.com";
-  // 1) 신규 구조
-  fetch(base + "/notices.json", { cache:"no-store" })
-    .then(r=>r.json())
-    .then(list=>{
-      if (list && Object.keys(list).length) return cb(list);
-      // 2) 없다면 레거시 단일 공지 fallback
-      return fetch(base + "/notice.json", { cache:"no-store" })
-        .then(r=>r.json())
-        .then(n=>{
-          if (!n || !n.text) return cb({});
-          const today = new Date().toISOString().slice(0,10);
-          // 레거시를 전체공지 1건처럼 변환
-          cb({
-            __legacy__: {
-              id: "__legacy__",
-              ward: "전체",
-              title: "공지",
-              body: n.text,
-              from: today,
-              to: today,
-              active: true,
-              ts: n.updatedAt || Date.now()
-            }
-          });
-        });
-    })
-    .catch(_=> cb({}));
-}
 
-  function renderNoticeList(list){
-  const wrap = document.getElementById('inList');
-  if (!wrap) return;
-  if (!list.length){
-    wrap.innerHTML = `<div style="color:#64748b;">표시할 공지가 없습니다.</div>`;
-    return;
+  // '전체' 또는 정확히 같은 병동만 통과
+  function matchesWard(targetWard, userWard){
+    const tw = String(targetWard ?? '').trim();
+    const uw = String(userWard ?? '').trim();
+    return tw === '전체' || tw === uw;
   }
-  wrap.innerHTML = list.map(n => `
-    <div style="border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:12px; background:#fff;">
-      <div style="font-weight:900; color:#2563eb; font-size:15px; margin-bottom:6px;">${n.title||''}</div>
-      <div style="white-space:pre-wrap; line-height:1.6; color:#334155; font-size:14px;">${(n.body||'').replace(/</g,'&lt;')}</div>
-    </div>
-  `).join('');
-}
+
+  // RTDB에서 공지 읽기(신규 → 레거시 fallback)
+  function readOnceNotices(cb){
+    const base = "https://hallymlinen-default-rtdb.firebaseio.com";
+    fetch(base + "/notices.json", { cache:"no-store" })
+      .then(r=>r.json())
+      .then(list=>{
+        if (list && Object.keys(list).length){ cb(list); return; }
+        // 레거시 단일 공지 fallback
+        fetch(base + "/notice.json", { cache:"no-store" })
+          .then(r=>r.json())
+          .then(n=>{
+            if (!n || !n.text){ cb({}); return; }
+            const today = ymd(new Date());
+            cb({
+              __legacy__: {
+                id: "__legacy__",
+                ward: "전체",
+                title: "공지",
+                body: n.text,
+                from: today,
+                to: today,
+                active: true,
+                ts: n.updatedAt || Date.now()
+              }
+            });
+          });
+      })
+      .catch(()=> cb({}));
+  }
+
+  // 리스트 렌더
+  function renderNoticeList(list){
+    const wrap = document.getElementById('inList');
+    if (!wrap) return;
+    if (!list.length){
+      wrap.innerHTML = `<div style="color:#64748b;">표시할 공지가 없습니다.</div>`;
+      return;
+    }
+    wrap.innerHTML = list.map(n => `
+      <div style="border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:12px; background:#fff;">
+        <div style="font-weight:900; color:#2563eb; font-size:15px; margin-bottom:6px;">${n.title||''}</div>
+        <div style="white-space:pre-wrap; line-height:1.6; color:#334155; font-size:14px;">${(n.body||'').replace(/</g,'&lt;')}</div>
+      </div>
+    `).join('');
+  }
 
   function showIndexNoticeModal(notices){
     renderNoticeList(notices);
-    if (notices.length){
-      openModal("#indexNoticeModal", "#inClose");
-    }
+    if (notices.length){ openModal("#indexNoticeModal", "#inClose"); }
   }
-  function seenKey(ward){
-    const today = yyyymmdd(new Date());
-    return `seenNotices/${today}/${ward||'ALL'}`;
-  }
-function dontTodayKey(ward){
-  const today = yyyymmdd(new Date());
-  return `dontShowToday/${today}/${ward || 'ALL'}`;
-}
+
+  // 병동별로 ‘오늘 안보기’/‘본 것’ 키 분리
+  const seenKey = ward => `seenNotices/${ymd(new Date())}/${ward||'ALL'}`;
+  const dontTodayKey = ward => `dontShowToday/${ymd(new Date())}/${ward||'ALL'}`;
 
   async function maybeShowNotices(){
     try{
-// 표시 전 체크 (maybeShowNotices() 안의 try 블록 초반부에 붙이기)
-const curWard = (window.state && window.state.ward) ? String(window.state.ward).trim() : '';
-// 오늘 미표시가 있으면 바로 종료
-if (localStorage.getItem(dontTodayKey(curWard || 'ALL')) === '1') return;
+      const curWard = (window.state && window.state.ward) ? String(window.state.ward).trim() : '';
 
-// (세션당 1회 제한은 유지)
-const skey = seenKey(curWard || 'ALL');
-if (sessionStorage.getItem(skey) === '1') return;
+      // ‘오늘 다시 보지 않기’ 체크가 있으면 즉시 종료 (병동별)
+      if (localStorage.getItem(dontTodayKey(curWard || 'ALL')) === '1') return;
 
-      const today = yyyymmdd(new Date());
+      // 세션 중복 방지 (병동별 키)
+      const skey = seenKey(curWard || 'ALL');
+      if (sessionStorage.getItem(skey) === '1') return;
+
+      const today = ymd(new Date());
       readOnceNotices((obj)=>{
-        const arr = Object.values(obj||{});
-        const actives = arr.filter(n => n && n.active === true);
-        const filtered = actives.filter(n => matchesWard(n.ward, curWard||'') && inRange(today, n.from||'', n.to||''));
-        filtered.sort((a,b)=>(b.ts||0)-(a.ts||0));
+        const all = Object.values(obj||{});
+        const actives = all.filter(n => n && n.active === true);
+
+        // ★ 핵심: '전체' + 현재 병동 둘 다 포함
+        const filtered = actives
+          .filter(n => matchesWard(n.ward, curWard) && inRange(today, n.from||'', n.to||''))
+          .sort((a,b)=>(b.ts||0)-(a.ts||0));
+
         showIndexNoticeModal(filtered);
-        if (filtered.length){
-         sessionStorage.setItem(skey,'1');
+
+        // 병동을 아직 선택하지 않은 상태('')에서는
+        // 세션 키를 찍지 않아야, 나중에 병동 선택 후 다시 뜹니다.
+        if (filtered.length && curWard){
+          sessionStorage.setItem(skey, '1');
         }
       });
     }catch(_){}
   }
+
+  // 닫기 버튼 처리 (병동별로 오늘 안보기/세션키 저장)
   const closeBtn = document.getElementById('inClose');
-if (closeBtn) {
-  closeBtn.onclick = ()=> {
-    try {
-      const curWard = (window.state && window.state.ward) ? String(window.state.ward).trim() : '';
-      const chk = document.getElementById('inDontToday');
-      if (chk && chk.checked) {
-        // 오늘(해당 병동) 동안은 표시하지 않음
-        localStorage.setItem(dontTodayKey(curWard || 'ALL'), '1');
-      }
-      // 세션(탭) 당 1회 본 것으로 표시
-      sessionStorage.setItem(seenKey(curWard || 'ALL'), '1');
-    } catch(_) {}
-    closeModal('#indexNoticeModal');
-  };
-}
- window.maybeShowNotices = maybeShowNotices;
+  if (closeBtn){
+    closeBtn.onclick = ()=>{
+      try{
+        const curWard = (window.state && window.state.ward) ? String(window.state.ward).trim() : '';
+        if (document.getElementById('inDontToday')?.checked){
+          localStorage.setItem(dontTodayKey(curWard || 'ALL'), '1');
+        }
+        sessionStorage.setItem(seenKey(curWard || 'ALL'), '1');
+      }catch(_){}
+      closeModal('#indexNoticeModal');
+    };
+  }
+
+  // 외부에서 호출할 수 있게 export
+  window.maybeShowNotices = maybeShowNotices;
 })();
 </script>
-<!-- ▷▷▷ 인덱스 공지 로딩/표시 로직 종료 ▷▷▷ -->
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(maybeShowNotices, 0);
-  });
+  // 첫 진입 때 한 번 호출(병동 미선택이면 세션키 안 찍음 → 이후 선택 시 다시 뜸)
+  document.addEventListener('DOMContentLoaded', ()=> { setTimeout(maybeShowNotices, 0); });
 </script>
+<!-- ▷▷▷ 인덱스 공지 로딩/표시 로직 종료 ▷▷▷ -->
 
 </body>
 </html>
