@@ -2323,9 +2323,13 @@ document.addEventListener("click", (e) => {
     <div class="modalBody">
       <div id="inList">불러오는 중…</div>
     </div>
-    <div class="modalActions">
-      <button type="button" class="btn cancel" id="inClose">닫기</button>
-    </div>
+<div class="modalActions" style="justify-content:space-between; align-items:center;">
+  <label style="display:flex; align-items:center; gap:8px; font-weight:700; color:#334155;">
+    <input type="checkbox" id="inDontToday" />
+    오늘 다시 보지 않기
+  </label>
+  <button type="button" class="btn cancel" id="inClose">닫기</button>
+</div>
   </div>
 </div>
 <!-- ▷▷▷ 인덱스 공지 모달 UI 종료 ▷▷▷ -->
@@ -2403,11 +2407,22 @@ document.addEventListener("click", (e) => {
     const today = yyyymmdd(new Date());
     return `seenNotices/${today}/${ward||'ALL'}`;
   }
+function dontTodayKey(ward){
+  const today = yyyymmdd(new Date());
+  return `dontShowToday/${today}/${ward || 'ALL'}`;
+}
+
   async function maybeShowNotices(){
     try{
-      const curWard = (window.state && window.state.ward) ? String(window.state.ward).trim() : '';
-      const skey = seenKey(curWard || 'ALL');
-      if (localStorage.getItem(skey)==='1') return;
+// 표시 전 체크 (maybeShowNotices() 안의 try 블록 초반부에 붙이기)
+const curWard = (window.state && window.state.ward) ? String(window.state.ward).trim() : '';
+// 오늘 미표시가 있으면 바로 종료
+if (localStorage.getItem(dontTodayKey(curWard || 'ALL')) === '1') return;
+
+// (세션당 1회 제한은 유지)
+const skey = seenKey(curWard || 'ALL');
+if (sessionStorage.getItem(skey) === '1') return;
+
       const today = yyyymmdd(new Date());
       readOnceNotices((obj)=>{
         const arr = Object.values(obj||{});
@@ -2416,22 +2431,27 @@ document.addEventListener("click", (e) => {
         filtered.sort((a,b)=>(b.ts||0)-(a.ts||0));
         showIndexNoticeModal(filtered);
         if (filtered.length){
-          localStorage.setItem(skey,'1');
+         sessionStorage.setItem(skey,'1');
         }
       });
     }catch(_){}
   }
   const closeBtn = document.getElementById('inClose');
-  if (closeBtn) closeBtn.onclick = ()=> closeModal('#indexNoticeModal');
-  document.addEventListener('DOMContentLoaded', ()=> {
-    setTimeout(maybeShowNotices, 300);
-  });
-  const wardSelect = document.querySelector('#wardSelect');
-  if (wardSelect){
-    wardSelect.addEventListener('change', ()=>{
-      setTimeout(maybeShowNotices, 200);
-    });
-  }
+if (closeBtn) {
+  closeBtn.onclick = ()=> {
+    try {
+      const curWard = (window.state && window.state.ward) ? String(window.state.ward).trim() : '';
+      const chk = document.getElementById('inDontToday');
+      if (chk && chk.checked) {
+        // 오늘(해당 병동) 동안은 표시하지 않음
+        localStorage.setItem(dontTodayKey(curWard || 'ALL'), '1');
+      }
+      // 세션(탭) 당 1회 본 것으로 표시
+      sessionStorage.setItem(seenKey(curWard || 'ALL'), '1');
+    } catch(_) {}
+    closeModal('#indexNoticeModal');
+  };
+}
   /* ▷▷▷ 본문 생략 없이 그대로: 네가 보낸 스크립트 전체 종료 ▷▷▷ */
 })();
 </script>
