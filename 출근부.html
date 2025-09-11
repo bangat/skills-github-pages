@@ -201,6 +201,56 @@
 .row-inline input,
 .row-inline select,
 .row-inline textarea{ width:100%; }
+
+/* 신규CSS추가 시작 — 공지 날짜 YY 라벨 */
+.date-short-wrap{
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  height: 42px;
+}
+.date-short-wrap input[type="date"]{
+  /* 네이티브 피커는 살리고, 표시 텍스트만 투명화 */
+  color: transparent;
+  caret-color: transparent;
+  text-shadow: none;
+  width: 100%;
+  height: 42px;
+  line-height: 42px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0 12px;
+}
+.date-short-wrap input[type="date"]:focus{
+  box-shadow: var(--focus);
+  border-color: transparent;
+}
+.date-short-label{
+  position: absolute;
+  left: 12px;
+  right: 36px; /* 일부 단말의 캘린더 아이콘 영역 여유 */
+  top: 0;
+  height: 42px;
+  line-height: 42px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  pointer-events: none; /* 터치가 input으로 통과되게 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 다크 확장 등 대비용 */
+@supports (-webkit-touch-callout: none){
+  .date-short-wrap input[type="date"]::-webkit-datetime-edit { color: transparent; }
+}
+/* 모바일 높이 통일 */
+@media (max-width:480px){
+  .date-short-wrap, .date-short-wrap input[type="date"], .date-short-label{ height:48px; line-height:48px; }
+}
+/* 신규CSS추가 종료 — 공지 날짜 YY 라벨 */
+
   </style>
 
   <!-- ExcelJS / FileSaver -->
@@ -649,14 +699,54 @@
     (async ()=>{ showBootSpinner(); try{ const cached0 = getLastNameCache(); if (cached0) nameInput.value = cached0; buildTable(monthInput.value, nameInput.value.trim()); const [y,mm] = (monthInput.value || '').split('-').map(Number); if (y) { await loadHolidays(y); qsa('#tbody tr').forEach((tr, idx)=>{ const day = idx+1; const [dateCell, , , , , noteCell] = tr.children; const hlabel = dynamicHolidayLabel(y,mm,day); if(hlabel){ noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel); dateCell.classList.add('sun'); } }); } const nm0 = (nameInput.value||'').trim(); if (y && mm && nm0){ const data0 = await window.loadMonthFromFirebase(y, mm, nm0); window.applyMonthDataToTable(y, mm, data0); } } finally { hideBootSpinner(); } })();
   </script>
 
-  <!-- 공지 관리 로직 -->
-  <script>
-    const $ = (s)=>document.querySelector(s);
+ <!-- 공지 관리 로직 -->
+<script>
+  const $ = (s)=>document.querySelector(s);
 
-    document.addEventListener('click', (e) => {
-      const id = (e.target && e.target.id) || (e.target.closest?.('[id]')?.id) || '';
-      if (id === 'openNoticeAdmin'){ e.preventDefault(); switchNoticeTab('compose'); openNoticeAdmin(); }
-    });
+  /* 신규JS추가 시작 — 날짜 YY 라벨 유틸 */
+  function formatYY(iso){ // '2025-09-11' -> '25-09-11'
+    if(!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return '';
+    return iso.slice(2); // '25-09-11'
+  }
+  function ensureWrap(input){
+    if(!input) return null;
+    if(input.parentElement && input.parentElement.classList.contains('date-short-wrap')){
+      return input.parentElement;
+    }
+    const wrap = document.createElement('span');
+    wrap.className = 'date-short-wrap';
+    input.parentElement.insertBefore(wrap, input);
+    wrap.appendChild(input);
+    const label = document.createElement('span');
+    label.className = 'date-short-label';
+    wrap.appendChild(label);
+    return wrap;
+  }
+  function updateShortLabel(input){
+    const wrap = ensureWrap(input); if(!wrap) return;
+    const label = wrap.querySelector('.date-short-label');
+    label.textContent = formatYY(input.value || '') || '';
+  }
+  function decorateShortDate(id){
+    const input = document.getElementById(id); if(!input) return;
+    ensureWrap(input);
+    updateShortLabel(input);
+    input.addEventListener('change', ()=> updateShortLabel(input));
+    input.addEventListener('input',  ()=> updateShortLabel(input));
+  }
+
+  // 최초 1회 데코레이션
+  document.addEventListener('DOMContentLoaded', ()=>{
+    decorateShortDate('naFrom');
+    decorateShortDate('naTo');
+  });
+  /* 신규JS추가 종료 — 날짜 YY 라벨 유틸 */
+
+  document.addEventListener('click', (e) => {
+    const id = (e.target && e.target.id) || (e.target.closest?.('[id]')?.id) || '';
+    if (id === 'openNoticeAdmin'){ e.preventDefault(); switchNoticeTab('compose'); openNoticeAdmin(); }
+  });
+
 
     // 탭 전환
     function switchNoticeTab(tab){
@@ -679,7 +769,9 @@
       $('#naFrom').value    = editData?.from || today;
       $('#naTo').value      = editData?.to   || today;
       $('#naActiveToggle').checked = (editData?.active ?? true);
+
       m.style.display = 'block';
+
     }
     function closeNoticeAdmin(){ const m=$('#noticeAdminModal'); if(m) m.style.display='none'; }
     $('#naCancel').onclick = closeNoticeAdmin;
@@ -805,6 +897,8 @@
       $('#naFrom').value    = editData?.from || today;
       $('#naTo').value      = editData?.to   || today;
       $('#naActiveToggle').checked  = (editData?.active ?? true);
+  updateShortLabel(document.getElementById('naFrom'));
+  updateShortLabel(document.getElementById('naTo'));
     }
   </script>
 </body>
