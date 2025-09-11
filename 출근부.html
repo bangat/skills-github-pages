@@ -8,107 +8,131 @@
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 
   <!-- ▷▷▷ 전역 스타일 시작 ▷▷▷ -->
-  <style>
-    :root{
-      --bg:#f4f7fb; --card:#ffffff; --accent:#2563eb; --muted:#5b677a; --text:#0f172a; --border:#e6eaf2;
-      --r-lg:16px; --shadow-1:0 4px 16px rgba(15,23,42,.08);
-      --focus:0 0 0 2px rgba(37,99,235,.22),0 0 0 6px rgba(37,99,235,.1);
+ <style>
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --accent:#2563eb; --muted:#5b677a; --text:#0f172a; --border:#e6eaf2;
+    --r-lg:16px; --shadow-1:0 4px 16px rgba(15,23,42,.08);
+    --focus:0 0 0 2px rgba(37,99,235,.22),0 0 0 6px rgba(37,99,235,.1);
+  }
+  *{box-sizing:border-box}
+  html,body{-webkit-text-size-adjust:100%; overflow-x:hidden;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;}
+  .wrap{max-width:980px;margin:10px auto;padding:10px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-1)}
+
+  /* 상단 탭: 세 개 동일 폭 + 줄바꿈 방지 */
+  .topTabs{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+    margin:0 0 10px 0;
+    padding:0 2px;
+  }
+  .topTabs a{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    height:40px;
+    padding:0 14px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:#fff;
+    color:#0f172a;
+    text-decoration:none;
+    font-weight:800;
+    font-size:15px;
+
+    white-space:nowrap;
+    word-break:keep-all;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .topTabs a .icon{ width:1em; height:1em; stroke-width:2.5; vertical-align:-0.15em; }
+  .topTabs a[aria-current="page"]{
+    background:var(--accent); color:#fff; border-color:var(--accent);
+    pointer-events:none;
+  }
+  .topTabs a:active{ transform:translateY(1px); }
+
+  .card-head{padding:12px;display:grid;gap:10px}
+  .title{font-size:20px;font-weight:800}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .grid-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .row{display:flex;gap:8px;align-items:center}
+  input[type="text"], input[type="month"], input[type="email"], select{
+    border:1px solid var(--border);border-radius:12px;padding:0 12px;height:42px;font-size:15px;background:#fff;outline:none;min-width:0;width:100%;
+  }
+  input:focus, select:focus{box-shadow:var(--focus);border-color:transparent}
+  .btn{
+    border:1px solid var(--border);background:#fff;border-radius:12px;
+    padding:0 12px;height:42px;font-weight:700;cursor:pointer;font-size:15px;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn:active{transform:translateY(1px)}
+  .icon{ width:1em; height:1em; stroke-width:2.5; vertical-align:-0.15em; }
+  .table-wrap{border-radius:12px;border:1px solid var(--border);margin:8px 12px;overflow:hidden}
+  table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}
+  thead th{position:sticky;top:0;background:#f8fafc;border-bottom:1px solid var(--border);font-size:12.5px;height:32px}
+  td,th{border-bottom:1px solid var(--border);padding:6px;text-align:center;font-size:12.5px;white-space:nowrap}
+  tbody tr:hover{background:#f7fbff}
+  .date-col{width:36px;font-weight:700}
+  .name-col{width:50px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .time-col{width:60px}
+  .note-col{width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sun{color:#ef4444}
+  .sat{color:#2563eb}
+  .app-hide{display:none}
+  .card-foot{display:none}
+  .modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:12px;z-index:100;background:rgba(15,23,42,.5)}
+  .modal{width:min(560px, 94vw);background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:0 10px 30px rgba(15,23,42,.12);overflow:hidden}
+  .modal-hd{padding:14px 18px;border-bottom:1px solid var(--border);font-weight:800;font-size:18px}
+  .modal-bd{padding:16px 18px;display:grid;gap:12px}
+  .modal-ft{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+  .row-inline{display:grid;grid-template-columns:98px 1fr;gap:10px;align-items:center}
+  .row-inline .wfit{width:140px}
+  .hidden{display:none!important}
+  @media (max-width: 480px){
+    .modal{width:96vw;border-radius:16px}
+    .modal-bd{gap:10px}
+    .row-inline{grid-template-columns:1fr;gap:6px}
+    .row-inline .wfit{width:100%}
+    input[type="text"], input[type="month"], input[type="email"], select, input[type="time"]{
+      height:48px;font-size:16px
     }
-    *{box-sizing:border-box}
-    html,body{-webkit-text-size-adjust:100%; overflow-x:hidden;}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:Pretendard,Apple SD Gothic Neo,system-ui,sans-serif;}
-    .wrap{max-width:980px;margin:10px auto;padding:10px}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-1)}
-    .topTabs{display:flex; gap:8px; margin:0 0 10px 0; padding:0 2px;}
-    .topTabs a{
-      flex:0 0 auto;
-      display:inline-flex; align-items:center; gap:8px;
-      height:40px; padding:0 14px;
-      border:1px solid var(--border); border-radius:12px;
-      background:#fff; color:#0f172a; text-decoration:none; font-weight:800; font-size:15px;
-    }
-    .topTabs a .icon{ width:1em; height:1em; stroke-width:2.5; vertical-align:-0.15em; }
-    .topTabs a[aria-current="page"]{
-      background:var(--accent); color:#fff; border-color:var(--accent);
-      pointer-events:none;
-    }
-    .topTabs a:active{ transform:translateY(1px); }
-    .card-head{padding:12px;display:grid;gap:10px}
-    .title{font-size:20px;font-weight:800}
-    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .grid-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .row{display:flex;gap:8px;align-items:center}
-    input[type="text"], input[type="month"], input[type="email"], select{
-      border:1px solid var(--border);border-radius:12px;padding:0 12px;height:42px;font-size:15px;background:#fff;outline:none;min-width:0;width:100%;
-    }
-    input:focus, select:focus{box-shadow:var(--focus);border-color:transparent}
-    .btn{
-      border:1px solid var(--border);background:#fff;border-radius:12px;
-      padding:0 12px;height:42px;font-weight:700;cursor:pointer;font-size:15px;
-      display:inline-flex;align-items:center;justify-content:center;gap:8px;
-    }
-    .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
-    .btn:active{transform:translateY(1px)}
-    .icon{ width:1em; height:1em; stroke-width:2.5; vertical-align:-0.15em; }
-    .table-wrap{border-radius:12px;border:1px solid var(--border);margin:8px 12px;overflow:hidden}
-    table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0}
-    thead th{position:sticky;top:0;background:#f8fafc;border-bottom:1px solid var(--border);font-size:12.5px;height:32px}
-    td,th{border-bottom:1px solid var(--border);padding:6px;text-align:center;font-size:12.5px;white-space:nowrap}
-    tbody tr:hover{background:#f7fbff}
-    .date-col{width:36px;font-weight:700}
-    .name-col{width:50px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .time-col{width:60px}
-    .note-col{width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .sun{color:#ef4444}
-    .sat{color:#2563eb}
-    .app-hide{display:none}
-    .card-foot{display:none}
-    .modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:12px;z-index:100;background:rgba(15,23,42,.5)}
-    .modal{width:min(560px, 94vw);background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:0 10px 30px rgba(15,23,42,.12);overflow:hidden}
-    .modal-hd{padding:14px 18px;border-bottom:1px solid var(--border);font-weight:800;font-size:18px}
-    .modal-bd{padding:16px 18px;display:grid;gap:12px}
-    .modal-ft{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
-    .row-inline{display:grid;grid-template-columns:98px 1fr;gap:10px;align-items:center}
-    .row-inline .wfit{width:140px}
-    .hidden{display:none!important}
-    @media (max-width: 480px){
-      .modal{width:96vw;border-radius:16px}
-      .modal-bd{gap:10px}
-      .row-inline{grid-template-columns:1fr;gap:6px}
-      .row-inline .wfit{width:100%}
-      input[type="text"], input[type="month"], input[type="email"], select, input[type="time"]{
-        height:48px;font-size:16px
-      }
-      .modal-ft{position:sticky;bottom:0;background:#fff}
-    }
-    #toast{
-      position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
-      background:#16a34a;color:#fff;padding:10px 14px;border-radius:12px;
-      box-shadow:var(--shadow-1);display:none;z-index:250;font-weight:700
-    }
-    #emailBackdrop.kb-safe{
-      align-items:flex-end;
-      padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px);
-    }
-    #emailBackdrop.kb-safe .modal{
-      width:100%;
-      max-width:640px;
-      border-radius:14px 14px 0 0;
-    }
-    #toast {
-      position:fixed;
-      left:50%; bottom:18px;
-      transform:translateX(-50%);
-      background:#16a34a;
-      color:#fff;
-      padding:10px 14px;
-      border-radius:12px;
-      box-shadow:var(--shadow-1);
-      display:none;
-      z-index:250;
-      font-weight:700;
-    }
-  </style>
+    .modal-ft{position:sticky;bottom:0;background:#fff}
+  }
+  #toast{
+    position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+    background:#16a34a;color:#fff;padding:10px 14px;border-radius:12px;
+    box-shadow:var(--shadow-1);display:none;z-index:250;font-weight:700
+  }
+  #emailBackdrop.kb-safe{
+    align-items:flex-end;
+    padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px);
+  }
+  #emailBackdrop.kb-safe .modal{
+    width:100%;
+    max-width:640px;
+    border-radius:14px 14px 0 0;
+  }
+  #toast {
+    position:fixed;
+    left:50%; bottom:18px;
+    transform:translateX(-50%);
+    background:#16a34a;
+    color:#fff;
+    padding:10px 14px;
+    border-radius:12px;
+    box-shadow:var(--shadow-1);
+    display:none;
+    z-index:250;
+    font-weight:700;
+  }
+</style>
+
   <!-- ▷▷▷ 전역 스타일 종료 ▷▷▷ -->
 
   <!-- ExcelJS / FileSaver -->
@@ -212,14 +236,49 @@
     window.loadMonthFromFirebase = loadMonthFromFirebase;
     window.applyMonthDataToTable = applyMonthDataToTable;
   </script>
+
+<!-- ▷▷▷ Firebase(RTDB for Notice) 시작 ▷▷▷ -->
+<script type="module">
+  import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getDatabase, ref, push, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
+    authDomain: "hallymlinen.firebaseapp.com",
+    databaseURL: "https://hallymlinen-default-rtdb.firebaseio.com",
+    projectId: "hallymlinen",
+    storageBucket: "hallymlinen.appspot.com",
+    messagingSenderId: "867775830688",
+    appId: "1:867775830688:web:cef3ed4e70ae9818f347c5",
+    measurementId: "G-T02ZFK18L3"
+  };
+
+ // 이미 초기화된 앱 재사용
+  const app  = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  if (!auth.currentUser) {
+    signInAnonymously(auth).catch(e => console.error("notice auth fail:", e));
+  }
+
+  const rtdb = getDatabase(app);
+  window.__noticeRTDB = { rtdb, ref, push, update };
+</script>
+
+
 </head>
 <body>
   <div class="wrap">
 
-    <nav class="topTabs" aria-label="상단 탭">
-      <a href="#" aria-current="page"><i class="icon" data-feather="calendar"></i>출근부</a>
-      <a href="./구매현황.html"><i class="icon" data-feather="bar-chart-2"></i>구매관리</a>
-    </nav>
+
+<nav class="topTabs" aria-label="상단 탭">
+  <a href="#" aria-current="page"><i class="icon" data-feather="calendar"></i>출근부</a>
+  <a href="./구매현황.html"><i class="icon" data-feather="bar-chart-2"></i>구매관리</a>
+  <a href="#" id="openNoticeAdmin"><i class="icon" data-feather="megaphone"></i>공지관리</a>
+</nav>
+
+
 
     <div class="card">
       <div class="card-head">
@@ -432,6 +491,121 @@
       }
     })();
   </script>
+<!-- ▷▷▷ 공지관리 모달 UI 시작 ▷▷▷ -->
+<div id="noticeAdminModal" class="modal-backdrop" style="display:none; z-index:99999;">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="noticeAdminTitle" style="max-width:560px;">
+    <div class="modal-hd" id="noticeAdminTitle">공지관리</div>
+    <div class="modal-bd">
+      <div class="row-inline" style="gap:10px;">
+        <label style="min-width:72px; font-weight:800;">대상</label>
+        <select id="naWard" style="flex:1;">
+          <option value="전체" selected>전체 공지</option>
+          <option>93</option><option>83</option><option>73</option><option>71</option>
+          <option>63</option><option>62</option><option>61</option>
+          <option>52</option><option>51</option><option>42</option><option>41</option>
+          <option>기타</option>
+        </select>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <label style="font-weight:800;">제목</label>
+        <input id="naTitle" type="text" placeholder="예) 오늘(9/11) 수거 지연 안내" style="width:100%;">
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <label style="font-weight:800;">내용</label>
+        <textarea id="naBody" rows="5" placeholder="공지 내용을 입력하세요." style="width:100%;"></textarea>
+      </div>
+      <div class="row-inline" style="gap:10px; margin-top:8px;">
+        <label style="min-width:72px; font-weight:800;">유효기간</label>
+        <input id="naFrom" type="date" style="flex:1;">
+        <span aria-hidden="true">~</span>
+        <input id="naTo" type="date" style="flex:1;">
+      </div>
+      <div class="row-inline" style="gap:10px; margin-top:8px;">
+        <label style="min-width:72px; font-weight:800;">상태</label>
+        <select id="naActive" style="flex:1;">
+          <option value="1" selected>활성</option>
+          <option value="0">비활성</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-ft" style="display:flex; gap:8px; padding:12px;">
+      <button type="button" class="btn" id="naCancel">취소</button>
+      <button type="button" class="btn primary" id="naSave">저장</button>
+    </div>
+  </div>
+</div>
+<!-- ▷▷▷ 공지관리 모달 UI 종료 ▷▷▷ -->
+
+<!-- ▷▷▷ 공지관리 로직 시작 ▷▷▷ -->
+<script>
+  // 버튼 연결
+  document.addEventListener('click', (e) => {
+    const id = (e.target && e.target.id) || '';
+    if (id === 'openNoticeAdmin') {
+      e.preventDefault();
+      openNoticeAdmin();
+    }
+  });
+
+  // 모달 열기/닫기
+  function openNoticeAdmin() {
+    const m = document.getElementById('noticeAdminModal');
+    if (!m) return;
+    const today = new Date().toISOString().slice(0,10);
+    document.getElementById('naFrom').value = today;
+    document.getElementById('naTo').value = today;
+    m.style.display = 'block';
+  }
+  function closeNoticeAdmin() {
+    const m = document.getElementById('noticeAdminModal');
+    if (m) m.style.display = 'none';
+  }
+  document.getElementById('naCancel').onclick = closeNoticeAdmin;
+
+  // 저장
+  document.getElementById('naSave').onclick = async () => {
+    try {
+      const ward   = (document.getElementById('naWard').value || '전체').trim();
+      const title  = (document.getElementById('naTitle').value || '').trim();
+      const body   = (document.getElementById('naBody').value || '').trim();
+      const from   = document.getElementById('naFrom').value;
+      const to     = document.getElementById('naTo').value;
+      const active = document.getElementById('naActive').value === '1';
+
+      if (!title || !body || !from || !to) {
+        alert('대상/제목/내용/유효기간을 모두 입력하세요.');
+        return;
+      }
+
+      const { rtdb, ref, push, update } = (window.__noticeRTDB || {});
+      if (!rtdb) { alert('데이터베이스 연결 실패'); return; }
+
+      const baseRef = ref(rtdb, 'notices');
+      const now = Date.now();
+      const post = {
+        ward,                   // '전체' or '93' 등
+        title,
+        body,
+        from,                   // 'YYYY-MM-DD'
+        to,                     // 'YYYY-MM-DD'
+        active,                 // true/false
+        ts: now
+      };
+      const newRef = await push(baseRef, post);
+      // 키를 id 필드로 넣어두면 클라이언트에서 처리 쉬움
+      await update(newRef, { id: newRef.key });
+
+      alert('공지 저장 완료');
+      closeNoticeAdmin();
+    } catch (err) {
+      console.error('notice-save error:', err?.code, err?.message, err);
+      alert('공지 저장 중 오류가 발생했습니다.');
+    }
+  };
+</script>
+<!-- ▷▷▷ 공지관리 로직 종료 ▷▷▷ -->
+
+
 </body>
 </html>
 
