@@ -2020,8 +2020,15 @@ function wireMiniHeader(){
   if (btn){ btn.onclick = (e)=>{ try{ addRipple && addRipple(e); }catch(_){} openModal("#headerEditModal", "#wardSelect"); }; }
   const cancel = el("#heCancel");
   if (cancel){ cancel.onclick = ()=> closeModal("#headerEditModal"); }
-  const save = el("#heSave");
-  if (save){ save.onclick = ()=>{ closeModal("#headerEditModal"); syncMiniHeader(); }; }
+const save = el("#heSave");
+if (save){
+  save.onclick = ()=>{
+    closeModal("#headerEditModal");
+    syncMiniHeader();
+    if (typeof window.maybeShowNotices === "function") window.maybeShowNotices();
+  };
+}
+
   const wSel = el("#wardSelect"), dInp = el("#issueDate");
   if (wSel) wSel.addEventListener("change", syncMiniHeader);
   if (dInp) dInp.addEventListener("change", syncMiniHeader);
