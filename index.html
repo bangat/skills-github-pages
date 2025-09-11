@@ -2018,22 +2018,38 @@ function syncMiniHeader(){
 function wireMiniHeader(){
   const btn = el("#editHeaderBtn");
   if (btn){ btn.onclick = (e)=>{ try{ addRipple && addRipple(e); }catch(_){} openModal("#headerEditModal", "#wardSelect"); }; }
+  
   const cancel = el("#heCancel");
   if (cancel){ cancel.onclick = ()=> closeModal("#headerEditModal"); }
-const save = el("#heSave");
-if (save){
-  save.onclick = ()=>{
-    closeModal("#headerEditModal");
-    syncMiniHeader();
-    if (typeof window.maybeShowNotices === "function") window.maybeShowNotices();
-  };
-}
 
-  const wSel = el("#wardSelect"), dInp = el("#issueDate");
-  if (wSel) wSel.addEventListener("change", syncMiniHeader);
+  const save = el("#heSave");
+  if (save){
+    save.onclick = ()=>{
+      // 🔽🔽🔽 이 부분이 핵심 수정사항입니다 🔽🔽🔽
+      // 1. 선택된 병동 값을 실제로 읽어옵니다.
+      const selectedWard = el("#wardSelect").value || "";
+      
+      // 2. 앱의 상태(state)와 브라우저 저장소(localStorage)에 반영합니다.
+      state.ward = selectedWard.toString().trim();
+      localStorage.setItem(LS.ward, state.ward);
+
+      // 3. 기존 로직 실행
+      buildTable();       // 테이블 다시 그리기
+      fitCardToFooter();  // 푸터 간격 맞추기
+      closeModal("#headerEditModal");
+      syncMiniHeader();
+      
+      // 4. 병동 저장 직후 공지 재검사
+      if (typeof window.maybeShowNotices === "function") {
+          setTimeout(maybeShowNotices, 50); // 약간의 딜레이 후 실행
+      }
+    };
+  }
+
+  // 날짜 변경 시 헤더 업데이트 (이 부분은 그대로 둡니다)
+  const dInp = el("#issueDate");
   if (dInp) dInp.addEventListener("change", syncMiniHeader);
 }
-
 /* === 유틸리티 함수 === */
 function debounce(fn,delay=200){ let t; return(...a)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,a),delay); }; }
 
@@ -2480,4 +2496,3 @@ if (closeBtn) {
 
 </body>
 </html>
-
