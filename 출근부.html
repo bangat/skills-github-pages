@@ -437,7 +437,7 @@
             <div class="row-inline" style="align-items: flex-start;"><label>내용</label>
                 <textarea id="naBody" rows="5" placeholder="공지 내용을 입력하세요."></textarea>
             </div>
-            <div class="row-inline"><label>유효기간</label>
+            <div class="row-inline"><label>공지기간</label>
                 <div class="row" style="flex:1;">
                     <input id="naFrom" type="date" style="flex:1;"><span style="padding:0 4px;" aria-hidden="true">~</span><input id="naTo" type="date" style="flex:1;">
                 </div>
@@ -781,7 +781,7 @@
           const checked = e.target.checked;
           await update(ref(rtdb, `notices/${id}`), { active: !!checked });
         } else if (act==='delete'){
-          if (!confirm('정말 삭제할까요? 되돌릴 수 없습니다.')) return;
+          if (!confirm('정말 삭제할까요?')) return;
           await remove(ref(rtdb, `notices/${id}`));
           await loadNoticeHistory();
         }
