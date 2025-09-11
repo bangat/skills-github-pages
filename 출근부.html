@@ -70,12 +70,18 @@
   .sat{color:#2563eb}
   .app-hide{display:none}
   .card-foot{display:none}
-  .modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:12px;z-index:100;background:rgba(15,23,42,.5)}
+.modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:12px 0;z-index:100;background:rgba(15,23,42,.5)}
   .modal{width:min(560px, 94vw);background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:0 10px 30px rgba(15,23,42,.12);overflow:hidden}
   .modal-hd{padding:14px 18px;border-bottom:1px solid var(--border);font-weight:800;font-size:18px}
   .modal-bd{padding:16px 18px;display:grid;gap:12px}
   .modal-ft{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
-  .row-inline{display:grid;grid-template-columns:60px 1fr;gap:10px;align-items:center}
+.row-inline {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
   .row-inline .wfit{width:140px}
   .hidden{display:none!important}
   
@@ -170,6 +176,15 @@
     .nh-table thead th:nth-child(2){ width:74px }
     .nh-table thead th:nth-child(3){ width:120px }
   }
+
+/* === 잘림 방지 & 균등 정렬 보정 === */
+.row-inline > :nth-child(2){ min-width:0; }      /* 2번째 컬럼(입력 영역) 축소 허용 */
+.row-inline .row{ min-width:0; flex:1; }         /* '유효기간'처럼 내부에 .row 래퍼가 있을 때 */
+.row-inline .row > *{ min-width:0; }             /* 내부 input/select/textarea도 축소 허용 */
+.row-inline input,
+.row-inline select,
+.row-inline textarea{ width:100%; }              /* 폭은 100% 유지 */
+
   </style>
 
   <!-- ExcelJS / FileSaver -->
@@ -400,7 +415,7 @@
                 </select>
             </div>
             <div class="row-inline"><label>제목</label>
-                <input id="naTitle" type="text" placeholder="">
+                <input id="naTitle" type="text" placeholder="공지 제목을 입력하세요.">
             </div>
             <div class="row-inline" style="align-items: flex-start;"><label>내용</label>
                 <textarea id="naBody" rows="5" placeholder="공지 내용을 입력하세요."></textarea>
@@ -777,4 +792,3 @@
   </script>
 </body>
 </html>
-
