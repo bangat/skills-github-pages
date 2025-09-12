@@ -313,7 +313,7 @@
     async function saveDayToFirebase({y,m,day,name,inT,outT,note,leave,ot}){
       const token = localStorage.getItem('adminToken');
       if (!token) return alert("인증 토큰이 없습니다. 다시 로그인해주세요.");
-      const url = 'https://us-central1-hallymlinen.cloudfunctions.net/saveAttendanceData';
+      const url = 'https://saveattendancedata-t7cbh6uw5a-uc.a.run.app';
       const path = `/attendance/${ymKey(y,m)}/${nameKey(name)}/${pad2(day)}`;
       const payload = { y, m, day, name: String(name||'').trim(), in: String(inT||''), out: String(outT||''), note: String(note||''), leave: String(leave||''), ot: String(ot||'') };
       const res = await fetch(url,{ method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`}, body:JSON.stringify({path,payload}) });
@@ -323,7 +323,7 @@
     async function loadMonthFromFirebase(y,m,name){
       const token = localStorage.getItem('adminToken');
       if (!token) { alert("인증 토큰이 없습니다. 다시 로그인해주세요."); window.location.href='./index.html'; return {}; }
-      const url = new URL('https://us-central1-hallymlinen.cloudfunctions.net/getAttendanceData');
+      const url = "https://getattendancedata-t7cbh6uw5a-uc.a.run.app";
       url.searchParams.append('year', y); url.searchParams.append('month', m); url.searchParams.append('name', name);
       const res = await fetch(url,{ headers:{'Authorization':`Bearer ${token}`}});
       if(!res.ok){ if(res.status===403){ localStorage.removeItem('adminToken'); window.location.href='./index.html'; } throw new Error(`Server error: ${res.status}`); }
@@ -983,3 +983,4 @@ $('#naSave').onclick = async () => {
 
 </body>
 </html>
+
