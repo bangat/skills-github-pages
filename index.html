@@ -1291,7 +1291,7 @@ function openAdminGate(){
   // [보안 수정] 로그인 로직을 서버 측에서 처리하도록 변경
 async function tryLogin() {
     // 🚨 중요: 이 URL을 실제 배포된 checkAdminPassword 함수 URL로 교체해야 합니다!
-    const checkPasswordUrl = 'https://us-central1-hallymlinen.cloudfunctions.net/checkAdminPassword';
+    const checkPasswordUrl = 'https://checkadminpassword-t7cbh6uw5a-uc.a.run.app';
 
     // 로딩 표시
     const okButton = el("#adminOk");
@@ -2680,3 +2680,4 @@ document.addEventListener("click", (e) => {
 
 </body>
 </html>
+
