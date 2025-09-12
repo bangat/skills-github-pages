@@ -732,19 +732,16 @@ button {
 <main>
     <section id="sec-input">
       <div class="sectionCard">
-
 <div class="miniHeader" style="display: flex; gap: 8px; align-items: center;">
-  
   <button type="button" class="miniBtn" id="editHeaderBtn" aria-haspopup="dialog" title="병동/출고일 편집" style="flex-grow: 1; white-space: nowrap;">
     <span id="curWard">미선택</span> · <span id="curDate">0000-00-00</span>
   </button>
-
   <button type="button" class="miniBtn" id="voiceInputBtn" title="음성으로 입력하기" style="white-space: nowrap;">
     <i class="icon" data-feather="mic"></i>
     <span>음성입력</span>
   </button>
-
 </div>
+
         <div class="tabs">
           <div class="tab-slider" id="tabSlider" aria-hidden="true"></div>
           <div class="tab active" data-cat="시트">시트</div>
@@ -918,7 +915,7 @@ button {
     </div>
     <div class="modalBody" style="text-align: center;">
       <p id="vmStatus" style="font-weight: 800; color: #1f2937; font-size: 16px; min-height: 2.5em;">
-        아래 버튼을 누르고 AI에게 말씀해주세요
+        아래 버튼을 누르고 말씀해주세요
       </p>
       <div id="vmExample" style="background: #f8fafc; border-radius: 12px; padding: 12px; font-size: 14px; color: #475569; line-height: 1.6;">
         <b>예시)</b><br>
@@ -936,6 +933,7 @@ button {
     </div>
   </div>
 </div>
+
 
 
     </div>
@@ -1054,6 +1052,7 @@ window.addEventListener("unhandledrejection", e=>{
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  // 이 코드로 교체하세요
 import { getDatabase, ref, set, get, push, query, orderByChild, startAt, endAt, onValue, off } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 
@@ -1103,10 +1102,7 @@ import { getDatabase, ref, set, get, push, query, orderByChild, startAt, endAt, 
   }
 
   window.__fb = { saveLogsToRTDB, startStatsLiveWatcher };
-
-// index.html의 <script type="module"> 태그 안, 기존 코드 맨 아래에 추가
-
-// ▼▼▼ [신규] 음성 입력 전체 로직 시작 ▼▼▼
+// ▼▼▼ 3단계: 여기에 음성 입력 스크립트 추가 ▼▼▼
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const isSpeechRecognitionSupported = !!SpeechRecognition;
 let recognition = null;
@@ -1189,7 +1185,7 @@ if (voiceInputBtn && isSpeechRecognitionSupported) {
 async function processSpokenText(text) {
     const loadingOverlay = el('#loadingOverlay');
     try {
-        // 🚨 중요: 이 URL을 실제 배포된 함수 URL로 교체하세요!
+        // 이 URL은 이미 배포된 서버 함수의 실제 주소입니다.
         const PARSE_VOICE_URL = 'https://parsevoiceinput-t7cbh6uw5a-uc.a.run.app';
         
         loadingOverlay.style.display = 'flex';
@@ -1244,9 +1240,7 @@ async function processSpokenText(text) {
         vmRecordBtn.disabled = false;
     }
 }
-// ▲▲▲ [신규] 음성 입력 전체 로직 종료 ▲▲▲
-
-
+// ▲▲▲ 추가 완료 ▲▲▲
 </script>
 <script>
 /* === 전역 상수 및 설정 === */
