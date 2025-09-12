@@ -732,12 +732,19 @@ button {
 <main>
     <section id="sec-input">
       <div class="sectionCard">
-        <div class="miniHeader">
-          <button type="button" class="miniBtn" id="editHeaderBtn" aria-haspopup="dialog" title="병동/출고일 편집">
-            <span id="curWard">미선택</span> · <span id="curDate">0000-00-00</span>
-          </button>
-        </div>
 
+<div class="miniHeader" style="display: flex; gap: 8px; align-items: center;">
+  
+  <button type="button" class="miniBtn" id="editHeaderBtn" aria-haspopup="dialog" title="병동/출고일 편집" style="flex-grow: 1; white-space: nowrap;">
+    <span id="curWard">미선택</span> · <span id="curDate">0000-00-00</span>
+  </button>
+
+  <button type="button" class="miniBtn" id="voiceInputBtn" title="음성으로 입력하기" style="white-space: nowrap;">
+    <i class="icon" data-feather="mic"></i>
+    <span>음성입력</span>
+  </button>
+
+</div>
         <div class="tabs">
           <div class="tab-slider" id="tabSlider" aria-hidden="true"></div>
           <div class="tab active" data-cat="시트">시트</div>
@@ -902,6 +909,35 @@ button {
   <button data-k="0" class="wide3">0</button>
 </div>
 
+<div id="voiceModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="vmTitle" style="display:none">
+  <div class="modalCard" role="document">
+    <div class="modalHead" id="vmTitle">
+      <span style="display: flex; align-items: center; gap: 8px;">
+        <i class="icon" data-feather="mic" style="color:#2563eb;"></i> 음성으로 입력
+      </span>
+    </div>
+    <div class="modalBody" style="text-align: center;">
+      <p id="vmStatus" style="font-weight: 800; color: #1f2937; font-size: 16px; min-height: 2.5em;">
+        아래 버튼을 누르고 AI에게 말씀해주세요
+      </p>
+      <div id="vmExample" style="background: #f8fafc; border-radius: 12px; padding: 12px; font-size: 14px; color: #475569; line-height: 1.6;">
+        <b>예시)</b><br>
+        "대시트 스무 개, 반시트 열다섯 개, 수건 서른 개 입력해줘"
+      </div>
+      <div id="vmError" style="margin-top: 10px; color: #ef4444; font-weight: 700; display: none;"></div>
+    </div>
+    <div class="modalActions" style="padding: 16px;">
+      <button type="button" class="btn" id="vmRecordBtn" style="width: 80px; height: 80px; border-radius: 50%; background: #2563eb; border: 4px solid #93c5fd; box-shadow: var(--shadow-2);">
+        <i class="icon" data-feather="mic" style="width: 32px; height: 32px; color: white;"></i>
+      </button>
+    </div>
+    <div style="padding: 0 16px 12px; text-align:center;">
+        <button type="button" class="btn cancel" id="vmCloseBtn" style="width: 100%; background: transparent; box-shadow: none; color: var(--muted); border: none;">닫기</button>
+    </div>
+  </div>
+</div>
+
+
     </div>
     <div class="modalActions">
       <button type="button" class="btn cancel" id="qcCancel">취소</button>
@@ -1018,7 +1054,6 @@ window.addEventListener("unhandledrejection", e=>{
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  // 이 코드로 교체하세요
 import { getDatabase, ref, set, get, push, query, orderByChild, startAt, endAt, onValue, off } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 
@@ -1068,6 +1103,150 @@ import { getDatabase, ref, set, get, push, query, orderByChild, startAt, endAt, 
   }
 
   window.__fb = { saveLogsToRTDB, startStatsLiveWatcher };
+
+// index.html의 <script type="module"> 태그 안, 기존 코드 맨 아래에 추가
+
+// ▼▼▼ [신규] 음성 입력 전체 로직 시작 ▼▼▼
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const isSpeechRecognitionSupported = !!SpeechRecognition;
+let recognition = null;
+let isRecording = false;
+
+const voiceInputBtn = el('#voiceInputBtn');
+const voiceModal = el('#voiceModal');
+const vmStatus = el('#vmStatus');
+const vmError = el('#vmError');
+const vmRecordBtn = el('#vmRecordBtn');
+const vmCloseBtn = el('#vmCloseBtn');
+
+if (voiceInputBtn && isSpeechRecognitionSupported) {
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.lang = 'ko-KR';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event) => {
+        const spokenText = event.results[0][0].transcript;
+        vmStatus.textContent = 'AI가 분석 중입니다...';
+        vmRecordBtn.disabled = true;
+        processSpokenText(spokenText);
+    };
+
+    recognition.onstart = () => {
+        isRecording = true;
+        vmStatus.textContent = '듣고 있어요...';
+        vmError.style.display = 'none';
+        vmRecordBtn.style.background = '#ef4444';
+        if (navigator.vibrate) navigator.vibrate(20);
+    };
+
+    recognition.onend = () => {
+        isRecording = false;
+        vmRecordBtn.style.background = '#2563eb';
+        if (vmStatus.textContent === '듣고 있어요...') {
+            vmStatus.textContent = '아래 버튼을 누르고 말씀해주세요';
+        }
+    };
+
+    recognition.onerror = (event) => {
+        let errorMessage = '음성 인식 중 오류가 발생했습니다.';
+        if (event.error === 'no-speech') errorMessage = '음성이 감지되지 않았습니다. 다시 시도해주세요.';
+        if (event.error === 'not-allowed') errorMessage = '마이크 접근 권한이 필요합니다. 브라우저 설정을 확인해주세요.';
+        vmError.textContent = errorMessage;
+        vmError.style.display = 'block';
+    };
+
+    voiceInputBtn.addEventListener('click', () => {
+        openModal('#voiceModal');
+        vmStatus.textContent = '아래 버튼을 누르고 말씀해주세요';
+        vmError.style.display = 'none';
+        vmRecordBtn.disabled = false;
+    });
+
+    vmRecordBtn.addEventListener('click', () => {
+        if (isRecording) {
+            recognition.stop();
+        } else {
+            if (!isWardSelected()) {
+                closeModal('#voiceModal');
+                showWardPromptModal();
+                return;
+            }
+            recognition.start();
+        }
+    });
+
+    vmCloseBtn.addEventListener('click', () => {
+        if (isRecording) recognition.stop();
+        closeModal('#voiceModal');
+    });
+
+} else if (voiceInputBtn) {
+    voiceInputBtn.style.display = 'none';
+}
+
+async function processSpokenText(text) {
+    const loadingOverlay = el('#loadingOverlay');
+    try {
+        // 🚨 중요: 이 URL을 실제 배포된 함수 URL로 교체하세요!
+        const PARSE_VOICE_URL = 'https://parsevoiceinput-t7cbh6uw5a-uc.a.run.app';
+        
+        loadingOverlay.style.display = 'flex';
+
+        const response = await fetch(PARSE_VOICE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                text: text,
+                allItems: ALL_ITEMS
+            })
+        });
+
+        if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
+        const result = await response.json();
+
+        if (result.success && result.data) {
+            const updates = result.data;
+            let updatedCount = 0;
+            let updatedItems = [];
+            Object.entries(updates).forEach(([item, qty]) => {
+                const normalizedItem = item.replace(/\s/g, '');
+                const targetInput = els('#inputTable input[aria-label]').find(input => 
+                    input.getAttribute('aria-label').replace(/\s/g, '').replace(/수량$/, '') === normalizedItem
+                );
+                if (targetInput) {
+                    const itemName = targetInput.getAttribute('aria-label').replace(/ 수량$/, '');
+                    targetInput.value = qty;
+                    setDraftQty(itemName, qty);
+                    updatedCount++;
+                    updatedItems.push(`${itemName}: ${qty}개`);
+                }
+            });
+            if (updatedCount > 0) {
+                refreshTotalUI();
+                showToast(`${updatedCount}개 항목 업데이트 완료`, updatedItems.join(', '));
+                closeModal('#voiceModal');
+            } else {
+                 vmError.textContent = '업데이트할 품목을 찾지 못했습니다.';
+                 vmError.style.display = 'block';
+            }
+        } else {
+            throw new Error(result.error || 'Failed to parse data.');
+        }
+    } catch (error) {
+        console.error('Error processing spoken text:', error);
+        vmError.textContent = 'AI 분석에 실패했습니다. 잠시 후 다시 시도해주세요.';
+        vmError.style.display = 'block';
+    } finally {
+        loadingOverlay.style.display = 'none';
+        vmStatus.textContent = '아래 버튼을 누르고 말씀해주세요';
+        vmRecordBtn.disabled = false;
+    }
+}
+// ▲▲▲ [신규] 음성 입력 전체 로직 종료 ▲▲▲
+
+
 </script>
 <script>
 /* === 전역 상수 및 설정 === */
