@@ -2159,6 +2159,7 @@ window.addEventListener("DOMContentLoaded",()=>{
 
   const urlTab = new URL(location.href).searchParams.get("tab");
   goSection(urlTab === "stats" ? "stats" : "input");
+    setTimeout(maybeShowNotices, 100);
 
 
 });
@@ -2501,12 +2502,7 @@ const filtered = actives
   window.maybeShowNotices = maybeShowNotices;
 })();
 </script>
-<script>
-  // 첫 진입 때 한 번 호출(병동 미선택이면 세션키 안 찍음 → 이후 선택 시 다시 뜸)
-  document.addEventListener('DOMContentLoaded', ()=> { setTimeout(maybeShowNotices, 0); });
-</script>
-<!-- ▷▷▷ 인덱스 공지 로딩/표시 로직 종료 ▷▷▷ -->
-
 </body>
 </html>
+
 
