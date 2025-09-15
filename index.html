@@ -2391,34 +2391,16 @@ document.addEventListener("click", (e) => {
     return tw === '전체' || (uw && tw === uw);
   }
 
-  // RTDB에서 공지 읽기(신규 → 레거시 fallback)
+
+ // RTDB에서 공지 읽기 (신규 notices 경로만 사용)
   function readOnceNotices(cb){
     const base = "https://hallymlinen-default-rtdb.firebaseio.com";
     fetch(base + "/notices.json", { cache:"no-store" })
       .then(r=>r.json())
       .then(list=>{
-        if (list && Object.keys(list).length){ cb(list); return; }
-        // 레거시 단일 공지 fallback
-        fetch(base + "/notice.json", { cache:"no-store" })
-          .then(r=>r.json())
-          .then(n=>{
-            if (!n || !n.text){ cb({}); return; }
-            const today = ymd(new Date());
-            cb({
-              __legacy__: {
-                id: "__legacy__",
-                ward: "전체",
-                title: "공지",
-                body: n.text,
-                from: today,
-                to: today,
-                active: true,
-                ts: n.updatedAt || Date.now()
-              }
-            });
-          });
+        cb(list || {}); // 데이터가 있든 없든 그대로 전달
       })
-      .catch(()=> cb({}));
+      .catch(()=> cb({})); // 오류 발생 시 빈 객체 전달
   }
 
   // 리스트 렌더
@@ -2504,5 +2486,6 @@ const filtered = actives
 </script>
 </body>
 </html>
+
 
 
