@@ -2462,9 +2462,14 @@ document.addEventListener("click", (e) => {
         const actives = all.filter(n => n && n.active === true);
 
         // ★ 핵심: '전체' + 현재 병동 둘 다 포함
-        const filtered = actives
-          .filter(n => matchesWard(n.ward, curWard) && inRange(today, n.from||'', n.to||''))
-          .sort((a,b)=>(b.ts||0)-(a.ts||0));
+const filtered = actives
+        .filter(n => {
+          // ▼▼▼ 이 한 줄을 추가하는 것입니다 ▼▼▼
+          console.log(`[공지 필터링 비교] 내 병동: "${curWard}", 공지 대상: "${n.ward}", 일치 여부: ${matchesWard(n.ward, curWard)}`);
+          
+          return matchesWard(n.ward, curWard) && inRange(today, n.from||'', n.to||'');
+        })
+        .sort((a,b)=>(b.ts||0)-(a.ts||0));
 
         showIndexNoticeModal(filtered);
 
@@ -2504,3 +2509,4 @@ document.addEventListener("click", (e) => {
 
 </body>
 </html>
+
