@@ -612,7 +612,7 @@
 
   const summaryHeaders = ['품목'];
   if (hasAnyCarryOver) summaryHeaders.push('이월');
-  summaryHeaders.push('신규');
+  summaryHeaders.push('발주');
   if (hasAnyCarryOver) summaryHeaders.push('총 발주');
   summaryHeaders.push('입고', '미입고');
 
@@ -1035,7 +1035,7 @@
     
     const hasAnyCarryOver = ITEMS.some(item => getCarryOverData(item, selectedMonths) > 0);
 
-    const wsSum = wb.addWorksheet('요약');
+    const wsSum = wb.addWorksheet('전체현황');
     const summaryHeaders = hasAnyCarryOver ? ['품목','이월','신규발주','총 발주량', '전체입고량','미입고','진행률'] : ['품목','발주량','입고량','미입고','진행률'];
     wsSum.addRow(summaryHeaders);
     wsSum.views = [{state:'frozen', xSplit:1, ySplit:1}];
