@@ -76,7 +76,9 @@
     .is-hidden{ display:none !important; }
     .tbl-summary th, .tbl-summary td { padding-left: 4px; padding-right: 4px; }
     .tbl-summary th:first-child, .tbl-summary td:first-child { width: auto; text-align: left; padding-left: 10px; }
-    .tbl-summary th:not(:first-child), .tbl-summary td:not(:first-child) { width: 65px; }
+    .tbl-summary th:not(:first-child), .tbl-summary
+//숫자칸 넓이
+ td:not(:first-child) { width: 60px; }
     .tbl-summary .editable-row:hover { background-color: #f1f5f9; cursor: pointer; }
     .progress{height:16px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin:6px}
     .progress > div{height:100%;background:var(--accent);text-align:center;font-size:11px;color:#fff;line-height:16px}
@@ -1201,7 +1203,7 @@ async function onExportExcel_AllData(){
         months.forEach(m => {
             const orders = (((all[item.key] || {}).orders || {})[m]) || {};
             Object.values(orders).forEach(order => {
-                if (order.note && order.note.includes('이월분') && (item.tb ? order.topBottom === item.tb : true)) {
+                if (order.note && order.note.includes('이월') && (item.tb ? order.topBottom === item.tb : true)) {
                     carryOverQty += toInt(order.qty);
                 }
             });
@@ -1223,7 +1225,7 @@ async function onExportExcel_AllData(){
 
     // 1. 요약 시트 수정
     const wsSum=wb.addWorksheet('요약');
-    wsSum.addRow(['품목','이전년도 이월','선택월 신규발주','총 발주량', '전체입고량','미입고','진행률']);
+    wsSum.addRow(['품목','이월','발주량','총 발주량', '전체입고량','미입고','진행률']);
     wsSum.views = [{state:'frozen', xSplit:1, ySplit:1}];
     
     ITEMS.forEach(r=>{
@@ -1245,7 +1247,7 @@ async function onExportExcel_AllData(){
 
     // 2. 발주월별 시트 수정
     const wsOrd=wb.addWorksheet('발주월별(선택월)');
-    const ordHeaders = ['품목', '이월분 합계', ...selectedMonths.map(m => { const year = m.substring(2, 4); const month = parseInt(m.substring(5, 7), 10); return `${year}년 ${month}월`; })];
+    const ordHeaders = ['품목', '이월합계', ...selectedMonths.map(m => { const year = m.substring(2, 4); const month = parseInt(m.substring(5, 7), 10); return `${year}년 ${month}월`; })];
     wsOrd.addRow(ordHeaders);
     wsOrd.views = [{state:'frozen', xSplit:2, ySplit:1}];
     
