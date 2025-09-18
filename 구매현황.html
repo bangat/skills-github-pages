@@ -1259,8 +1259,9 @@ async function onExportExcel_AllData(){
     });
 
     const buf=await wb.xlsx.writeBuffer();
-    const ymd = new Date().toISOString().slice(2, 10).replace(/-/g, '');
-    saveAs(new Blob([buf]), `구매현황_발주필터(${ymd}).xlsx`);
+     // ▼▼▼ 파일 이름 생성 부분을 원래대로 수정했습니다 ▼▼▼
+    const y = new Date().getFullYear().toString().slice(2);
+    saveAs(new Blob([buf]), `구매현황(${y}년).xlsx`);
   } catch (e) {
     console.error("엑셀 생성 실패:", e);
     showToast("엑셀 생성 실패: 다시 시도해주세요.");
