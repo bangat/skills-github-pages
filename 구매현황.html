@@ -828,61 +828,80 @@ function renderOrderSummary(container){
   const monthsDesc = sortDescYM(allMonths);
   const ITEMS = buildItems(data);
 
-  const sumMonth=(name,month,tb='',kind='orders')=>{
+  // 이월 데이터 계산을 위한 헬퍼 함수 추가
+  const getCarryOverData = (item, months) => {
+      let carryOverQty = 0;
+      months.forEach(m => {
+          const orders = (((data[item.key] || {}).orders || {})[m]) || {};
+          Object.values(orders).forEach(order => {
+              if (order.note && order.note.includes('이월분') && (item.tb ? order.topBottom === item.tb : true)) {
+                  carryOverQty += toInt(order.qty);
+              }
+          });
+      });
+      return carryOverQty;
+  };
+
+  const sumMonth=(name,month,tb='',kind='orders', excludeCarryOver = false)=>{
     const node=(((data[name]||{})[kind]||{})[month])||{};
-    const arr=Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true);
-    return arr.reduce((s,e)=> s+toInt(e.qty),0);
+    return Object.values(node)
+        .filter(e => {
+            const tbMatch = tb ? (e.topBottom||'')===tb : true;
+            const carryOverMatch = excludeCarryOver ? !(e.note && e.note.includes('이월분')) : true;
+            return tbMatch && carryOverMatch;
+        })
+        .reduce((s,e)=> s+toInt(e.qty),0);
   };
-
-  const rowHtml=(r, o, i, m) => {
-    const n=o-i; const negCls = n<0 ? 'neg' : '';
-    const color = r.group==='normal' ? 'txt-normal' : (r.group==='ortho' ? 'txt-ortho' : '');
-    const dataAttrs = m ? `class="editable-row" data-item-key="${r.key}" data-item-label="${r.label}" data-item-tb="${r.tb}" data-month="${m}"` : '';
-    return `<tr ${dataAttrs}><td class="${color}">${r.label}</td><td>${o}</td><td>${i}</td><td class="${negCls}">${n}</td></tr>`;
-  };
-
+  
   const parts=[];
   let rows=[];
   
   const selectedMonths = Array.from(state.selectedMonths);
   ITEMS.forEach(r=>{
-    const o = selectedMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'orders'), 0);
-    const i = allMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'receipts'), 0);
-
-    if(o||i) rows.push(rowHtml(r,o,i,null));
+    const carryOver = getCarryOverData(r, selectedMonths);
+    const newOrders = selectedMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'orders', true), 0);
+    const totalOrders = carryOver + newOrders;
+    const totalReceipts = allMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'receipts'), 0);
+    const unfulfilled = totalOrders - totalReceipts;
+    
+    if (totalOrders || totalReceipts) {
+        const color = r.group === 'normal' ? 'txt-normal' : (r.group === 'ortho' ? 'txt-ortho' : '');
+        const negCls = unfulfilled < 0 ? 'neg' : '';
+        // 이월(c), 신규(o), 입고(i), 미입고(n)
+        rows.push(`<tr class="summary-row"><td class="${color}">${r.label}</td><td style="color:#78716C;">${carryOver}</td><td>${newOrders}</td><td>${totalReceipts}</td><td class="${negCls}">${unfulfilled}</td></tr>`);
+    }
   });
 
   parts.push(`
     <div class="sec-title">전체 요약 (발주:선택월 / 입고:전체)</div>
     <div class="table-wrap">
       <table class="tbl-summary">
-        <thead><tr><th>품목</th><th>선택발주량</th><th>전체입고량</th><th>미입고</th></tr></thead>
+        <thead><tr><th>품목</th><th>이월</th><th>신규</th><th>입고</th><th>미입고</th></tr></thead>
         <tbody>${rows.join('')}</tbody>
       </table>
     </div>`);
 
   monthsDesc.forEach(m=>{
-    // ▼▼▼ 바로 이전 코드에서 추가했던 문제가 되는 라인을 삭제했습니다. ▼▼▼
-    // 이제 체크를 해제해도 월별 상세 테이블이 사라지지 않습니다.
-
+    if (!state.selectedMonths.has(m)) return;
     const rowsM=[];
     ITEMS.forEach(r=>{
       const o=sumMonth(r.key,m,r.tb,'orders'); const i=sumMonth(r.key,m,r.tb,'receipts');
-      if(o||i) rowsM.push(rowHtml(r,o,i,m));
+      if(o||i) {
+        const n=o-i; const negCls = n<0 ? 'neg' : '';
+        const color = r.group==='normal' ? 'txt-normal' : (r.group==='ortho' ? 'txt-ortho' : '');
+        rowsM.push(`<tr class="editable-row" data-item-key="${r.key}" data-item-label="${r.label}" data-item-tb="${r.tb}" data-month="${m}"><td class="${color}">${r.label}</td><td>${o}</td><td>${i}</td><td class="${negCls}">${n}</td></tr>`);
+      }
     });
     if(rowsM.length){
       const year = m.substring(2, 4); const month = parseInt(m.substring(5, 7), 10);
       const isChecked = state.selectedMonths.has(m) ? 'checked' : '';
-      
       parts.push(`
         <div class="sec-title month-title-editable" data-month="${m}">
           <div style="cursor: pointer; display: flex; align-items: center; gap: 6px;" title="${year}년 ${month}월 상세 내역 수정">
-            <span>${year}년 ${month}월 발주</span>
-            <i data-feather="edit-2" style="width:14px; height:14px;"></i>
+            <span>${year}년 ${month}월 발주</span><i data-feather="edit-2" style="width:14px; height:14px;"></i>
           </div>
           <input type="checkbox" class="month-checkbox" data-month="${m}" ${isChecked} title="전체 요약에 포함/제외">
         </div>
-
         <div class="table-wrap">
           <table class="tbl-summary">
             <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
@@ -893,6 +912,7 @@ function renderOrderSummary(container){
   });
   container.innerHTML = parts.join('');
 }
+
 
 
     /* ▷▷▷ 렌더링 종료 ▷▷▷ */
@@ -1174,46 +1194,75 @@ async function onExportExcel_AllData(){
 
     const ITEMS = buildItems(all);
     const wb=new ExcelJS.Workbook();
-    const sumMonth = (it, kind, m, tb='')=>{
-      const node=((it[kind]||{})[m])||{};
-      return Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true).reduce((s,e)=> s+toInt(e.qty),0);
+    
+    // 이월 데이터 계산을 위한 헬퍼 함수
+    const getCarryOverData = (item, months) => {
+        let carryOverQty = 0;
+        months.forEach(m => {
+            const orders = (((all[item.key] || {}).orders || {})[m]) || {};
+            Object.values(orders).forEach(order => {
+                if (order.note && order.note.includes('이월분') && (item.tb ? order.topBottom === item.tb : true)) {
+                    carryOverQty += toInt(order.qty);
+                }
+            });
+        });
+        return carryOverQty;
     };
-    const sumRange = (it, kind, months, tb='')=> months.reduce((acc,m)=> acc + sumMonth(it,kind,m,tb), 0);
+    
+    const sumMonth = (it, kind, m, tb='', excludeCarryOver = false)=>{
+      const node=((it[kind]||{})[m])||{};
+      return Object.values(node)
+        .filter(e=> {
+            const tbMatch = tb ? (e.topBottom||'')===tb : true;
+            const carryOverMatch = excludeCarryOver ? !(e.note && e.note.includes('이월분')) : true;
+            return tbMatch && carryOverMatch;
+        })
+        .reduce((s,e)=> s+toInt(e.qty),0);
+    };
+    const sumRange = (it, kind, months, tb='', excludeCarryOver = false)=> months.reduce((acc,m)=> acc + sumMonth(it,kind,m,tb,excludeCarryOver), 0);
 
-    // 요약 시트 (발주:선택월 / 입고:전체)
+    // 1. 요약 시트 수정
     const wsSum=wb.addWorksheet('요약');
-    wsSum.addRow(['품목','선택발주량','전체입고량','미입고(선택발주 기준)','진행률']);
+    wsSum.addRow(['품목','이전년도 이월','선택월 신규발주','총 발주량', '전체입고량','미입고','진행률']);
     wsSum.views = [{state:'frozen', xSplit:1, ySplit:1}];
-    let totO=0, totR=0;
+    
     ITEMS.forEach(r=>{
       const it=all[r.key]||{};
-      const o=sumRange(it,'orders',selectedMonths,r.tb);
-      const v=sumRange(it,'receipts',allMonths,r.tb);
-      if(o!==0 || v!==0){
-        const n=o-v;
-        const pct = (o>0) ? `${Math.round(v/o*100)}%` : 'N/A';
-        const row=wsSum.addRow([r.label,o,v,n,pct]);
+      const carryOver = getCarryOverData(r, selectedMonths);
+      const newOrders = sumRange(it,'orders',selectedMonths,r.tb, true); // 이월 제외 신규 발주
+      const totalOrders = carryOver + newOrders;
+      const totalReceipts = sumRange(it,'receipts',allMonths,r.tb);
+      
+      if(totalOrders !== 0 || totalReceipts !== 0){
+        const unfulfilled = totalOrders - totalReceipts;
+        const pct = (totalOrders>0) ? `${Math.round(totalReceipts/totalOrders*100)}%` : 'N/A';
+        const row=wsSum.addRow([r.label, carryOver, newOrders, totalOrders, totalReceipts, unfulfilled, pct]);
         if(r.group==='normal') row.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
         if(r.group==='ortho')  row.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
+        if(carryOver > 0) row.getCell(2).font = {color:{argb:'FF78716C'}, bold:true}; // 이월 수량 회색
       }
     });
 
-    // 발주월별 시트 (선택된 월 기준)
+    // 2. 발주월별 시트 수정
     const wsOrd=wb.addWorksheet('발주월별(선택월)');
-    const ordHeaders = ['품목', ...selectedMonths.map(m => { const year = m.substring(2, 4); const month = parseInt(m.substring(5, 7), 10); return `${year}년 ${month}월`; })];
+    const ordHeaders = ['품목', '이월분 합계', ...selectedMonths.map(m => { const year = m.substring(2, 4); const month = parseInt(m.substring(5, 7), 10); return `${year}년 ${month}월`; })];
     wsOrd.addRow(ordHeaders);
-    wsOrd.views = [{state:'frozen', xSplit:1, ySplit:1}];
+    wsOrd.views = [{state:'frozen', xSplit:2, ySplit:1}];
+    
     ITEMS.forEach(r=>{
       const it=all[r.key]||{};
-      const vals=selectedMonths.map(m=> sumMonth(it,'orders',m,r.tb));
-      if(vals.some(v=>v!==0)){
-        const added=wsOrd.addRow([r.label, ...vals]);
+      const carryOverTotal = getCarryOverData(r, selectedMonths);
+      const monthlyVals=selectedMonths.map(m=> sumMonth(it,'orders',m,r.tb, true)); // 이월 제외
+      
+      if(carryOverTotal > 0 || monthlyVals.some(v=>v!==0)){
+        const added=wsOrd.addRow([r.label, carryOverTotal, ...monthlyVals]);
         if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
         if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
+        if(carryOverTotal > 0) added.getCell(2).font = {color:{argb:'FF78716C'}, bold:true};
       }
     });
 
-    // 입고(날짜별) 시트 (전체 월 기준)
+    // 3. 입고 시트는 그대로 (변경 없음)
     const monthToDays = {};
     allMonths.forEach(m=>{
       const daysSet = new Set();
@@ -1239,11 +1288,13 @@ async function onExportExcel_AllData(){
       const vals = allMonths.flatMap(m=> monthToDays[m].map(d=> daySum(it, m, d, r.tb)));
       if(vals.some(v=>v!==0)){
         const added=wsRecv.addRow([r.label, ...vals]);
-        if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
+        if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A3A4'},bold:true};
         if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
       }
     });
 
+
+    // 스타일링
     [wsSum, wsOrd, wsRecv].forEach(ws => {
       ws.getRow(1).eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1E293B'}}; c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center'}; });
       for(let r=2; r<=ws.rowCount; r++){ ws.getRow(r).eachCell((c,ci)=>{ c.alignment={vertical:'middle',horizontal:(ci===1?'left':'center')}; }); }
@@ -1259,9 +1310,9 @@ async function onExportExcel_AllData(){
     });
 
     const buf=await wb.xlsx.writeBuffer();
-     // ▼▼▼ 파일 이름 생성 부분을 원래대로 수정했습니다 ▼▼▼
     const y = new Date().getFullYear().toString().slice(2);
     saveAs(new Blob([buf]), `구매현황(${y}년).xlsx`);
+
   } catch (e) {
     console.error("엑셀 생성 실패:", e);
     showToast("엑셀 생성 실패: 다시 시도해주세요.");
@@ -1269,6 +1320,7 @@ async function onExportExcel_AllData(){
     hideLoader();
   }
 }
+
 
 
     /* ▷▷▷ 엑셀 내보내기 종료 ▷▷▷ */
