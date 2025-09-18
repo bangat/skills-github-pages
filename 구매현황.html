@@ -820,13 +820,11 @@ if (savedMonthsJSON) {
       });
     }
 
-    // 기존 renderOrderSummary 함수를 지우고 아래 코드로 전체 교체하세요.
-
-// 기존 renderOrderSummary 함수를 이 코드로 교체해주세요.
+    // 기존 renderOrderSummary 함수를 이 코드로 교체해주세요.
 
 function renderOrderSummary(container){
   const data = state.snapshot||{};
-  const allMonths = collectAllMonths(data); // 모든 월 목록을 가져옵니다.
+  const allMonths = collectAllMonths(data);
   const monthsDesc = sortDescYM(allMonths);
   const ITEMS = buildItems(data);
 
@@ -848,8 +846,6 @@ function renderOrderSummary(container){
   
   const selectedMonths = Array.from(state.selectedMonths);
   ITEMS.forEach(r=>{
-    // ▼▼▼ 로직 수정 ▼▼▼
-    // 발주(o)는 '선택된 월'만, 입고(i)는 '모든 월'을 기준으로 합산합니다.
     const o = selectedMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'orders'), 0);
     const i = allMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'receipts'), 0);
 
@@ -866,7 +862,8 @@ function renderOrderSummary(container){
     </div>`);
 
   monthsDesc.forEach(m=>{
-    if (!state.selectedMonths.has(m)) return;
+    // ▼▼▼ 바로 이전 코드에서 추가했던 문제가 되는 라인을 삭제했습니다. ▼▼▼
+    // 이제 체크를 해제해도 월별 상세 테이블이 사라지지 않습니다.
 
     const rowsM=[];
     ITEMS.forEach(r=>{
