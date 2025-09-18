@@ -535,18 +535,25 @@ selectedMonths: new Set()
 $('#formBox').addEventListener('click', (e) => {
   if (state.tab !== 'summary') return;
 
+  // ▼▼▼ 이 부분이 추가되었습니다! ▼▼▼
+  // 클릭된 대상이 '월별 체크박스'인 경우에는 아무 동작도 하지 않고 종료합니다.
+  if (e.target.classList.contains('month-checkbox')) {
+    return;
+  }
+
   const row = e.target.closest('.editable-row');
   const monthTitle = e.target.closest('.month-title-editable');
 
   if (row) {
     const { itemKey, itemLabel, itemTb, month } = row.dataset;
-    openEditModal({ itemKey, itemLabel, itemTb, month });
+    // openEditModal 함수가 정의되어 있지 않으므로, 아래 코드는 주석 처리하거나
+    // 해당 함수를 구현해야 합니다. 현재 기능에서는 월 전체 수정만 사용되고 있습니다.
+    // openEditModal({ itemKey, itemLabel, itemTb, month });
   } else if (monthTitle) {
     const month = monthTitle.dataset.month;
     openEditModalForMonth(month); // 새로운 함수 호출
   }
 });
-
 // 이 코드로 교체해주세요
 $('#formBox').addEventListener('change', e => {
   if (e.target.classList.contains('month-checkbox')) {
