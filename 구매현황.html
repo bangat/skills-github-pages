@@ -164,6 +164,20 @@
     }
     .month-title-editable { display: flex; align-items: center; gap: 6px; }
     .month-checkbox { margin-left: auto; cursor: pointer; width: 18px; height: 18px; }
+
+    .payment-status-wrapper {
+    margin-left: auto; /* 체크박스와 텍스트를 오른쪽 끝으로 밀어냄 */
+    display: flex;
+    align-items: center;
+    gap: 6px; /* 체크박스와 텍스트 사이 간격 */
+}
+.payment-status-wrapper label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none; /* 텍스트가 선택되지 않도록 함 */
+}
   </style>
   </head>
 
@@ -557,7 +571,9 @@
     }
 
 //■■■■■■■■◇◇◇바인딩 시작
-    function renderOrderSummary(container){
+   // 기존 renderOrderSummary 함수를 이 코드로 교체해주세요.
+
+function renderOrderSummary(container){
   const data = state.snapshot||{};
   const allMonths = collectAllMonths(data);
   const monthsDesc = sortDescYM(allMonths);
@@ -612,7 +628,7 @@
 
   const summaryHeaders = ['품목'];
   if (hasAnyCarryOver) summaryHeaders.push('이월');
-  summaryHeaders.push('발주');
+  summaryHeaders.push('신규');
   if (hasAnyCarryOver) summaryHeaders.push('총 발주');
   summaryHeaders.push('입고', '미입고');
 
@@ -624,8 +640,6 @@
     </table></div>`);
 
   monthsDesc.forEach(m=>{
-    // ▼▼▼ 문제가 되었던 이 라인을 삭제했습니다 ▼▼▼
-
     const rowsM = ITEMS.map(r => {
       const o = sumMonth(r.key,m,r.tb,'orders');
       const i = sumMonth(r.key,m,r.tb,'receipts');
@@ -645,7 +659,12 @@
           <div style="cursor: pointer; display: flex; align-items: center; gap: 6px;" title="${year}년 ${month}월 상세 내역 수정">
           <span>${year}년 ${month}월 발주</span><i data-feather="edit-2" style="width:14px; height:14px;"></i>
           </div>
-          <input type="checkbox" class="month-checkbox" data-month="${m}" ${isChecked} title="요약에 포함/제외">
+          
+          <div class="payment-status-wrapper">
+            <input type="checkbox" class="month-checkbox" id="chk-${m}" data-month="${m}" ${isChecked} title="요약에 포함/제외">
+            <label for="chk-${m}">결제완료</label>
+          </div>
+
         </div>
         <div class="table-wrap"><table class="tbl-summary">
         <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
