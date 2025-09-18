@@ -1,20 +1,13 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <!-- ▷▷▷ head 메타 시작 ▷▷▷ -->
   <meta charset="utf-8" />
   <meta http-equiv="Cache-Control" content="no-store" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>발주·입고 현황</title>
-  <!-- ▷▷▷ head 메타 종료 ▷▷▷ -->
-
-  <!-- ▷▷▷ 외부 라이브러리 로드 시작 ▷▷▷ -->
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
-  <!-- ▷▷▷ 외부 라이브러리 로드 종료 ▷▷▷ -->
-
-  <!-- ▷▷▷ 전역 스타일 시작 ▷▷▷ -->
   <style>
     :root{
       --bg:#f4f7fb; --card:#ffffff; --accent:#2563eb; --muted:#5b677a; --text:#0f172a; --border:#e6eaf2;
@@ -76,12 +69,7 @@
     .is-hidden{ display:none !important; }
     .tbl-summary th, .tbl-summary td { padding-left: 4px; padding-right: 4px; }
     .tbl-summary th:first-child, .tbl-summary td:first-child { width: auto; text-align: left; padding-left: 10px; }
-    .tbl-summary th:not(:first-child), .tbl-summary
-
-//숫자칸 넓이■■■■■□□□□□□□□
-
-
- td:not(:first-child) { width: 50px; }
+    .tbl-summary th:not(:first-child), .tbl-summary td:not(:first-child) { width: 60px; }
     .tbl-summary .editable-row:hover { background-color: #f1f5f9; cursor: pointer; }
     .progress{height:16px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin:6px}
     .progress > div{height:100%;background:var(--accent);text-align:center;font-size:11px;color:#fff;line-height:16px}
@@ -96,8 +84,6 @@
     .txt-normal{ color:#16a34a; font-weight:800;}
     .txt-ortho{  color:#2563eb; font-weight:800;}
     .neg{ color:#f43f5e; font-weight:900;}
-
-    /* ▷▷▷ 로더 오버레이 시작 ▷▷▷ */
     .loader-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(255, 255, 255, 0.7);
@@ -110,9 +96,6 @@
     }
     .loader-overlay p { margin-top: 15px; font-weight: 800; color: var(--text); }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    /* ▷▷▷ 로더 오버레이 종료 ▷▷▷ */
-
-    /* ▷▷▷ 모달 공통 시작 ▷▷▷ */
     .modal-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(15, 23, 42, 0.6);
@@ -146,112 +129,48 @@
     #confirmationModal .modal-body li:last-child { border-bottom: none; }
     #confirmationModal .modal-body li .item-name { font-weight: 600; color: var(--text); }
     #confirmationModal .modal-body li .item-qty { font-weight: 800; color: var(--accent); font-size: 14px; }
-
     #editModal .modal-body li {
-      padding: 8px 4px; border-bottom: 1px solid #f1f5f9;
-      display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center;
+      display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; padding: 10px 4px;
+      border-bottom: 1px solid #f1f5f9;
     }
     #editModal .modal-body li:last-child { border-bottom: none; }
     #editModal .modal-body li.is-deleted { opacity: 0.5; }
-    #editModal .modal-body li.is-deleted .item-info { text-decoration: line-through; }
-    #editModal .modal-body li .item-info { font-weight: 600; color: var(--text); font-size: 13px; }
-    #editModal .modal-body li .item-qty { font-weight: 800; color: var(--accent); font-size: 14px; }
+    #editModal .modal-body li.is-deleted .item-details { text-decoration: line-through; }
+    #editModal .modal-body li .item-details {
+      display: flex; flex-direction: column; text-align: left;
+      line-height: 1.3; white-space: nowrap;
+    }
+    #editModal .modal-body li .item-details .item-name { font-weight: 600; font-size: 14px; }
+    #editModal .modal-body li .item-details .sub-info { font-size: 11px; color: var(--muted); margin-top: 2px; }
     #editModal .modal-body li .qty-input { width: 60px; height: 30px; border-radius: 8px; font-size: 13px;}
     #editModal .modal-body li .btn { min-width: auto; height: 30px; padding: 0 8px; font-size: 12px; }
+    #editModal .modal-body .spinner { width: 32px; height: 32px; border-width: 4px; margin: 20px auto; }
     .modal-footer {
       display: flex; justify-content: space-between; align-items: center;
       gap: 10px; padding-top: 15px; border-top: 1px solid var(--border);
     }
-    #editModal .modal-body .spinner { width: 32px; height: 32px; border-width: 4px; margin: 20px auto; }
-    /* ▷▷▷ 모달 공통 종료 ▷▷▷ */
-
-#editModal .modal-body li {
-  display: grid;
-  grid-template-columns: 1fr auto auto; /* 품목정보 | 수량입력 | 삭제버튼 */
-  gap: 8px;
-  align-items: center;
-  padding: 10px 4px;
-}
-#editModal .modal-body li .item-details {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-  line-height: 1.3;
-  white-space: nowrap; /* 줄바꿈 방지 */
-}
-#editModal .modal-body li .item-details .item-name {
-  font-weight: 600;
-  font-size: 14px;
-}
-#editModal .modal-body li .item-details .sub-info {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 2px;
-}
-#editModal .modal-body li.is-deleted .item-details {
-  text-decoration: line-through;
-}
-
-/* 탭 UI 스타일 */
-.modal-tabs {
-  display: flex;
-  gap: 6px;
-  padding: 0 10px;
-  border-bottom: 2px solid var(--border);
-  margin-bottom: 10px;
-}
-.modal-tab {
-  padding: 8px 12px;
-  font-weight: 900;
-  color: var(--muted);
-  background: transparent;
-  border: none;
-  border-bottom: 3px solid transparent;
-  cursor: pointer;
-}
-.modal-tab.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-}
-
-/* 기존 ul 스타일 수정 */
-#editModal .modal-body ul {
-  list-style: none;
-  padding: 0;
-  margin: 0; /* margin: 15px 0; 에서 변경 */
-  max-height: 350px; /* max-height를 조금 늘려도 좋습니다. */
-  overflow-y: auto;
-  /* border와 padding 관련 속성은 제거합니다. */
-}
-
-/* ▷▷▷ 월별 요약 체크박스 스타일 시작 ▷▷▷ */
-.month-title-editable {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.month-checkbox {
-  margin-left: auto; /* 체크박스를 오른쪽 끝으로 밀어냄 */
-  cursor: pointer;
-  width: 18px;
-  height: 18px;
-}
-/* ▷▷▷ 월별 요약 체크박스 스타일 종료 ▷▷▷ */
-
-
-
+    .modal-tabs {
+      display: flex; gap: 6px; padding: 0 10px;
+      border-bottom: 2px solid var(--border); margin-bottom: 10px;
+    }
+    .modal-tab {
+      padding: 8px 12px; font-weight: 900; color: var(--muted); background: transparent;
+      border: none; border-bottom: 3px solid transparent; cursor: pointer;
+    }
+    .modal-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    #editModal .modal-body ul {
+      list-style: none; padding: 0; margin: 0;
+      max-height: 350px; overflow-y: auto;
+    }
+    .month-title-editable { display: flex; align-items: center; gap: 6px; }
+    .month-checkbox { margin-left: auto; cursor: pointer; width: 18px; height: 18px; }
   </style>
-  <!-- ▷▷▷ 전역 스타일 종료 ▷▷▷ -->
-</head>
+  </head>
 
 <body>
-  <!-- ▷▷▷ 로더 오버레이 시작 ▷▷▷ -->
   <div id="loader" class="loader-overlay"><div class="spinner"></div><p id="loaderMsg">서버와 연결중…</p></div>
-  <!-- ▷▷▷ 로더 오버레이 종료 ▷▷▷ -->
-
   <div class="wrap">
     <div class="card">
-      <!-- ▷▷▷ 카드 헤더 시작 ▷▷▷ -->
       <div class="card-head">
         <div class="row">
           <div class="subtabs" role="tablist">
@@ -259,16 +178,13 @@
             <button id="tab-receipts" class="subtab" data-mode="receipts">입고현황</button>
           </div>
         </div>
-
         <div class="datebar">
           <input id="entryDate" type="date" aria-label="기록 날짜" />
         </div>
-
         <div style="padding:6px 6px 0">
           <div id="gaugeStats" style="font-size:12px;color:#475569;margin:4px 0 2px">발주수량 0개 · 입고수량 0개 — 0% 입고됨</div>
           <div class="progress" aria-label="진행률"><div id="progressBarInner" style="width:0%">0%</div></div>
         </div>
-
         <div id="ordersTopLine" class="itemline">
           <div id="tabsWrap" class="itemtabs" role="tablist">
             <button class="itemtab active" data-tab="sheet">시트류</button>
@@ -277,35 +193,23 @@
           </div>
           <div class="spacer"></div>
         </div>
-
         <div id="patientTabs" class="patient-tabs" style="display:none">
           <button class="ptab active" data-kind="normal">일반환의</button>
           <button class="ptab" data-kind="ortho">정형환의</button>
           <button class="ptab" data-kind="hip">고관절</button>
         </div>
       </div>
-      <!-- ▷▷▷ 카드 헤더 종료 ▷▷▷ -->
-
-      <!-- ▷▷▷ 본문 컨테이너 시작 ▷▷▷ -->
       <div id="formBox"></div>
-      <!-- ▷▷▷ 본문 컨테이너 종료 ▷▷▷ -->
-    </div>
+      </div>
   </div>
 
-  <!-- ▷▷▷ 하단 저장 바 시작 ▷▷▷ -->
   <div class="savebar">
     <a href="뉴업로더.html" target="_blank" class="btn ghost"><i data-feather="upload"></i> 엑셀 업로드</a>
     <button id="btnExcelBottom" class="btn green"><i data-feather="download"></i> 엑셀로 내려받기</button>
     <div class="spacer"></div>
     <button id="btnSaveBottom" class="btn primary"><i data-feather="save"></i> <span id="saveLabel">발주 저장</span></button>
   </div>
-  <!-- ▷▷▷ 하단 저장 바 종료 ▷▷▷ -->
-
-  <!-- ▷▷▷ 토스트 시작 ▷▷▷ -->
   <div id="toast" role="status" aria-live="polite" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:80px;background:#111827;color:#fff;padding:8px 12px;border-radius:10px;font-size:12px;z-index:1100;"></div>
-  <!-- ▷▷▷ 토스트 종료 ▷▷▷ -->
-
-  <!-- ▷▷▷ 저장 확인 모달 시작 ▷▷▷ -->
   <div id="confirmationModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
@@ -322,9 +226,6 @@
       </div>
     </div>
   </div>
-  <!-- ▷▷▷ 저장 확인 모달 종료 ▷▷▷ -->
-
-  <!-- ▷▷▷ 상세 수정 모달 시작 ▷▷▷ -->
   <div id="editModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
@@ -340,9 +241,6 @@
       </div>
     </div>
   </div>
-  <!-- ▷▷▷ 상세 수정 모달 종료 ▷▷▷ -->
-
-  <!-- ▷▷▷ 앱 스크립트 시작 ▷▷▷ -->
   <script type="module">
     /* ▷▷▷ Firebase 초기화 시작 ▷▷▷ */
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -396,14 +294,12 @@
       $('#loader').style.display = 'none';
     }
 
-    // 지수 백오프 재시도
     async function fetchWithRetry(url, options = {}, { retries = 3, baseDelay = 500 } = {}){
       let lastErr;
       for(let attempt=0; attempt<=retries; attempt++){
         try{
           const res = await fetch(url, options);
           if(!res.ok){
-            // 403은 즉시 처리 (토큰 만료 등)
             if(res.status === 403) return res;
             throw new Error(`HTTP ${res.status}`);
           }
@@ -420,11 +316,10 @@
     }
     /* ▷▷▷ 공용 유틸 종료 ▷▷▷ */
 
-    /* ▷▷▷ 서버 API 호출(자동 재시도 포함) 시작 ▷▷▷ */
+    /* ▷▷▷ 서버 API 호출 시작 ▷▷▷ */
     const API = {
       getPurchaseData: 'https://getpurchasedata-t7cbh6uw5a-uc.a.run.app',
       updatePurchaseData: 'https://updatepurchasedata-t7cbh6uw5a-uc.a.run.app'
-
     };
 
     async function getStatusOnce(){
@@ -434,16 +329,13 @@
         window.location.href = './index.html';
         return {};
       }
-
       const res = await fetchWithRetry(API.getPurchaseData, {
         headers: { 'Authorization': `Bearer ${token}` }
-      }, { retries: 2, baseDelay: 600 });
-
+      });
       if (!res.ok){
         if (res.status === 403){
           localStorage.removeItem('adminToken');
           window.location.href = './index.html';
-          return {};
         }
         throw new Error(`Server error: ${res.status}`);
       }
@@ -454,16 +346,13 @@
       const token = localStorage.getItem('adminToken');
       if (!token) { showToast("인증 만료. 다시 로그인해주세요."); return; }
       if (Object.keys(updates).length === 0) return;
-
-      const res = await fetchWithRetry(API.updatePurchaseData, {
+      await fetchWithRetry(API.updatePurchaseData, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ updates })
-      }, { retries: 2, baseDelay: 700 });
-
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      });
     }
-    /* ▷▷▷ 서버 API 호출(자동 재시도 포함) 종료 ▷▷▷ */
+    /* ▷▷▷ 서버 API 호출 종료 ▷▷▷ */
 
     /* ▷▷▷ 도메인 상수/상태 시작 ▷▷▷ */
     const state = {
@@ -471,7 +360,7 @@
       entryDate:'', snapshot:null,
       draftOrders:{ sheet:new Map(), patient:new Map(), hip:new Map() },
       patientKind:'normal',
-selectedMonths: new Set() 
+      selectedMonths: new Set() 
     };
 
     const BASE_SHEETS = ["대시트","반시트","베갯잇","수건","중환의","얼음포","억제대"];
@@ -485,7 +374,6 @@ selectedMonths: new Set()
     document.addEventListener('DOMContentLoaded', async ()=>{
       try {
         showLoader('서버와 연결중…');
-
         const t = new Date();
         const ymd = `${t.getFullYear()}-${pad2(t.getMonth()+1)}-${pad2(t.getDate())}`;
         $('#entryDate').value = ymd; state.entryDate=ymd;
@@ -499,7 +387,7 @@ selectedMonths: new Set()
             $('#ordersTopLine').style.display = showOrdersUI ? 'flex' : 'none';
             $('#patientTabs').style.display   = (showOrdersUI && state.tab==='patient') ? 'flex' : 'none';
             $('#saveLabel').textContent = (state.mode==='orders') ? '발주 저장' : '입고 완료';
-            renderBody(); refreshProgress();
+            renderBody(); 
           });
         });
 
@@ -523,82 +411,51 @@ selectedMonths: new Set()
         $('#entryDate').addEventListener('change', ()=>{ state.entryDate = $('#entryDate').value; });
         $('#btnSaveBottom').addEventListener('click', onSaveAll);
         $('#btnExcelBottom').addEventListener('click', onExportExcel_AllData);
-
-        // 저장 확인 모달
-        const confirmModal = $('#confirmationModal');
         $('#modalConfirmBtn').addEventListener('click', proceedWithSave);
-        $('#modalCancelBtn').addEventListener('click', () => { confirmModal.style.display = 'none'; });
-        $('#modalCloseBtn').addEventListener('click', () => { confirmModal.style.display = 'none'; });
-
-        // 수정 모달
-        const editModal = $('#editModal');
-        editModal.querySelectorAll('.close-btn').forEach(btn => btn.addEventListener('click', () => { editModal.style.display = 'none'; }));
+        $('#confirmationModal').querySelectorAll('.close-btn, #modalCancelBtn').forEach(btn => btn.addEventListener('click', () => { $('#confirmationModal').style.display = 'none'; }));
+        $('#editModal').querySelectorAll('.close-btn').forEach(btn => btn.addEventListener('click', () => { $('#editModal').style.display = 'none'; }));
         $('#saveEditsBtn').addEventListener('click', saveEdits);
 
-        // 요약표 클릭(행 단위 편집)
-        // 수정된 코드
-$('#formBox').addEventListener('click', (e) => {
-  if (state.tab !== 'summary') return;
+        $('#formBox').addEventListener('click', (e) => {
+          if (state.tab !== 'summary') return;
+          if (e.target.classList.contains('month-checkbox')) return;
+          const monthTitle = e.target.closest('.month-title-editable');
+          if (monthTitle) {
+            openEditModalForMonth(monthTitle.dataset.month);
+          }
+        });
 
-  // ▼▼▼ 이 부분이 추가되었습니다! ▼▼▼
-  // 클릭된 대상이 '월별 체크박스'인 경우에는 아무 동작도 하지 않고 종료합니다.
-  if (e.target.classList.contains('month-checkbox')) {
-    return;
-  }
+        $('#formBox').addEventListener('change', e => {
+          if (e.target.classList.contains('month-checkbox')) {
+            const month = e.target.dataset.month;
+            if (e.target.checked) {
+              state.selectedMonths.add(month);
+            } else {
+              state.selectedMonths.delete(month);
+            }
+            localStorage.setItem('selectedMonths', JSON.stringify(Array.from(state.selectedMonths)));
+            if (state.tab === 'summary') {
+              renderOrderSummary($('#formBox'));
+              feather.replace({ width: '1em', height: '1em' });
+            } else if (state.mode === 'receipts') {
+              renderReceiptsUI($('#formBox'));
+            }
+            refreshProgress();
+          }
+        });
 
-  const row = e.target.closest('.editable-row');
-  const monthTitle = e.target.closest('.month-title-editable');
+        state.snapshot = await getStatusOnce();
+        const savedMonthsJSON = localStorage.getItem('selectedMonths');
+        if (savedMonthsJSON) {
+            state.selectedMonths = new Set(JSON.parse(savedMonthsJSON));
+        } else {
+            const allMonths = collectAllMonths(state.snapshot);
+            state.selectedMonths = new Set(allMonths);
+        }
 
-  if (row) {
-    const { itemKey, itemLabel, itemTb, month } = row.dataset;
-    // openEditModal 함수가 정의되어 있지 않으므로, 아래 코드는 주석 처리하거나
-    // 해당 함수를 구현해야 합니다. 현재 기능에서는 월 전체 수정만 사용되고 있습니다.
-    // openEditModal({ itemKey, itemLabel, itemTb, month });
-  } else if (monthTitle) {
-    const month = monthTitle.dataset.month;
-    openEditModalForMonth(month); // 새로운 함수 호출
-  }
-});
-// 이 코드로 교체해주세요
-$('#formBox').addEventListener('change', e => {
-  if (e.target.classList.contains('month-checkbox')) {
-    const month = e.target.dataset.month;
-    if (e.target.checked) {
-      state.selectedMonths.add(month);
-    } else {
-      state.selectedMonths.delete(month);
-    }
-    
-    // 1. 변경된 선택 상태를 브라우저에 저장 (새로고침해도 유지되도록)
-    localStorage.setItem('selectedMonths', JSON.stringify(Array.from(state.selectedMonths)));
-    
-    // 요약 탭의 테이블을 다시 그림
-    if (state.tab === 'summary') {
-      renderOrderSummary($('#formBox'));
-      if (window.feather) feather.replace({ width: '1em', height: '1em' });
-    }
-    
-    // 2. 상단 진행률 바와 통계를 업데이트
-    refreshProgress();
-  }
-});
-
-        // 스냅샷 로드
-state.snapshot = await getStatusOnce();
-
-// 로컬 저장소에서 이전에 저장된 월 선택 데이터를 불러옵니다.
-const savedMonthsJSON = localStorage.getItem('selectedMonths');
-if (savedMonthsJSON) {
-    // 저장된 데이터가 있으면, 그것을 사용해 state를 복원합니다.
-    state.selectedMonths = new Set(JSON.parse(savedMonthsJSON));
-} else {
-    // 저장된 데이터가 없으면 (첫 방문), 모든 월을 기본값으로 선택합니다.
-    const allMonths = collectAllMonths(state.snapshot);
-    state.selectedMonths = new Set(allMonths);
-}
         renderBody();
         refreshProgress();
-        if (window.feather && typeof feather.replace === 'function') feather.replace({ width:'1em', height:'1em' });
+        feather.replace({ width:'1em', height:'1em' });
       } catch (error) {
         console.error("초기화 실패:", error);
         showToast("초기 로딩 오류: 잠시 후 다시 시도해주세요.");
@@ -608,7 +465,7 @@ if (savedMonthsJSON) {
     });
     /* ▷▷▷ 초기 이벤트 바인딩 & 첫 로딩 종료 ▷▷▷ */
 
-    /* ▷▷▷ 아이템 정의/빌더 시작 ▷▷▷ */
+    /* ▷▷▷ 아이템/데이터 헬퍼 시작 ▷▷▷ */
     function buildItems(snapshot){
       const hasHipNew = HIP_NEW.some(k=> snapshot[k]);
       const hasHipOld = !!snapshot['고관절'];
@@ -633,58 +490,44 @@ if (savedMonthsJSON) {
       return Array.from(set).sort();
     }
     const sortDescYM = list => [...list].sort((a,b)=> a<b ? 1 : (a>b ? -1 : 0));
-    /* ▷▷▷ 아이템 정의/빌더 종료 ▷▷▷ */
+    /* ▷▷▷ 아이템/데이터 헬퍼 종료 ▷▷▷ */
 
-    /* ▷▷▷ 렌더링 시작 ▷▷▷ */
+    /* ▷▷▷ 렌더링 함수 시작 ▷▷▷ */
     async function renderBody(){
       if(!state.snapshot) state.snapshot = await getStatusOnce();
-      const container = $('#formBox'); container.innerHTML='';
-      container.classList.toggle('is-orders', state.mode==='orders');
-      if(state.mode==='orders') renderOrdersUI(container);
-      else await renderReceiptsUI(container);
-      if (window.feather) feather.replace({ width:'1em', height:'1em' });
+      const container = $('#formBox'); 
+      container.innerHTML='';
+      if(state.mode === 'orders'){
+        renderOrdersUI(container);
+      } else {
+        await renderReceiptsUI(container);
+      }
+      feather.replace({ width:'1em', height:'1em' });
     }
 
     function renderOrdersUI(container){
-      if(state.tab==='sheet'){
-        const sheets = [...BASE_SHEETS];
+      const tabRenderers = {
+        sheet: renderSheetOrders,
+        patient: renderPatientOrders,
+        summary: renderOrderSummary
+      };
+      (tabRenderers[state.tab] || renderSheetOrders)(container);
+    }
+
+    function renderSheetOrders(container) {
         container.innerHTML = `
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>품목</th><th>수량</th></tr></thead>
-              <tbody>
-                ${sheets.map(n=>`
-                  <tr><td>${n}</td>
-                  <td><input type="number" min="0" inputmode="numeric" class="q-sheet" data-item="${n}" value="${state.draftOrders.sheet.get(n)||''}"/></td></tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>`;
-        $$('.q-sheet').forEach(i=> i.addEventListener('input', e=>{
-          const v = toInt(e.target.value);
-          if(v>0) state.draftOrders.sheet.set(e.target.dataset.item, v);
-          else state.draftOrders.sheet.delete(e.target.dataset.item);
-        }));
-      }else if(state.tab==='patient'){
+          <div class="table-wrap"><table><thead><tr><th>품목</th><th>수량</th></tr></thead><tbody>
+          ${BASE_SHEETS.map(n=>`<tr><td>${n}</td><td><input type="number" min="0" inputmode="numeric" class="q-input" data-group="sheet" data-item="${n}" value="${state.draftOrders.sheet.get(n)||''}"/></td></tr>`).join('')}
+          </tbody></table></div>`;
+        addInputListeners('sheet');
+    }
+
+    function renderPatientOrders(container) {
         if(state.patientKind==='hip'){
-          const rows = HIP_NEW.map(n=>({label:n, key:n}));
-          container.innerHTML = `
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>품목</th><th>수량</th></tr></thead>
-                <tbody>
-                  ${rows.map(r=>`
-                    <tr><td>${r.label}</td>
-                    <td><input type="number" min="0" inputmode="numeric" class="q-hip" data-item="${r.key}" value="${state.draftOrders.hip.get(r.key)||''}" /></td></tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>`;
-          $$('.q-hip').forEach(i=> i.addEventListener('input', e=>{
-            const v = toInt(e.target.value);
-            if(v>0) state.draftOrders.hip.set(e.target.dataset.item, v);
-            else state.draftOrders.hip.delete(e.target.dataset.item);
-          }));
+          container.innerHTML = `<div class="table-wrap"><table><thead><tr><th>품목</th><th>수량</th></tr></thead><tbody>
+          ${HIP_NEW.map(n=>`<tr><td>${n}</td><td><input type="number" min="0" inputmode="numeric" class="q-input" data-group="hip" data-item="${n}" value="${state.draftOrders.hip.get(n)||''}"/></td></tr>`).join('')}
+          </tbody></table></div>`;
+          addInputListeners('hip');
         }else{
           const sizes = state.patientKind==='normal' ? NORMAL_SIZES : ORTHO_SIZES;
           const kindLabel = state.patientKind==='normal' ? '일반' : '정형';
@@ -692,372 +535,231 @@ if (savedMonthsJSON) {
           const rows = [];
           sizes.forEach(sz=>{
             ['상의','하의'].forEach(tb=>{
-              const itemKey = `${state.patientKind==='normal'?'일반환의':'정형환의'}${sz}__${tb}`;
+              const itemKey = `${state.patientKind === 'normal' ? '일반환의' : '정형환의'}${sz}__${tb}`;
               rows.push({label: `${kindLabel}${tb}${sz}`, key:itemKey});
             });
           });
-          container.innerHTML = `
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>품목</th><th>수량</th></tr></thead>
-                <tbody>
-                  ${rows.map(r=>`
-                    <tr>
-                      <td class="${colorCls}">${r.label}</td>
-                      <td><input type="number" min="0" inputmode="numeric" class="q-pt" data-key="${r.key}" value="${state.draftOrders.patient.get(r.key)||''}" /></td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>`;
-          $$('.q-pt').forEach(i=> i.addEventListener('input', e=>{
-            const v = toInt(e.target.value);
-            if(v>0) state.draftOrders.patient.set(e.target.dataset.key, v);
-            else state.draftOrders.patient.delete(e.target.dataset.key);
-          }));
+          container.innerHTML = `<div class="table-wrap"><table><thead><tr><th>품목</th><th>수량</th></tr></thead><tbody>
+          ${rows.map(r=>`<tr><td class="${colorCls}">${r.label}</td><td><input type="number" min="0" inputmode="numeric" class="q-input" data-group="patient" data-item="${r.key}" value="${state.draftOrders.patient.get(r.key)||''}"/></td></tr>`).join('')}
+          </tbody></table></div>`;
+          addInputListeners('patient');
         }
-      }else{
-        renderOrderSummary(container);
-      }
     }
 
-//■□■■■■■■■■□□□□□□□입고현황랜더
-    Async function renderBody(){
-      if(!state.snapshot) state.snapshot = await getStatusOnce();
-      const container = $('#formBox'); container.innerHTML='';
-      container.classList.toggle('is-orders', state.mode==='orders');
-      if(state.mode==='orders') renderOrdersUI(container);
-      else await renderReceiptsUI(container);
-      if (window.feather) feather.replace({ width:'1em', height:'1em' });
-    }
-
-    function renderOrdersUI(container){
-      if(state.tab==='sheet'){
-        const sheets = [...BASE_SHEETS];
-        container.innerHTML = `
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>품목</th><th>수량</th></tr></thead>
-              <tbody>
-                ${sheets.map(n=>`
-                  <tr><td>${n}</td>
-                  <td><input type="number" min="0" inputmode="numeric" class="q-sheet" data-item="${n}" value="${state.draftOrders.sheet.get(n)||''}"/></td></tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>`;
-        $$('.q-sheet').forEach(i=> i.addEventListener('input', e=>{
-          const v = toInt(e.target.value);
-          if(v>0) state.draftOrders.sheet.set(e.target.dataset.item, v);
-          else state.draftOrders.sheet.delete(e.target.dataset.item);
+    function addInputListeners(group) {
+        $$('.q-input').forEach(i => i.addEventListener('input', e => {
+            const { group, item } = e.target.dataset;
+            const value = toInt(e.target.value);
+            const draftMap = state.draftOrders[group];
+            if (value > 0) draftMap.set(item, value);
+            else draftMap.delete(item);
         }));
-      }else if(state.tab==='patient'){
-        if(state.patientKind==='hip'){
-          const rows = HIP_NEW.map(n=>({label:n, key:n}));
-          container.innerHTML = `
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>품목</th><th>수량</th></tr></thead>
-                <tbody>
-                  ${rows.map(r=>`
-                    <tr><td>${r.label}</td>
-                    <td><input type="number" min="0" inputmode="numeric" class="q-hip" data-item="${r.key}" value="${state.draftOrders.hip.get(r.key)||''}" /></td></tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>`;
-          $$('.q-hip').forEach(i=> i.addEventListener('input', e=>{
-            const v = toInt(e.target.value);
-            if(v>0) state.draftOrders.hip.set(e.target.dataset.item, v);
-            else state.draftOrders.hip.delete(e.target.dataset.item);
-          }));
-        }else{
-          const sizes = state.patientKind==='normal' ? NORMAL_SIZES : ORTHO_SIZES;
-          const kindLabel = state.patientKind==='normal' ? '일반' : '정형';
-          const colorCls  = state.patientKind==='normal' ? 'txt-normal' : 'txt-ortho';
-          const rows = [];
-          sizes.forEach(sz=>{
-            ['상의','하의'].forEach(tb=>{
-              const itemKey = `${state.patientKind==='normal'?'일반환의':'정형환의'}${sz}__${tb}`;
-              rows.push({label: `${kindLabel}${tb}${sz}`, key:itemKey});
-            });
+    }
+
+    function renderOrderSummary(container){
+      const data = state.snapshot||{};
+      const allMonths = collectAllMonths(data);
+      const monthsDesc = sortDescYM(allMonths);
+      const ITEMS = buildItems(data);
+
+      const getCarryOverData = (item, months) => {
+          let carryOverQty = 0;
+          months.forEach(m => {
+              const orders = (((data[item.key] || {}).orders || {})[m]) || {};
+              Object.values(orders).forEach(order => {
+                  if (order.note && order.note.includes('이월분') && (item.tb ? order.topBottom === item.tb : true)) {
+                      carryOverQty += toInt(order.qty);
+                  }
+              });
           });
-          container.innerHTML = `
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>품목</th><th>수량</th></tr></thead>
-                <tbody>
-                  ${rows.map(r=>`
-                    <tr>
-                      <td class="${colorCls}">${r.label}</td>
-                      <td><input type="number" min="0" inputmode="numeric" class="q-pt" data-key="${r.key}" value="${state.draftOrders.patient.get(r.key)||''}" /></td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>`;
-          $$('.q-pt').forEach(i=> i.addEventListener('input', e=>{
-            const v = toInt(e.target.value);
-            if(v>0) state.draftOrders.patient.set(e.target.dataset.key, v);
-            else state.draftOrders.patient.delete(e.target.dataset.key);
-          }));
+          return carryOverQty;
+      };
+
+      const sumMonth=(name,month,tb='',kind='orders', excludeCarryOver = false)=>{
+        const node=(((data[name]||{})[kind]||{})[month])||{};
+        return Object.values(node)
+            .filter(e => {
+                const tbMatch = tb ? (e.topBottom||'')===tb : true;
+                const carryOverMatch = excludeCarryOver ? !(e.note && e.note.includes('이월분')) : true;
+                return tbMatch && carryOverMatch;
+            })
+            .reduce((s,e)=> s+toInt(e.qty),0);
+      };
+
+      const parts=[];
+      const selectedMonths = Array.from(state.selectedMonths);
+      const hasAnyCarryOver = ITEMS.some(item => getCarryOverData(item, selectedMonths) > 0);
+
+      const summaryRows = ITEMS.map(r => {
+        const carryOver = getCarryOverData(r, selectedMonths);
+        const newOrders = selectedMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'orders', true), 0);
+        const totalOrders = carryOver + newOrders;
+        const totalReceipts = allMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'receipts'), 0);
+        const unfulfilled = totalOrders - totalReceipts;
+
+        if (!totalOrders && !totalReceipts) return '';
+
+        const color = r.group === 'normal' ? 'txt-normal' : (r.group === 'ortho' ? 'txt-ortho' : '');
+        const negCls = unfulfilled < 0 ? 'neg' : '';
+        let rowHtml = `<tr class="summary-row"><td class="${color}">${r.label}</td>`;
+        if (hasAnyCarryOver) rowHtml += `<td style="color:#78716C;">${carryOver}</td>`;
+        rowHtml += `<td>${newOrders}</td>`;
+        if (hasAnyCarryOver) rowHtml += `<td>${totalOrders}</td>`;
+        rowHtml += `<td>${totalReceipts}</td><td class="${negCls}">${unfulfilled}</td></tr>`;
+        return rowHtml;
+      }).join('');
+
+      const summaryHeaders = ['품목'];
+      if (hasAnyCarryOver) summaryHeaders.push('이월');
+      summaryHeaders.push('신규');
+      if (hasAnyCarryOver) summaryHeaders.push('총 발주');
+      summaryHeaders.push('입고', '미입고');
+
+      parts.push(`
+        <div class="sec-title">전체 요약 (발주:선택월 / 입고:전체)</div>
+        <div class="table-wrap"><table class="tbl-summary">
+        <thead><tr><th>${summaryHeaders.join('</th><th>')}</th></tr></thead>
+        <tbody>${summaryRows}</tbody>
+        </table></div>`);
+
+      monthsDesc.forEach(m=>{
+        if (!state.selectedMonths.has(m) && state.mode === 'orders') return;
+        
+        const rowsM = ITEMS.map(r => {
+          const o = sumMonth(r.key,m,r.tb,'orders');
+          const i = sumMonth(r.key,m,r.tb,'receipts');
+          if (!o && !i) return '';
+          const n=o-i; 
+          const negCls = n<0 ? 'neg' : '';
+          const color = r.group==='normal' ? 'txt-normal' : (r.group==='ortho' ? 'txt-ortho' : '');
+          return `<tr class="editable-row" data-month="${m}"><td class="${color}">${r.label}</td><td>${o}</td><td>${i}</td><td class="${negCls}">${n}</td></tr>`;
+        }).join('');
+
+        if(rowsM){
+          const year = m.substring(2, 4); 
+          const month = parseInt(m.substring(5, 7), 10);
+          const isChecked = state.selectedMonths.has(m) ? 'checked' : '';
+          parts.push(`
+            <div class="sec-title month-title-editable" data-month="${m}">
+              <div style="cursor: pointer; display: flex; align-items: center; gap: 6px;" title="${year}년 ${month}월 상세 내역 수정">
+              <span>${year}년 ${month}월 발주</span><i data-feather="edit-2" style="width:14px; height:14px;"></i>
+              </div>
+              <input type="checkbox" class="month-checkbox" data-month="${m}" ${isChecked} title="요약에 포함/제외">
+            </div>
+            <div class="table-wrap"><table class="tbl-summary">
+            <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
+            <tbody>${rowsM}</tbody>
+            </table></div>`);
         }
-      }else{
-        renderOrderSummary(container);
-      }
+      });
+      container.innerHTML = parts.join('');
     }
 
     async function renderReceiptsUI(container){
       const data = state.snapshot||{};
-      const months = collectAllMonths(data);
-      if(months.length===0){ container.innerHTML=''; return; }
+      const selectedMonths = Array.from(state.selectedMonths);
+      const allMonths = collectAllMonths(data);
+      if(allMonths.length===0){ container.innerHTML=''; return; }
       const ITEMS = buildItems(data);
 
-      const sumBy = (name, path, tb='')=>{
-        return months.reduce((acc, m)=>{
-          const node = (((data[name]||{})[path]||{})[m])||{};
-          const arr = Object.values(node).filter(e=> (tb? (e.topBottom||'')===tb : true));
-          return acc + arr.reduce((s,e)=> s+toInt(e.qty),0);
-        },0);
+      const calculateTotal = (item, kind, monthList) => {
+        return monthList.reduce((acc, m) => {
+            const node = (((data[item.key] || {})[kind] || {})[m]) || {};
+            const sum = Object.values(node)
+                .filter(e => item.tb ? (e.topBottom || '') === item.tb : true)
+                .reduce((s, e) => s + toInt(e.qty), 0);
+            return acc + sum;
+        }, 0);
       };
 
-      const sheetRows = ITEMS.filter(x=>x.group==='sheet').map(r=>{
-        const o = sumBy(r.key,'orders',r.tb), rv = sumBy(r.key,'receipts',r.tb);
-        if(o<=0 && rv<=0) return '';
-        const done = rv>=o ? 'done' : '';
-        const over = rv>o ? 'over' : '';
-        const prDisp = (o>0) ? (rv<=o ? `${Math.round((rv/o)*100)}%` : `-${Math.round((rv-o)/o*100)}%`) : (rv>0?'100%':'0%');
-        const overCnt = Math.max(0, rv - o);
-        const badgeClass = overCnt ? '' : 'is-hidden';
-        const pc100Class = (o>0 && rv>=o && (rv-o)===0) ? 'pc100' : '';
-        return `
-          <tr class="rec-row ${done} ${over}" data-item="${r.key}" data-tb="">
-            <td class="name-cell"><span class="name">${r.label}</span><span class="badge-dot ${badgeClass}" title="추가입고 ${overCnt}개">+</span></td>
-            <td class="o-cell"><span class="o" data-o="${o}" data-r="${rv}">${o}/${rv}</span></td>
-            <td><input type="number" min="0" inputmode="numeric" class="rq" data-item="${r.key}" data-tb="" /></td>
-            <td class="pcell ${pc100Class}">${prDisp}</td>
-          </tr>`;
-      }).filter(Boolean).join('');
-
-      const buildPatientTable = (group, colorClass)=>{
-        const rows=[];
-        ITEMS.filter(x=>x.group===group).forEach(r=>{
-          const o = sumBy(r.key,'orders',r.tb); const i = sumBy(r.key,'receipts',r.tb);
-          if(o>0 || i>0){
-            const prDisp = (o>0) ? (i<=o? `${Math.round((i/o)*100)}%` : `-${Math.round((i-o)/o*100)}%`) : (i>0?'100%':'0%');
-            const done = i>=o ? 'done' : '';
-            const over = i>o ? 'over' : '';
-            const overCnt = Math.max(0, i - o);
-            const badgeClass = overCnt ? '' : 'is-hidden';
-            const pc100Class = (o>0 && i>=o && (i-o)===0) ? 'pc100' : '';
-            rows.push(`
-              <tr class="rec-row ${done} ${over}" data-item="${r.key}" data-tb="${r.tb}">
-                <td class="name-cell"><span class="name ${colorClass}">${r.label}</span><span class="badge-dot ${badgeClass}" title="추가입고 ${overCnt}개">+</span></td>
-                <td class="o-cell"><span class="o" data-o="${o}" data-r="${i}">${o}/${i}</span></td>
-                <td><input type="number" min="0" inputmode="numeric" class="rq" data-item="${r.key}" data-tb="${r.tb}" /></td>
-                <td class="pcell ${pc100Class}">${prDisp}</td>
-              </tr>`);
-          }
-        });
-        if(rows.length===0) return '';
-        return `
-          <div class="table-wrap">
-            <table class="tbl-receipts">
-              <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>진행률</th></tr></thead>
-              <tbody>${rows.join('')}</tbody>
-            </table>
-          </div>`;
+      const renderTableRows = (items) => {
+        return items.map(r => {
+          const o = calculateTotal(r, 'orders', selectedMonths);
+          const rv = calculateTotal(r, 'receipts', allMonths);
+          if (o <= 0 && rv <= 0) return '';
+          const done = rv >= o ? 'done' : '';
+          const over = rv > o ? 'over' : '';
+          const prDisp = (o > 0) ? (rv <= o ? `${Math.round((rv/o)*100)}%` : `-${Math.round(((rv-o)/o)*100)}%`) : (rv > 0 ? '100%+' : '0%');
+          const overCnt = Math.max(0, rv - o);
+          const badgeClass = overCnt ? '' : 'is-hidden';
+          const pc100Class = (o > 0 && rv === o) ? 'pc100' : '';
+          const colorClass = r.group === 'normal' ? 'txt-normal' : (r.group === 'ortho' ? 'txt-ortho' : '');
+          return `<tr class="rec-row ${done} ${over}" data-item="${r.key}" data-tb="${r.tb}">
+              <td class="name-cell"><span class="name ${colorClass}">${r.label}</span><span class="badge-dot ${badgeClass}" title="추가입고 ${overCnt}개">+</span></td>
+              <td class="o-cell"><span class="o" data-o="${o}" data-r="${rv}">${o}/${rv}</span></td>
+              <td><input type="number" min="0" inputmode="numeric" class="rq" data-item="${r.key}" data-tb="${r.tb}" /></td>
+              <td class="pcell ${pc100Class}">${prDisp}</td>
+            </tr>`;
+        }).join('');
       };
+
+      const sheetRows = renderTableRows(ITEMS.filter(x => x.group === 'sheet'));
+      const normalRows = renderTableRows(ITEMS.filter(x => x.group === 'normal'));
+      const orthoRows = renderTableRows(ITEMS.filter(x => x.group === 'ortho'));
 
       container.innerHTML = `
-        <div class="table-wrap">
-          <table class="tbl-receipts">
-            <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>진행률</th></tr></thead>
-            <tbody>${sheetRows}</tbody>
-          </table>
-        </div>
-        <div class="divider-strong"></div>
-        ${buildPatientTable('normal','txt-normal')}
-        <div class="divider-strong"></div>
-        ${buildPatientTable('ortho','txt-ortho')}
+        <div class="table-wrap"><table class="tbl-receipts"><thead><tr><th>품목</th><th>선택발주량</th><th>전체입고량</th><th>진행률</th></tr></thead><tbody>${sheetRows}</tbody></table></div>
+        ${normalRows ? `<div class="divider-strong"></div><div class="table-wrap"><table class="tbl-receipts"><thead><tr><th>품목</th><th>선택발주량</th><th>전체입고량</th><th>진행률</th></tr></thead><tbody>${normalRows}</tbody></table></div>` : ''}
+        ${orthoRows ? `<div class="divider-strong"></div><div class="table-wrap"><table class="tbl-receipts"><thead><tr><th>품목</th><th>선택발주량</th><th>전체입고량</th><th>진행률</th></tr></thead><tbody>${orthoRows}</tbody></table></div>` : ''}
       `;
-
-      $$('.rq').forEach(inp=>{
-        inp.addEventListener('input', (e)=>{
-          const tr = e.target.closest('tr');
-          const oEl = tr.querySelector('.o');
-          const o = toInt(oEl.dataset.o), r0 = toInt(oEl.dataset.r);
-          const v = toInt(e.target.value);
-          const rNew = r0 + v;
-          oEl.textContent = `${o}/${rNew}`;
-          const pcell = tr.querySelector('.pcell');
-          tr.classList.toggle('done', rNew>=o);
-          const isOver = rNew>o;
-          tr.classList.toggle('over', isOver);
-          const badge = tr.querySelector('.badge-dot');
-          if(isOver){
-            const over = rNew - o;
-            pcell.textContent = `-${Math.round((over/o)*100)}%`;
-            pcell.classList.remove('pc100');
-            badge.classList.remove('is-hidden');
-            badge.title = `추가입고 ${over}개`;
-          }else{
-            const pct = o>0 ? Math.round((rNew/o)*100) : (rNew>0?100:0);
-            pcell.textContent = `${pct}%`;
-            pcell.classList.toggle('pc100', pct===100);
-            badge.classList.add('is-hidden');
-          }
+      
+      $$('.rq').forEach(inp => {
+        inp.addEventListener('input', (e) => {
+            const tr = e.target.closest('tr');
+            const oEl = tr.querySelector('.o');
+            const o = toInt(oEl.dataset.o), r0 = toInt(oEl.dataset.r);
+            const v = toInt(e.target.value);
+            const rNew = r0 + v;
+            oEl.textContent = `${o}/${rNew}`;
+            const pcell = tr.querySelector('.pcell');
+            tr.classList.toggle('done', rNew >= o);
+            tr.classList.toggle('over', rNew > o);
+            const badge = tr.querySelector('.badge-dot');
+            if (rNew > o) {
+                const over = rNew - o;
+                pcell.textContent = `-${Math.round((over/o)*100)}%`;
+                badge.classList.remove('is-hidden');
+                badge.title = `추가입고 ${over}개`;
+            } else {
+                pcell.textContent = o > 0 ? `${Math.round((rNew/o)*100)}%` : '100%+';
+                badge.classList.add('is-hidden');
+            }
+            pcell.classList.toggle('pc100', o > 0 && rNew === o);
         });
       });
     }
-
-  function renderOrderSummary(container){
-  const data = state.snapshot||{};
-  const allMonths = collectAllMonths(data);
-  const monthsDesc = sortDescYM(allMonths);
-  const ITEMS = buildItems(data);
-
-  const getCarryOverData = (item, months) => {
-      let carryOverQty = 0;
-      months.forEach(m => {
-          const orders = (((data[item.key] || {}).orders || {})[m]) || {};
-          Object.values(orders).forEach(order => {
-              if (order.note && order.note.includes('이월분') && (item.tb ? order.topBottom === item.tb : true)) {
-                  carryOverQty += toInt(order.qty);
-              }
-          });
-      });
-      return carryOverQty;
-  };
-
-  const sumMonth=(name,month,tb='',kind='orders', excludeCarryOver = false)=>{
-    const node=(((data[name]||{})[kind]||{})[month])||{};
-    return Object.values(node)
-        .filter(e => {
-            const tbMatch = tb ? (e.topBottom||'')===tb : true;
-            const carryOverMatch = excludeCarryOver ? !(e.note && e.note.includes('이월분')) : true;
-            return tbMatch && carryOverMatch;
-        })
-        .reduce((s,e)=> s+toInt(e.qty),0);
-  };
-
-  const parts=[];
-  const selectedMonths = Array.from(state.selectedMonths);
-
-  // --- 전체 요약 테이블 생성 ---
-  const summaryRows = [];
-  let totalCarryOver = 0;
-  ITEMS.forEach(r => {
-    totalCarryOver += getCarryOverData(r, selectedMonths);
-  });
-  const showCarryOver = totalCarryOver > 0;
-
-  ITEMS.forEach(r=>{
-    const carryOver = getCarryOverData(r, selectedMonths);
-    const newOrders = selectedMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'orders', true), 0);
-    const totalOrders = carryOver + newOrders;
-    const totalReceipts = allMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'receipts'), 0);
-    const unfulfilled = totalOrders - totalReceipts;
-
-    if (totalOrders || totalReceipts) {
-        const color = r.group === 'normal' ? 'txt-normal' : (r.group === 'ortho' ? 'txt-ortho' : '');
-        const negCls = unfulfilled < 0 ? 'neg' : '';
-        
-        let rowHtml = `<tr class="summary-row"><td class="${color}">${r.label}</td>`;
-        if (showCarryOver) {
-            rowHtml += `<td style="color:#78716C;">${carryOver}</td>`;
-        }
-        rowHtml += `<td>${newOrders}</td>`;
-        if (showCarryOver) {
-             rowHtml += `<td>${totalOrders}</td>`;
-        }
-        rowHtml += `<td>${totalReceipts}</td><td class="${negCls}">${unfulfilled}</td></tr>`;
-        summaryRows.push(rowHtml);
-    }
-  });
-
-  const summaryHeaders = ['품목'];
-  if (showCarryOver) summaryHeaders.push('이월');
-  summaryHeaders.push('발주');
-  if (showCarryOver) summaryHeaders.push('총 발주');
-  summaryHeaders.push('입고', '미입고');
-
-  parts.push(`
-    <div class="sec-title">전체 요약 (발주:선택월 / 입고:전체)</div>
-    <div class="table-wrap">
-      <table class="tbl-summary">
-        <thead><tr><th>${summaryHeaders.join('</th><th>')}</th></tr></thead>
-        <tbody>${summaryRows.join('')}</tbody>
-      </table>
-    </div>`);
-
-  // --- 월별 상세 내역 테이블 생성 (체크박스와 상관없이 항상 표시) ---
-  monthsDesc.forEach(m=>{
-    const rowsM=[];
-    ITEMS.forEach(r=>{
-      const o=sumMonth(r.key,m,r.tb,'orders'); const i=sumMonth(r.key,m,r.tb,'receipts');
-      if(o||i) {
-        const n=o-i; const negCls = n<0 ? 'neg' : '';
-        const color = r.group==='normal' ? 'txt-normal' : (r.group==='ortho' ? 'txt-ortho' : '');
-        rowsM.push(`<tr class="editable-row" data-item-key="${r.key}" data-item-label="${r.label}" data-item-tb="${r.tb}" data-month="${m}"><td class="${color}">${r.label}</td><td>${o}</td><td>${i}</td><td class="${negCls}">${n}</td></tr>`);
-      }
-    });
-    if(rowsM.length){
-      const year = m.substring(2, 4); const month = parseInt(m.substring(5, 7), 10);
-      const isChecked = state.selectedMonths.has(m) ? 'checked' : '';
-      parts.push(`
-        <div class="sec-title month-title-editable" data-month="${m}">
-          <div style="cursor: pointer; display: flex; align-items: center; gap: 6px;" title="${year}년 ${month}월 상세 내역 수정">
-            <span>${year}년 ${month}월 발주</span><i data-feather="edit-2" style="width:14px; height:14px;"></i>
-          </div>
-          <input type="checkbox" class="month-checkbox" data-month="${m}" ${isChecked} title="전체 요약에 포함/제외">
-        </div>
-        <div class="table-wrap">
-          <table class="tbl-summary">
-            <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
-            <tbody>${rowsM.join('')}</tbody>
-          </table>
-        </div>`);
-    }
-  });
-  container.innerHTML = parts.join('');
-}
-
-
-
-
-    /* ▷▷▷ 렌더링 종료 ▷▷▷ */
+    /* ▷▷▷ 렌더링 함수 종료 ▷▷▷ */
 
     /* ▷▷▷ 진행률 갱신 시작 ▷▷▷ */
-    // 기존 refreshProgress 함수를 지우고 아래 코드로 전체 교체하세요.
+    async function refreshProgress(){
+      if(!state.snapshot) state.snapshot = await getStatusOnce();
+      const data = state.snapshot||{};
+      const ITEMS = buildItems(data);
+      const selectedMonths = Array.from(state.selectedMonths);
+      const allMonths = collectAllMonths(data);
 
-async function refreshProgress(){
-  if(!state.snapshot) state.snapshot = await getStatusOnce();
-  const data = state.snapshot||{};
-  // ▼▼▼ 이 부분이 핵심입니다 ▼▼▼
-  // 기존: const months = collectAllMonths(data);
-  // 변경: state.selectedMonths 에서 선택된 월 목록을 가져옵니다.
-  const months = Array.from(state.selectedMonths);
-  const ITEMS = buildItems(data);
-  let totO=0, totR=0;
+      const calculateTotal = (kind, monthList) => {
+        let total = 0;
+        ITEMS.forEach(it => {
+          monthList.forEach(m => {
+            const node = (((data[it.key] || {})[kind] || {})[m]) || {};
+            total += Object.values(node)
+              .filter(e => it.tb ? (e.topBottom || '') === it.tb : true)
+              .reduce((s, e) => s + toInt(e.qty), 0);
+          });
+        });
+        return total;
+      };
 
-  months.forEach(m=>{
-    ITEMS.forEach(it=>{
-      const o = Object.values((((data[it.key]||{}).orders||{})[m])||{}).filter(e=> it.tb? (e.topBottom||'')===it.tb : true).reduce((s,e)=> s+toInt(e.qty),0);
-      const r = Object.values((((data[it.key]||{}).receipts||{})[m])||{}).filter(e=> it.tb? (e.topBottom||'')===it.tb : true).reduce((s,e)=> s+toInt(e.qty),0);
-      totO += o; totR += r;
-    });
-  });
-
-  const p = totO>0 ? Math.round((totR/totO)*100) : (totR>0?100:0);
-  const bar = $('#progressBarInner');
-  bar.style.width = Math.min(100,p)+'%'; bar.textContent = Math.min(100,p)+'%';
-  const overTxt = (totR<=totO)? `${p}%` : `-${Math.round((totR-totO)/totO*100)}%`;
-  
-  // 전체발주가 아닌 '선택된 발주'로 텍스트를 변경하여 명확성을 높입니다.
-  $('#gaugeStats').textContent = `선택발주 ${totO}개 · 입고 ${totR}개 ${overTxt} 입고됨`;
-}
-
+      const totO = calculateTotal('orders', selectedMonths);
+      const totR = calculateTotal('receipts', allMonths);
+      
+      const p = totO > 0 ? Math.round((totR / totO) * 100) : (totR > 0 ? 100 : 0);
+      const bar = $('#progressBarInner');
+      bar.style.width = Math.min(100, p) + '%';
+      bar.textContent = p + '%';
+      $('#gaugeStats').textContent = `선택발주 ${totO}개 · 전체입고 ${totR}개 (선택발주 대비 ${p}%)`;
+    }
     /* ▷▷▷ 진행률 갱신 종료 ▷▷▷ */
 
     /* ▷▷▷ 저장(발주/입고) 플로우 시작 ▷▷▷ */
@@ -1065,30 +767,40 @@ async function refreshProgress(){
 
     async function onSaveAll() {
       const displayEntries = [];
-      if(state.mode === 'orders'){
-        state.draftOrders.sheet.forEach((qty, item) => { if(qty>0) displayEntries.push({name: item, qty}); });
-        state.draftOrders.patient.forEach((qty, key) => {
+      const { sheet, patient, hip } = state.draftOrders;
+      
+      sheet.forEach((qty, item) => { if(qty>0) displayEntries.push({name: item, qty}); });
+      hip.forEach((qty, item) => { if(qty>0) displayEntries.push({name: item, qty}); });
+      patient.forEach((qty, key) => {
           const [itemName, tb] = key.split('__');
           const kindLabel = itemName.includes('일반') ? '일반' : '정형';
           const size = itemName.replace('일반환의','').replace('정형환의','');
-          const name = labelOf(kindLabel, tb, size);
-          if(qty>0) displayEntries.push({name, qty});
-        });
-        state.draftOrders.hip.forEach((qty, item)=>{ if(qty>0) displayEntries.push({name: item, qty}); });
-      } else {
+          if(qty>0) displayEntries.push({name: labelOf(kindLabel, tb, size), qty});
+      });
+
+      if(state.mode === 'receipts') {
         $$('.rq').forEach(inp => {
           const qty = toInt(inp.value);
-          if(qty > 0){ const name = inp.closest('tr').querySelector('.name').textContent; displayEntries.push({name, qty}); }
+          if(qty > 0){ 
+            const name = inp.closest('tr').querySelector('.name').textContent;
+            displayEntries.push({name, qty}); 
+          }
         });
       }
+
       if(displayEntries.length === 0){ showToast((state.mode === 'orders' ? '발주' : '입고') + ' 입력값이 없습니다.'); return; }
 
-      entriesToSave = state.mode === 'orders'
-        ? [...state.draftOrders.sheet.entries(), ...state.draftOrders.patient.entries(), ...state.draftOrders.hip.entries()]
-            .map(([key, qty]) => { if(key.includes('__')) { const [itemName, topBottom] = key.split('__'); return {itemName, qty, topBottom}; } return {itemName: key, qty, topBottom:''}; })
-            .filter(e => e.qty > 0)
-        : $$('.rq').filter(inp => toInt(inp.value) > 0).map(inp => ({ itemName: inp.dataset.item, topBottom: inp.dataset.tb || '', qty: toInt(inp.value) }));
-
+      if (state.mode === 'orders') {
+        entriesToSave = [...sheet.entries(), ...hip.entries(), ...patient.entries()]
+          .map(([key, qty]) => {
+            const [itemName, topBottom] = key.includes('__') ? key.split('__') : [key, ''];
+            return { itemName, qty, topBottom };
+          }).filter(e => e.qty > 0);
+      } else {
+        entriesToSave = $$('.rq').filter(inp => toInt(inp.value) > 0)
+          .map(inp => ({ itemName: inp.dataset.item, topBottom: inp.dataset.tb || '', qty: toInt(inp.value) }));
+      }
+      
       $('#modalSummaryList').innerHTML = displayEntries.map(e => `<li><span class="item-name">${e.name}</span> <span class="item-qty">${e.qty}개</span></li>`).join('');
       $('#modalTitle').textContent = state.mode === 'orders' ? '발주 내역 확인' : '입고 내역 확인';
       $('#confirmationModal').style.display = 'flex';
@@ -1097,388 +809,329 @@ async function refreshProgress(){
     async function proceedWithSave() {
       const ymd = state.entryDate;
       const ym  = ymOf(ymd);
-      const day = Number(ymd.split('-')[2]||'1');
       const updates = {};
+      const currentYear = parseInt(ymd.substring(0, 4), 10);
 
-      try{
+      try {
         showLoader('저장 처리중…');
 
-        if(state.mode === 'orders'){
-          entriesToSave.forEach(({itemName, qty, topBottom})=>{
-            const q = toInt(qty); if(q<=0) return;
+        if (state.mode === 'orders') {
+          let latestYear = 0;
+          if (state.snapshot) {
+            Object.values(state.snapshot).forEach(item => {
+              Object.keys(item.orders || {}).forEach(month => {
+                const year = parseInt(month.substring(0, 4), 10);
+                if (year > latestYear) latestYear = year;
+              });
+            });
+          }
+
+          if (latestYear > 0 && currentYear > latestYear) {
+            const ITEMS = buildItems(state.snapshot);
+            const prevYearMonths = collectAllMonths(state.snapshot).filter(m => m.startsWith(String(latestYear)));
+            const sumForYear = (item, kind) => prevYearMonths.reduce((acc, m) => {
+              const node = (((state.snapshot[item.key] || {})[kind] || {})[m]) || {};
+              return acc + Object.values(node).filter(e => item.tb ? (e.topBottom || '') === item.tb : true).reduce((s, e) => s + toInt(e.qty), 0);
+            }, 0);
+
+            const carryOverItems = [];
+            ITEMS.forEach(item => {
+                const unfulfilled = sumForYear(item, 'orders') - sumForYear(item, 'receipts');
+                if (unfulfilled > 0) carryOverItems.push({ itemName: item.key, qty: unfulfilled, topBottom: item.tb || '' });
+            });
+
+            if (carryOverItems.length > 0) {
+              showToast(`${latestYear}년 미입고 ${carryOverItems.length}개 품목 자동 이월...`);
+              await new Promise(r => setTimeout(r, 1000));
+              carryOverItems.forEach(({ itemName, qty, topBottom }) => {
+                const k = push(ref(rtdb)).key;
+                updates[`purchase_status/${itemName}/name`] = itemName;
+                updates[`purchase_status/${itemName}/orders/${ym}/${k}`] = { qty, topBottom, ts: Date.now(), note: `${latestYear}년 이월분` };
+              });
+            }
+          }
+        }
+        
+        const saveEntries = (entries, type) => {
+          entries.forEach(({ itemName, qty, topBottom }) => {
+            const q = toInt(qty); if (q <= 0) return;
             const k = push(ref(rtdb)).key;
             updates[`purchase_status/${itemName}/name`] = itemName;
-            updates[`purchase_status/${itemName}/orders/${ym}/${k}`] = {qty:q, topBottom: topBottom||'', ts:Date.now()};
+            if (type === 'orders') {
+              updates[`purchase_status/${itemName}/orders/${ym}/${k}`] = { qty: q, topBottom: topBottom || '', ts: Date.now() };
+            } else {
+              const day = Number(ymd.split('-')[2] || '1');
+              updates[`purchase_status/${itemName}/receipts/${ym}/${k}`] = { day, qty: q, topBottom: topBottom || '', ts: Date.now() };
+            }
           });
-          await updatePurchaseStatus(updates);
-          state.draftOrders.sheet.clear(); state.draftOrders.patient.clear(); state.draftOrders.hip.clear();
+        };
+
+        if (state.mode === 'orders') {
+          saveEntries(entriesToSave, 'orders');
+          state.draftOrders.sheet.clear();
+          state.draftOrders.patient.clear();
+          state.draftOrders.hip.clear();
           showToast('발주 저장 완료');
         } else {
-          entriesToSave.forEach(({itemName, qty, topBottom})=>{
-            const q = toInt(qty); if(q<=0) return;
-            const k = push(ref(rtdb)).key;
-            updates[`purchase_status/${itemName}/name`] = itemName;
-            updates[`purchase_status/${itemName}/receipts/${ym}/${k}`] = {day, qty:q, topBottom: topBottom||'', ts:Date.now()};
-          });
-          await updatePurchaseStatus(updates);
+          saveEntries(entriesToSave, 'receipts');
           showToast('입고 완료');
         }
+        
+        if (Object.keys(updates).length > 0) await updatePurchaseStatus(updates);
+
         successAudio.play();
         $('#confirmationModal').style.display = 'none';
         entriesToSave = [];
         state.snapshot = await getStatusOnce();
         renderBody();
         refreshProgress();
-      }catch(err){
+      } catch (err) {
         console.error('저장 중 오류:', err);
         showToast('저장 실패: 잠시 후 재시도해주세요.');
-      }finally{
+      } finally {
         hideLoader();
       }
     }
     /* ▷▷▷ 저장(발주/입고) 플로우 종료 ▷▷▷ */
 
     /* ▷▷▷ 상세 수정(모달) 시작 ▷▷▷ */
+    async function openEditModalForMonth(month) {
+      const modal = $('#editModal');
+      const body = $('#editModalBody');
+      modal.style.display = 'flex';
+      body.innerHTML = '<div class="spinner"></div>';
 
-// 기존 openEditModalForMonth 함수를 삭제하고 아래 코드로 교체하세요.
+      const year = month.substring(2, 4);
+      const mon = parseInt(month.substring(5, 7), 10);
+      $('#editModalTitle').textContent = `${year}년 ${mon}월 전체 내역 수정`;
 
-// 기존 openEditModalForMonth 함수를 삭제하고 아래 코드로 교체하세요.
+      try {
+        const getTimestamp = (t, m) => (t.type === 'receipts' && t.day) ? new Date(`${m}-${String(t.day).padStart(2, '0')}`).getTime() : t.ts || 0;
+        
+        const allTransactions = [];
+        const ITEMS = buildItems(state.snapshot);
+        ITEMS.forEach(item => {
+          const itemData = state.snapshot[item.key] || {};
+          const orders = Object.entries((itemData.orders || {})[month] || {}).map(([id, data]) => ({ id, type: 'orders', itemKey: item.key, itemLabel: item.label, ...data }));
+          const receipts = Object.entries((itemData.receipts || {})[month] || {}).map(([id, data]) => ({ id, type: 'receipts', itemKey: item.key, itemLabel: item.label, ...data }));
+          allTransactions.push(...orders, ...receipts);
+        });
 
-async function openEditModalForMonth(month) {
-  const modal = $('#editModal');
-  const body = $('#editModalBody');
-  modal.style.display = 'flex';
-  body.innerHTML = '<div class="spinner"></div>';
+        const sorted = allTransactions.sort((a, b) => getTimestamp(a, month) - getTimestamp(b, month));
+        const ordersList = sorted.filter(t => t.type === 'orders');
+        const receiptsList = sorted.filter(t => t.type === 'receipts');
 
-  const year = month.substring(2, 4);
-  const mon = parseInt(month.substring(5, 7), 10);
-  $('#editModalTitle').textContent = `${year}년 ${mon}월 전체 내역 수정`;
-
-  const getTransactionTimestamp = (transaction, monthStr) => {
-    if (transaction.type === 'receipts' && transaction.day) {
-      return new Date(`${monthStr}-${String(transaction.day).padStart(2, '0')}`).getTime();
-    }
-    return transaction.ts || 0;
-  };
-
-  try {
-    const allTransactions = [];
-    const ITEMS = buildItems(state.snapshot);
-
-    ITEMS.forEach(item => {
-      const itemData = state.snapshot[item.key] || {};
-      const orders = Object.entries((itemData.orders || {})[month] || {}).map(([id, data]) => ({ id, type: 'orders', itemKey: item.key, itemLabel: item.label, ...data }));
-      const receipts = Object.entries((itemData.receipts || {})[month] || {}).map(([id, data]) => ({ id, type: 'receipts', itemKey: item.key, itemLabel: item.label, ...data }));
-      allTransactions.push(...orders, ...receipts);
-    });
-
-    const sortedTransactions = allTransactions.sort((a, b) => getTransactionTimestamp(a, month) - getTransactionTimestamp(b, month));
-
-    // 발주(orders)와 입고(receipts) 데이터 분리
-    const ordersList = sortedTransactions.filter(t => t.type === 'orders');
-    const receiptsList = sortedTransactions.filter(t => t.type === 'receipts');
-
-    if (sortedTransactions.length === 0) {
-      body.innerHTML = '<p style="text-align:center;padding:20px 0;">해당 월에 수정할 상세 내역이 없습니다.</p>';
-      return;
-    }
-
-    // 리스트 아이템 HTML을 생성하는 헬퍼 함수
-    const createListItemHtml = (t) => {
-      const dateStr = t.type === 'receipts'
-        ? `${mon}월 ${t.day}일`
-        : (t.ts && !isNaN(t.ts) ? new Date(t.ts).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '날짜 정보 없음');
-      const typeLabel = t.type === 'orders' ? '발주' : '입고';
-      const colorCls = t.itemLabel.includes('일반') ? 'txt-normal' : (t.itemLabel.includes('정형') ? 'txt-ortho' : '');
-
-      return `
-        <li data-id="${t.id}" data-type="${t.type}" data-item-key="${t.itemKey}" data-month="${month}" data-original-qty="${t.qty}">
-          <div class="item-details">
-            <span class="item-name ${colorCls}">${t.itemLabel}</span>
-            <small class="sub-info">${dateStr} ${typeLabel}</small>
-          </div>
-          <input type="number" class="qty-input" value="${t.qty}" min="0">
-          <button class="btn ghost red delete-btn">삭제</button>
-        </li>`;
-    };
-
-    const ordersHtml = ordersList.map(createListItemHtml).join('');
-    const receiptsHtml = receiptsList.map(createListItemHtml).join('');
-
-    // 탭과 리스트를 포함한 전체 모달 body HTML
-    body.innerHTML = `
-      <div class="modal-tabs">
-        <button class="modal-tab active" data-tab="orders-list">발주 (${ordersList.length}건)</button>
-        <button class="modal-tab" data-tab="receipts-list">입고 (${receiptsList.length}건)</button>
-      </div>
-      <ul id="orders-list">${ordersHtml}</ul>
-      <ul id="receipts-list" class="is-hidden">${receiptsHtml}</ul>
-    `;
-
-    // 탭 클릭 이벤트 리스너
-    body.querySelector('.modal-tabs').addEventListener('click', e => {
-      const target = e.target;
-      if (target.classList.contains('modal-tab')) {
-        body.querySelectorAll('.modal-tab').forEach(tab => tab.classList.remove('active'));
-        target.classList.add('active');
-
-        body.querySelectorAll('ul').forEach(ul => ul.classList.add('is-hidden'));
-        const tabContentId = target.dataset.tab;
-        body.querySelector(`#${tabContentId}`).classList.remove('is-hidden');
-      }
-    });
-
-    // 삭제 버튼 이벤트 리스너 (ul 두 개를 모두 대상으로 함)
-    body.addEventListener('click', e => {
-      const target = e.target;
-      if (target.classList.contains('delete-btn')) {
-        const li = target.closest('li');
-        if (li) li.classList.toggle('is-deleted');
-      }
-    });
-
-  } catch (err) {
-    console.error("월별 상세 내역 로딩 실패:", err);
-    body.innerHTML = '<p style="text-align:center;padding:20px 0;">오류가 발생했습니다.</p>';
-  }
-}
-    // 수정된 saveEdits 함수
-async function saveEdits() {
-  try {
-    showLoader('변경내용 저장중…');
-
-    const updates = {};
- $$('#editModalBody li').forEach(li => {
-      const { id, type, itemKey, month } = li.dataset;
-      const path = `purchase_status/${itemKey}/${type}/${month}/${id}`;
-
-      if (li.classList.contains('is-deleted')) {
-        updates[path] = null;
-      } else {
-        const input = li.querySelector('.qty-input');
-        // ▼▼▼ 이렇게 수정되었습니다 ▼▼▼
-        const originalQty = toInt(li.dataset.originalQty); 
-        const newQty = toInt(input.value);
-
-        if (newQty !== originalQty) {
-          updates[`${path}/qty`] = newQty;
+        if (sorted.length === 0) {
+          body.innerHTML = '<p style="text-align:center;padding:20px 0;">해당 월에 수정할 상세 내역이 없습니다.</p>';
+          return;
         }
-      }
-    });
 
-    if (Object.keys(updates).length > 0) {
-      await updatePurchaseStatus(updates);
+        const createListItemHtml = (t) => {
+          const dateStr = t.type === 'receipts' ? `${mon}월 ${t.day}일` : (t.ts ? new Date(t.ts).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '날짜 정보 없음');
+          const typeLabel = t.type === 'orders' ? '발주' : '입고';
+          const colorCls = t.itemLabel.includes('일반') ? 'txt-normal' : (t.itemLabel.includes('정형') ? 'txt-ortho' : '');
+          const noteHtml = t.note ? `<small class="sub-info" style="color:var(--accent);font-weight:600;">(${t.note})</small>` : '';
+
+          return `<li data-id="${t.id}" data-type="${t.type}" data-item-key="${t.itemKey}" data-month="${month}" data-original-qty="${t.qty}">
+              <div class="item-details">
+                <span class="item-name ${colorCls}">${t.itemLabel} ${noteHtml}</span>
+                <small class="sub-info">${dateStr} ${typeLabel}</small>
+              </div>
+              <input type="number" class="qty-input" value="${t.qty}" min="0">
+              <button class="btn ghost red delete-btn">삭제</button>
+            </li>`;
+        };
+
+        body.innerHTML = `
+          <div class="modal-tabs">
+            <button class="modal-tab active" data-tab="orders-list">발주 (${ordersList.length}건)</button>
+            <button class="modal-tab" data-tab="receipts-list">입고 (${receiptsList.length}건)</button>
+          </div>
+          <ul id="orders-list">${ordersList.map(createListItemHtml).join('')}</ul>
+          <ul id="receipts-list" class="is-hidden">${receiptsList.map(createListItemHtml).join('')}</ul>`;
+
+        body.querySelector('.modal-tabs').addEventListener('click', e => {
+          if (e.target.classList.contains('modal-tab')) {
+            body.querySelectorAll('.modal-tab').forEach(tab => tab.classList.remove('active'));
+            e.target.classList.add('active');
+            body.querySelectorAll('ul').forEach(ul => ul.classList.add('is-hidden'));
+            body.querySelector(`#${e.target.dataset.tab}`).classList.remove('is-hidden');
+          }
+        });
+
+        body.addEventListener('click', e => {
+          if (e.target.classList.contains('delete-btn')) e.target.closest('li')?.classList.toggle('is-deleted');
+        });
+
+      } catch (err) {
+        console.error("월별 상세 내역 로딩 실패:", err);
+        body.innerHTML = '<p style="text-align:center;padding:20px 0;">오류가 발생했습니다.</p>';
+      }
     }
 
-    $('#editModal').style.display = 'none';
-    showToast('수정 완료!');
-    successAudio.play();
-    state.snapshot = await getStatusOnce();
-    renderBody();
-    refreshProgress();
-  } catch (err) {
-    console.error("수정사항 저장 실패:", err);
-    showToast('수정 저장 실패: 잠시 후 재시도해주세요.');
-  } finally {
-    hideLoader();
-  }
-}
+    async function saveEdits() {
+      try {
+        showLoader('변경내용 저장중…');
+        const updates = {};
+        $$('#editModalBody li').forEach(li => {
+          const { id, type, itemKey, month, originalQty } = li.dataset;
+          const path = `purchase_status/${itemKey}/${type}/${month}/${id}`;
+          if (li.classList.contains('is-deleted')) {
+            updates[path] = null;
+          } else {
+            const newQty = toInt(li.querySelector('.qty-input').value);
+            if (newQty !== toInt(originalQty)) {
+              updates[`${path}/qty`] = newQty;
+            }
+          }
+        });
+
+        if (Object.keys(updates).length > 0) await updatePurchaseStatus(updates);
+        $('#editModal').style.display = 'none';
+        showToast('수정 완료!');
+        successAudio.play();
+        state.snapshot = await getStatusOnce();
+        renderBody();
+        refreshProgress();
+      } catch (err) {
+        console.error("수정사항 저장 실패:", err);
+        showToast('수정 저장 실패: 잠시 후 재시도해주세요.');
+      } finally {
+        hideLoader();
+      }
+    }
     /* ▷▷▷ 상세 수정(모달) 종료 ▷▷▷ */
 
     /* ▷▷▷ 엑셀 내보내기 시작 ▷▷▷ */
-   // 기존 onExportExcel_AllData 함수를 이 최종 버전으로 교체해주세요.
+    async function onExportExcel_AllData(){
+      try {
+        showLoader('엑셀 생성중…');
+        if(!state.snapshot) state.snapshot=await getStatusOnce();
+        const all=state.snapshot||{};
+        const selectedMonths = Array.from(state.selectedMonths).sort((a,b)=>a.localeCompare(b));
+        const allMonths = collectAllMonths(all).sort((a,b)=>a.localeCompare(b));
+        if (selectedMonths.length === 0) {
+          showToast("요약에 포함할 발주 월이 선택되지 않았습니다.");
+          return;
+        }
 
-async function onExportExcel_AllData(){
-  try {
-    showLoader('엑셀 생성중…');
+        const ITEMS = buildItems(all);
+        const wb=new ExcelJS.Workbook();
 
-    if(!state.snapshot) state.snapshot=await getStatusOnce();
-    const all=state.snapshot||{};
-
-    const selectedMonths = Array.from(state.selectedMonths).sort((a, b) => a.localeCompare(b));
-    const allMonths = collectAllMonths(all).sort((a,b) => a.localeCompare(b));
-
-    if (selectedMonths.length === 0) {
-      showToast("요약에 포함할 발주 월이 선택되지 않았습니다.");
-      return;
-    }
-
-    const ITEMS = buildItems(all);
-    const wb=new ExcelJS.Workbook();
-
-    const getCarryOverData = (item, months) => {
-        let carryOverQty = 0;
-        months.forEach(m => {
+        const getCarryOverData = (item, months) => {
+          return months.reduce((acc, m) => {
             const orders = (((all[item.key] || {}).orders || {})[m]) || {};
-            Object.values(orders).forEach(order => {
-                if (order.note && order.note.includes('이월') && (item.tb ? order.topBottom === item.tb : true)) {
-                    carryOverQty += toInt(order.qty);
-                }
-            });
-        });
-        return carryOverQty;
-    };
+            return acc + Object.values(orders).filter(order => order.note?.includes('이월') && (item.tb ? order.topBottom === item.tb : true)).reduce((s, e) => s + toInt(e.qty), 0);
+          }, 0);
+        };
 
-    const sumMonth = (it, kind, m, tb='', excludeCarryOver = false)=>{
-      const node=((it[kind]||{})[m])||{};
-      return Object.values(node)
-        .filter(e=> {
-            const tbMatch = tb ? (e.topBottom||'')===tb : true;
-            const carryOverMatch = excludeCarryOver ? !(e.note && e.note.includes('이월분')) : true;
-            return tbMatch && carryOverMatch;
-        })
-        .reduce((s,e)=> s+toInt(e.qty),0);
-    };
-    const sumRange = (it, kind, months, tb='', excludeCarryOver = false)=> months.reduce((acc,m)=> acc + sumMonth(it,kind,m,tb,excludeCarryOver), 0);
-
-    const hasAnyCarryOver = ITEMS.some(item => getCarryOverData(item, selectedMonths) > 0);
-
-    // 1. 요약 시트
-    const wsSum=wb.addWorksheet('요약');
-    const summaryHeaders = hasAnyCarryOver
-      ? ['품목','이월','신규발주','총 발주량', '전체입고량','미입고','진행률']
-      : ['품목','발주량','입고량','미입고','진행률'];
-    wsSum.addRow(summaryHeaders);
-    wsSum.views = [{state:'frozen', xSplit:1, ySplit:1}];
-
-    let grandTotal_CarryOver = 0, grandTotal_NewOrders = 0;
-    let grandTotal_Orders = 0, grandTotal_Receipts = 0;
-
-    ITEMS.forEach(r=>{
-      const it=all[r.key]||{};
-      const carryOver = getCarryOverData(r, selectedMonths);
-      const newOrders = sumRange(it,'orders',selectedMonths,r.tb, true);
-      const totalOrders = carryOver + newOrders;
-      const totalReceipts = sumRange(it,'receipts',allMonths,r.tb);
-
-      if(totalOrders !== 0 || totalReceipts !== 0){
-        grandTotal_CarryOver += carryOver;
-        grandTotal_NewOrders += newOrders;
-        grandTotal_Orders += totalOrders;
-        grandTotal_Receipts += totalReceipts;
-
-        const unfulfilled = totalOrders - totalReceipts;
-        let pctText = 'N/A';
-        if (totalOrders > 0) {
-            pctText = totalReceipts <= totalOrders
-                ? `${Math.round((totalReceipts / totalOrders) * 100)}%`
-                : `-${Math.round(((totalReceipts - totalOrders) / totalOrders) * 100)}%`;
-        }
-
-        const rowData = hasAnyCarryOver
-          ? [r.label, carryOver, newOrders, totalOrders, totalReceipts, unfulfilled, pctText]
-          : [r.label, totalOrders, totalReceipts, unfulfilled, pctText];
-        const row = wsSum.addRow(rowData);
-
-        // ▼▼▼ 누락되었던 개별 행 스타일링 로직 전체 복원 ▼▼▼
-        if(r.group==='normal') row.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
-        if(r.group==='ortho')  row.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
+        const sumMonth = (it, kind, m, tb, excludeCarryOver) => {
+          const node = (((all[it.key]||{})[kind]||{})[m])||{};
+          return Object.values(node).filter(e => (tb ? (e.topBottom||'')===tb : true) && (!excludeCarryOver || !e.note?.includes('이월분'))).reduce((s,e)=>s+toInt(e.qty),0);
+        };
+        const sumRange = (it, kind, months, tb, excludeCarryOver) => months.reduce((acc,m)=>acc+sumMonth(it,kind,m,tb,excludeCarryOver), 0);
         
-        if (hasAnyCarryOver) { // 이월 열이 있을 때
-            if (carryOver > 0) row.getCell(2).font = {color:{argb:'FF78716C'}, bold:true};
-            if (unfulfilled < 0) row.getCell(6).font = { color: { argb: 'FFF43F5E' }, bold: true };
-            if (pctText.startsWith('-')) row.getCell(7).font = { color: { argb: 'FFF43F5E' }, bold: true };
-            else if (pctText === '100%') row.getCell(7).font = { color: { argb: 'FF2563EB' }, bold: true };
-        } else { // 이월 열이 없을 때
-            if (unfulfilled < 0) row.getCell(4).font = { color: { argb: 'FFF43F5E' }, bold: true };
-            if (pctText.startsWith('-')) row.getCell(5).font = { color: { argb: 'FFF43F5E' }, bold: true };
-            else if (pctText === '100%') row.getCell(5).font = { color: { argb: 'FF2563EB' }, bold: true };
-        }
-      }
-    });
+        const hasAnyCarryOver = ITEMS.some(item => getCarryOverData(item, selectedMonths) > 0);
 
-    const grandTotal_Unfulfilled = grandTotal_Orders - grandTotal_Receipts;
-    let grandTotal_PctText = 'N/A';
-    if (grandTotal_Orders > 0) {
-        grandTotal_PctText = grandTotal_Receipts <= grandTotal_Orders
-            ? `${Math.round((grandTotal_Receipts / grandTotal_Orders) * 100)}%`
-            : `-${Math.round(((grandTotal_Receipts - grandTotal_Orders) / grandTotal_Orders) * 100)}%`;
+        const wsSum = wb.addWorksheet('요약');
+        const summaryHeaders = hasAnyCarryOver ? ['품목','이월','신규발주','총 발주량', '전체입고량','미입고','진행률'] : ['품목','발주량','입고량','미입고','진행률'];
+        wsSum.addRow(summaryHeaders);
+        wsSum.views = [{state:'frozen', xSplit:1, ySplit:1}];
+        
+        let grandTotals = { carry: 0, new: 0, orders: 0, receipts: 0 };
+
+        ITEMS.forEach(r => {
+          const carryOver = getCarryOverData(r, selectedMonths);
+          const newOrders = sumRange(r, 'orders', selectedMonths, r.tb, true);
+          const totalOrders = carryOver + newOrders;
+          const totalReceipts = sumRange(r, 'receipts', allMonths, r.tb, false);
+          
+          if(totalOrders || totalReceipts){
+            grandTotals.carry += carryOver; grandTotals.new += newOrders;
+            grandTotals.orders += totalOrders; grandTotals.receipts += totalReceipts;
+            
+            const unfulfilled = totalOrders - totalReceipts;
+            const pctText = totalOrders > 0 ? (totalReceipts <= totalOrders ? `${Math.round((totalReceipts/totalOrders)*100)}%` : `-${Math.round(((totalReceipts-totalOrders)/totalOrders)*100)}%`) : 'N/A';
+            const rowData = hasAnyCarryOver ? [r.label, carryOver, newOrders, totalOrders, totalReceipts, unfulfilled, pctText] : [r.label, totalOrders, totalReceipts, unfulfilled, pctText];
+            const row = wsSum.addRow(rowData);
+            
+            if(r.group==='normal') row.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
+            if(r.group==='ortho')  row.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
+            if (hasAnyCarryOver) {
+                if (carryOver > 0) row.getCell(2).font = {color:{argb:'FF78716C'}, bold:true};
+                if (unfulfilled < 0) row.getCell(6).font = { color: { argb: 'FFF43F5E' }, bold: true };
+                if (pctText.startsWith('-')) row.getCell(7).font = { color: { argb: 'FFF43F5E' }, bold: true };
+                else if (pctText === '100%') row.getCell(7).font = { color: { argb: 'FF2563EB' }, bold: true };
+            } else {
+                if (unfulfilled < 0) row.getCell(4).font = { color: { argb: 'FFF43F5E' }, bold: true };
+                if (pctText.startsWith('-')) row.getCell(5).font = { color: { argb: 'FFF43F5E' }, bold: true };
+                else if (pctText === '100%') row.getCell(5).font = { color: { argb: 'FF2563EB' }, bold: true };
+            }
+          }
+        });
+        
+        const gtUnfulfilled = grandTotals.orders - grandTotals.receipts;
+        const gtPctText = grandTotals.orders > 0 ? (grandTotals.receipts <= grandTotals.orders ? `${Math.round((grandTotals.receipts/grandTotals.orders)*100)}%` : `-${Math.round(((grandTotals.receipts-grandTotals.orders)/grandTotals.orders)*100)}%`) : 'N/A';
+        const totalRowData = hasAnyCarryOver ? ['종합', grandTotals.carry, grandTotals.new, grandTotals.orders, grandTotals.receipts, gtUnfulfilled, gtPctText] : ['종합', grandTotals.orders, grandTotals.receipts, gtUnfulfilled, gtPctText];
+        const totalRow = wsSum.addRow(totalRowData);
+        totalRow.eachCell(c => { c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF1E293B'}}; c.font = {bold:true, color:{argb:'FFFFFFFF'}}; });
+
+        const wsOrd = wb.addWorksheet('발주월별(선택월)');
+        const ordHeaders = hasAnyCarryOver ? ['품목', '이월합계', ...selectedMonths.map(m => `${m.substring(2,4)}년 ${parseInt(m.substring(5,7),10)}월`)] : ['품목', ...selectedMonths.map(m => `${m.substring(2,4)}년 ${parseInt(m.substring(5,7),10)}월`)];
+        wsOrd.addRow(ordHeaders);
+        wsOrd.views = [{state:'frozen', xSplit: hasAnyCarryOver ? 2 : 1, ySplit:1}];
+        ITEMS.forEach(r=>{
+          const carryOverTotal = getCarryOverData(r, selectedMonths);
+          const monthlyVals = selectedMonths.map(m => sumMonth(r, 'orders', m, r.tb, true));
+          if(carryOverTotal || monthlyVals.some(v=>v)){
+            const rowData = hasAnyCarryOver ? [r.label, carryOverTotal, ...monthlyVals] : [r.label, ...monthlyVals];
+            const added=wsOrd.addRow(rowData);
+            if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
+            if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
+            if(hasAnyCarryOver && carryOverTotal > 0) added.getCell(2).font = {color:{argb:'FF78716C'}, bold:true};
+          }
+        });
+
+        const wsRecv = wb.addWorksheet('입고_날짜별(전체)');
+        const monthToDays = {};
+        allMonths.forEach(m => {
+          const days = new Set();
+          ITEMS.forEach(r => Object.values(((all[r.key]||{}).receipts||{})[m]||{}).forEach(e => e.day && days.add(e.day)));
+          monthToDays[m] = Array.from(days).sort((a,b)=>a-b);
+        });
+        const recvHeaders = ['품목', ...allMonths.flatMap(m => monthToDays[m].map(d=>`${parseInt(m.slice(5,7),10)}/${d}`))];
+        wsRecv.addRow(recvHeaders);
+        wsRecv.views = [{state:'frozen', xSplit:1, ySplit:1}];
+        ITEMS.forEach(r => {
+          const vals = allMonths.flatMap(m => monthToDays[m].map(d => {
+            const node = ((all[r.key]||{}).receipts||{})[m]||{};
+            return Object.values(node).filter(e => e.day==d && (r.tb ? e.topBottom===r.tb : true)).reduce((s,e)=>s+toInt(e.qty),0);
+          }));
+          if(vals.some(v=>v)) wsRecv.addRow([r.label, ...vals]);
+        });
+        
+        [wsSum, wsOrd, wsRecv].forEach(ws => {
+          ws.getRow(1).eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1E293B'}}; c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center'}; });
+          for(let r=2; r<=ws.rowCount; r++){ ws.getRow(r).eachCell((c,ci)=>{ c.alignment={vertical:'middle',horizontal:(ci===1?'left':'center')}; }); }
+          ws.columns.forEach(col => {
+            let maxLen = 0;
+            col.eachCell({includeEmpty:true}, cell => maxLen=Math.max(maxLen, (cell.value||'').toString().length));
+            col.width = Math.max(10, maxLen + 2);
+          });
+          ws.getColumn(1).width = 11.88;
+        });
+
+        const buf = await wb.xlsx.writeBuffer();
+        saveAs(new Blob([buf]), `구매현황(${new Date().getFullYear().toString().slice(2)}년).xlsx`);
+
+      } catch (e) {
+        console.error("엑셀 생성 실패:", e);
+        showToast("엑셀 생성 실패: 다시 시도해주세요.");
+      } finally {
+        hideLoader();
+      }
     }
-    const totalRowData = hasAnyCarryOver
-      ? ['종합', grandTotal_CarryOver, grandTotal_NewOrders, grandTotal_Orders, grandTotal_Receipts, grandTotal_Unfulfilled, grandTotal_PctText]
-      : ['종합', grandTotal_Orders, grandTotal_Receipts, grandTotal_Unfulfilled, grandTotal_PctText];
-    const totalRow = wsSum.addRow(totalRowData);
-    totalRow.eachCell(c => {
-        c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF1E293B'}};
-        c.font = {bold:true, color:{argb:'FFFFFFFF'}};
-    });
-
-    // (이하 코드 변경 없음)
-    const wsOrd=wb.addWorksheet('발주월별(선택월)');
-    const ordHeaders = hasAnyCarryOver
-      ? ['품목', '이월합계', ...selectedMonths.map(m => `${m.substring(2,4)}년 ${parseInt(m.substring(5,7),10)}월`)]
-      : ['품목', ...selectedMonths.map(m => `${m.substring(2,4)}년 ${parseInt(m.substring(5,7),10)}월`)];
-    wsOrd.addRow(ordHeaders);
-    wsOrd.views = [{state:'frozen', xSplit: hasAnyCarryOver ? 2 : 1, ySplit:1}];
-    ITEMS.forEach(r=>{
-      const it=all[r.key]||{};
-      const carryOverTotal = getCarryOverData(r, selectedMonths);
-      const monthlyVals=selectedMonths.map(m=> sumMonth(it,'orders',m,r.tb, true));
-      if(carryOverTotal > 0 || monthlyVals.some(v=>v!==0)){
-        const rowData = hasAnyCarryOver ? [r.label, carryOverTotal, ...monthlyVals] : [r.label, ...monthlyVals];
-        const added=wsOrd.addRow(rowData);
-        if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
-        if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
-        if(hasAnyCarryOver && carryOverTotal > 0) added.getCell(2).font = {color:{argb:'FF78716C'}, bold:true};
-      }
-    });
-    
-    const monthToDays = {};
-    allMonths.forEach(m=>{
-      const daysSet = new Set();
-      ITEMS.forEach(r=>{
-        const recs = (((all[r.key]||{}).receipts||{})[m])||{};
-        Object.values(recs).forEach(e=>{
-          const d = Number(e.day||''); if(!Number.isNaN(d)) daysSet.add(d);
-        });
-      });
-      monthToDays[m] = Array.from(daysSet).sort((a,b)=>a-b);
-    });
-    const wsRecv=wb.addWorksheet('입고_날짜별(전체)');
-    const recvHeaders = ['품목', ...allMonths.flatMap(m=> monthToDays[m].map(d=>`${parseInt(m.slice(5,7),10)}월 ${d}일`))];
-    wsRecv.addRow(recvHeaders);
-    wsRecv.views = [{state:'frozen', xSplit:1, ySplit:1}];
-    const daySum = (it, m, d, tb='')=>{
-      const node=((it.receipts||{})[m])||{};
-      return Object.values(node).filter(e=> (tb? (e.topBottom||'')===tb : true) && Number(e.day||'')===d).reduce((s,e)=> s+toInt(e.qty),0);
-    };
-    ITEMS.forEach(r=>{
-      const it=all[r.key]||{};
-      const vals = allMonths.flatMap(m=> monthToDays[m].map(d=> daySum(it, m, d, r.tb)));
-      if(vals.some(v=>v!==0)){
-        wsRecv.addRow([r.label, ...vals]);
-      }
-    });
-
-    [wsSum, wsOrd, wsRecv].forEach(ws => {
-      ws.getRow(1).eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1E293B'}}; c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center'}; });
-      for(let r=2; r<=ws.rowCount; r++){ ws.getRow(r).eachCell((c,ci)=>{ c.alignment={vertical:'middle',horizontal:(ci===1?'left':'center')}; }); }
-      ws.columns.forEach(column => {
-        let max_length = 0;
-        column.eachCell({ includeEmpty: true }, cell => {
-          let cell_length = (cell.value || '').toString().length;
-          if (cell_length > max_length) { max_length = cell_length; }
-        });
-        column.width = Math.max(10, max_length + 2);
-      });
-      ws.getColumn(1).width = 11.88;
-    });
-
-    const buf=await wb.xlsx.writeBuffer();
-    const y = new Date().getFullYear().toString().slice(2);
-    saveAs(new Blob([buf]), `구매현황(${y}년).xlsx`);
-
-  } catch (e) {
-    console.error("엑셀 생성 실패:", e);
-    showToast("엑셀 생성 실패: 다시 시도해주세요.");
-  } finally {
-    hideLoader();
-  }
-}
-
-
     /* ▷▷▷ 엑셀 내보내기 종료 ▷▷▷ */
   </script>
-  <!-- ▷▷▷ 앱 스크립트 종료 ▷▷▷ -->
-</body>
+  </body>
 </html>
