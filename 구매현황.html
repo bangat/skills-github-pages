@@ -822,15 +822,12 @@ if (savedMonthsJSON) {
       });
     }
 
-    // 기존 renderOrderSummary 함수를 이 코드로 교체해주세요.
-
-function renderOrderSummary(container){
+    function renderOrderSummary(container){
   const data = state.snapshot||{};
   const allMonths = collectAllMonths(data);
   const monthsDesc = sortDescYM(allMonths);
   const ITEMS = buildItems(data);
 
-  // 이월 데이터 계산을 위한 헬퍼 함수 추가
   const getCarryOverData = (item, months) => {
       let carryOverQty = 0;
       months.forEach(m => {
@@ -854,37 +851,59 @@ function renderOrderSummary(container){
         })
         .reduce((s,e)=> s+toInt(e.qty),0);
   };
-  
+
   const parts=[];
-  let rows=[];
-  
   const selectedMonths = Array.from(state.selectedMonths);
+
+  // --- 전체 요약 테이블 생성 ---
+  const summaryRows = [];
+  let totalCarryOver = 0;
+  ITEMS.forEach(r => {
+    totalCarryOver += getCarryOverData(r, selectedMonths);
+  });
+  const showCarryOver = totalCarryOver > 0;
+
   ITEMS.forEach(r=>{
     const carryOver = getCarryOverData(r, selectedMonths);
     const newOrders = selectedMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'orders', true), 0);
     const totalOrders = carryOver + newOrders;
     const totalReceipts = allMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'receipts'), 0);
     const unfulfilled = totalOrders - totalReceipts;
-    
+
     if (totalOrders || totalReceipts) {
         const color = r.group === 'normal' ? 'txt-normal' : (r.group === 'ortho' ? 'txt-ortho' : '');
         const negCls = unfulfilled < 0 ? 'neg' : '';
-        // 이월(c), 신규(o), 입고(i), 미입고(n)
-        rows.push(`<tr class="summary-row"><td class="${color}">${r.label}</td><td style="color:#78716C;">${carryOver}</td><td>${newOrders}</td><td>${totalReceipts}</td><td class="${negCls}">${unfulfilled}</td></tr>`);
+        
+        let rowHtml = `<tr class="summary-row"><td class="${color}">${r.label}</td>`;
+        if (showCarryOver) {
+            rowHtml += `<td style="color:#78716C;">${carryOver}</td>`;
+        }
+        rowHtml += `<td>${newOrders}</td>`;
+        if (showCarryOver) {
+             rowHtml += `<td>${totalOrders}</td>`;
+        }
+        rowHtml += `<td>${totalReceipts}</td><td class="${negCls}">${unfulfilled}</td></tr>`;
+        summaryRows.push(rowHtml);
     }
   });
+
+  const summaryHeaders = ['품목'];
+  if (showCarryOver) summaryHeaders.push('이월');
+  summaryHeaders.push('발주');
+  if (showCarryOver) summaryHeaders.push('총 발주');
+  summaryHeaders.push('입고', '미입고');
 
   parts.push(`
     <div class="sec-title">전체 요약 (발주:선택월 / 입고:전체)</div>
     <div class="table-wrap">
       <table class="tbl-summary">
-        <thead><tr><th>품목</th><th>이월</th><th>신규</th><th>입고</th><th>미입고</th></tr></thead>
-        <tbody>${rows.join('')}</tbody>
+        <thead><tr><th>${summaryHeaders.join('</th><th>')}</th></tr></thead>
+        <tbody>${summaryRows.join('')}</tbody>
       </table>
     </div>`);
 
+  // --- 월별 상세 내역 테이블 생성 (체크박스와 상관없이 항상 표시) ---
   monthsDesc.forEach(m=>{
-    if (!state.selectedMonths.has(m)) return;
     const rowsM=[];
     ITEMS.forEach(r=>{
       const o=sumMonth(r.key,m,r.tb,'orders'); const i=sumMonth(r.key,m,r.tb,'receipts');
@@ -914,6 +933,7 @@ function renderOrderSummary(container){
   });
   container.innerHTML = parts.join('');
 }
+
 
 
 
