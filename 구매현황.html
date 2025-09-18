@@ -699,9 +699,9 @@
       const orthoRows = renderTableRows(ITEMS.filter(x => x.group === 'ortho'));
 
       container.innerHTML = `
-        <div class="table-wrap"><table class="tbl-receipts"><thead><tr><th>품목</th><th>선택발주량</th><th>전체입고량</th><th>진행률</th></tr></thead><tbody>${sheetRows}</tbody></table></div>
-        ${normalRows ? `<div class="divider-strong"></div><div class="table-wrap"><table class="tbl-receipts"><thead><tr><th>품목</th><th>선택발주량</th><th>전체입고량</th><th>진행률</th></tr></thead><tbody>${normalRows}</tbody></table></div>` : ''}
-        ${orthoRows ? `<div class="divider-strong"></div><div class="table-wrap"><table class="tbl-receipts"><thead><tr><th>품목</th><th>선택발주량</th><th>전체입고량</th><th>진행률</th></tr></thead><tbody>${orthoRows}</tbody></table></div>` : ''}
+        <div class="table-wrap"><table class="tbl-receipts"><thead><tr><th>품목</th><th>총발주</th><th>총입고</th><th>진행률</th></tr></thead><tbody>${sheetRows}</tbody></table></div>
+        ${normalRows ? `<div class="divider-strong"></div><div class="table-wrap"><table class="tbl-receipts"><thead><tr><th>품목</th><th>총발주</th><th>총입고</th><th>진행률</th></tr></thead><tbody>${normalRows}</tbody></table></div>` : ''}
+        ${orthoRows ? `<div class="divider-strong"></div><div class="table-wrap"><table class="tbl-receipts"><thead><tr><th>품목</th><th>총발주</th><th>총입고</th><th>진행률</th></tr></thead><tbody>${orthoRows}</tbody></table></div>` : ''}
       `;
       
       $$('.rq').forEach(inp => {
