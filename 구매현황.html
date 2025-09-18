@@ -219,21 +219,6 @@
   /* border와 padding 관련 속성은 제거합니다. */
 }
 
-/* ▷▷▷ 월별 요약 체크박스 스타일 시작 ▷▷▷ */
-.month-title-editable {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.month-checkbox {
-  margin-left: auto; /* 체크박스를 오른쪽 끝으로 밀어냄 */
-  cursor: pointer;
-  width: 18px;
-  height: 18px;
-}
-/* ▷▷▷ 월별 요약 체크박스 스타일 종료 ▷▷▷ */
-
-
 
   </style>
   <!-- ▷▷▷ 전역 스타일 종료 ▷▷▷ -->
@@ -466,7 +451,6 @@
       entryDate:'', snapshot:null,
       draftOrders:{ sheet:new Map(), patient:new Map(), hip:new Map() },
       patientKind:'normal'
-selectedMonths: new Set() 
     };
 
     const BASE_SHEETS = ["대시트","반시트","베갯잇","수건","중환의","얼음포","억제대"];
@@ -547,29 +531,8 @@ $('#formBox').addEventListener('click', (e) => {
   }
 });
 
-$('#formBox').addEventListener('change', e => {
-  if (e.target.classList.contains('month-checkbox')) {
-    const month = e.target.dataset.month;
-    if (e.target.checked) {
-      state.selectedMonths.add(month);
-    } else {
-      state.selectedMonths.delete(month);
-    }
-    // 요약 탭이 활성화 상태일 때만 다시 렌더링하여 변경사항을 즉시 반영합니다.
-    if (state.tab === 'summary') {
-      renderOrderSummary($('#formBox'));
-      if (window.feather) feather.replace({ width: '1em', height: '1em' });
-    }
-  }
-});
-
         // 스냅샷 로드
         state.snapshot = await getStatusOnce();
-
-// 모든 월 데이터를 수집하여 기본적으로 전체 선택 상태로 만듭니다.
-const allMonths = collectAllMonths(state.snapshot);
-state.selectedMonths = new Set(allMonths);
-
         renderBody();
         refreshProgress();
         if (window.feather && typeof feather.replace === 'function') feather.replace({ width:'1em', height:'1em' });
@@ -799,79 +762,70 @@ state.selectedMonths = new Set(allMonths);
       });
     }
 
-    // 기존 renderOrderSummary 함수를 지우고 아래 코드로 전체 교체하세요.
+    function renderOrderSummary(container){
+      const data = state.snapshot||{};
+      const monthsAsc = collectAllMonths(data);
+      const monthsDesc = sortDescYM(monthsAsc);
+      const ITEMS = buildItems(data);
 
-function renderOrderSummary(container){
-  const data = state.snapshot||{};
-  const monthsAsc = collectAllMonths(data);
-  const monthsDesc = sortDescYM(monthsAsc);
-  const ITEMS = buildItems(data);
+      const sumAcross=(name,tb='',kind='orders')=>monthsAsc.reduce((acc,m)=>{
+        const node=(((data[name]||{})[kind]||{})[m])||{};
+        const arr=Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true);
+        return acc+arr.reduce((s,e)=> s+toInt(e.qty),0);
+      },0);
 
-  const sumMonth=(name,month,tb='',kind='orders')=>{
-    const node=(((data[name]||{})[kind]||{})[month])||{};
-    const arr=Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true);
-    return arr.reduce((s,e)=> s+toInt(e.qty),0);
-  };
+      const sumMonth=(name,month,tb='',kind='orders')=>{
+        const node=(((data[name]||{})[kind]||{})[month])||{};
+        const arr=Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true);
+        return arr.reduce((s,e)=> s+toInt(e.qty),0);
+      };
 
-  const rowHtml=(r, o, i, m) => {
-    const n=o-i; const negCls = n<0 ? 'neg' : '';
-    const color = r.group==='normal' ? 'txt-normal' : (r.group==='ortho' ? 'txt-ortho' : '');
-    const dataAttrs = m ? `class="editable-row" data-item-key="${r.key}" data-item-label="${r.label}" data-item-tb="${r.tb}" data-month="${m}"` : '';
-    return `<tr ${dataAttrs}><td class="${color}">${r.label}</td><td>${o}</td><td>${i}</td><td class="${negCls}">${n}</td></tr>`;
-  };
+      const rowHtml=(r, o, i, m) => {
+        const n=o-i; const negCls = n<0 ? 'neg' : '';
+        const color = r.group==='normal' ? 'txt-normal' : (r.group==='ortho' ? 'txt-ortho' : '');
+        const dataAttrs = m ? `class="editable-row" data-item-key="${r.key}" data-item-label="${r.label}" data-item-tb="${r.tb}" data-month="${m}"` : '';
+        return `<tr ${dataAttrs}><td class="${color}">${r.label}</td><td>${o}</td><td>${i}</td><td class="${negCls}">${n}</td></tr>`;
+      };
 
-  const parts=[];
-  let rows=[];
-  
-  // ▼▼▼ 전체 요약 계산 로직 수정 ▼▼▼
-  // state.selectedMonths에 있는 월들만 합산합니다.
-  const monthsToSum = Array.from(state.selectedMonths);
-  ITEMS.forEach(r=>{
-    const o = monthsToSum.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'orders'), 0);
-    const i = monthsToSum.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'receipts'), 0);
-    if(o||i) rows.push(rowHtml(r,o,i,null));
-  });
-
-  parts.push(`
-    <div class="sec-title">전체 요약 (선택된 월 합산)</div>
-    <div class="table-wrap">
-      <table class="tbl-summary">
-        <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
-        <tbody>${rows.join('')}</tbody>
-      </table>
-    </div>`);
-
-  monthsDesc.forEach(m=>{
-    const rowsM=[];
-    ITEMS.forEach(r=>{
-      const o=sumMonth(r.key,m,r.tb,'orders'); const i=sumMonth(r.key,m,r.tb,'receipts');
-      if(o||i) rowsM.push(rowHtml(r,o,i,m));
-    });
-    if(rowsM.length){
-      const year = m.substring(2, 4); const month = parseInt(m.substring(5, 7), 10);
-      const isChecked = state.selectedMonths.has(m) ? 'checked' : ''; // 체크박스 상태 결정
-      
-      // ▼▼▼ 월별 제목 HTML에 체크박스 추가 ▼▼▼
+      const parts=[];
+      let rows=[];
+      ITEMS.forEach(r=>{
+        const o=sumAcross(r.key,r.tb,'orders'), i=sumAcross(r.key,r.tb,'receipts');
+        if(o||i) rows.push(rowHtml(r,o,i,null));
+      });
       parts.push(`
-        <div class="sec-title month-title-editable" data-month="${m}">
-          <div style="cursor: pointer; display: flex; align-items: center; gap: 6px;" title="${year}년 ${month}월 상세 내역 수정">
-            <span>${year}년 ${month}월 발주</span>
-            <i data-feather="edit-2" style="width:14px; height:14px;"></i>
-          </div>
-          <input type="checkbox" class="month-checkbox" data-month="${m}" ${isChecked} title="전체 요약에 포함/제외">
-        </div>
-
+        <div class="sec-title">전체 요약</div>
         <div class="table-wrap">
           <table class="tbl-summary">
             <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
-            <tbody>${rowsM.join('')}</tbody>
+            <tbody>${rows.join('')}</tbody>
           </table>
         </div>`);
-    }
-  });
-  container.innerHTML = parts.join('');
-}
 
+      monthsDesc.forEach(m=>{
+        const rowsM=[];
+        ITEMS.forEach(r=>{
+          const o=sumMonth(r.key,m,r.tb,'orders'); const i=sumMonth(r.key,m,r.tb,'receipts');
+          if(o||i) rowsM.push(rowHtml(r,o,i,m));
+        });
+        if(rowsM.length){
+          const year = m.substring(2, 4); const month = parseInt(m.substring(5, 7), 10);
+          parts.push(`
+            <div class="sec-title month-title-editable" data-month="${m}" style="cursor: pointer; display: flex; align-items: center; gap: 6px;" title="${year}년 ${month}월 전체 내역 수정">
+              <span>${year}년 ${month}월 발주</span>
+              <i data-feather="edit-2" style="width:14px; height:14px;"></i>
+            </div>
+
+            <div class="table-wrap">
+              <table class="tbl-summary">
+                <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
+                <tbody>${rowsM.join('')}</tbody>
+              </table>
+            </div>`);
+        }
+      });
+      container.innerHTML = parts.join('');
+    }
     /* ▷▷▷ 렌더링 종료 ▷▷▷ */
 
     /* ▷▷▷ 진행률 갱신 시작 ▷▷▷ */
@@ -1011,7 +965,7 @@ async function openEditModalForMonth(month) {
     });
 
     const sortedTransactions = allTransactions.sort((a, b) => getTransactionTimestamp(a, month) - getTransactionTimestamp(b, month));
-    
+
     // 발주(orders)와 입고(receipts) 데이터 분리
     const ordersList = sortedTransactions.filter(t => t.type === 'orders');
     const receiptsList = sortedTransactions.filter(t => t.type === 'receipts');
@@ -1028,7 +982,7 @@ async function openEditModalForMonth(month) {
         : (t.ts && !isNaN(t.ts) ? new Date(t.ts).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '날짜 정보 없음');
       const typeLabel = t.type === 'orders' ? '발주' : '입고';
       const colorCls = t.itemLabel.includes('일반') ? 'txt-normal' : (t.itemLabel.includes('정형') ? 'txt-ortho' : '');
-      
+
       return `
         <li data-id="${t.id}" data-type="${t.type}" data-item-key="${t.itemKey}" data-month="${month}" data-original-qty="${t.qty}">
           <div class="item-details">
@@ -1042,7 +996,7 @@ async function openEditModalForMonth(month) {
 
     const ordersHtml = ordersList.map(createListItemHtml).join('');
     const receiptsHtml = receiptsList.map(createListItemHtml).join('');
-    
+
     // 탭과 리스트를 포함한 전체 모달 body HTML
     body.innerHTML = `
       <div class="modal-tabs">
@@ -1052,14 +1006,14 @@ async function openEditModalForMonth(month) {
       <ul id="orders-list">${ordersHtml}</ul>
       <ul id="receipts-list" class="is-hidden">${receiptsHtml}</ul>
     `;
-    
+
     // 탭 클릭 이벤트 리스너
     body.querySelector('.modal-tabs').addEventListener('click', e => {
       const target = e.target;
       if (target.classList.contains('modal-tab')) {
         body.querySelectorAll('.modal-tab').forEach(tab => tab.classList.remove('active'));
         target.classList.add('active');
-        
+
         body.querySelectorAll('ul').forEach(ul => ul.classList.add('is-hidden'));
         const tabContentId = target.dataset.tab;
         body.querySelector(`#${tabContentId}`).classList.remove('is-hidden');
@@ -1089,7 +1043,7 @@ async function saveEdits() {
  $$('#editModalBody li').forEach(li => {
       const { id, type, itemKey, month } = li.dataset;
       const path = `purchase_status/${itemKey}/${type}/${month}/${id}`;
-      
+
       if (li.classList.contains('is-deleted')) {
         updates[path] = null;
       } else {
@@ -1097,7 +1051,7 @@ async function saveEdits() {
         // ▼▼▼ 이렇게 수정되었습니다 ▼▼▼
         const originalQty = toInt(li.dataset.originalQty); 
         const newQty = toInt(input.value);
-        
+
         if (newQty !== originalQty) {
           updates[`${path}/qty`] = newQty;
         }
@@ -1242,4 +1196,3 @@ async function saveEdits() {
   <!-- ▷▷▷ 앱 스크립트 종료 ▷▷▷ -->
 </body>
 </html>
-
