@@ -625,8 +625,7 @@
 
   monthsDesc.forEach(m=>{
     // ▼▼▼ 문제가 되었던 이 라인을 삭제했습니다 ▼▼▼
-    // if (!state.selectedMonths.has(m) && state.mode === 'orders') return;
-    
+
     const rowsM = ITEMS.map(r => {
       const o = sumMonth(r.key,m,r.tb,'orders');
       const i = sumMonth(r.key,m,r.tb,'receipts');
@@ -760,7 +759,7 @@
       const bar = $('#progressBarInner');
       bar.style.width = Math.min(100, p) + '%';
       bar.textContent = p + '%';
-      $('#gaugeStats').textContent = `선택발주 ${totO}개 · 전체입고 ${totR}개 (선택발주 대비 ${p}%)`;
+      $('#gaugeStats').textContent = `총발주 ${totO}개 · 총입고 ${totR}개 (총발주 대비 ${p}%)`;
     }
     /* ▷▷▷ 진행률 갱신 종료 ▷▷▷ */
 
