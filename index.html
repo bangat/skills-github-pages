@@ -338,6 +338,26 @@ border-top:5px solid #2563eb; /* 진한 파랑 */
   #exportXLSXBtn{display:none}
 
   /* --- 통계 화면 전용 스타일 --- */
+/* 기존 .preset-btn 스타일을 아래 코드로 교체 */
+.preset-btn {
+    padding: 0 12px;
+    height: 42px;
+    font-size: 14px;
+    flex-shrink: 0;
+    /* ▼▼▼ 색상 및 효과 추가 ▼▼▼ */
+    background-color: #eef2ff;
+    color: #4338ca;
+    border: 1px solid #c7d2fe;
+    font-weight: 700;
+    transition: background-color 0.2s, transform 0.1s;
+}
+.preset-btn:hover {
+    background-color: #e0e7ff;
+}
+.preset-btn:active {
+    transform: translateY(1px);
+}
+
   body.mode-stats header{display:none}
   body.mode-stats #saveAll, body.mode-stats #appDownloadBtn{display:none}
   body.mode-stats #exportXLSXBtn{display:block;width:100%;font-size:16px;padding:12px 16px;border-radius:12px}
@@ -1706,7 +1726,14 @@ let lineChart=null, dowChart=null;
 function fmtYYYYMMDD(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0"); return `${y}-${m}-${dd}`; }
 function dateRangeArray(sStr,eStr){
   const [sMs,eMs]=rangeMsByDates(sStr,eStr);
-  const arr=[]; for(let t=sMs; t<eMs; t+=86400000){ arr.push(new Date(t)); }
+  const arr=[];
+  for(let t=sMs; t<eMs; t+=86400000){
+    const d = new Date(t);
+    // getDay()가 0인 일요일은 목록에 추가하지 않습니다.
+    if (d.getDay() !== 0) {
+      arr.push(d);
+    }
+  }
   return arr;
 }
 function buildDailySeries(item, sStr, eStr, wardFilter){
@@ -1902,38 +1929,92 @@ async function renderStats(){
 
 /* === 데이터 내보내기 (XLSX) === */
 function exportXLSX(){
-  const table=document.querySelector("#statsWrap table"); if(!table){ alert("통계 표가 없습니다."); return; }
-  const s=el("#dateStart").value||"", e=el("#dateEnd").value||"", ward=el("#wardFilter").value||"전체";
-  const ws=XLSX.utils.table_to_sheet(table,{origin:"A2"});
-  const title=`${s} ~ ${e} ${ward}병동 출고량`;
-  XLSX.utils.sheet_add_aoa(ws,[[title]],{origin:"A1"});
-  const lastCol=table.rows[0].cells.length-1;
-  ws["!merges"]=ws["!merges"]||[]; ws["!merges"].push({s:{r:0,c:0},e:{r:0,c:lastCol}});
-  ws["A1"].s={font:{bold:true,sz:14},alignment:{horizontal:"center",vertical:"center"}};
-  ws["!rows"]=ws["!rows"]||[]; ws["!rows"][0]={hpt:22};
-  const daysCount = Math.max(1, Math.round((new Date(e) - new Date(s)) / (1000*60*60*24)) + 1);
-  const tBody = table.tBodies[0];
-  const lastRow = tBody.rows[tBody.rows.length-1];
-  const totals = Array.from(lastRow.cells).slice(1).map(c=>parseInt(c.innerText)||0);
-  const avgs = totals.map(v=>Math.round(v/daysCount));
-  XLSX.utils.sheet_add_aoa(ws,[["일평균", ...avgs]],{origin:-1});
-  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"통계");
-  XLSX.writeFile(wb,`stats_${s}_to_${e}.xlsx`);
-}
-function exportChartXLSX(){
-  const s=el("#dateStart").value||"", e=el("#dateEnd").value||"", ward=el("#wardFilter").value||"전체";
-  const item = el("#chartItem").value || "모든 품목 합계";
-  if(!s || !e){ alert("기간을 먼저 선택하세요."); return; }
-  const {labels,values} = buildDailySeries(item, s, e, ward);
-  const {labels: dowLabels, values: dowValues} = buildDowSeries(values, labels);
-  const wb = XLSX.utils.book_new();
-  const ws1 = XLSX.utils.aoa_to_sheet([["날짜","수량"], ...labels.map((d,i)=>[d,values[i]])]);
-  XLSX.utils.book_append_sheet(wb, ws1, "일자추이");
-  const ws2 = XLSX.utils.aoa_to_sheet([["요일","합계"], ...dowLabels.map((n,i)=>[n,dowValues[i]])]);
-  XLSX.utils.book_append_sheet(wb, ws2, "요일합계");
-  XLSX.writeFile(wb, `trend_${item}_${s}_to_${e}.xlsx`);
-}
+  const table = document.querySelector("#statsWrap table");
+  if (!table) {
+    alert("통계 표가 없습니다.");
+    return;
+  }
+  const s = el("#dateStart").value || "", e = el("#dateEnd").value || "", ward = el("#wardFilter").value || "전체";
 
+  // --- 1. 파일명 생성---
+  const formatDate = (dStr) => {
+    const d = new Date(dStr + "T00:00:00");
+    return `${String(d.getFullYear()).slice(2)}년${d.getMonth()+1}월${d.getDate()}일`;
+  };
+  const isFullMonth = (startStr, endStr) => {
+    const s = new Date(startStr + "T00:00:00");
+    const e = new Date(endStr + "T00:00:00");
+    if (s.getFullYear() !== e.getFullYear() || s.getMonth() !== e.getMonth()) return false;
+    const lastDayOfMonth = new Date(e.getFullYear(), e.getMonth() + 1, 0).getDate();
+    return s.getDate() === 1 && e.getDate() === lastDayOfMonth;
+  };
+  let fileName = "";
+  if (isFullMonth(s, e)) {
+    const d = new Date(s + "T00:00:00");
+    fileName = `${String(d.getFullYear()).slice(2)}년${d.getMonth()+1}월 ${ward}병동 출고량.xlsx`;
+  } else {
+    fileName = `${formatDate(s)} - ${formatDate(e)} ${ward}병동 출고량.xlsx`;
+  }
+
+  // --- 2. 엑셀 데이터 생성 및 공백 행 추가 ---
+  // 표를 A3셀부터 시작하여 2행에 공백을 만듭니다.
+  const ws = XLSX.utils.table_to_sheet(table, { origin: "A3" });
+  const title = `${s} ~ ${e} ${ward}병동 출고량`;
+  XLSX.utils.sheet_add_aoa(ws, [[title]], { origin: "A1" });
+  
+  const daysCount = Math.max(1, Math.round((new Date(e) - new Date(s)) / (1000 * 60 * 60 * 24)) + 1);
+  const tBody = table.tBodies[0];
+  const lastDataRowIndex = tBody.rows.length;
+  const totals = Array.from(tBody.rows[lastDataRowIndex-1].cells).slice(1).map(c=>parseInt(c.innerText.replace(/,/g,''))||0);
+  const avgs = totals.map(v => Math.round(v / daysCount));
+  XLSX.utils.sheet_add_aoa(ws, [["일평균", ...avgs]], { origin: -1 });
+
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const lastCol = range.e.c;
+  
+  ws["!merges"] = ws["!merges"] || [];
+  ws["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: lastCol } });
+  ws["!rows"] = ws["!rows"] || [];
+  ws["!rows"][0] = { hpt: 22 };
+
+  // --- 3. 새로운 스타일 정의 및 적용 ---
+  const borderStyle = { style: "thin", color: { rgb: "BFBFBF" } };
+  const borders = { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle };
+  const baseStyle = { alignment: { horizontal: "center", vertical: "center" }, border: borders };
+  
+  // [수정] 보고서 형식에 맞는 새로운 색상 스타일 정의
+  const titleStyle = { ...baseStyle, border: {}, font: { bold: true, sz: 14 } }; // 테두리와 배경색 제거
+  const headerStyle = { ...baseStyle, fill: { fgColor: { rgb: "333F54" } }, font: { bold: true, color: { rgb: "FFFFFF" } } };
+  const firstColStyle = { ...baseStyle, fill: { fgColor: { rgb: "F2F2F2" } }, font: { bold: true } };
+  const totalRowStyle = { ...baseStyle, fill: { fgColor: { rgb: "E2E8F0" } }, font: { bold: true } };
+
+  for (let R = range.s.r; R <= range.e.r; ++R) {
+    // 2행은 공백이므로 건너뜁니다.
+    if (R === 1) continue;
+    
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cell_ref = XLSX.utils.encode_cell({ c: C, r: R });
+      if (!ws[cell_ref]) continue;
+
+      // [수정] 행 인덱스에 맞춰 스타일 적용
+      if (R === 0) { // 제목 행 (1행)
+        ws[cell_ref].s = titleStyle;
+      } else if (R === 2) { // 헤더 행 (3행)
+        ws[cell_ref].s = headerStyle;
+      } else if (R >= lastDataRowIndex + 2) { // 합계 및 평균 행
+        ws[cell_ref].s = totalRowStyle;
+      } else if (C === 0) { // 첫 번째 열 (A열)
+        ws[cell_ref].s = firstColStyle;
+      } else { // 나머지 데이터 셀
+        ws[cell_ref].s = baseStyle;
+      }
+    }
+  }
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "통계");
+  XLSX.writeFile(wb, fileName);
+}
 /* === 버튼 상호작용 (Hold & Ripple) === */
 function attachHoldRepeat(btn, onStep){
   let timer = null;
@@ -2061,6 +2142,59 @@ function showWardPromptModal(){ openModal('#wardPromptModal', '#wpOk'); playSnd(
 /* === 페이지 초기화 및 이벤트 핸들러 바인딩 === */
 window.addEventListener("DOMContentLoaded",()=>{
   el('#wpOk').onclick = () => { closeModal('#wardPromptModal'); openModal('#headerEditModal', '#wardSelect'); };
+
+// ▼▼▼통계 날짜 프리셋 버튼 로직 (UI 및 기능 수정) ▼▼▼
+const wardControls = el('#wardFilter').parentElement;
+if (wardControls) {
+  wardControls.style.display = 'flex';
+  wardControls.style.alignItems = 'center';
+  const spacer = document.createElement('div');
+  spacer.style.flex = '1 1 auto';
+  const btnWrap = document.createElement('div');
+  btnWrap.className = 'preset-buttons';
+  btnWrap.innerHTML = `
+    <button id="presetWeek" class="btn preset-btn">주간</button>
+    <button id="presetMonth" class="btn preset-btn">월간</button>
+  `;
+  wardControls.appendChild(spacer);
+  wardControls.appendChild(btnWrap);
+
+  // 날짜를 'YYYY-MM-DD' 형식으로 안전하게 변환하는 함수
+  const formatDate = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  el('#presetWeek').onclick = () => {
+    const startInput = el('#dateStart');
+    const endInput = el('#dateEnd');
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - offset);
+    
+    startInput.value = formatDate(monday);
+    endInput.value = formatDate(today);
+    renderStats();
+  };
+
+  el('#presetMonth').onclick = () => {
+    const startInput = el('#dateStart');
+    const endInput = el('#dateEnd');
+    
+    // '오늘'이 아닌, 종료일 입력창의 날짜를 기준으로 월의 1일을 계산합니다.
+    const endDate = new Date(endInput.value + "T12:00:00");
+    const firstDayOfMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+    
+    startInput.value = formatDate(firstDayOfMonth);
+    renderStats();
+  };
+}
+// ▲▲▲통계 날짜 프리셋 버튼 로직 (UI 및 기능 수정) ▲▲▲
+  
   ['click', 'mousedown', 'touchstart'].forEach(eventType => {
     document.body.addEventListener(eventType, (e) => {
       if (isWardSelected()) return;
@@ -2444,10 +2578,8 @@ document.addEventListener("click", (e) => {
         const all = Object.values(obj||{});
         const actives = all.filter(n => n && n.active === true);
 
-        // ★ 핵심: '전체' + 현재 병동 둘 다 포함
 const filtered = actives
         .filter(n => {
-          // ▼▼▼ 이 한 줄을 추가하는 것입니다 ▼▼▼
           console.log(`[공지 필터링 비교] 내 병동: "${curWard}", 공지 대상: "${n.ward}", 일치 여부: ${matchesWard(n.ward, curWard)}`);
           
           return matchesWard(n.ward, curWard) && inRange(today, n.from||'', n.to||'');
@@ -2455,9 +2587,6 @@ const filtered = actives
         .sort((a,b)=>(b.ts||0)-(a.ts||0));
 
         showIndexNoticeModal(filtered);
-
-        // 병동을 아직 선택하지 않은 상태('')에서는
-        // 세션 키를 찍지 않아야, 나중에 병동 선택 후 다시 뜹니다.
         if (filtered.length && curWard){
           sessionStorage.setItem(skey, '1');
         }
@@ -2486,6 +2615,3 @@ const filtered = actives
 </script>
 </body>
 </html>
-
-
-
