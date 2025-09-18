@@ -875,27 +875,35 @@ function renderOrderSummary(container){
     /* ▷▷▷ 렌더링 종료 ▷▷▷ */
 
     /* ▷▷▷ 진행률 갱신 시작 ▷▷▷ */
-    async function refreshProgress(){
-      if(!state.snapshot) state.snapshot = await getStatusOnce();
-      const data = state.snapshot||{};
-      const months = collectAllMonths(data);
-      const ITEMS = buildItems(data);
-      let totO=0, totR=0;
+    // 기존 refreshProgress 함수를 지우고 아래 코드로 전체 교체하세요.
 
-      months.forEach(m=>{
-        ITEMS.forEach(it=>{
-          const o = Object.values((((data[it.key]||{}).orders||{})[m])||{}).filter(e=> it.tb? (e.topBottom||'')===it.tb : true).reduce((s,e)=> s+toInt(e.qty),0);
-          const r = Object.values((((data[it.key]||{}).receipts||{})[m])||{}).filter(e=> it.tb? (e.topBottom||'')===it.tb : true).reduce((s,e)=> s+toInt(e.qty),0);
-          totO += o; totR += r;
-        });
-      });
+async function refreshProgress(){
+  if(!state.snapshot) state.snapshot = await getStatusOnce();
+  const data = state.snapshot||{};
+  // ▼▼▼ 이 부분이 핵심입니다 ▼▼▼
+  // 기존: const months = collectAllMonths(data);
+  // 변경: state.selectedMonths 에서 선택된 월 목록을 가져옵니다.
+  const months = Array.from(state.selectedMonths);
+  const ITEMS = buildItems(data);
+  let totO=0, totR=0;
 
-      const p = totO>0 ? Math.round((totR/totO)*100) : (totR>0?100:0);
-      const bar = $('#progressBarInner');
-      bar.style.width = Math.min(100,p)+'%'; bar.textContent = Math.min(100,p)+'%';
-      const overTxt = (totR<=totO)? `${p}%` : `-${Math.round((totR-totO)/totO*100)}%`;
-      $('#gaugeStats').textContent = `전체발주 ${totO}개 · 전체입고 ${totR}개 ${overTxt} 입고됨`;
-    }
+  months.forEach(m=>{
+    ITEMS.forEach(it=>{
+      const o = Object.values((((data[it.key]||{}).orders||{})[m])||{}).filter(e=> it.tb? (e.topBottom||'')===it.tb : true).reduce((s,e)=> s+toInt(e.qty),0);
+      const r = Object.values((((data[it.key]||{}).receipts||{})[m])||{}).filter(e=> it.tb? (e.topBottom||'')===it.tb : true).reduce((s,e)=> s+toInt(e.qty),0);
+      totO += o; totR += r;
+    });
+  });
+
+  const p = totO>0 ? Math.round((totR/totO)*100) : (totR>0?100:0);
+  const bar = $('#progressBarInner');
+  bar.style.width = Math.min(100,p)+'%'; bar.textContent = Math.min(100,p)+'%';
+  const overTxt = (totR<=totO)? `${p}%` : `-${Math.round((totR-totO)/totO*100)}%`;
+  
+  // 전체발주가 아닌 '선택된 발주'로 텍스트를 변경하여 명확성을 높입니다.
+  $('#gaugeStats').textContent = `선택발주 ${totO}개 · 입고 ${totR}개 ${overTxt} 입고됨`;
+}
+
     /* ▷▷▷ 진행률 갱신 종료 ▷▷▷ */
 
     /* ▷▷▷ 저장(발주/입고) 플로우 시작 ▷▷▷ */
@@ -1124,119 +1132,132 @@ async function saveEdits() {
     /* ▷▷▷ 상세 수정(모달) 종료 ▷▷▷ */
 
     /* ▷▷▷ 엑셀 내보내기 시작 ▷▷▷ */
-    async function onExportExcel_AllData(){
-      try {
-        showLoader('엑셀 생성중…');
+    // 기존 onExportExcel_AllData 함수를 지우고 아래 코드로 전체 교체하세요.
 
-        if(!state.snapshot) state.snapshot=await getStatusOnce();
-        const all=state.snapshot||{};
-        const monthsAll=collectAllMonths(all);
-        const ITEMS = buildItems(all);
-        const wb=new ExcelJS.Workbook();
-        const sumMonth = (it, kind, m, tb='')=>{
-          const node=((it[kind]||{})[m])||{};
-          return Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true).reduce((s,e)=> s+toInt(e.qty),0);
-        };
-        const sumRange = (it, kind, months, tb='')=> months.reduce((acc,m)=> acc + sumMonth(it,kind,m,tb), 0);
+async function onExportExcel_AllData(){
+  try {
+    showLoader('엑셀 생성중…');
 
-        // 요약
-        const wsSum=wb.addWorksheet('요약');
-        wsSum.addRow(['품목','발주량','입고량','미입고','진행률']);
-        wsSum.views = [{state:'frozen', xSplit:1, ySplit:1}];
-        let totO=0, totR=0;
-        ITEMS.forEach(r=>{
-          const it=all[r.key]||{};
-          const o=sumRange(it,'orders',monthsAll,r.tb);
-          const v=sumRange(it,'receipts',monthsAll,r.tb);
-          const n=o-v; totO+=o; totR+=v;
-          if(o!==0 || v!==0){
-            const pct = (o>0) ? (v<=o? `${Math.round(v/o*100)}%` : `-${Math.round((v-o)/o*100)}%`) : (v>0?'100%':'0%');
-            const row=wsSum.addRow([r.label,o,v,n,pct]);
-            if(r.group==='normal') row.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
-            if(r.group==='ortho')  row.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
-            if(n<0) row.getCell(4).font={color:{argb:'FFF43F5E'},bold:true};
-            if(pct.startsWith('-')) row.getCell(5).font={color:{argb:'FFF43F5E'},bold:true};
-            if(o>0 && n===0){
-              row.eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE8F7EE'}}; });
-              row.getCell(5).font={bold:true, color:{argb:'FF2563EB'}};
-            }
-          }
-        });
-        const totN = totO - totR;
-        const totalPctText = (totO>0? (totR<=totO? `${Math.round(totR/totO*100)}%` : `-${Math.round((totR-totO)/totO*100)}%`) : (totR>0?'100%':'0%'));
-        const totalRow = wsSum.addRow(['종합(전체)', totO, totR, totN, totalPctText]);
-        totalRow.eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF2563EB'}}; c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center'}; });
+    if(!state.snapshot) state.snapshot=await getStatusOnce();
+    const all=state.snapshot||{};
 
-        // 발주월별
-        const wsOrd=wb.addWorksheet('발주월별');
-        const ordHeaders = ['품목', ...monthsAll.map(m => { const year = m.substring(2, 4); const month = parseInt(m.substring(5, 7), 10); return `${year}년 ${month}월`; })];
-        wsOrd.addRow(ordHeaders);
-        wsOrd.views = [{state:'frozen', xSplit:1, ySplit:1}];
-        ITEMS.forEach(r=>{
-          const it=all[r.key]||{};
-          const vals=monthsAll.map(m=> sumMonth(it,'orders',m,r.tb));
-          if(vals.some(v=>v!==0)){
-            const added=wsOrd.addRow([r.label, ...vals]);
-            if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
-            if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
-          }
-        });
-
-        // 입고(날짜별)
-        const monthToDays = {};
-        monthsAll.forEach(m=>{
-          const daysSet = new Set();
-          ITEMS.forEach(r=>{
-            const recs = (((all[r.key]||{}).receipts||{})[m])||{};
-            Object.values(recs).forEach(e=>{
-              const d = Number(e.day||''); if(!Number.isNaN(d)) daysSet.add(d);
-            });
-          });
-          monthToDays[m] = Array.from(daysSet).sort((a,b)=>a-b);
-        });
-
-        const wsRecv=wb.addWorksheet('입고(날짜별)');
-        const recvHeaders = ['품목', ...monthsAll.flatMap(m=> monthToDays[m].map(d=>`${parseInt(m.slice(5,7),10)}월 ${d}일`))];
-        wsRecv.addRow(recvHeaders);
-        wsRecv.views = [{state:'frozen', xSplit:1, ySplit:1}];
-        const daySum = (it, m, d, tb='')=>{
-          const node=((it.receipts||{})[m])||{};
-          return Object.values(node).filter(e=> (tb? (e.topBottom||'')===tb : true) && Number(e.day||'')===d).reduce((s,e)=> s+toInt(e.qty),0);
-        };
-        ITEMS.forEach(r=>{
-          const it=all[r.key]||{};
-          const vals = monthsAll.flatMap(m=> monthToDays[m].map(d=> daySum(it, m, d, r.tb)));
-          if(vals.some(v=>v!==0)){
-            const added=wsRecv.addRow([r.label, ...vals]);
-            if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
-            if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
-          }
-        });
-
-        [wsSum, wsOrd, wsRecv].forEach(ws => {
-          ws.getRow(1).eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1E293B'}}; c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center'}; });
-          for(let r=2; r<=ws.rowCount; r++){ ws.getRow(r).eachCell((c,ci)=>{ c.alignment={vertical:'middle',horizontal:(ci===1?'left':'center')}; }); }
-          ws.columns.forEach(column => {
-            let max_length = 0;
-            column.eachCell({ includeEmpty: true }, cell => {
-              let cell_length = (cell.value || '').toString().length;
-              if (cell_length > max_length) { max_length = cell_length; }
-            });
-            column.width = Math.max(10, max_length + 2);
-          });
-          ws.getColumn(1).width = 11.88;
-        });
-
-        const buf=await wb.xlsx.writeBuffer();
-        const y = new Date().getFullYear().toString().slice(2);
-        saveAs(new Blob([buf]), `구매현황(${y}년).xlsx`);
-      } catch (e) {
-        console.error("엑셀 생성 실패:", e);
-        showToast("엑셀 생성 실패: 다시 시도해주세요.");
-      } finally {
-        hideLoader();
-      }
+    // ▼▼▼ 핵심 수정사항 ▼▼▼
+    // 기존: const monthsAll=collectAllMonths(all);
+    // 변경: state에서 '선택된 월' 목록만 가져와서 엑셀을 생성합니다.
+    const selectedMonths = Array.from(state.selectedMonths).sort((a, b) => a.localeCompare(b));
+    
+    if (selectedMonths.length === 0) {
+      showToast("엑셀로 내보낼 월이 선택되지 않았습니다.");
+      return;
     }
+
+    const ITEMS = buildItems(all);
+    const wb=new ExcelJS.Workbook();
+    const sumMonth = (it, kind, m, tb='')=>{
+      const node=((it[kind]||{})[m])||{};
+      return Object.values(node).filter(e=> tb? (e.topBottom||'')===tb : true).reduce((s,e)=> s+toInt(e.qty),0);
+    };
+    const sumRange = (it, kind, months, tb='')=> months.reduce((acc,m)=> acc + sumMonth(it,kind,m,tb), 0);
+
+    // 요약 시트 (선택된 월 기준)
+    const wsSum=wb.addWorksheet('요약(선택월)');
+    wsSum.addRow(['품목','발주량','입고량','미입고','진행률']);
+    wsSum.views = [{state:'frozen', xSplit:1, ySplit:1}];
+    let totO=0, totR=0;
+    ITEMS.forEach(r=>{
+      const it=all[r.key]||{};
+      const o=sumRange(it,'orders',selectedMonths,r.tb);
+      const v=sumRange(it,'receipts',selectedMonths,r.tb);
+      const n=o-v; totO+=o; totR+=v;
+      if(o!==0 || v!==0){
+        const pct = (o>0) ? (v<=o? `${Math.round(v/o*100)}%` : `-${Math.round((v-o)/o*100)}%`) : (v>0?'100%':'0%');
+        const row=wsSum.addRow([r.label,o,v,n,pct]);
+        if(r.group==='normal') row.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
+        if(r.group==='ortho')  row.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
+        if(n<0) row.getCell(4).font={color:{argb:'FFF43F5E'},bold:true};
+        if(pct.startsWith('-')) row.getCell(5).font={color:{argb:'FFF43F5E'},bold:true};
+        if(o>0 && n===0){
+          row.eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE8F7EE'}}; });
+          row.getCell(5).font={bold:true, color:{argb:'FF2563EB'}};
+        }
+      }
+    });
+    const totN = totO - totR;
+    const totalPctText = (totO>0? (totR<=totO? `${Math.round(totR/totO*100)}%` : `-${Math.round((totR-totO)/totO*100)}%`) : (totR>0?'100%':'0%'));
+    const totalRow = wsSum.addRow(['종합(선택월)', totO, totR, totN, totalPctText]);
+    totalRow.eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF2563EB'}}; c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center'}; });
+
+    // 발주월별 시트 (선택된 월 기준)
+    const wsOrd=wb.addWorksheet('발주월별(선택월)');
+    const ordHeaders = ['품목', ...selectedMonths.map(m => { const year = m.substring(2, 4); const month = parseInt(m.substring(5, 7), 10); return `${year}년 ${month}월`; })];
+    wsOrd.addRow(ordHeaders);
+    wsOrd.views = [{state:'frozen', xSplit:1, ySplit:1}];
+    ITEMS.forEach(r=>{
+      const it=all[r.key]||{};
+      const vals=selectedMonths.map(m=> sumMonth(it,'orders',m,r.tb));
+      if(vals.some(v=>v!==0)){
+        const added=wsOrd.addRow([r.label, ...vals]);
+        if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
+        if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
+      }
+    });
+
+    // 입고(날짜별) 시트 (선택된 월 기준)
+    const monthToDays = {};
+    selectedMonths.forEach(m=>{
+      const daysSet = new Set();
+      ITEMS.forEach(r=>{
+        const recs = (((all[r.key]||{}).receipts||{})[m])||{};
+        Object.values(recs).forEach(e=>{
+          const d = Number(e.day||''); if(!Number.isNaN(d)) daysSet.add(d);
+        });
+      });
+      monthToDays[m] = Array.from(daysSet).sort((a,b)=>a-b);
+    });
+
+    const wsRecv=wb.addWorksheet('입고_날짜별(선택월)');
+    const recvHeaders = ['품목', ...selectedMonths.flatMap(m=> monthToDays[m].map(d=>`${parseInt(m.slice(5,7),10)}월 ${d}일`))];
+    wsRecv.addRow(recvHeaders);
+    wsRecv.views = [{state:'frozen', xSplit:1, ySplit:1}];
+    const daySum = (it, m, d, tb='')=>{
+      const node=((it.receipts||{})[m])||{};
+      return Object.values(node).filter(e=> (tb? (e.topBottom||'')===tb : true) && Number(e.day||'')===d).reduce((s,e)=> s+toInt(e.qty),0);
+    };
+    ITEMS.forEach(r=>{
+      const it=all[r.key]||{};
+      const vals = selectedMonths.flatMap(m=> monthToDays[m].map(d=> daySum(it, m, d, r.tb)));
+      if(vals.some(v=>v!==0)){
+        const added=wsRecv.addRow([r.label, ...vals]);
+        if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
+        if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
+      }
+    });
+
+    [wsSum, wsOrd, wsRecv].forEach(ws => {
+      ws.getRow(1).eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1E293B'}}; c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center'}; });
+      for(let r=2; r<=ws.rowCount; r++){ ws.getRow(r).eachCell((c,ci)=>{ c.alignment={vertical:'middle',horizontal:(ci===1?'left':'center')}; }); }
+      ws.columns.forEach(column => {
+        let max_length = 0;
+        column.eachCell({ includeEmpty: true }, cell => {
+          let cell_length = (cell.value || '').toString().length;
+          if (cell_length > max_length) { max_length = cell_length; }
+        });
+        column.width = Math.max(10, max_length + 2);
+      });
+      ws.getColumn(1).width = 11.88;
+    });
+
+    const buf=await wb.xlsx.writeBuffer();
+    const ymd = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+    saveAs(new Blob([buf]), `구매현황_선택월(${ymd}).xlsx`);
+  } catch (e) {
+    console.error("엑셀 생성 실패:", e);
+    showToast("엑셀 생성 실패: 다시 시도해주세요.");
+  } finally {
+    hideLoader();
+  }
+}
+
     /* ▷▷▷ 엑셀 내보내기 종료 ▷▷▷ */
   </script>
   <!-- ▷▷▷ 앱 스크립트 종료 ▷▷▷ -->
