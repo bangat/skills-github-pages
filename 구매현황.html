@@ -721,109 +721,125 @@ if (savedMonthsJSON) {
       }
     }
 
-    async function renderReceiptsUI(container){
-      const data = state.snapshot||{};
-      const months = collectAllMonths(data);
-      if(months.length===0){ container.innerHTML=''; return; }
-      const ITEMS = buildItems(data);
+    // 기존 renderReceiptsUI 함수를 이 코드로 교체해주세요.
 
-      const sumBy = (name, path, tb='')=>{
-        return months.reduce((acc, m)=>{
-          const node = (((data[name]||{})[path]||{})[m])||{};
-          const arr = Object.values(node).filter(e=> (tb? (e.topBottom||'')===tb : true));
-          return acc + arr.reduce((s,e)=> s+toInt(e.qty),0);
-        },0);
-      };
+async function renderReceiptsUI(container){
+  const data = state.snapshot||{};
+  
+  // ▼▼▼ 1. '선택된 월'과 '전체 월' 목록을 모두 가져옵니다.
+  const selectedMonths = Array.from(state.selectedMonths);
+  const allMonths = collectAllMonths(data);
 
-      const sheetRows = ITEMS.filter(x=>x.group==='sheet').map(r=>{
-        const o = sumBy(r.key,'orders',r.tb), rv = sumBy(r.key,'receipts',r.tb);
-        if(o<=0 && rv<=0) return '';
-        const done = rv>=o ? 'done' : '';
-        const over = rv>o ? 'over' : '';
-        const prDisp = (o>0) ? (rv<=o ? `${Math.round((rv/o)*100)}%` : `-${Math.round((rv-o)/o*100)}%`) : (rv>0?'100%':'0%');
-        const overCnt = Math.max(0, rv - o);
+  if(allMonths.length===0){ container.innerHTML=''; return; }
+  const ITEMS = buildItems(data);
+
+  // ▼▼▼ 2. 계산 로직을 명확하게 분리합니다.
+  // 발주량은 '선택된 월' 기준, 입고량은 '전체 월' 기준으로 계산합니다.
+  const calculateTotal = (item, kind, monthList) => {
+    return monthList.reduce((acc, m) => {
+        const node = (((data[item.key] || {})[kind] || {})[m]) || {};
+        const sum = Object.values(node)
+            .filter(e => item.tb ? (e.topBottom || '') === item.tb : true)
+            .reduce((s, e) => s + toInt(e.qty), 0);
+        return acc + sum;
+    }, 0);
+  };
+
+  const sheetRows = ITEMS.filter(x=>x.group==='sheet').map(r=>{
+    const o = calculateTotal(r, 'orders', selectedMonths); // 발주량 = 선택된 월
+    const rv = calculateTotal(r, 'receipts', allMonths); // 입고량 = 전체 월
+
+    if(o<=0 && rv<=0) return '';
+    const done = rv>=o ? 'done' : '';
+    const over = rv>o ? 'over' : '';
+    const prDisp = (o>0) ? (rv<=o ? `${Math.round((rv/o)*100)}%` : `-${Math.round((rv-o)/o*100)}%`) : (rv>0?'100%':'0%');
+    const overCnt = Math.max(0, rv - o);
+    const badgeClass = overCnt ? '' : 'is-hidden';
+    const pc100Class = (o>0 && rv>=o && (rv-o)===0) ? 'pc100' : '';
+    return `
+      <tr class="rec-row ${done} ${over}" data-item="${r.key}" data-tb="">
+        <td class="name-cell"><span class="name">${r.label}</span><span class="badge-dot ${badgeClass}" title="추가입고 ${overCnt}개">+</span></td>
+        <td class="o-cell"><span class="o" data-o="${o}" data-r="${rv}">${o}/${rv}</span></td>
+        <td><input type="number" min="0" inputmode="numeric" class="rq" data-item="${r.key}" data-tb="" /></td>
+        <td class="pcell ${pc100Class}">${prDisp}</td>
+      </tr>`;
+  }).filter(Boolean).join('');
+
+  const buildPatientTable = (group, colorClass)=>{
+    const rows=[];
+    ITEMS.filter(x=>x.group===group).forEach(r=>{
+      const o = calculateTotal(r, 'orders', selectedMonths); // 발주량 = 선택된 월
+      const i = calculateTotal(r, 'receipts', allMonths);   // 입고량 = 전체 월
+
+      if(o>0 || i>0){
+        const prDisp = (o>0) ? (i<=o? `${Math.round((i/o)*100)}%` : `-${Math.round((i-o)/o*100)}%`) : (i>0?'100%':'0%');
+        const done = i>=o ? 'done' : '';
+        const over = i>o ? 'over' : '';
+        const overCnt = Math.max(0, i - o);
         const badgeClass = overCnt ? '' : 'is-hidden';
-        const pc100Class = (o>0 && rv>=o && (rv-o)===0) ? 'pc100' : '';
-        return `
-          <tr class="rec-row ${done} ${over}" data-item="${r.key}" data-tb="">
-            <td class="name-cell"><span class="name">${r.label}</span><span class="badge-dot ${badgeClass}" title="추가입고 ${overCnt}개">+</span></td>
-            <td class="o-cell"><span class="o" data-o="${o}" data-r="${rv}">${o}/${rv}</span></td>
-            <td><input type="number" min="0" inputmode="numeric" class="rq" data-item="${r.key}" data-tb="" /></td>
+        const pc100Class = (o>0 && i>=o && (i-o)===0) ? 'pc100' : '';
+        rows.push(`
+          <tr class="rec-row ${done} ${over}" data-item="${r.key}" data-tb="${r.tb}">
+            <td class="name-cell"><span class="name ${colorClass}">${r.label}</span><span class="badge-dot ${badgeClass}" title="추가입고 ${overCnt}개">+</span></td>
+            <td class="o-cell"><span class="o" data-o="${o}" data-r="${i}">${o}/${i}</span></td>
+            <td><input type="number" min="0" inputmode="numeric" class="rq" data-item="${r.key}" data-tb="${r.tb}" /></td>
             <td class="pcell ${pc100Class}">${prDisp}</td>
-          </tr>`;
-      }).filter(Boolean).join('');
+          </tr>`);
+      }
+    });
+    if(rows.length===0) return '';
+    return `
+      <div class="table-wrap">
+        <table class="tbl-receipts">
+          <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>진행률</th></tr></thead>
+          <tbody>${rows.join('')}</tbody>
+        </table>
+      </div>`;
+  };
 
-      const buildPatientTable = (group, colorClass)=>{
-        const rows=[];
-        ITEMS.filter(x=>x.group===group).forEach(r=>{
-          const o = sumBy(r.key,'orders',r.tb); const i = sumBy(r.key,'receipts',r.tb);
-          if(o>0 || i>0){
-            const prDisp = (o>0) ? (i<=o? `${Math.round((i/o)*100)}%` : `-${Math.round((i-o)/o*100)}%`) : (i>0?'100%':'0%');
-            const done = i>=o ? 'done' : '';
-            const over = i>o ? 'over' : '';
-            const overCnt = Math.max(0, i - o);
-            const badgeClass = overCnt ? '' : 'is-hidden';
-            const pc100Class = (o>0 && i>=o && (i-o)===0) ? 'pc100' : '';
-            rows.push(`
-              <tr class="rec-row ${done} ${over}" data-item="${r.key}" data-tb="${r.tb}">
-                <td class="name-cell"><span class="name ${colorClass}">${r.label}</span><span class="badge-dot ${badgeClass}" title="추가입고 ${overCnt}개">+</span></td>
-                <td class="o-cell"><span class="o" data-o="${o}" data-r="${i}">${o}/${i}</span></td>
-                <td><input type="number" min="0" inputmode="numeric" class="rq" data-item="${r.key}" data-tb="${r.tb}" /></td>
-                <td class="pcell ${pc100Class}">${prDisp}</td>
-              </tr>`);
-          }
-        });
-        if(rows.length===0) return '';
-        return `
-          <div class="table-wrap">
-            <table class="tbl-receipts">
-              <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>진행률</th></tr></thead>
-              <tbody>${rows.join('')}</tbody>
-            </table>
-          </div>`;
-      };
+  container.innerHTML = `
+    <div class="table-wrap">
+      <table class="tbl-receipts">
+        <thead><tr><th>품목</th><th>선택발주량</th><th>전체입고량</th><th>진행률</th></tr></thead>
+        <tbody>${sheetRows}</tbody>
+      </table>
+    </div>
+    <div class="divider-strong"></div>
+    ${buildPatientTable('normal','txt-normal')}
+    <div class="divider-strong"></div>
+    ${buildPatientTable('ortho','txt-ortho')}
+  `;
 
-      container.innerHTML = `
-        <div class="table-wrap">
-          <table class="tbl-receipts">
-            <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>진행률</th></tr></thead>
-            <tbody>${sheetRows}</tbody>
-          </table>
-        </div>
-        <div class="divider-strong"></div>
-        ${buildPatientTable('normal','txt-normal')}
-        <div class="divider-strong"></div>
-        ${buildPatientTable('ortho','txt-ortho')}
-      `;
-
-      $$('.rq').forEach(inp=>{
-        inp.addEventListener('input', (e)=>{
-          const tr = e.target.closest('tr');
-          const oEl = tr.querySelector('.o');
-          const o = toInt(oEl.dataset.o), r0 = toInt(oEl.dataset.r);
-          const v = toInt(e.target.value);
-          const rNew = r0 + v;
-          oEl.textContent = `${o}/${rNew}`;
-          const pcell = tr.querySelector('.pcell');
-          tr.classList.toggle('done', rNew>=o);
-          const isOver = rNew>o;
-          tr.classList.toggle('over', isOver);
-          const badge = tr.querySelector('.badge-dot');
-          if(isOver){
-            const over = rNew - o;
-            pcell.textContent = `-${Math.round((over/o)*100)}%`;
-            pcell.classList.remove('pc100');
-            badge.classList.remove('is-hidden');
-            badge.title = `추가입고 ${over}개`;
-          }else{
-            const pct = o>0 ? Math.round((rNew/o)*100) : (rNew>0?100:0);
-            pcell.textContent = `${pct}%`;
-            pcell.classList.toggle('pc100', pct===100);
-            badge.classList.add('is-hidden');
-          }
-        });
-      });
-    }
+  // (이하 이벤트 핸들러는 변경 없음)
+  $$('.rq').forEach(inp=>{
+    inp.addEventListener('input', (e)=>{
+      const tr = e.target.closest('tr');
+      const oEl = tr.querySelector('.o');
+      const o = toInt(oEl.dataset.o), r0 = toInt(oEl.dataset.r);
+      const v = toInt(e.target.value);
+      const rNew = r0 + v;
+      oEl.textContent = `${o}/${rNew}`;
+      const pcell = tr.querySelector('.pcell');
+      tr.classList.toggle('done', rNew>=o);
+      const isOver = rNew>o;
+      tr.classList.toggle('over', isOver);
+      const badge = tr.querySelector('.badge-dot');
+      if(isOver){
+        const over = rNew - o;
+        pcell.textContent = `-${Math.round((over/o)*100)}%`;
+        pcell.classList.remove('pc100');
+        badge.classList.remove('is-hidden');
+        badge.title = `추가입고 ${over}개`;
+      }else{
+        const pct = o>0 ? Math.round((rNew/o)*100) : (rNew>0?100:0);
+        pcell.textContent = `${pct}%`;
+        pcell.classList.toggle('pc100', pct===100);
+        badge.classList.add('is-hidden');
+      }
+    });
+  });
+}
+}
 
     function renderOrderSummary(container){
   const data = state.snapshot||{};
