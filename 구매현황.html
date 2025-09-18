@@ -1101,7 +1101,8 @@
       ITEMS.forEach(r => Object.values(((all[r.key]||{}).receipts||{})[m]||{}).forEach(e => e.day && days.add(e.day)));
       monthToDays[m] = Array.from(days).sort((a,b)=>a-b);
     });
-    const recvHeaders = ['품목', ...allMonths.flatMap(m => monthToDays[m].map(d=>`${parseInt(m.slice(5,7),10)}/${d}`))];
+const recvHeaders = ['품목', ...allMonths.flatMap(m => monthToDays[m].map(d=>`${parseInt(m.slice(5,7),10)}월 ${d}일`))];
+
     wsRecv.addRow(recvHeaders);
     wsRecv.views = [{state:'frozen', xSplit:1, ySplit:1}];
     ITEMS.forEach(r => {
