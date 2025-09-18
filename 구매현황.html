@@ -721,9 +721,8 @@ if (savedMonthsJSON) {
       }
     }
 
-    // 기존 renderReceiptsUI 함수를 이 코드로 교체해주세요.
-
-Async function renderBody(){
+//■□■■■■■■■■□□□□□□□입고현황랜더
+    Async function renderBody(){
       if(!state.snapshot) state.snapshot = await getStatusOnce();
       const container = $('#formBox'); container.innerHTML='';
       container.classList.toggle('is-orders', state.mode==='orders');
@@ -912,8 +911,7 @@ Async function renderBody(){
       });
     }
 
-원본이이건데 누락된거없니?
-    function renderOrderSummary(container){
+  function renderOrderSummary(container){
   const data = state.snapshot||{};
   const allMonths = collectAllMonths(data);
   const monthsDesc = sortDescYM(allMonths);
