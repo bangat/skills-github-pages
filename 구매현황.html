@@ -1200,7 +1200,7 @@ async function saveEdits() {
     /* ▷▷▷ 상세 수정(모달) 종료 ▷▷▷ */
 
     /* ▷▷▷ 엑셀 내보내기 시작 ▷▷▷ */
-   // 기존 onExportExcel_AllData 함수를 이 코드로 교체해주세요.
+   // 기존 onExportExcel_AllData 함수를 이 최종 버전으로 교체해주세요.
 
 async function onExportExcel_AllData(){
   try {
@@ -1255,7 +1255,6 @@ async function onExportExcel_AllData(){
     wsSum.addRow(summaryHeaders);
     wsSum.views = [{state:'frozen', xSplit:1, ySplit:1}];
 
-    // ▼▼▼ 1. 최종 합계를 저장할 변수 초기화 ▼▼▼
     let grandTotal_CarryOver = 0, grandTotal_NewOrders = 0;
     let grandTotal_Orders = 0, grandTotal_Receipts = 0;
 
@@ -1266,7 +1265,6 @@ async function onExportExcel_AllData(){
       const totalOrders = carryOver + newOrders;
       const totalReceipts = sumRange(it,'receipts',allMonths,r.tb);
 
-      // ▼▼▼ 2. 각 품목의 합계를 최종 합계 변수에 누적 ▼▼▼
       if(totalOrders !== 0 || totalReceipts !== 0){
         grandTotal_CarryOver += carryOver;
         grandTotal_NewOrders += newOrders;
@@ -1285,12 +1283,24 @@ async function onExportExcel_AllData(){
           ? [r.label, carryOver, newOrders, totalOrders, totalReceipts, unfulfilled, pctText]
           : [r.label, totalOrders, totalReceipts, unfulfilled, pctText];
         const row = wsSum.addRow(rowData);
+
+        // ▼▼▼ 누락되었던 개별 행 스타일링 로직 전체 복원 ▼▼▼
+        if(r.group==='normal') row.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
+        if(r.group==='ortho')  row.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
         
-        // (스타일링 생략)
+        if (hasAnyCarryOver) { // 이월 열이 있을 때
+            if (carryOver > 0) row.getCell(2).font = {color:{argb:'FF78716C'}, bold:true};
+            if (unfulfilled < 0) row.getCell(6).font = { color: { argb: 'FFF43F5E' }, bold: true };
+            if (pctText.startsWith('-')) row.getCell(7).font = { color: { argb: 'FFF43F5E' }, bold: true };
+            else if (pctText === '100%') row.getCell(7).font = { color: { argb: 'FF2563EB' }, bold: true };
+        } else { // 이월 열이 없을 때
+            if (unfulfilled < 0) row.getCell(4).font = { color: { argb: 'FFF43F5E' }, bold: true };
+            if (pctText.startsWith('-')) row.getCell(5).font = { color: { argb: 'FFF43F5E' }, bold: true };
+            else if (pctText === '100%') row.getCell(5).font = { color: { argb: 'FF2563EB' }, bold: true };
+        }
       }
     });
 
-    // ▼▼▼ 3. 모든 품목을 처리한 후, 최종 합계 행 추가 ▼▼▼
     const grandTotal_Unfulfilled = grandTotal_Orders - grandTotal_Receipts;
     let grandTotal_PctText = 'N/A';
     if (grandTotal_Orders > 0) {
@@ -1298,7 +1308,6 @@ async function onExportExcel_AllData(){
             ? `${Math.round((grandTotal_Receipts / grandTotal_Orders) * 100)}%`
             : `-${Math.round(((grandTotal_Receipts - grandTotal_Orders) / grandTotal_Orders) * 100)}%`;
     }
-
     const totalRowData = hasAnyCarryOver
       ? ['종합', grandTotal_CarryOver, grandTotal_NewOrders, grandTotal_Orders, grandTotal_Receipts, grandTotal_Unfulfilled, grandTotal_PctText]
       : ['종합', grandTotal_Orders, grandTotal_Receipts, grandTotal_Unfulfilled, grandTotal_PctText];
@@ -1322,10 +1331,12 @@ async function onExportExcel_AllData(){
       if(carryOverTotal > 0 || monthlyVals.some(v=>v!==0)){
         const rowData = hasAnyCarryOver ? [r.label, carryOverTotal, ...monthlyVals] : [r.label, ...monthlyVals];
         const added=wsOrd.addRow(rowData);
+        if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
+        if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
+        if(hasAnyCarryOver && carryOverTotal > 0) added.getCell(2).font = {color:{argb:'FF78716C'}, bold:true};
       }
     });
     
-    // (이하 코드 변경 없음)
     const monthToDays = {};
     allMonths.forEach(m=>{
       const daysSet = new Set();
@@ -1378,7 +1389,6 @@ async function onExportExcel_AllData(){
     hideLoader();
   }
 }
-
 
 
     /* ▷▷▷ 엑셀 내보내기 종료 ▷▷▷ */
