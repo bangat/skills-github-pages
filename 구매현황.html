@@ -556,104 +556,106 @@
         }));
     }
 
+//■■■■■■■■◇◇◇바인딩 시작
     function renderOrderSummary(container){
-      const data = state.snapshot||{};
-      const allMonths = collectAllMonths(data);
-      const monthsDesc = sortDescYM(allMonths);
-      const ITEMS = buildItems(data);
+  const data = state.snapshot||{};
+  const allMonths = collectAllMonths(data);
+  const monthsDesc = sortDescYM(allMonths);
+  const ITEMS = buildItems(data);
 
-      const getCarryOverData = (item, months) => {
-          let carryOverQty = 0;
-          months.forEach(m => {
-              const orders = (((data[item.key] || {}).orders || {})[m]) || {};
-              Object.values(orders).forEach(order => {
-                  if (order.note && order.note.includes('이월분') && (item.tb ? order.topBottom === item.tb : true)) {
-                      carryOverQty += toInt(order.qty);
-                  }
-              });
+  const getCarryOverData = (item, months) => {
+      let carryOverQty = 0;
+      months.forEach(m => {
+          const orders = (((data[item.key] || {}).orders || {})[m]) || {};
+          Object.values(orders).forEach(order => {
+              if (order.note && order.note.includes('이월분') && (item.tb ? order.topBottom === item.tb : true)) {
+                  carryOverQty += toInt(order.qty);
+              }
           });
-          return carryOverQty;
-      };
-
-      const sumMonth=(name,month,tb='',kind='orders', excludeCarryOver = false)=>{
-        const node=(((data[name]||{})[kind]||{})[month])||{};
-        return Object.values(node)
-            .filter(e => {
-                const tbMatch = tb ? (e.topBottom||'')===tb : true;
-                const carryOverMatch = excludeCarryOver ? !(e.note && e.note.includes('이월분')) : true;
-                return tbMatch && carryOverMatch;
-            })
-            .reduce((s,e)=> s+toInt(e.qty),0);
-      };
-
-      const parts=[];
-      const selectedMonths = Array.from(state.selectedMonths);
-      const hasAnyCarryOver = ITEMS.some(item => getCarryOverData(item, selectedMonths) > 0);
-
-      const summaryRows = ITEMS.map(r => {
-        const carryOver = getCarryOverData(r, selectedMonths);
-        const newOrders = selectedMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'orders', true), 0);
-        const totalOrders = carryOver + newOrders;
-        const totalReceipts = allMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'receipts'), 0);
-        const unfulfilled = totalOrders - totalReceipts;
-
-        if (!totalOrders && !totalReceipts) return '';
-
-        const color = r.group === 'normal' ? 'txt-normal' : (r.group === 'ortho' ? 'txt-ortho' : '');
-        const negCls = unfulfilled < 0 ? 'neg' : '';
-        let rowHtml = `<tr class="summary-row"><td class="${color}">${r.label}</td>`;
-        if (hasAnyCarryOver) rowHtml += `<td style="color:#78716C;">${carryOver}</td>`;
-        rowHtml += `<td>${newOrders}</td>`;
-        if (hasAnyCarryOver) rowHtml += `<td>${totalOrders}</td>`;
-        rowHtml += `<td>${totalReceipts}</td><td class="${negCls}">${unfulfilled}</td></tr>`;
-        return rowHtml;
-      }).join('');
-
-      const summaryHeaders = ['품목'];
-      if (hasAnyCarryOver) summaryHeaders.push('이월');
-      summaryHeaders.push('신규');
-      if (hasAnyCarryOver) summaryHeaders.push('총 발주');
-      summaryHeaders.push('입고', '미입고');
-
-      parts.push(`
-        <div class="sec-title">전체 요약 (발주:선택월 / 입고:전체)</div>
-        <div class="table-wrap"><table class="tbl-summary">
-        <thead><tr><th>${summaryHeaders.join('</th><th>')}</th></tr></thead>
-        <tbody>${summaryRows}</tbody>
-        </table></div>`);
-
-      monthsDesc.forEach(m=>{
-        if (!state.selectedMonths.has(m) && state.mode === 'orders') return;
-        
-        const rowsM = ITEMS.map(r => {
-          const o = sumMonth(r.key,m,r.tb,'orders');
-          const i = sumMonth(r.key,m,r.tb,'receipts');
-          if (!o && !i) return '';
-          const n=o-i; 
-          const negCls = n<0 ? 'neg' : '';
-          const color = r.group==='normal' ? 'txt-normal' : (r.group==='ortho' ? 'txt-ortho' : '');
-          return `<tr class="editable-row" data-month="${m}"><td class="${color}">${r.label}</td><td>${o}</td><td>${i}</td><td class="${negCls}">${n}</td></tr>`;
-        }).join('');
-
-        if(rowsM){
-          const year = m.substring(2, 4); 
-          const month = parseInt(m.substring(5, 7), 10);
-          const isChecked = state.selectedMonths.has(m) ? 'checked' : '';
-          parts.push(`
-            <div class="sec-title month-title-editable" data-month="${m}">
-              <div style="cursor: pointer; display: flex; align-items: center; gap: 6px;" title="${year}년 ${month}월 상세 내역 수정">
-              <span>${year}년 ${month}월 발주</span><i data-feather="edit-2" style="width:14px; height:14px;"></i>
-              </div>
-              <input type="checkbox" class="month-checkbox" data-month="${m}" ${isChecked} title="요약에 포함/제외">
-            </div>
-            <div class="table-wrap"><table class="tbl-summary">
-            <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
-            <tbody>${rowsM}</tbody>
-            </table></div>`);
-        }
       });
-      container.innerHTML = parts.join('');
+      return carryOverQty;
+  };
+
+  const sumMonth=(name,month,tb='',kind='orders', excludeCarryOver = false)=>{
+    const node=(((data[name]||{})[kind]||{})[month])||{};
+    return Object.values(node)
+        .filter(e => {
+            const tbMatch = tb ? (e.topBottom||'')===tb : true;
+            const carryOverMatch = excludeCarryOver ? !(e.note && e.note.includes('이월분')) : true;
+            return tbMatch && carryOverMatch;
+        })
+        .reduce((s,e)=> s+toInt(e.qty),0);
+  };
+
+  const parts=[];
+  const selectedMonths = Array.from(state.selectedMonths);
+  const hasAnyCarryOver = ITEMS.some(item => getCarryOverData(item, selectedMonths) > 0);
+
+  const summaryRows = ITEMS.map(r => {
+    const carryOver = getCarryOverData(r, selectedMonths);
+    const newOrders = selectedMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'orders', true), 0);
+    const totalOrders = carryOver + newOrders;
+    const totalReceipts = allMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'receipts'), 0);
+    const unfulfilled = totalOrders - totalReceipts;
+
+    if (!totalOrders && !totalReceipts) return '';
+
+    const color = r.group === 'normal' ? 'txt-normal' : (r.group === 'ortho' ? 'txt-ortho' : '');
+    const negCls = unfulfilled < 0 ? 'neg' : '';
+    let rowHtml = `<tr class="summary-row"><td class="${color}">${r.label}</td>`;
+    if (hasAnyCarryOver) rowHtml += `<td style="color:#78716C;">${carryOver}</td>`;
+    rowHtml += `<td>${newOrders}</td>`;
+    if (hasAnyCarryOver) rowHtml += `<td>${totalOrders}</td>`;
+    rowHtml += `<td>${totalReceipts}</td><td class="${negCls}">${unfulfilled}</td></tr>`;
+    return rowHtml;
+  }).join('');
+
+  const summaryHeaders = ['품목'];
+  if (hasAnyCarryOver) summaryHeaders.push('이월');
+  summaryHeaders.push('신규');
+  if (hasAnyCarryOver) summaryHeaders.push('총 발주');
+  summaryHeaders.push('입고', '미입고');
+
+  parts.push(`
+    <div class="sec-title">전체 요약 (발주:선택월 / 입고:전체)</div>
+    <div class="table-wrap"><table class="tbl-summary">
+    <thead><tr><th>${summaryHeaders.join('</th><th>')}</th></tr></thead>
+    <tbody>${summaryRows}</tbody>
+    </table></div>`);
+
+  monthsDesc.forEach(m=>{
+    // ▼▼▼ 문제가 되었던 이 라인을 삭제했습니다 ▼▼▼
+    // if (!state.selectedMonths.has(m) && state.mode === 'orders') return;
+    
+    const rowsM = ITEMS.map(r => {
+      const o = sumMonth(r.key,m,r.tb,'orders');
+      const i = sumMonth(r.key,m,r.tb,'receipts');
+      if (!o && !i) return '';
+      const n=o-i; 
+      const negCls = n<0 ? 'neg' : '';
+      const color = r.group==='normal' ? 'txt-normal' : (r.group==='ortho' ? 'txt-ortho' : '');
+      return `<tr class="editable-row" data-month="${m}" data-item-key="${r.key}" data-item-label="${r.label}" data-item-tb="${r.tb}"><td class="${color}">${r.label}</td><td>${o}</td><td>${i}</td><td class="${negCls}">${n}</td></tr>`;
+    }).join('');
+
+    if(rowsM){
+      const year = m.substring(2, 4); 
+      const month = parseInt(m.substring(5, 7), 10);
+      const isChecked = state.selectedMonths.has(m) ? 'checked' : '';
+      parts.push(`
+        <div class="sec-title month-title-editable" data-month="${m}">
+          <div style="cursor: pointer; display: flex; align-items: center; gap: 6px;" title="${year}년 ${month}월 상세 내역 수정">
+          <span>${year}년 ${month}월 발주</span><i data-feather="edit-2" style="width:14px; height:14px;"></i>
+          </div>
+          <input type="checkbox" class="month-checkbox" data-month="${m}" ${isChecked} title="요약에 포함/제외">
+        </div>
+        <div class="table-wrap"><table class="tbl-summary">
+        <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
+        <tbody>${rowsM}</tbody>
+        </table></div>`);
     }
+  });
+  container.innerHTML = parts.join('');
+}
 
     async function renderReceiptsUI(container){
       const data = state.snapshot||{};
