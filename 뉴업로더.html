@@ -71,6 +71,9 @@
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Firebase App + Auth SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -98,7 +101,18 @@
 </div>
 
 <script>
-/* ○○○○ 기본 DOM 헬퍼 시작 ○○○○ */
+/* ○○○○ Firebase 초기화 시작 ○○○○ */
+const firebaseConfig = {
+    apiKey: "YOUR_FIREBASE_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    appId: "YOUR_APP_ID",
+    databaseURL: "YOUR_DATABASE_URL"
+};
+firebase.initializeApp(firebaseConfig);
+/* ○○○○ Firebase 초기화 종료 ○○○○ */
+
+/* ○○○○ 로그 함수 시작 ○○○○ */
 const $ = s => document.querySelector(s);
 const logEl = $("#log");
 const log = (m, cls = '') => {
@@ -109,13 +123,15 @@ const log = (m, cls = '') => {
   logEl.appendChild(span);
   logEl.scrollTop = logEl.scrollHeight;
 };
-/* ○○○○ 기본 DOM 헬퍼 종료 ○○○○ */
+/* ○○○○ 로그 함수 종료 ○○○○ */
 
+/* ○○○○ 엑셀 처리 변수 시작 ○○○○ */
 let workbook = null, sheetNames = [];
-
 const fileInput = $("#filePick");
 const uploadArea = $("#file-upload-area");
+/* ○○○○ 엑셀 처리 변수 종료 ○○○○ */
 
+/* ○○○○ 파일 선택/드래그 이벤트 시작 ○○○○ */
 const handleFileSelect = (file) => {
     if (!file) return;
     $("#fileName").textContent = file.name;
@@ -153,7 +169,9 @@ uploadArea.addEventListener('drop', (e) => {
         handleFileSelect(e.dataTransfer.files[0]);
     }
 });
+/* ○○○○ 파일 선택/드래그 이벤트 종료 ○○○○ */
 
+/* ○○○○ 시트 미리보기 시작 ○○○○ */
 function renderPreview(name) {
   if (!workbook) return;
   const ws = workbook.Sheets[name];
@@ -162,7 +180,9 @@ function renderPreview(name) {
   rows2d.slice(0, 20).forEach((row, i) => { html += `<tr>${row.map(cell => `<${i===0?'th':'td'}>${String(cell)}</${i===0?'th':'td'}>`).join("")}</tr>`; });
   $("#preview").innerHTML = html + `</table>`;
 }
+/* ○○○○ 시트 미리보기 종료 ○○○○ */
 
+/* ○○○○ 라벨 매핑 시작 ○○○○ */
 function mapLabelToApp(label) {
     const s = String(label || '').trim();
     if (s === '종합') return null;
@@ -176,7 +196,9 @@ function mapLabelToApp(label) {
     }
     return null;
 }
+/* ○○○○ 라벨 매핑 종료 ○○○○ */
 
+/* ○○○○ 시트 -> 레코드 변환 시작 ○○○○ */
 function buildRecordsFromSheet(ws, sheetName, year) {
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
     if (rows.length < 2) return { records: [], months: new Set(), items: new Set(), year };
@@ -233,10 +255,12 @@ function buildRecordsFromSheet(ws, sheetName, year) {
     }
     return { records, months: monthsInSheet, items: itemsInSheet, year };
 }
+/* ○○○○ 시트 -> 레코드 변환 종료 ○○○○ */
 
+/* ○○○○ deleteAndUpload 함수 시작 (ID 토큰 인증 적용) ○○○○ */
 async function deleteAndUpload(section, sheetName, year) {
     if (!sheetName) {
-        log(`[${section.toUpperCase()}] 관련 시트(${section === 'orders' ? '발주월별' : '입고_날짜별'})를 찾을 수 없어 건너뜁니다.`, 'warn');
+        log(`[${section.toUpperCase()}] 관련 시트를 찾을 수 없어 건너뜁니다.`, 'warn');
         return year;
     }
 
@@ -262,7 +286,6 @@ async function deleteAndUpload(section, sheetName, year) {
         addUpdates[path] = data;
     }
 
-  /* ○○○○ deleteAndUpload fetch 수정 시작 ○○○○ */
     try {
         // Firebase 인증 ID 토큰 가져오기
         let token = null;
@@ -287,12 +310,12 @@ async function deleteAndUpload(section, sheetName, year) {
     } catch (error) {
         throw new Error(`데이터 업로드 중 오류: ${error.message}`);
     }
-/* ○○○○ deleteAndUpload fetch 수정 종료 ○○○○ */
-
 
     return result.year || year;
 }
+/* ○○○○ deleteAndUpload 함수 종료 ○○○○ */
 
+/* ○○○○ 업로드 버튼 이벤트 시작 ○○○○ */
 $("#runBtn").addEventListener('click', async () => {
   if (!workbook) { 
     log("엑셀 파일을 먼저 선택하세요.", 'err'); 
@@ -315,19 +338,29 @@ $("#runBtn").addEventListener('click', async () => {
 
     if (receiptSheetName && year) {
       await deleteAndUpload('receipts', receiptSheetName, year);
-    } else if (receiptSheetName && !year) {
-      log("연도 정보 없이 입고 데이터를 처리할 수 없습니다.", 'err');
     } else {
       log("입고_날짜별 시트를 찾을 수 없습니다.", 'warn');
     }
 
-    log(`[완료] 모든 데이터 처리 성공`, 'ok');
-  } catch (e) {
-    log(`[오류] ${e.message}`, 'err');
+    log("모든 시트 처리 완료.", 'ok');
+  } catch (err) {
+    log(err.message, 'err');
   } finally {
     $("#runBtn").disabled = false;
   }
 });
+/* ○○○○ 업로드 버튼 이벤트 종료 ○○○○ */
+
+/* ○○○○ Firebase Auth 로그인 자동 처리 시작 ○○○○ */
+firebase.auth().onAuthStateChanged(user => {
+    if (!user) {
+        log("사용자 로그인 필요, Firebase Auth UI 등 구현 필요.", 'warn');
+    } else {
+        log(`사용자 로그인 확인: ${user.email}`, 'ok');
+    }
+});
+/* ○○○○ Firebase Auth 로그인 자동 처리 종료 ○○○○ */
+
 </script>
 </body>
 </html>
