@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta http-equiv="Cache-Control" content="no-store" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <title>구매현황 업로더</title>
+  <title>구매현황 엑셀 업로더</title>
   <style>
     :root{
       color-scheme: light; --bg:#f4f7fb; --card:#fff; --text:#0f172a; --muted:#5b677a; --border:#e6eaf2; --accent:#2563eb;
@@ -71,15 +71,17 @@
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <!-- Firebase App + Auth SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 <div class="wrap">
   <div class="card">
     <h1>구매현황 엑셀 업로더</h1>
-    <p style="margin:0 0 10px;color:#475569">'구매현황' 앱에서 내려받은 엑셀(.xlsx)을 업로드하세요.</p>
+    <p style="margin:0 0 10px;color:#475569">요약 엑셀(.xlsx)을 선택하면 서버 데이터를 업데이트합니다.</p>
+
+    <div style="display:none;">
+      <input id="dbURL" type="text" value="https://hallymlinen-default-rtdb.firebaseio.com">
+      <input id="basePath" type="text" value="/purchase_status">
+    </div>
 
     <input type="file" id="filePick" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
     <label for="filePick" id="file-upload-area">
@@ -89,9 +91,12 @@
         <div class="upload-text">파일을 선택하거나 여기에 드래그하세요</div>
         <div class="file-name" id="fileName"></div>
     </label>
+
     <button id="runBtn" class="btn" disabled>업로드 시작</button>
+
     <label style="margin-top:16px">진행 로그</label>
     <div id="log" class="log"></div>
+
     <div id="sheetArea" style="margin-top:16px;display:none">
       <label>시트 미리보기</label>
       <select id="sheetSel"></select>
@@ -101,91 +106,87 @@
 </div>
 
 <script>
-/* ○○○○ Firebase 초기화 시작 ○○○○ */
-const firebaseConfig = {
-    apiKey: "YOUR_FIREBASE_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    appId: "YOUR_APP_ID",
-    databaseURL: "YOUR_DATABASE_URL"
-};
-firebase.initializeApp(firebaseConfig);
-/* ○○○○ Firebase 초기화 종료 ○○○○ */
-
-/* ○○○○ 로그 함수 시작 ○○○○ */
+/* ------------ Basic Helpers ------------ */
 const $ = s => document.querySelector(s);
 const logEl = $("#log");
 const log = (m, cls = '') => {
-  console[cls === 'err' ? 'error' : 'log'](m);
-  const span = document.createElement('span');
-  span.className = cls;
-  span.textContent = m + '\n';
-  logEl.appendChild(span);
+  console[cls === 'err' ? 'error' : (cls === 'warn' ? 'warn' : 'log')](m);
+  logEl.innerHTML += (cls ? `<span class="${cls}">` : '') + (typeof m === 'string' ? m : JSON.stringify(m)) + (cls ? '</span>' : '') + "\n";
   logEl.scrollTop = logEl.scrollHeight;
 };
-/* ○○○○ 로그 함수 종료 ○○○○ */
+const updateBtn = () => $("#runBtn").disabled = !($("#filePick").files.length > 0);
 
-/* ○○○○ 엑셀 처리 변수 시작 ○○○○ */
+/* ------------ File Parsing & UI Handling ------------ */
 let workbook = null, sheetNames = [];
 const fileInput = $("#filePick");
 const uploadArea = $("#file-upload-area");
-/* ○○○○ 엑셀 처리 변수 종료 ○○○○ */
+const fileNameEl = $("#fileName");
 
-/* ○○○○ 파일 선택/드래그 이벤트 시작 ○○○○ */
 const handleFileSelect = (file) => {
     if (!file) return;
-    $("#fileName").textContent = file.name;
+    fileNameEl.textContent = file.name;
+
+    $("#preview").innerHTML = ""; 
+    $("#sheetArea").style.display = "none"; 
+    workbook = null; 
+    sheetNames = [];
     logEl.textContent = "";
+
     try {
         const reader = new FileReader();
         reader.onload = (e) => {
-            workbook = XLSX.read(e.target.result, { type: 'array' });
+            const buf = e.target.result;
+            workbook = XLSX.read(buf, { type: 'array' });
             sheetNames = workbook.SheetNames || [];
             if (!sheetNames.length) { log("시트를 찾을 수 없습니다.", 'err'); return; }
+
             const sel = $("#sheetSel");
             sel.innerHTML = sheetNames.map(n => `<option value="${n}">${n}</option>`).join("");
             $("#sheetArea").style.display = "block";
             renderPreview(sel.value);
             log(`엑셀 로드 성공: 시트 ${sheetNames.length}개`);
-            updateButtonState();
         };
         reader.readAsArrayBuffer(file);
-    } catch (err) { log(`엑셀 파싱 실패: ${err.message}`, 'err'); }
-}
-
-function updateButtonState() {
-    $("#runBtn").disabled = !workbook;
+    } catch (err) {
+        log(`엑셀 파싱 실패: ${err}`, 'err');
+    } finally {
+        updateBtn();
+    }
 }
 
 fileInput.addEventListener('change', (e) => handleFileSelect(e.target.files[0]));
 $("#sheetSel").addEventListener('change', () => renderPreview($("#sheetSel").value));
-uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
-uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+});
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+});
 uploadArea.addEventListener('drop', (e) => {
     e.preventDefault();
     uploadArea.classList.remove('dragover');
-    if (e.dataTransfer.files.length) {
-        fileInput.files = e.dataTransfer.files;
-        handleFileSelect(e.dataTransfer.files[0]);
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        fileInput.files = files;
+        handleFileSelect(files[0]);
     }
 });
-/* ○○○○ 파일 선택/드래그 이벤트 종료 ○○○○ */
 
-/* ○○○○ 시트 미리보기 시작 ○○○○ */
 function renderPreview(name) {
   if (!workbook) return;
   const ws = workbook.Sheets[name];
   const rows2d = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
   let html = `<table>`;
   rows2d.slice(0, 20).forEach((row, i) => { html += `<tr>${row.map(cell => `<${i===0?'th':'td'}>${String(cell)}</${i===0?'th':'td'}>`).join("")}</tr>`; });
-  $("#preview").innerHTML = html + `</table>`;
+  html += `</table>`;
+  $("#preview").innerHTML = html;
 }
-/* ○○○○ 시트 미리보기 종료 ○○○○ */
 
-/* ○○○○ 라벨 매핑 시작 ○○○○ */
+/* ------------ Schema Mapping & Data Processing ------------ */
 function mapLabelToApp(label) {
     const s = String(label || '').trim();
-    if (s === '종합') return null;
     const sheetItems = ["대시트","반시트","베갯잇","수건","중환의","얼음포","억제대","고관절XL","고관절L","고관절M"];
     if (sheetItems.includes(s)) return { item: s, topBottom: '' };
     const match = s.match(/^(일반|정형)(상의|하의)의?(4XL|3XL|2XL|XL|L|M|S)$/);
@@ -194,60 +195,51 @@ function mapLabelToApp(label) {
         const prefix = kind === '일반' ? '일반환의' : '정형환의';
         return { item: `${prefix}${size}`, topBottom: tb };
     }
-    return null;
+    return { item: s, topBottom: '' };
 }
-/* ○○○○ 라벨 매핑 종료 ○○○○ */
 
-/* ○○○○ 시트 -> 레코드 변환 시작 ○○○○ */
 function buildRecordsFromSheet(ws, sheetName, year) {
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
-    if (rows.length < 2) return { records: [], months: new Set(), items: new Set(), year };
-    const header = rows[0].map(h => String(h || '').trim());
-    const dataRows = rows.slice(1);
-    const records = [], monthsInSheet = new Set(), itemsInSheet = new Set();
-    const isMonthlyOrders = sheetName.includes('발주월별');
-    const isDailyReceipts = sheetName.includes('입고_날짜별');
+    if (rows.length < 2) return { records: [], months: new Set(), items: new Set(), year: year };
 
-    const carryOverColIndex = header.findIndex(h => h.includes('이월'));
-    const hasCarryOver = carryOverColIndex !== -1;
+    const header = rows[0];
+    const dataRows = rows.slice(1);
+    const records = [];
+    const monthsInSheet = new Set();
+    const itemsInSheet = new Set();
+
+    const isMonthlyOrders = /발주월별/.test(sheetName);
+    const isDailyReceipts = /입고\(날짜별\)/.test(sheetName);
 
     for (const row of dataRows) {
-        const mapped = mapLabelToApp(row[0]);
-        if (!mapped) continue;
-        const { item, topBottom } = mapped;
+        const label = String(row[0] || '').trim();
+        if (!label) continue;
+        const { item, topBottom } = mapLabelToApp(label);
         itemsInSheet.add(item);
 
-        if (isMonthlyOrders && hasCarryOver) {
-            const carryOverQty = Number(row[carryOverColIndex]);
-            if (carryOverQty > 0) {
-                const yearMatch = sheetName.match(/(\d{2})년/);
-                const currentYear = yearMatch ? `20${yearMatch[1]}` : new Date().getFullYear();
-                const monthKey = `${currentYear}-01`;
-                monthsInSheet.add(monthKey);
-                records.push({ item, topBottom, qty: carryOverQty, section: 'orders', monthKey, note: `${currentYear - 1}년 이월분` });
-            }
-        }
-
         for (let c = 1; c < header.length; c++) {
-            if (hasCarryOver && c === carryOverColIndex) continue;
             const qty = Number(row[c]);
-            if (!qty || qty <= 0) continue;
-
+            if (!qty || !Number.isFinite(qty)) continue;
+            const colHeader = String(header[c] || '').trim();
             let recordData = null;
+
             if (isMonthlyOrders) {
-                const match = header[c].match(/^(\d{2})년\s*(\d{1,2})월$/);
+                const match = colHeader.match(/^(\d{2})년\s*(\d{1,2})월$/);
                 if (match) {
                     year = `20${match[1]}`;
-                    const monthKey = `${year}-${String(match[2]).padStart(2, '0')}`;
+                    const m = String(match[2]).padStart(2, '0');
+                    const monthKey = `${year}-${m}`;
                     monthsInSheet.add(monthKey);
-                    recordData = { section: 'orders', monthKey };
+                    recordData = { section: 'orders', monthKey, ts: new Date(monthKey + '-01').getTime() };
                 }
             } else if (isDailyReceipts) {
-                const match = header[c].match(/^(\d{1,2})월\s*(\d{1,2})일$/);
+                const match = colHeader.match(/^(\d{1,2})월\s*(\d{1,2})일$/);
                 if (match && year) {
-                    const monthKey = `${year}-${String(match[1]).padStart(2, '0')}`;
+                    const m = String(match[1]).padStart(2, '0');
+                    const d = Number(match[2]);
+                    const monthKey = `${year}-${m}`;
                     monthsInSheet.add(monthKey);
-                    recordData = { section: 'receipts', monthKey, day: Number(match[2]) };
+                    recordData = { section: 'receipts', monthKey, day: d };
                 }
             }
             if (recordData) records.push({ item, topBottom, qty, ...recordData });
@@ -255,112 +247,102 @@ function buildRecordsFromSheet(ws, sheetName, year) {
     }
     return { records, months: monthsInSheet, items: itemsInSheet, year };
 }
-/* ○○○○ 시트 -> 레코드 변환 종료 ○○○○ */
 
-/* ○○○○ deleteAndUpload 함수 시작 (ID 토큰 인증 적용) ○○○○ */
-async function deleteAndUpload(section, sheetName, year) {
-    if (!sheetName) {
-        log(`[${section.toUpperCase()}] 관련 시트를 찾을 수 없어 건너뜁니다.`, 'warn');
-        return year;
-    }
+/* ------------ Uploader (REST API) ------------ */
+// [수정됨] 이 함수가 변경되었습니다.
+async function deleteExistingData(section, monthsToDelete, itemsToDelete, basePath) {
+    if (monthsToDelete.size === 0 || itemsToDelete.size === 0) return;
+    const rootBase = $("#dbURL").value.replace(/\/$/, '');
+    const updates = {};
+    const sectionLabel = section === 'orders' ? '발주' : '입고';
 
-    log(`[시작] '${sheetName}' 시트 처리 중...`);
-    const ws = workbook.Sheets[sheetName];
-    const result = buildRecordsFromSheet(ws, sheetName, year);
+    log(`[데이터 삭제] 엑셀에 포함된 ${sectionLabel} 데이터(${monthsToDelete.size}개월치)를 삭제합니다...`, 'warn');
 
-    if (result.records.length === 0) {
-        log(`> '${sheetName}' 시트에서 처리할 데이터가 없습니다.`, 'warn');
-        return result.year || year;
-    }
-
-    log(`> '${sheetName}' 시트에서 ${result.records.length}개 데이터 발견. (기준 연도: ${result.year})`);
-
-    log(`> 새 데이터 추가 중...`);
-    const addUpdates = {};
-    for (const r of result.records) {
-        const key = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-        const path = `purchase_status/${r.item}/${r.section}/${r.monthKey}/${key}`;
-        const data = r.section === 'orders'
-          ? { qty: r.qty, topBottom: r.topBottom, ts: r.ts || Date.now(), note: r.note || '' }
-          : { qty: r.qty, topBottom: r.topBottom, day: r.day };
-        addUpdates[path] = data;
-    }
-
-    try {
-        // Firebase 인증 ID 토큰 가져오기
-        let token = null;
-        if (firebase && firebase.auth) {
-            const user = firebase.auth().currentUser;
-            if (user) {
-                token = await user.getIdToken();
-            }
+    for (const item of itemsToDelete) {
+        for (const month of monthsToDelete) {
+            updates[`${basePath}/${item}/${section}/${month}`] = null;
         }
-
-        const headers = { "Content-Type": "application/json" };
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-
-        const addRes = await fetch('https://updatepurchasedata-t7cbh6uw5a-uc.a.run.app', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ updates: addUpdates })
-        });
-
-        if (!addRes.ok) throw new Error(`데이터 업로드 실패 ${addRes.status}`);
-        log(`> '${sheetName}' 데이터 처리 완료.`, 'ok');
-    } catch (error) {
-        throw new Error(`데이터 업로드 중 오류: ${error.message}`);
     }
 
-    return result.year || year;
+    const res = await fetch(`${rootBase}/.json`, { method: 'PATCH', body: JSON.stringify(updates) });
+    
+    // 이 부분이 수정되었습니다.
+    if (!res.ok) {
+        // 오류를 발생시키는 대신, 경고 로그를 남기고 함수를 종료합니다.
+        log(`> 기존 ${sectionLabel} 데이터 삭제에 실패했거나 삭제할 데이터가 없습니다. (오류: ${res.statusText}) 업로드를 계속 진행합니다.`, 'warn');
+    } else {
+        log(`> 기존 ${sectionLabel} 데이터 삭제 완료.`, 'ok');
+    }
 }
-/* ○○○○ deleteAndUpload 함수 종료 ○○○○ */
 
-/* ○○○○ 업로드 버튼 이벤트 시작 ○○○○ */
-$("#runBtn").addEventListener('click', async () => {
-  if (!workbook) { 
-    log("엑셀 파일을 먼저 선택하세요.", 'err'); 
-    return; 
+async function uploadSheetData(records, basePath) {
+  if (!records || records.length === 0) return;
+  const rootBase = $("#dbURL").value.replace(/\/$/, '');
+  const updates = {};
+  for (const r of records) {
+    const path = `${basePath}/${r.item}/${r.section}/${r.monthKey}`;
+    const key = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    updates[`${path}/${key}`] = r.section === 'orders' 
+      ? { qty: r.qty, topBottom: r.topBottom, ts: r.ts }
+      : { qty: r.qty, topBottom: r.topBottom, day: r.day };
   }
+  const res = await fetch(`${rootBase}/.json`, { method: 'PATCH', body: JSON.stringify(updates) });
+  if (!res.ok) throw new Error(`업로드 실패 ${res.status}: ${await res.text()}`);
+  log(`> ${records.length}개 레코드 업로드 완료.`);
+}
 
+/* ------------ Run Handler (Main Logic) ------------ */
+$("#runBtn").addEventListener('click', async () => {
+  if (!workbook) { log("엑셀을 먼저 선택하세요.", 'err'); return; }
+
+  const basePath = $("#basePath").value.trim();
   $("#runBtn").disabled = true;
   logEl.textContent = "";
+  let year = "";
 
   try {
-    let year = new Date().getFullYear().toString();
-    const orderSheetName = sheetNames.find(name => name.includes('발주월별(선택월)'));
-    const receiptSheetName = sheetNames.find(name => name.includes('입고_날짜별(전체)'));
-
+    const orderSheetName = sheetNames.find(name => /발주월별/.test(name));
     if (orderSheetName) {
-      year = await deleteAndUpload('orders', orderSheetName, year);
+        log(`[시작] '발주월별' 시트 처리 중...`);
+        const ws = workbook.Sheets[orderSheetName];
+        const result = buildRecordsFromSheet(ws, orderSheetName, year);
+        year = result.year;
+        if (result.records.length > 0) {
+            log(`> '${orderSheetName}' 시트에서 ${result.records.length}개 발주 데이터 발견. (기준 연도: ${year})`);
+            await deleteExistingData('orders', result.months, result.items, basePath);
+            await uploadSheetData(result.records, basePath);
+        } else {
+            log(`> '${orderSheetName}' 시트에서 처리할 데이터가 없습니다.`, 'warn');
+        }
     } else {
-      log("발주월별 시트를 찾을 수 없습니다.", 'warn');
+        log(`[경고] '발주월별' 시트를 찾을 수 없습니다. 입고 내역 처리를 위해 연도가 필요합니다.`, 'warn');
     }
 
-    if (receiptSheetName && year) {
-      await deleteAndUpload('receipts', receiptSheetName, year);
+    if (!year && orderSheetName) {
+        log(`[오류] '발주월별' 시트에서 연도를 파악하지 못해 입고 내역을 처리할 수 없습니다.`, 'err');
     } else {
-      log("입고_날짜별 시트를 찾을 수 없습니다.", 'warn');
+        const receiptSheetName = sheetNames.find(name => /입고\(날짜별\)/.test(name));
+        if (receiptSheetName) {
+            log(`[시작] '입고(날짜별)' 시트 처리 중...`);
+            const ws = workbook.Sheets[receiptSheetName];
+            const result = buildRecordsFromSheet(ws, receiptSheetName, year);
+             if (result.records.length > 0) {
+                log(`> '${receiptSheetName}' 시트에서 ${result.records.length}개 입고 데이터 발견.`);
+                await deleteExistingData('receipts', result.months, result.items, basePath);
+                await uploadSheetData(result.records, basePath);
+            } else {
+                log(`> '${receiptSheetName}' 시트에서 처리할 데이터가 없습니다.`, 'warn');
+            }
+        }
     }
+    log(`[완료] 모든 데이터 처리 성공`, 'ok');
 
-    log("모든 시트 처리 완료.", 'ok');
-  } catch (err) {
-    log(err.message, 'err');
+  } catch (e) {
+    log(String(e && e.message ? e.message : e), 'err');
   } finally {
     $("#runBtn").disabled = false;
   }
 });
-/* ○○○○ 업로드 버튼 이벤트 종료 ○○○○ */
-
-/* ○○○○ Firebase Auth 로그인 자동 처리 시작 ○○○○ */
-firebase.auth().onAuthStateChanged(user => {
-    if (!user) {
-        log("사용자 로그인 필요, Firebase Auth UI 등 구현 필요.", 'warn');
-    } else {
-        log(`사용자 로그인 확인: ${user.email}`, 'ok');
-    }
-});
-/* ○○○○ Firebase Auth 로그인 자동 처리 종료 ○○○○ */
-
 </script>
 </body>
 </html>
