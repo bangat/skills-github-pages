@@ -811,8 +811,6 @@ function renderOrderSummary(container){
       } 
       // [입고 모드]일 경우
       else {
-        // ✅ 수정된 로직: 각 입력칸을 개별적으로 순회하며
-        // 해당하는 품목과 수량만 1:1로 묶습니다.
         $$('.rq').forEach(inputElement => {
           const qty = toInt(inputElement.value);
 
@@ -821,24 +819,19 @@ function renderOrderSummary(container){
             const topBottom = inputElement.dataset.tb || '';
             const displayName = inputElement.closest('tr').querySelector('.name').textContent;
 
-            // 저장할 데이터 목록에 추가 (1건)
             currentEntriesToSave.push({ itemName, topBottom, qty });
-            // 확인 창에 보여줄 데이터 목록에 추가 (1건)
             displayEntries.push({ name: displayName, qty });
           }
         });
       }
 
-      // 저장할 내용이 없으면 사용자에게 알리고 함수를 종료합니다.
       if (displayEntries.length === 0) {
         showToast((state.mode === 'orders' ? '발주' : '입고') + ' 입력값이 없습니다.');
         return;
       }
 
-      // 전역 변수에 최종 저장할 데이터를 할당합니다.
       entriesToSave = currentEntriesToSave;
 
-      // 확인 모달창을 설정하고 띄웁니다.
       $('#modalSummaryList').innerHTML = displayEntries.map(e => `<li><span class="item-name">${e.name}</span> <span class="item-qty">${e.qty}개</span></li>`).join('');
       $('#modalTitle').textContent = state.mode === 'orders' ? '발주 내역 확인' : '입고 내역 확인';
       $('#confirmationModal').style.display = 'flex';
@@ -951,8 +944,18 @@ function renderOrderSummary(container){
         const ITEMS = buildItems(state.snapshot);
         ITEMS.forEach(item => {
           const itemData = state.snapshot[item.key] || {};
-          const orders = Object.entries((itemData.orders || {})[month] || {}).map(([id, data]) => ({ id, type: 'orders', itemKey: item.key, itemLabel: item.label, ...data }));
-          const receipts = Object.entries((itemData.receipts || {})[month] || {}).map(([id, data]) => ({ id, type: 'receipts', itemKey: item.key, itemLabel: item.label, ...data }));
+
+          // ✅✅✅✅✅  수정된 부분 시작 ✅✅✅✅✅
+          // orders와 receipts를 가져올 때, 현재 item의 상/하의(tb) 정보와 일치하는 데이터만 필터링합니다.
+          const orders = Object.entries((itemData.orders || {})[month] || {})
+            .filter(([id, data]) => item.tb ? data.topBottom === item.tb : true)
+            .map(([id, data]) => ({ id, type: 'orders', itemKey: item.key, itemLabel: item.label, ...data }));
+
+          const receipts = Object.entries((itemData.receipts || {})[month] || {})
+            .filter(([id, data]) => item.tb ? data.topBottom === item.tb : true)
+            .map(([id, data]) => ({ id, type: 'receipts', itemKey: item.key, itemLabel: item.label, ...data }));
+          // ✅✅✅✅✅  수정된 부분 종료 ✅✅✅✅✅
+
           allTransactions.push(...orders, ...receipts);
         });
 
@@ -971,7 +974,7 @@ function renderOrderSummary(container){
           const colorCls = t.itemLabel.includes('일반') ? 'txt-normal' : (t.itemLabel.includes('정형') ? 'txt-ortho' : '');
           const noteHtml = t.note ? `<small class="sub-info" style="color:var(--accent);font-weight:600;">(${t.note})</small>` : '';
 
-          return `<li data-id="${t.id}" data-type="${t.type}" data-item-key="${t.itemKey}" data-month="${month}" data-original-qty="${t.qty}">
+          return `<li data-id="${t.id}" data-type="${t.type}" data-item-key="${t.itemKey}" data-month="${month}" data-original-qty="${t.qty}" data-tb="${t.topBottom || ''}">
               <div class="item-details">
                 <span class="item-name ${colorCls}">${t.itemLabel} ${noteHtml}</span>
                 <small class="sub-info">${dateStr} ${typeLabel}</small>
