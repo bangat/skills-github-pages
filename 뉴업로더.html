@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta http-equiv="Cache-Control" content="no-store" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <title>구매현황 업로더 (진단 모드)</title>
+  <title>구매현황 업로더</title>
   <style>
     :root{
       color-scheme: light; --bg:#f4f7fb; --card:#fff; --text:#0f172a; --muted:#5b677a; --border:#e6eaf2; --accent:#2563eb;
@@ -75,7 +75,7 @@
 <body>
 <div class="wrap">
   <div class="card">
-    <h1>구매현황 엑셀 업로더 (진단 모드)</h1>
+    <h1>구매현황 엑셀 업로더</h1>
     <p style="margin:0 0 10px;color:#475569">'구매현황' 앱에서 내려받은 엑셀(.xlsx)을 업로드하세요.</p>
     <div style="display:none;">
       <input id="dbURL" type="text" value="https://hallymlinen-default-rtdb.firebaseio.com">
@@ -104,7 +104,7 @@
 const $ = s => document.querySelector(s);
 const logEl = $("#log");
 const log = (m, cls = '') => {
-  // HTML 태그가 포함될 수 있으므로, 텍스트로 안전하게 처리
+  console[cls === 'err' ? 'error' : 'log'](m);
   const span = document.createElement('span');
   span.className = cls;
   span.textContent = m + '\n';
@@ -230,10 +230,10 @@ function buildRecordsFromSheet(ws, sheetName, year) {
     return { records, months: monthsInSheet, items: itemsInSheet, year };
 }
 
-async function processAndShowData(section, sheetName, year, basePath) {
+async function deleteAndUpload(section, sheetName, year, basePath) {
     if (!sheetName) {
         log(`[${section.toUpperCase()}] 관련 시트(${section === 'orders' ? '발주월별' : '입고_날짜별'})를 찾을 수 없어 건너뜁니다.`, 'warn');
-        return { year, updates: {} };
+        return year;
     }
 
     log(`[시작] '${sheetName}' 시트 처리 중...`);
@@ -242,35 +242,34 @@ async function processAndShowData(section, sheetName, year, basePath) {
 
     if (result.records.length === 0) {
         log(`> '${sheetName}' 시트에서 처리할 데이터가 없습니다.`, 'warn');
-        return { year: result.year || year, updates: {} };
+        return result.year || year;
     }
 
     log(`> '${sheetName}' 시트에서 ${result.records.length}개 데이터 발견. (기준 연도: ${result.year})`);
+
+    const rootBase = $("#dbURL").value.replace(/\/$/, '');
     const updates = {};
 
-    log(`> 가상 데이터 생성 중... (${result.months.size}개월, ${result.items.size}품목)`);
+    log(`> 기존 데이터를 삭제하고 새로 업로드합니다... (${result.months.size}개월, ${result.items.size}품목)`);
     for (const item of result.items) {
         for (const month of result.months) {
-            const path = `${basePath}/${item}/${section}/${month}`;
-            if (path.includes('.') || path.includes('#') || path.includes('$') || path.includes('[') || path.includes(']')) {
-                 log(`[오류!] 경로에 허용되지 않는 문자 발견: ${path}`, 'err');
-            }
-            updates[path] = null;
+            updates[`${basePath}/${item}/${section}/${month}`] = null;
         }
     }
 
     for (const r of result.records) {
         const path = `${basePath}/${r.item}/${r.section}/${r.monthKey}`;
         const key = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-        if (path.includes('.') || path.includes('#') || path.includes('$') || path.includes('[') || path.includes(']')) {
-            log(`[오류!] 경로에 허용되지 않는 문자 발견: ${path}`, 'err');
-        }
         updates[`${path}/${key}`] = r.section === 'orders'
           ? { qty: r.qty, topBottom: r.topBottom, ts: r.ts || Date.now(), note: r.note || '' }
           : { qty: r.qty, topBottom: r.topBottom, day: r.day };
     }
-    
-    return { year: result.year || year, updates };
+
+    const res = await fetch(`${rootBase}/.json`, { method: 'PATCH', body: JSON.stringify(updates) });
+    if (!res.ok) throw new Error(`업로드 실패 ${res.status}: ${await res.text()}`);
+
+    log(`> 데이터 처리 완료.`, 'ok');
+    return result.year || year;
 }
 
 $("#runBtn").addEventListener('click', async () => {
@@ -284,25 +283,17 @@ $("#runBtn").addEventListener('click', async () => {
     const orderSheetName = sheetNames.find(name => name.includes('발주월별'));
     const receiptSheetName = sheetNames.find(name => name.includes('입고_날짜별'));
 
-    const orderResult = await processAndShowData('orders', orderSheetName, year, basePath);
-    year = orderResult.year;
+    year = await deleteAndUpload('orders', orderSheetName, year, basePath);
 
-    const receiptResult = await processAndShowData('receipts', receiptSheetName, year, basePath);
-    
-    const allUpdates = {...orderResult.updates, ...receiptResult.updates};
-
-    if (Object.keys(allUpdates).length > 0) {
-        log('---------- [진단 결과] ----------', 'ok');
-        log('아래 텍스트 전체를 복사해서 전달해주세요.', 'ok');
-        log(JSON.stringify(allUpdates, null, 2), 'ok');
+    if (!year && receiptSheetName) {
+        log(`'발주월별' 시트에서 연도를 확인할 수 없어 입고 데이터 처리를 중단합니다.`, 'err');
     } else {
-        log('처리할 데이터가 없습니다.', 'warn');
+        await deleteAndUpload('receipts', receiptSheetName, year, basePath);
     }
 
-    throw new Error('진단 모드입니다. 실제 업로드는 중단되었습니다.');
-
+    log(`[완료] 모든 데이터 처리 성공`, 'ok');
   } catch (e) {
-    log(`[알림] ${e.message}`, 'err');
+    log(`[오류] ${e.message}`, 'err');
   } finally {
     $("#runBtn").disabled = false;
   }
