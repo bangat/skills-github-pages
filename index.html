@@ -811,7 +811,7 @@ body, .sectionCard, .tab, .tabs, .formHeader, .modalCard, .pinPad button, .qcPad
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-/* 7. 다크 모드 활성화 시 색상 변수 */
+/* 9. 다크 모드일 때 각 요소의 색상 덮어쓰기 */
 html.dark-mode {
   --bg: #111827;
   --card: #1f2937;
@@ -820,25 +820,21 @@ html.dark-mode {
   --border: #374151;
   --accent: #3b82f6;
   --table-header-bg: #2b3646;
-  
-  /* ⭐ 디자인 개선용 신규 색상 변수 */
-  --active-tab-bg: linear-gradient(180deg, #8b5cf6, #6d28d9); /* 활성 탭 (보라) */
-  --inactive-tab-bg: #374151; /* 비활성 탭 배경 */
-  --item-name-bg-dark: #252a4a; /* 품목명 배경 (남색) */
-  --item-name-border-dark: #4f46e5; /* 품목명 테두리 (남색 계열) */
-  --item-name-text-dark: #c7d2fe; /* 품목명 텍스트 (밝은 남색) */
+  --active-tab-bg: linear-gradient(180deg, #8b5cf6, #6d28d9);
+  --inactive-tab-bg: #374151;
+  --item-name-bg-dark: #252a4a;
+  --item-name-border-dark: #4f46e5;
+  --item-name-text-dark: #c7d2fe;
   --danger-text: #ff8c8c;
   --primary-blue-text: #89b5ff;
-
   --focus: 0 0 0 2px rgba(59, 130, 246, .22), 0 0 0 6px rgba(59, 130, 246, .1);
-}
+}  
 
 /* 8. 다크 모드일 때 아이콘 최종 상태 (JS로 애니메이션 후 상태 고정) */
 html.dark-mode .theme-icon.sun { opacity: 0; }
 html.dark-mode .theme-icon.moon { opacity: 1; }
 
 
-/* 9. 다크 모드일 때 각 요소의 색상 덮어쓰기 */
 html.dark-mode .sectionCard,
 html.dark-mode .miniBtn,
 html.dark-mode table {
@@ -847,6 +843,8 @@ html.dark-mode table {
   border-color: var(--border);
   box-shadow: 0 16px 44px rgba(0, 0, 0, .25);
 }
+
+
 html.dark-mode .topNav {
   background: rgba(17, 24, 39, .65);
   border-bottom-color: var(--border);
@@ -855,30 +853,77 @@ html.dark-mode .navTab { color: var(--muted); }
 html.dark-mode .navTab:hover,
 html.dark-mode .navTab.active { color: var(--text); }
 
-/* --- ⭐ 탭 디자인 개선 --- */
 html.dark-mode .tabs {
   background: var(--card);
   border-color: var(--border);
 }
 html.dark-mode .tab {
-  color: var(--text); /* 글씨를 선명하게 */
-  background: transparent; /* 배경을 투명하게 변경 */
+  color: var(--text);
+  background: transparent;
 }
 html.dark-mode .tab:hover {
   background: #4b5563;
 }
 html.dark-mode .tab.active {
-  background: var(--active-tab-bg); /* 새로운 활성 탭 색상 */
-  box-shadow: 0 0 12px rgba(109, 40, 217, .5); /* 은은한 네온 효과 */
+  background: var(--active-tab-bg);
+  box-shadow: 0 0 12px rgba(109, 40, 217, .5);
 }
-/* ------------------------------------ */
 
 html.dark-mode thead th {
   background: var(--table-header-bg);
-  color: var(--muted);
+  color: var(--text);
 }
 html.dark-mode th, html.dark-mode td {
   border-bottom-color: var(--border);
+}
+
+/* 1, 2, 3등 행에 은은한 배경색 추가 (가독성 개선) */
+html.dark-mode tr[data-rank="1"] td { background: rgba(250, 204, 21, 0.08) !important; } /* 🥇 */
+html.dark-mode tr[data-rank="2"] td { background: rgba(209, 213, 219, 0.05) !important; } /* 🥈 */
+html.dark-mode tr[data-rank="3"] td { background: rgba(249, 115, 22, 0.07) !important; } /* 🥉 */
+
+/* 합계/평균 행 배경색 추가 (가독성 개선) */
+html.dark-mode .statsTable .total-row > *,
+html.dark-mode .summaryTable tr:last-child > * {
+  background-color: rgba(55, 65, 81, 0.5); 
+}
+
+html.dark-mode #inputTable td.item-name {
+  color: var(--item-name-text-dark) !important;
+}
+html.dark-mode #inputTable td.item-name::before {
+  background: var(--item-name-bg-dark);
+  box-shadow: inset 0 0 0 1.5px var(--item-name-border-dark);
+}
+
+html.dark-mode .qtyCell input {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--border);
+}
+html.dark-mode .chip.ctrl.minus {
+  background: #374151 !important;
+  color: var(--danger-text) !important;
+  border-color: #4b5563 !important;
+}
+html.dark-mode #appDownloadBtn {
+  background: #374151;
+  color: var(--text);
+  border-color: #4b5563;
+}
+html.dark-mode #curWard {
+  color: var(--primary-blue-text);
+}/* ----------------------------------------------- */
+
+/* ⭐ [수정] 통계 테이블의 모든 글씨를 밝게 만듭니다 */
+html.dark-mode .statsTable th,
+html.dark-mode .statsTable td {
+  color: var(--text);
+}
+/* ⭐ [수정] 요약 테이블의 글씨도 밝게 보장합니다 */
+html.dark-mode .summaryTable th,
+html.dark-mode .summaryTable td {
+  color: var(--text);
 }
 
 /* --- ⭐ 품목 디자인 개선 --- */
@@ -889,6 +934,8 @@ html.dark-mode #inputTable td.item-name::before {
   background: var(--item-name-bg-dark);
   box-shadow: inset 0 0 0 1.5px var(--item-name-border-dark); /* 테두리 효과 */
 }
+
+
 /* ------------------------------- */
 
 html.dark-mode .qtyCell input {
