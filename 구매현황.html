@@ -787,21 +787,18 @@ function renderOrderSummary(container){
 
     async function onSaveAll() {
   const displayEntries = [];
-  // entriesToSave를 함수 내 지역 변수로 선언하여 다른 작업에 영향을 주지 않도록 합니다.
   let currentEntriesToSave = [];
 
   // [발주 모드]일 경우
   if (state.mode === 'orders') {
     const { sheet, patient, hip } = state.draftOrders;
     
-    // 발주 데이터를 수집합니다.
     const orderEntries = [...sheet.entries(), ...hip.entries(), ...patient.entries()]
       .map(([key, qty]) => {
         const [itemName, topBottom] = key.includes('__') ? key.split('__') : [key, ''];
-        return { itemName, qty, topBottom, originalKey: key }; // 원본 key도 임시 저장
+        return { itemName, qty, topBottom, originalKey: key };
       }).filter(e => e.qty > 0);
 
-    // 저장할 데이터와 화면 표시용 데이터를 만듭니다.
     orderEntries.forEach(entry => {
       currentEntriesToSave.push({ itemName: entry.itemName, qty: entry.qty, topBottom: entry.topBottom });
       
@@ -817,21 +814,21 @@ function renderOrderSummary(container){
   } 
   // [입고 모드]일 경우
   else {
-    // 화면에 있는 모든 입고 입력 필드('.rq')를 가져옵니다.
     const receiptInputs = $$('.rq');
     
-    // 각 입력 필드를 순회하며 개별적으로 처리하여 데이터가 섞이는 것을 방지합니다.
+    // ✅ 수정된 로직: 각 입력칸을 개별적으로 순회하며
+    // 해당하는 품목과 수량만 1:1로 묶습니다.
     receiptInputs.forEach(inputElement => {
       const qty = toInt(inputElement.value);
-      // 수량이 0보다 큰 경우에만 처리합니다.
+      
       if (qty > 0) {
         const itemName = inputElement.dataset.item;
         const topBottom = inputElement.dataset.tb || '';
         const displayName = inputElement.closest('tr').querySelector('.name').textContent;
         
-        // 저장할 데이터 목록에 추가
+        // 저장할 데이터 목록에 추가 (1건)
         currentEntriesToSave.push({ itemName, topBottom, qty });
-        // 확인 창에 보여줄 데이터 목록에 추가
+        // 확인 창에 보여줄 데이터 목록에 추가 (1건)
         displayEntries.push({ name: displayName, qty });
       }
     });
