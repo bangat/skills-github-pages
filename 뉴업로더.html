@@ -176,8 +176,8 @@ function buildRecordsFromSheet(ws, sheetName, year) {
     const header = rows[0].map(h => String(h || '').trim());
     const dataRows = rows.slice(1);
     const records = [], monthsInSheet = new Set(), itemsInSheet = new Set();
-    const isMonthlyOrders = /발주월별/.test(sheetName);
-    const isDailyReceipts = /입고_날짜별/.test(sheetName);
+    const isMonthlyOrders = sheetName.includes('발주월별');
+    const isDailyReceipts = sheetName.includes('입고_날짜별');
 
     // 이월 데이터 열이 있는지 확인
     const carryOverColIndex = header.findIndex(h => h.includes('이월'));
@@ -259,7 +259,7 @@ async function deleteAndUpload(section, sheetName, year, basePath) {
     for (const r of result.records) {
         const path = `${basePath}/${r.item}/${r.section}/${r.monthKey}`;
         const key = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-        updates[`${path}/${key}`] = r.section === 'orders' 
+        updates[`${path}/${key}`] = r.section === 'orders'
           ? { qty: r.qty, topBottom: r.topBottom, ts: r.ts || Date.now(), note: r.note || '' }
           : { qty: r.qty, topBottom: r.topBottom, day: r.day };
     }
@@ -279,12 +279,15 @@ $("#runBtn").addEventListener('click', async () => {
 
   try {
     let year = new Date().getFullYear().toString();
-    const orderSheetName = sheetNames.find(name => /발주월별/.test(name));
-    const receiptSheetName = sheetNames.find(name => /입고_날짜별/.test(name));
+    // ▼▼▼ 수정된 부분 ▼▼▼
+    // 시트 이름에 특수문자가 있어도 찾을 수 있도록 단순 문자열 포함 여부로 변경
+    const orderSheetName = sheetNames.find(name => name.includes('발주월별'));
+    const receiptSheetName = sheetNames.find(name => name.includes('입고_날짜별'));
+    // ▲▲▲ 수정된 부분 ▲▲▲
 
     year = await deleteAndUpload('orders', orderSheetName, year, basePath);
 
-    if (!year) {
+    if (!year && receiptSheetName) {
         log(`'발주월별' 시트에서 연도를 확인할 수 없어 입고 데이터 처리를 중단합니다.`, 'err');
     } else {
         await deleteAndUpload('receipts', receiptSheetName, year, basePath);
