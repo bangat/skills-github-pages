@@ -299,20 +299,35 @@ async function deleteExistingData(section, monthsToDelete, itemsToDelete, basePa
 }
 
 async function uploadSheetData(records, basePath) {
-  if (!records || records.length === 0) return;
-  const rootBase = $("#dbURL").value.replace(/\/$/, '');
-  const updates = {};
-  for (const r of records) {
-    const path = `${basePath}/${r.item}/${r.section}/${r.monthKey}`;
-    const key = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-    updates[`${path}/${key}`] = r.section === 'orders' 
-      ? { qty: r.qty, topBottom: r.topBottom, ts: r.ts }
-      : { qty: r.qty, topBottom: r.topBottom, day: r.day };
-  }
-  const res = await fetch(`${rootBase}/.json`, { method: 'PATCH', body: JSON.stringify(updates) });
-  if (!res.ok) throw new Error(`업로드 실패 ${res.status}: ${await res.text()}`);
-  log(`> ${records.length}개 레코드 업로드 완료.`);
+    if (!records || records.length === 0) return;
+    const updates = {};
+    for (const r of records) {
+        const path = `${basePath}/${r.item}/${r.section}/${r.monthKey}`;
+        const key = firebase.database().ref(path).push().key;
+        
+        // 기본 데이터 구조 생성
+        const payload = {
+            qty: r.qty,
+        };
+
+        // section에 따라 필드 추가
+        if (r.section === 'orders') {
+            payload.ts = r.ts;
+        } else { // receipts
+            payload.day = r.day;
+        }
+
+        // topBottom 정보가 있을 때만 payload에 추가 (가장 중요)
+        if (r.topBottom) {
+            payload.topBottom = r.topBottom;
+        }
+
+        updates[`${path}/${key}`] = payload;
+    }
+    await firebase.database().ref().update(updates);
+    log(`> ${records.length}개 레코드 업로드 완료.`);
 }
+
 
 /* ------------ Run Handler (Main Logic) ------------ */
 /* ------------ Run Handler (Main Logic) ------------ */
