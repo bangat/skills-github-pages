@@ -136,7 +136,7 @@ const handleFileSelect = (file) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             const buf = e.target.result;
-            workbook = XLSX.read(buf, { type: 'array' });
+            workbook = XLSX.read(buf, { type: 'array', cellDates: true });
             sheetNames = workbook.SheetNames || [];
             if (!sheetNames.length) { log("시트를 찾을 수 없습니다.", 'err'); return; }
 
@@ -199,55 +199,78 @@ function mapLabelToApp(label) {
 }
 
 function buildRecordsFromSheet(ws, sheetName, year) {
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
-    if (rows.length < 2) return { records: [], months: new Set(), items: new Set(), year: year };
+    if (!ws || !ws['!ref']) return { records: [], months: new Set(), items: new Set(), year: year };
 
-    const header = rows[0];
-    const dataRows = rows.slice(1);
-    const records = [];
-    const monthsInSheet = new Set();
-    const itemsInSheet = new Set();
-
+    const records = [], monthsInSheet = new Set(), itemsInSheet = new Set();
     const isMonthlyOrders = /발주월별/.test(sheetName);
-    const isDailyReceipts = /입고\(날짜별\)/.test(sheetName);
+    const isDailyReceipts = /입고_날짜별/.test(sheetName);
 
-    for (const row of dataRows) {
-        const label = String(row[0] || '').trim();
+    // 엑셀 시트의 전체 범위를 가져옵니다 (예: A1:Z50)
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    const headerRow = 0; 
+    const dataStartRow = 1;
+
+    // 1. 헤더 분석
+    const headerMap = {};
+    for (let C = range.s.c + 1; C <= range.e.c; ++C) { // B열부터 마지막 열까지
+        const cellAddress = XLSX.utils.encode_cell({ r: headerRow, c: C });
+        const cell = ws[cellAddress];
+        if (!cell || !cell.v) continue;
+
+        let recordData = null;
+
+        if (isMonthlyOrders) {
+            const match = String(cell.w || cell.v).trim().match(/^(\d{2})년\s*(\d{1,2})월$/);
+            if (match) {
+                year = `20${match[1]}`;
+                const m = String(match[2]).padStart(2, '0');
+                recordData = { section: 'orders', monthKey: `${year}-${m}`, ts: new Date(`${year}-${m}-01`).getTime() };
+            }
+        } else if (isDailyReceipts) {
+            let dateInfo = null;
+            // cell.v가 Date 객체인지 직접 확인합니다.
+            if (cell.v instanceof Date) {
+                const d = cell.v;
+                dateInfo = { y: d.getFullYear(), m: d.getMonth() + 1, d: d.getDate() };
+            } else { // Date 객체가 아니면 '9월 19일' 같은 텍스트인지 확인합니다.
+                const match = String(cell.w || cell.v).trim().match(/^(\d{1,2})월\s*(\d{1,2})일$/);
+                if (match && year) {
+                    dateInfo = { y: year, m: match[1], d: match[2] };
+                }
+            }
+            if (dateInfo) {
+                const yyyy = String(dateInfo.y);
+                const mm = String(dateInfo.m).padStart(2, '0');
+                recordData = { section: 'receipts', monthKey: `${yyyy}-${mm}`, day: Number(dateInfo.d) };
+            }
+        }
+        if (recordData) headerMap[C] = recordData;
+    }
+
+    // 2. 데이터 행 분석
+    for (let R = dataStartRow; R <= range.e.r; ++R) {
+        const labelCellAddress = XLSX.utils.encode_cell({ r: R, c: range.s.c });
+        const labelCell = ws[labelCellAddress];
+        const label = labelCell ? String(labelCell.w || labelCell.v).trim() : '';
         if (!label) continue;
+        
         const { item, topBottom } = mapLabelToApp(label);
         itemsInSheet.add(item);
 
-        for (let c = 1; c < header.length; c++) {
-            const qty = Number(row[c]);
+        for (const colIndex in headerMap) {
+            const cellAddress = XLSX.utils.encode_cell({ r: R, c: Number(colIndex) });
+            const cell = ws[cellAddress];
+            const qty = cell ? Number(cell.v) : 0;
             if (!qty || !Number.isFinite(qty)) continue;
-            const colHeader = String(header[c] || '').trim();
-            let recordData = null;
 
-            if (isMonthlyOrders) {
-                const match = colHeader.match(/^(\d{2})년\s*(\d{1,2})월$/);
-                if (match) {
-                    year = `20${match[1]}`;
-                    const m = String(match[2]).padStart(2, '0');
-                    const monthKey = `${year}-${m}`;
-                    monthsInSheet.add(monthKey);
-                    recordData = { section: 'orders', monthKey, ts: new Date(monthKey + '-01').getTime() };
-                }
-            } else if (isDailyReceipts) {
-                const match = colHeader.match(/^(\d{1,2})월\s*(\d{1,2})일$/);
-                if (match && year) {
-                    const m = String(match[1]).padStart(2, '0');
-                    const d = Number(match[2]);
-                    const monthKey = `${year}-${m}`;
-                    monthsInSheet.add(monthKey);
-                    recordData = { section: 'receipts', monthKey, day: d };
-                }
-            }
-            if (recordData) records.push({ item, topBottom, qty, ...recordData });
+            const headerData = headerMap[colIndex];
+            monthsInSheet.add(headerData.monthKey);
+            records.push({ item, topBottom, qty, ...headerData });
         }
     }
+    
     return { records, months: monthsInSheet, items: itemsInSheet, year };
 }
-
 /* ------------ Uploader (REST API) ------------ */
 // [수정됨] 이 함수가 변경되었습니다.
 async function deleteExistingData(section, monthsToDelete, itemsToDelete, basePath) {
@@ -292,56 +315,74 @@ async function uploadSheetData(records, basePath) {
 }
 
 /* ------------ Run Handler (Main Logic) ------------ */
+/* ------------ Run Handler (Main Logic) ------------ */
 $("#runBtn").addEventListener('click', async () => {
-  if (!workbook) { log("엑셀을 먼저 선택하세요.", 'err'); return; }
+    if (!workbook) { log("엑셀을 먼저 선택하세요.", 'err'); return; }
 
-  const basePath = $("#basePath").value.trim();
-  $("#runBtn").disabled = true;
-  logEl.textContent = "";
-  let year = "";
+    const basePath = $("#basePath").value.trim();
+    $("#runBtn").disabled = true;
+    logEl.textContent = "";
+    let year = null; // 연도를 null로 초기화
 
-  try {
-    const orderSheetName = sheetNames.find(name => /발주월별/.test(name));
-    if (orderSheetName) {
-        log(`[시작] '발주월별' 시트 처리 중...`);
-        const ws = workbook.Sheets[orderSheetName];
-        const result = buildRecordsFromSheet(ws, orderSheetName, year);
-        year = result.year;
-        if (result.records.length > 0) {
-            log(`> '${orderSheetName}' 시트에서 ${result.records.length}개 발주 데이터 발견. (기준 연도: ${year})`);
-            await deleteExistingData('orders', result.months, result.items, basePath);
-            await uploadSheetData(result.records, basePath);
+    try {
+        log('[시작] 데이터 업로드를 시작합니다.');
+        const orderSheetName = sheetNames.find(name => /발주월별/.test(name));
+        const receiptSheetName = sheetNames.find(name => /입고_날짜별/.test(name));
+
+        // 1. 발주 시트 처리
+        if (orderSheetName) {
+            log(`[처리] '${orderSheetName}' 시트를 분석합니다...`);
+            const ws = workbook.Sheets[orderSheetName];
+            const result = buildRecordsFromSheet(ws, orderSheetName, year);
+            
+            // buildRecordsFromSheet 함수가 반환한 연도 값을 확정
+            if (result.year) {
+                year = result.year;
+                log(`> 기준 연도를 '${year}'으로 설정했습니다.`, 'ok');
+            }
+
+            if (result.records.length > 0) {
+                log(`> ${result.records.length}개의 발주 데이터를 발견했습니다.`);
+                await deleteExistingData('orders', result.months, result.items, basePath);
+                await uploadSheetData(result.records, basePath);
+            } else {
+                log(`> 처리할 발주 데이터가 없습니다.`, 'warn');
+            }
         } else {
-            log(`> '${orderSheetName}' 시트에서 처리할 데이터가 없습니다.`, 'warn');
+            log(`[정보] '발주월별' 시트를 찾을 수 없습니다.`, 'warn');
         }
-    } else {
-        log(`[경고] '발주월별' 시트를 찾을 수 없습니다. 입고 내역 처리를 위해 연도가 필요합니다.`, 'warn');
-    }
 
-    if (!year && orderSheetName) {
-        log(`[오류] '발주월별' 시트에서 연도를 파악하지 못해 입고 내역을 처리할 수 없습니다.`, 'err');
-    } else {
-        const receiptSheetName = sheetNames.find(name => /입고\(날짜별\)/.test(name));
+        // 2. 입고 시트 처리
         if (receiptSheetName) {
-            log(`[시작] '입고(날짜별)' 시트 처리 중...`);
+            log(`[처리] '${receiptSheetName}' 시트를 분석합니다...`);
+            
+            // 만약 발주 시트가 없거나 연도를 못찾았다면, 현재 연도를 기준으로 사용
+            if (!year) {
+                year = new Date().getFullYear().toString();
+                log(`> 기준 연도를 현재 연도인 '${year}'으로 설정합니다.`, 'warn');
+            }
+
             const ws = workbook.Sheets[receiptSheetName];
             const result = buildRecordsFromSheet(ws, receiptSheetName, year);
-             if (result.records.length > 0) {
-                log(`> '${receiptSheetName}' 시트에서 ${result.records.length}개 입고 데이터 발견.`);
+            
+            if (result.records.length > 0) {
+                log(`> ${result.records.length}개의 입고 데이터를 발견했습니다.`);
                 await deleteExistingData('receipts', result.months, result.items, basePath);
                 await uploadSheetData(result.records, basePath);
             } else {
-                log(`> '${receiptSheetName}' 시트에서 처리할 데이터가 없습니다.`, 'warn');
+                log(`> 처리할 입고 데이터가 없습니다.`, 'warn');
             }
+        } else {
+            log(`[정보] '입고(날짜별)' 시트를 찾을 수 없습니다.`, 'warn');
         }
-    }
-    log(`[완료] 모든 데이터 처리 성공`, 'ok');
 
-  } catch (e) {
-    log(String(e && e.message ? e.message : e), 'err');
-  } finally {
-    $("#runBtn").disabled = false;
-  }
+        log(`[완료] 모든 작업이 성공적으로 종료되었습니다.`, 'ok');
+
+    } catch (e) {
+        log(`[오류] 작업 중단: ${e && e.message ? e.message : e}`, 'err');
+    } finally {
+        $("#runBtn").disabled = false;
+    }
 });
 </script>
 </body>
