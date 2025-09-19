@@ -570,9 +570,6 @@
         }));
     }
 
-//■■■■■■■■◇◇◇바인딩 시작
-   // 기존 renderOrderSummary 함수를 이 코드로 교체해주세요.
-
 function renderOrderSummary(container){
   const data = state.snapshot||{};
   const allMonths = collectAllMonths(data);
@@ -722,7 +719,7 @@ function renderOrderSummary(container){
         ${normalRows ? `<div class="divider-strong"></div><div class="table-wrap"><table class="tbl-receipts"><thead><tr><th>품목</th><th>총발주</th><th>총입고</th><th>진행률</th></tr></thead><tbody>${normalRows}</tbody></table></div>` : ''}
         ${orthoRows ? `<div class="divider-strong"></div><div class="table-wrap"><table class="tbl-receipts"><thead><tr><th>품목</th><th>총발주</th><th>총입고</th><th>진행률</th></tr></thead><tbody>${orthoRows}</tbody></table></div>` : ''}
       `;
-      
+
       $$('.rq').forEach(inp => {
         inp.addEventListener('input', (e) => {
             const tr = e.target.closest('tr');
@@ -773,7 +770,7 @@ function renderOrderSummary(container){
 
       const totO = calculateTotal('orders', selectedMonths);
       const totR = calculateTotal('receipts', allMonths);
-      
+
       const p = totO > 0 ? Math.round((totR / totO) * 100) : (totR > 0 ? 100 : 0);
       const bar = $('#progressBarInner');
       bar.style.width = Math.min(100, p) + '%';
@@ -786,68 +783,66 @@ function renderOrderSummary(container){
     let entriesToSave = [];
 
     async function onSaveAll() {
-  const displayEntries = [];
-  let currentEntriesToSave = [];
+      const displayEntries = [];
+      let currentEntriesToSave = [];
 
-  // [발주 모드]일 경우
-  if (state.mode === 'orders') {
-    const { sheet, patient, hip } = state.draftOrders;
-    
-    const orderEntries = [...sheet.entries(), ...hip.entries(), ...patient.entries()]
-      .map(([key, qty]) => {
-        const [itemName, topBottom] = key.includes('__') ? key.split('__') : [key, ''];
-        return { itemName, qty, topBottom, originalKey: key };
-      }).filter(e => e.qty > 0);
+      // [발주 모드]일 경우
+      if (state.mode === 'orders') {
+        const { sheet, patient, hip } = state.draftOrders;
 
-    orderEntries.forEach(entry => {
-      currentEntriesToSave.push({ itemName: entry.itemName, qty: entry.qty, topBottom: entry.topBottom });
-      
-      let displayName = entry.itemName;
-      if (entry.originalKey.includes('__')) {
-         const [itemName, tb] = entry.originalKey.split('__');
-         const kindLabel = itemName.includes('일반') ? '일반' : '정형';
-         const size = itemName.replace('일반환의','').replace('정형환의','');
-         displayName = labelOf(kindLabel, tb, size);
+        const orderEntries = [...sheet.entries(), ...hip.entries(), ...patient.entries()]
+          .map(([key, qty]) => {
+            const [itemName, topBottom] = key.includes('__') ? key.split('__') : [key, ''];
+            return { itemName, qty, topBottom, originalKey: key };
+          }).filter(e => e.qty > 0);
+
+        orderEntries.forEach(entry => {
+          currentEntriesToSave.push({ itemName: entry.itemName, qty: entry.qty, topBottom: entry.topBottom });
+
+          let displayName = entry.itemName;
+          if (entry.originalKey.includes('__')) {
+            const [itemName, tb] = entry.originalKey.split('__');
+            const kindLabel = itemName.includes('일반') ? '일반' : '정형';
+            const size = itemName.replace('일반환의','').replace('정형환의','');
+            displayName = labelOf(kindLabel, tb, size);
+          }
+          displayEntries.push({ name: displayName, qty: entry.qty });
+        });
+      } 
+      // [입고 모드]일 경우
+      else {
+        // ✅ 수정된 로직: 각 입력칸을 개별적으로 순회하며
+        // 해당하는 품목과 수량만 1:1로 묶습니다.
+        $$('.rq').forEach(inputElement => {
+          const qty = toInt(inputElement.value);
+
+          if (qty > 0) {
+            const itemName = inputElement.dataset.item;
+            const topBottom = inputElement.dataset.tb || '';
+            const displayName = inputElement.closest('tr').querySelector('.name').textContent;
+
+            // 저장할 데이터 목록에 추가 (1건)
+            currentEntriesToSave.push({ itemName, topBottom, qty });
+            // 확인 창에 보여줄 데이터 목록에 추가 (1건)
+            displayEntries.push({ name: displayName, qty });
+          }
+        });
       }
-      displayEntries.push({ name: displayName, qty: entry.qty });
-    });
-  } 
-  // [입고 모드]일 경우
-  else {
-    const receiptInputs = $$('.rq');
-    
-    // ✅ 수정된 로직: 각 입력칸을 개별적으로 순회하며
-    // 해당하는 품목과 수량만 1:1로 묶습니다.
-    receiptInputs.forEach(inputElement => {
-      const qty = toInt(inputElement.value);
-      
-      if (qty > 0) {
-        const itemName = inputElement.dataset.item;
-        const topBottom = inputElement.dataset.tb || '';
-        const displayName = inputElement.closest('tr').querySelector('.name').textContent;
-        
-        // 저장할 데이터 목록에 추가 (1건)
-        currentEntriesToSave.push({ itemName, topBottom, qty });
-        // 확인 창에 보여줄 데이터 목록에 추가 (1건)
-        displayEntries.push({ name: displayName, qty });
+
+      // 저장할 내용이 없으면 사용자에게 알리고 함수를 종료합니다.
+      if (displayEntries.length === 0) {
+        showToast((state.mode === 'orders' ? '발주' : '입고') + ' 입력값이 없습니다.');
+        return;
       }
-    });
-  }
 
-  // 저장할 내용이 없으면 사용자에게 알리고 함수를 종료합니다.
-  if (displayEntries.length === 0) {
-    showToast((state.mode === 'orders' ? '발주' : '입고') + ' 입력값이 없습니다.');
-    return;
-  }
-  
-  // 전역 변수에 최종 저장할 데이터를 할당합니다.
-  entriesToSave = currentEntriesToSave;
+      // 전역 변수에 최종 저장할 데이터를 할당합니다.
+      entriesToSave = currentEntriesToSave;
 
-  // 확인 모달창을 설정하고 띄웁니다.
-  $('#modalSummaryList').innerHTML = displayEntries.map(e => `<li><span class="item-name">${e.name}</span> <span class="item-qty">${e.qty}개</span></li>`).join('');
-  $('#modalTitle').textContent = state.mode === 'orders' ? '발주 내역 확인' : '입고 내역 확인';
-  $('#confirmationModal').style.display = 'flex';
-}
+      // 확인 모달창을 설정하고 띄웁니다.
+      $('#modalSummaryList').innerHTML = displayEntries.map(e => `<li><span class="item-name">${e.name}</span> <span class="item-qty">${e.qty}개</span></li>`).join('');
+      $('#modalTitle').textContent = state.mode === 'orders' ? '발주 내역 확인' : '입고 내역 확인';
+      $('#confirmationModal').style.display = 'flex';
+    }
 
 
     async function proceedWithSave() {
@@ -895,7 +890,7 @@ function renderOrderSummary(container){
             }
           }
         }
-        
+
         const saveEntries = (entries, type) => {
           entries.forEach(({ itemName, qty, topBottom }) => {
             const q = toInt(qty); if (q <= 0) return;
@@ -920,7 +915,7 @@ function renderOrderSummary(container){
           saveEntries(entriesToSave, 'receipts');
           showToast('입고 완료');
         }
-        
+
         if (Object.keys(updates).length > 0) await updatePurchaseStatus(updates);
 
         successAudio.play();
@@ -951,7 +946,7 @@ function renderOrderSummary(container){
 
       try {
         const getTimestamp = (t, m) => (t.type === 'receipts' && t.day) ? new Date(`${m}-${String(t.day).padStart(2, '0')}`).getTime() : t.ts || 0;
-        
+
         const allTransactions = [];
         const ITEMS = buildItems(state.snapshot);
         ITEMS.forEach(item => {
@@ -1048,140 +1043,138 @@ function renderOrderSummary(container){
 
     /* ▷▷▷ 엑셀 내보내기 시작 ▷▷▷ */
     async function onExportExcel_AllData(){
-  try {
-    showLoader('엑셀 생성중…');
-    if(!state.snapshot) state.snapshot=await getStatusOnce();
-    const all=state.snapshot||{};
-    const selectedMonths = Array.from(state.selectedMonths).sort((a,b)=>a.localeCompare(b));
-    const allMonths = collectAllMonths(all).sort((a,b)=>a.localeCompare(b));
-    if (selectedMonths.length === 0) {
-      showToast("요약에 포함할 발주 월이 선택되지 않았습니다.");
-      return;
-    }
-
-    const ITEMS = buildItems(all);
-    const wb=new ExcelJS.Workbook();
-
-    const getCarryOverData = (item, months) => {
-      return months.reduce((acc, m) => {
-        const orders = (((all[item.key] || {}).orders || {})[m]) || {};
-        return acc + Object.values(orders).filter(order => order.note?.includes('이월') && (item.tb ? order.topBottom === item.tb : true)).reduce((s, e) => s + toInt(e.qty), 0);
-      }, 0);
-    };
-
-    const sumMonth = (it, kind, m, tb, excludeCarryOver) => {
-      const node = (((all[it.key]||{})[kind]||{})[m])||{};
-      return Object.values(node).filter(e => (tb ? (e.topBottom||'')===tb : true) && (!excludeCarryOver || !e.note?.includes('이월분'))).reduce((s,e)=>s+toInt(e.qty),0);
-    };
-    const sumRange = (it, kind, months, tb, excludeCarryOver) => months.reduce((acc,m)=>acc+sumMonth(it,kind,m,tb,excludeCarryOver), 0);
-    
-    const hasAnyCarryOver = ITEMS.some(item => getCarryOverData(item, selectedMonths) > 0);
-
-    const wsSum = wb.addWorksheet('전체현황');
-    const summaryHeaders = hasAnyCarryOver ? ['품목','이월','신규발주','총 발주량', '전체입고량','미입고','진행률'] : ['품목','발주량','입고량','미입고','진행률'];
-    wsSum.addRow(summaryHeaders);
-    wsSum.views = [{state:'frozen', xSplit:1, ySplit:1}];
-    
-    let grandTotals = { carry: 0, new: 0, orders: 0, receipts: 0 };
-
-    ITEMS.forEach(r => {
-      const carryOver = getCarryOverData(r, selectedMonths);
-      const newOrders = sumRange(r, 'orders', selectedMonths, r.tb, true);
-      const totalOrders = carryOver + newOrders;
-      const totalReceipts = sumRange(r, 'receipts', allMonths, r.tb, false);
-      
-      if(totalOrders || totalReceipts){
-        grandTotals.carry += carryOver; grandTotals.new += newOrders;
-        grandTotals.orders += totalOrders; grandTotals.receipts += totalReceipts;
-        
-        const unfulfilled = totalOrders - totalReceipts;
-        const pctText = totalOrders > 0 ? (totalReceipts <= totalOrders ? `${Math.round((totalReceipts/totalOrders)*100)}%` : `-${Math.round(((totalReceipts-totalOrders)/totalOrders)*100)}%`) : 'N/A';
-        const rowData = hasAnyCarryOver ? [r.label, carryOver, newOrders, totalOrders, totalReceipts, unfulfilled, pctText] : [r.label, totalOrders, totalReceipts, unfulfilled, pctText];
-        const row = wsSum.addRow(rowData);
-        
-        if(r.group==='normal') row.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
-        if(r.group==='ortho')  row.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
-        if (hasAnyCarryOver) {
-            if (carryOver > 0) row.getCell(2).font = {color:{argb:'FF78716C'}, bold:true};
-            if (unfulfilled < 0) row.getCell(6).font = { color: { argb: 'FFF43F5E' }, bold: true };
-            if (pctText.startsWith('-')) row.getCell(7).font = { color: { argb: 'FFF43F5E' }, bold: true };
-            else if (pctText === '100%') row.getCell(7).font = { color: { argb: 'FF2563EB' }, bold: true };
-        } else {
-            if (unfulfilled < 0) row.getCell(4).font = { color: { argb: 'FFF43F5E' }, bold: true };
-            if (pctText.startsWith('-')) row.getCell(5).font = { color: { argb: 'FFF43F5E' }, bold: true };
-            else if (pctText === '100%') row.getCell(5).font = { color: { argb: 'FF2563EB' }, bold: true };
+      try {
+        showLoader('엑셀 생성중…');
+        if(!state.snapshot) state.snapshot=await getStatusOnce();
+        const all=state.snapshot||{};
+        const selectedMonths = Array.from(state.selectedMonths).sort((a,b)=>a.localeCompare(b));
+        const allMonths = collectAllMonths(all).sort((a,b)=>a.localeCompare(b));
+        if (selectedMonths.length === 0) {
+          showToast("요약에 포함할 발주 월이 선택되지 않았습니다.");
+          return;
         }
+
+        const ITEMS = buildItems(all);
+        const wb=new ExcelJS.Workbook();
+
+        const getCarryOverData = (item, months) => {
+          return months.reduce((acc, m) => {
+            const orders = (((all[item.key] || {}).orders || {})[m]) || {};
+            return acc + Object.values(orders).filter(order => order.note?.includes('이월') && (item.tb ? order.topBottom === item.tb : true)).reduce((s, e) => s + toInt(e.qty), 0);
+          }, 0);
+        };
+
+        const sumMonth = (it, kind, m, tb, excludeCarryOver) => {
+          const node = (((all[it.key]||{})[kind]||{})[m])||{};
+          return Object.values(node).filter(e => (tb ? (e.topBottom||'')===tb : true) && (!excludeCarryOver || !e.note?.includes('이월분'))).reduce((s,e)=>s+toInt(e.qty),0);
+        };
+        const sumRange = (it, kind, months, tb, excludeCarryOver) => months.reduce((acc,m)=>acc+sumMonth(it,kind,m,tb,excludeCarryOver), 0);
+
+        const hasAnyCarryOver = ITEMS.some(item => getCarryOverData(item, selectedMonths) > 0);
+
+        const wsSum = wb.addWorksheet('전체현황');
+        const summaryHeaders = hasAnyCarryOver ? ['품목','이월','신규발주','총 발주량', '전체입고량','미입고','진행률'] : ['품목','발주량','입고량','미입고','진행률'];
+        wsSum.addRow(summaryHeaders);
+        wsSum.views = [{state:'frozen', xSplit:1, ySplit:1}];
+
+        let grandTotals = { carry: 0, new: 0, orders: 0, receipts: 0 };
+
+        ITEMS.forEach(r => {
+          const carryOver = getCarryOverData(r, selectedMonths);
+          const newOrders = sumRange(r, 'orders', selectedMonths, r.tb, true);
+          const totalOrders = carryOver + newOrders;
+          const totalReceipts = sumRange(r, 'receipts', allMonths, r.tb, false);
+
+          if(totalOrders || totalReceipts){
+            grandTotals.carry += carryOver; grandTotals.new += newOrders;
+            grandTotals.orders += totalOrders; grandTotals.receipts += totalReceipts;
+
+            const unfulfilled = totalOrders - totalReceipts;
+            const pctText = totalOrders > 0 ? (totalReceipts <= totalOrders ? `${Math.round((totalReceipts/totalOrders)*100)}%` : `-${Math.round(((totalReceipts-totalOrders)/totalOrders)*100)}%`) : 'N/A';
+            const rowData = hasAnyCarryOver ? [r.label, carryOver, newOrders, totalOrders, totalReceipts, unfulfilled, pctText] : [r.label, totalOrders, totalReceipts, unfulfilled, pctText];
+            const row = wsSum.addRow(rowData);
+
+            if(r.group==='normal') row.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
+            if(r.group==='ortho')  row.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
+            if (hasAnyCarryOver) {
+                if (carryOver > 0) row.getCell(2).font = {color:{argb:'FF78716C'}, bold:true};
+                if (unfulfilled < 0) row.getCell(6).font = { color: { argb: 'FFF43F5E' }, bold: true };
+                if (pctText.startsWith('-')) row.getCell(7).font = { color: { argb: 'FFF43F5E' }, bold: true };
+                else if (pctText === '100%') row.getCell(7).font = { color: { argb: 'FF2563EB' }, bold: true };
+            } else {
+                if (unfulfilled < 0) row.getCell(4).font = { color: { argb: 'FFF43F5E' }, bold: true };
+                if (pctText.startsWith('-')) row.getCell(5).font = { color: { argb: 'FFF43F5E' }, bold: true };
+                else if (pctText === '100%') row.getCell(5).font = { color: { argb: 'FF2563EB' }, bold: true };
+            }
+          }
+        });
+
+        const gtUnfulfilled = grandTotals.orders - grandTotals.receipts;
+        const gtPctText = grandTotals.orders > 0 ? (grandTotals.receipts <= grandTotals.orders ? `${Math.round((grandTotals.receipts/grandTotals.orders)*100)}%` : `-${Math.round(((grandTotals.receipts-grandTotals.orders)/grandTotals.orders)*100)}%`) : 'N/A';
+        const totalRowData = hasAnyCarryOver ? ['종합', grandTotals.carry, grandTotals.new, grandTotals.orders, grandTotals.receipts, gtUnfulfilled, gtPctText] : ['종합', grandTotals.orders, grandTotals.receipts, gtUnfulfilled, gtPctText];
+        const totalRow = wsSum.addRow(totalRowData);
+        totalRow.eachCell(c => { c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF1E293B'}}; c.font = {bold:true, color:{argb:'FFFFFFFF'}}; });
+
+        const wsOrd = wb.addWorksheet('발주월별(선택월)');
+        const ordHeaders = hasAnyCarryOver ? ['품목', '이월합계', ...selectedMonths.map(m => `${m.substring(2,4)}년 ${parseInt(m.substring(5,7),10)}월`)] : ['품목', ...selectedMonths.map(m => `${m.substring(2,4)}년 ${parseInt(m.substring(5,7),10)}월`)];
+        wsOrd.addRow(ordHeaders);
+        wsOrd.views = [{state:'frozen', xSplit: hasAnyCarryOver ? 2 : 1, ySplit:1}];
+        ITEMS.forEach(r=>{
+          const carryOverTotal = getCarryOverData(r, selectedMonths);
+          const monthlyVals = selectedMonths.map(m => sumMonth(r, 'orders', m, r.tb, true));
+          if(carryOverTotal || monthlyVals.some(v=>v)){
+            const rowData = hasAnyCarryOver ? [r.label, carryOverTotal, ...monthlyVals] : [r.label, ...monthlyVals];
+            const added=wsOrd.addRow(rowData);
+            if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
+            if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
+            if(hasAnyCarryOver && carryOverTotal > 0) added.getCell(2).font = {color:{argb:'FF78716C'}, bold:true};
+          }
+        });
+
+        const wsRecv = wb.addWorksheet('입고_날짜별(전체)');
+        const monthToDays = {};
+        allMonths.forEach(m => {
+          const days = new Set();
+          ITEMS.forEach(r => Object.values(((all[r.key]||{}).receipts||{})[m]||{}).forEach(e => e.day && days.add(e.day)));
+          monthToDays[m] = Array.from(days).sort((a,b)=>a-b);
+        });
+        const recvHeaders = ['품목', ...allMonths.flatMap(m => monthToDays[m].map(d=>`${parseInt(m.slice(5,7),10)}월 ${d}일`))];
+
+        wsRecv.addRow(recvHeaders);
+        wsRecv.views = [{state:'frozen', xSplit:1, ySplit:1}];
+        ITEMS.forEach(r => {
+          const vals = allMonths.flatMap(m => monthToDays[m].map(d => {
+            const node = ((all[r.key]||{}).receipts||{})[m]||{};
+            return Object.values(node).filter(e => e.day==d && (r.tb ? e.topBottom===r.tb : true)).reduce((s,e)=>s+toInt(e.qty),0);
+          }));
+          if(vals.some(v=>v)) {
+            const added = wsRecv.addRow([r.label, ...vals]);
+            if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
+            if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
+          }
+        });
+
+        [wsSum, wsOrd, wsRecv].forEach(ws => {
+          ws.getRow(1).eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1E293B'}}; c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center'}; });
+          for(let r=2; r<=ws.rowCount; r++){ ws.getRow(r).eachCell((c,ci)=>{ c.alignment={vertical:'middle',horizontal:(ci===1?'left':'center')}; }); }
+          ws.columns.forEach(col => {
+            let maxLen = 0;
+            col.eachCell({includeEmpty:true}, cell => maxLen=Math.max(maxLen, (cell.value||'').toString().length));
+            col.width = Math.max(10, maxLen + 2);
+          });
+          ws.getColumn(1).width = 11.88;
+        });
+
+        const buf = await wb.xlsx.writeBuffer();
+        saveAs(new Blob([buf]), `구매현황(${new Date().getFullYear().toString().slice(2)}년).xlsx`);
+
+      } catch (e) {
+        console.error("엑셀 생성 실패:", e);
+        showToast("엑셀 생성 실패: 다시 시도해주세요.");
+      } finally {
+        hideLoader();
       }
-    });
-    
-    const gtUnfulfilled = grandTotals.orders - grandTotals.receipts;
-    const gtPctText = grandTotals.orders > 0 ? (grandTotals.receipts <= grandTotals.orders ? `${Math.round((grandTotals.receipts/grandTotals.orders)*100)}%` : `-${Math.round(((grandTotals.receipts-grandTotals.orders)/grandTotals.orders)*100)}%`) : 'N/A';
-    const totalRowData = hasAnyCarryOver ? ['종합', grandTotals.carry, grandTotals.new, grandTotals.orders, grandTotals.receipts, gtUnfulfilled, gtPctText] : ['종합', grandTotals.orders, grandTotals.receipts, gtUnfulfilled, gtPctText];
-    const totalRow = wsSum.addRow(totalRowData);
-    totalRow.eachCell(c => { c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF1E293B'}}; c.font = {bold:true, color:{argb:'FFFFFFFF'}}; });
-
-    const wsOrd = wb.addWorksheet('발주월별(선택월)');
-    const ordHeaders = hasAnyCarryOver ? ['품목', '이월합계', ...selectedMonths.map(m => `${m.substring(2,4)}년 ${parseInt(m.substring(5,7),10)}월`)] : ['품목', ...selectedMonths.map(m => `${m.substring(2,4)}년 ${parseInt(m.substring(5,7),10)}월`)];
-    wsOrd.addRow(ordHeaders);
-    wsOrd.views = [{state:'frozen', xSplit: hasAnyCarryOver ? 2 : 1, ySplit:1}];
-    ITEMS.forEach(r=>{
-      const carryOverTotal = getCarryOverData(r, selectedMonths);
-      const monthlyVals = selectedMonths.map(m => sumMonth(r, 'orders', m, r.tb, true));
-      if(carryOverTotal || monthlyVals.some(v=>v)){
-        const rowData = hasAnyCarryOver ? [r.label, carryOverTotal, ...monthlyVals] : [r.label, ...monthlyVals];
-        const added=wsOrd.addRow(rowData);
-        if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
-        if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
-        if(hasAnyCarryOver && carryOverTotal > 0) added.getCell(2).font = {color:{argb:'FF78716C'}, bold:true};
-      }
-    });
-
-    const wsRecv = wb.addWorksheet('입고_날짜별(전체)');
-    const monthToDays = {};
-    allMonths.forEach(m => {
-      const days = new Set();
-      ITEMS.forEach(r => Object.values(((all[r.key]||{}).receipts||{})[m]||{}).forEach(e => e.day && days.add(e.day)));
-      monthToDays[m] = Array.from(days).sort((a,b)=>a-b);
-    });
-const recvHeaders = ['품목', ...allMonths.flatMap(m => monthToDays[m].map(d=>`${parseInt(m.slice(5,7),10)}월 ${d}일`))];
-
-    wsRecv.addRow(recvHeaders);
-    wsRecv.views = [{state:'frozen', xSplit:1, ySplit:1}];
-    ITEMS.forEach(r => {
-      const vals = allMonths.flatMap(m => monthToDays[m].map(d => {
-        const node = ((all[r.key]||{}).receipts||{})[m]||{};
-        return Object.values(node).filter(e => e.day==d && (r.tb ? e.topBottom===r.tb : true)).reduce((s,e)=>s+toInt(e.qty),0);
-      }));
-      if(vals.some(v=>v)) {
-        const added = wsRecv.addRow([r.label, ...vals]);
-        // ▼▼▼ 누락되었던 '입고' 시트의 색상 스타일링 로직 복원 ▼▼▼
-        if(r.group==='normal') added.getCell(1).font={color:{argb:'FF16A34A'},bold:true};
-        if(r.group==='ortho')  added.getCell(1).font={color:{argb:'FF2563EB'},bold:true};
-      }
-    });
-    
-    [wsSum, wsOrd, wsRecv].forEach(ws => {
-      ws.getRow(1).eachCell(c=>{ c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1E293B'}}; c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={horizontal:'center'}; });
-      for(let r=2; r<=ws.rowCount; r++){ ws.getRow(r).eachCell((c,ci)=>{ c.alignment={vertical:'middle',horizontal:(ci===1?'left':'center')}; }); }
-      ws.columns.forEach(col => {
-        let maxLen = 0;
-        col.eachCell({includeEmpty:true}, cell => maxLen=Math.max(maxLen, (cell.value||'').toString().length));
-        col.width = Math.max(10, maxLen + 2);
-      });
-      ws.getColumn(1).width = 11.88;
-    });
-
-    const buf = await wb.xlsx.writeBuffer();
-    saveAs(new Blob([buf]), `구매현황(${new Date().getFullYear().toString().slice(2)}년).xlsx`);
-
-  } catch (e) {
-    console.error("엑셀 생성 실패:", e);
-    showToast("엑셀 생성 실패: 다시 시도해주세요.");
-  } finally {
-    hideLoader();
-  }
-}
-
+    }
     /* ▷▷▷ 엑셀 내보내기 종료 ▷▷▷ */
   </script>
   </body>
