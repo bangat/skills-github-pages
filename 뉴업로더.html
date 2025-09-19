@@ -262,17 +262,33 @@ async function deleteAndUpload(section, sheetName, year) {
         addUpdates[path] = data;
     }
 
+  /* ○○○○ deleteAndUpload fetch 수정 시작 ○○○○ */
     try {
+        // Firebase 인증 ID 토큰 가져오기
+        let token = null;
+        if (firebase && firebase.auth) {
+            const user = firebase.auth().currentUser;
+            if (user) {
+                token = await user.getIdToken();
+            }
+        }
+
+        const headers = { "Content-Type": "application/json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
         const addRes = await fetch('https://updatepurchasedata-t7cbh6uw5a-uc.a.run.app', {
             method: 'POST',
-            headers: { "Content-Type": "application/json" },
+            headers,
             body: JSON.stringify({ updates: addUpdates })
         });
+
         if (!addRes.ok) throw new Error(`데이터 업로드 실패 ${addRes.status}`);
         log(`> '${sheetName}' 데이터 처리 완료.`, 'ok');
     } catch (error) {
         throw new Error(`데이터 업로드 중 오류: ${error.message}`);
     }
+/* ○○○○ deleteAndUpload fetch 수정 종료 ○○○○ */
+
 
     return result.year || year;
 }
