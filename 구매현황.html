@@ -164,22 +164,18 @@
     }
     .month-title-editable { display: flex; align-items: center; gap: 6px; }
     .month-checkbox { margin-left: auto; cursor: pointer; width: 18px; height: 18px; }
-
     .payment-status-wrapper {
-    margin-left: auto; /* 체크박스와 텍스트를 오른쪽 끝으로 밀어냄 */
-    display: flex;
-    align-items: center;
-    gap: 6px; /* 체크박스와 텍스트 사이 간격 */
-}
-.payment-status-wrapper label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--muted);
-    cursor: pointer;
-    user-select: none; /* 텍스트가 선택되지 않도록 함 */
-}
+      margin-left: auto; display: flex; align-items: center; gap: 6px;
+    }
+    .payment-status-wrapper label {
+      font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; user-select: none;
+    }
+    /* ✅✅✅ 가독성 개선용 스타일 추가 ✅✅✅ */
+    .tbl-patient-orders th:first-child { text-align: left; padding-left: 10px; width: 30%; }
+    .tbl-patient-orders td:first-child { text-align: left; padding-left: 10px; font-weight: 800; }
+    .tbl-patient-orders input { width: 100%; }
   </style>
-  </head>
+</head>
 
 <body>
   <div id="loader" class="loader-overlay"><div class="spinner"></div><p id="loaderMsg">서버와 연결중…</p></div>
@@ -536,27 +532,38 @@
         addInputListeners('sheet');
     }
 
+    // ✅✅✅ 가독성 개선이 적용된 함수 ✅✅✅
     function renderPatientOrders(container) {
-        if(state.patientKind==='hip'){
-          container.innerHTML = `<div class="table-wrap"><table><thead><tr><th>품목</th><th>수량</th></tr></thead><tbody>
-          ${HIP_NEW.map(n=>`<tr><td>${n}</td><td><input type="number" min="0" inputmode="numeric" class="q-input" data-group="hip" data-item="${n}" value="${state.draftOrders.hip.get(n)||''}"/></td></tr>`).join('')}
-          </tbody></table></div>`;
-          addInputListeners('hip');
-        }else{
-          const sizes = state.patientKind==='normal' ? NORMAL_SIZES : ORTHO_SIZES;
-          const kindLabel = state.patientKind==='normal' ? '일반' : '정형';
-          const colorCls  = state.patientKind==='normal' ? 'txt-normal' : 'txt-ortho';
-          const rows = [];
-          sizes.forEach(sz=>{
-            ['상의','하의'].forEach(tb=>{
-              const itemKey = `${state.patientKind === 'normal' ? '일반환의' : '정형환의'}${sz}__${tb}`;
-              rows.push({label: `${kindLabel}${tb}${sz}`, key:itemKey});
-            });
-          });
-          container.innerHTML = `<div class="table-wrap"><table><thead><tr><th>품목</th><th>수량</th></tr></thead><tbody>
-          ${rows.map(r=>`<tr><td class="${colorCls}">${r.label}</td><td><input type="number" min="0" inputmode="numeric" class="q-input" data-group="patient" data-item="${r.key}" value="${state.draftOrders.patient.get(r.key)||''}"/></td></tr>`).join('')}
-          </tbody></table></div>`;
-          addInputListeners('patient');
+        if (state.patientKind === 'hip') {
+            container.innerHTML = `<div class="table-wrap"><table><thead><tr><th>품목</th><th>수량</th></tr></thead><tbody>
+            ${HIP_NEW.map(n => `<tr><td>${n}</td><td><input type="number" min="0" inputmode="numeric" class="q-input" data-group="hip" data-item="${n}" value="${state.draftOrders.hip.get(n) || ''}"/></td></tr>`).join('')}
+            </tbody></table></div>`;
+            addInputListeners('hip');
+        } else {
+            const sizes = state.patientKind === 'normal' ? NORMAL_SIZES : ORTHO_SIZES;
+            const kindLabel = state.patientKind === 'normal' ? '일반환의' : '정형환의';
+            const colorCls = state.patientKind === 'normal' ? 'txt-normal' : 'txt-ortho';
+            const baseItemName = state.patientKind === 'normal' ? '일반환의' : '정형환의';
+
+            const tableHeader = `<thead><tr><th class="${colorCls}">${kindLabel}</th><th>상의</th><th>하의</th></tr></thead>`;
+
+            const tableRows = sizes.map(sz => {
+                const topKey = `${baseItemName}${sz}__상의`;
+                const bottomKey = `${baseItemName}${sz}__하의`;
+                const topValue = state.draftOrders.patient.get(topKey) || '';
+                const bottomValue = state.draftOrders.patient.get(bottomKey) || '';
+
+                return `
+                    <tr>
+                        <td>${sz}</td>
+                        <td><input type="number" min="0" inputmode="numeric" class="q-input" data-group="patient" data-item="${topKey}" value="${topValue}" /></td>
+                        <td><input type="number" min="0" inputmode="numeric" class="q-input" data-group="patient" data-item="${bottomKey}" value="${bottomValue}" /></td>
+                    </tr>
+                `;
+            }).join('');
+
+            container.innerHTML = `<div class="table-wrap"><table class="tbl-patient-orders">${tableHeader}<tbody>${tableRows}</tbody></table></div>`;
+            addInputListeners('patient');
         }
     }
 
@@ -570,107 +577,107 @@
         }));
     }
 
-function renderOrderSummary(container){
-  const data = state.snapshot||{};
-  const allMonths = collectAllMonths(data);
-  const monthsDesc = sortDescYM(allMonths);
-  const ITEMS = buildItems(data);
+    function renderOrderSummary(container){
+      const data = state.snapshot||{};
+      const allMonths = collectAllMonths(data);
+      const monthsDesc = sortDescYM(allMonths);
+      const ITEMS = buildItems(data);
 
-  const getCarryOverData = (item, months) => {
-      let carryOverQty = 0;
-      months.forEach(m => {
-          const orders = (((data[item.key] || {}).orders || {})[m]) || {};
-          Object.values(orders).forEach(order => {
-              if (order.note && order.note.includes('이월분') && (item.tb ? order.topBottom === item.tb : true)) {
-                  carryOverQty += toInt(order.qty);
-              }
+      const getCarryOverData = (item, months) => {
+          let carryOverQty = 0;
+          months.forEach(m => {
+              const orders = (((data[item.key] || {}).orders || {})[m]) || {};
+              Object.values(orders).forEach(order => {
+                  if (order.note && order.note.includes('이월분') && (item.tb ? order.topBottom === item.tb : true)) {
+                      carryOverQty += toInt(order.qty);
+                  }
+              });
           });
-      });
-      return carryOverQty;
-  };
+          return carryOverQty;
+      };
 
-  const sumMonth=(name,month,tb='',kind='orders', excludeCarryOver = false)=>{
-    const node=(((data[name]||{})[kind]||{})[month])||{};
-    return Object.values(node)
-        .filter(e => {
-            const tbMatch = tb ? (e.topBottom||'')===tb : true;
-            const carryOverMatch = excludeCarryOver ? !(e.note && e.note.includes('이월분')) : true;
-            return tbMatch && carryOverMatch;
-        })
-        .reduce((s,e)=> s+toInt(e.qty),0);
-  };
+      const sumMonth=(name,month,tb='',kind='orders', excludeCarryOver = false)=>{
+        const node=(((data[name]||{})[kind]||{})[month])||{};
+        return Object.values(node)
+            .filter(e => {
+                const tbMatch = tb ? (e.topBottom||'')===tb : true;
+                const carryOverMatch = excludeCarryOver ? !(e.note && e.note.includes('이월분')) : true;
+                return tbMatch && carryOverMatch;
+            })
+            .reduce((s,e)=> s+toInt(e.qty),0);
+      };
 
-  const parts=[];
-  const selectedMonths = Array.from(state.selectedMonths);
-  const hasAnyCarryOver = ITEMS.some(item => getCarryOverData(item, selectedMonths) > 0);
+      const parts=[];
+      const selectedMonths = Array.from(state.selectedMonths);
+      const hasAnyCarryOver = ITEMS.some(item => getCarryOverData(item, selectedMonths) > 0);
 
-  const summaryRows = ITEMS.map(r => {
-    const carryOver = getCarryOverData(r, selectedMonths);
-    const newOrders = selectedMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'orders', true), 0);
-    const totalOrders = carryOver + newOrders;
-    const totalReceipts = allMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'receipts'), 0);
-    const unfulfilled = totalOrders - totalReceipts;
+      const summaryRows = ITEMS.map(r => {
+        const carryOver = getCarryOverData(r, selectedMonths);
+        const newOrders = selectedMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'orders', true), 0);
+        const totalOrders = carryOver + newOrders;
+        const totalReceipts = allMonths.reduce((acc, m) => acc + sumMonth(r.key, m, r.tb, 'receipts'), 0);
+        const unfulfilled = totalOrders - totalReceipts;
 
-    if (!totalOrders && !totalReceipts) return '';
+        if (!totalOrders && !totalReceipts) return '';
 
-    const color = r.group === 'normal' ? 'txt-normal' : (r.group === 'ortho' ? 'txt-ortho' : '');
-    const negCls = unfulfilled < 0 ? 'neg' : '';
-    let rowHtml = `<tr class="summary-row"><td class="${color}">${r.label}</td>`;
-    if (hasAnyCarryOver) rowHtml += `<td style="color:#78716C;">${carryOver}</td>`;
-    rowHtml += `<td>${newOrders}</td>`;
-    if (hasAnyCarryOver) rowHtml += `<td>${totalOrders}</td>`;
-    rowHtml += `<td>${totalReceipts}</td><td class="${negCls}">${unfulfilled}</td></tr>`;
-    return rowHtml;
-  }).join('');
+        const color = r.group === 'normal' ? 'txt-normal' : (r.group === 'ortho' ? 'txt-ortho' : '');
+        const negCls = unfulfilled < 0 ? 'neg' : '';
+        let rowHtml = `<tr class="summary-row"><td class="${color}">${r.label}</td>`;
+        if (hasAnyCarryOver) rowHtml += `<td style="color:#78716C;">${carryOver}</td>`;
+        rowHtml += `<td>${newOrders}</td>`;
+        if (hasAnyCarryOver) rowHtml += `<td>${totalOrders}</td>`;
+        rowHtml += `<td>${totalReceipts}</td><td class="${negCls}">${unfulfilled}</td></tr>`;
+        return rowHtml;
+      }).join('');
 
-  const summaryHeaders = ['품목'];
-  if (hasAnyCarryOver) summaryHeaders.push('이월');
-  summaryHeaders.push('신규');
-  if (hasAnyCarryOver) summaryHeaders.push('총 발주');
-  summaryHeaders.push('입고', '미입고');
+      const summaryHeaders = ['품목'];
+      if (hasAnyCarryOver) summaryHeaders.push('이월');
+      summaryHeaders.push('신규');
+      if (hasAnyCarryOver) summaryHeaders.push('총 발주');
+      summaryHeaders.push('입고', '미입고');
 
-  parts.push(`
-    <div class="sec-title">전체 요약 (발주:선택월 / 입고:전체)</div>
-    <div class="table-wrap"><table class="tbl-summary">
-    <thead><tr><th>${summaryHeaders.join('</th><th>')}</th></tr></thead>
-    <tbody>${summaryRows}</tbody>
-    </table></div>`);
-
-  monthsDesc.forEach(m=>{
-    const rowsM = ITEMS.map(r => {
-      const o = sumMonth(r.key,m,r.tb,'orders');
-      const i = sumMonth(r.key,m,r.tb,'receipts');
-      if (!o && !i) return '';
-      const n=o-i; 
-      const negCls = n<0 ? 'neg' : '';
-      const color = r.group==='normal' ? 'txt-normal' : (r.group==='ortho' ? 'txt-ortho' : '');
-      return `<tr class="editable-row" data-month="${m}" data-item-key="${r.key}" data-item-label="${r.label}" data-item-tb="${r.tb}"><td class="${color}">${r.label}</td><td>${o}</td><td>${i}</td><td class="${negCls}">${n}</td></tr>`;
-    }).join('');
-
-    if(rowsM){
-      const year = m.substring(2, 4); 
-      const month = parseInt(m.substring(5, 7), 10);
-      const isChecked = state.selectedMonths.has(m) ? 'checked' : '';
       parts.push(`
-        <div class="sec-title month-title-editable" data-month="${m}">
-          <div style="cursor: pointer; display: flex; align-items: center; gap: 6px;" title="${year}년 ${month}월 상세 내역 수정">
-          <span>${year}년 ${month}월 발주</span><i data-feather="edit-2" style="width:14px; height:14px;"></i>
-          </div>
-          
-          <div class="payment-status-wrapper">
-            <input type="checkbox" class="month-checkbox" id="chk-${m}" data-month="${m}" ${isChecked} title="요약에 포함/제외">
-            <label for="chk-${m}">결제완료</label>
-          </div>
-
-        </div>
+        <div class="sec-title">전체 요약 (발주:선택월 / 입고:전체)</div>
         <div class="table-wrap"><table class="tbl-summary">
-        <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
-        <tbody>${rowsM}</tbody>
+        <thead><tr><th>${summaryHeaders.join('</th><th>')}</th></tr></thead>
+        <tbody>${summaryRows}</tbody>
         </table></div>`);
+
+      monthsDesc.forEach(m=>{
+        const rowsM = ITEMS.map(r => {
+          const o = sumMonth(r.key,m,r.tb,'orders');
+          const i = sumMonth(r.key,m,r.tb,'receipts');
+          if (!o && !i) return '';
+          const n=o-i; 
+          const negCls = n<0 ? 'neg' : '';
+          const color = r.group==='normal' ? 'txt-normal' : (r.group==='ortho' ? 'txt-ortho' : '');
+          return `<tr class="editable-row" data-month="${m}" data-item-key="${r.key}" data-item-label="${r.label}" data-item-tb="${r.tb}"><td class="${color}">${r.label}</td><td>${o}</td><td>${i}</td><td class="${negCls}">${n}</td></tr>`;
+        }).join('');
+
+        if(rowsM){
+          const year = m.substring(2, 4); 
+          const month = parseInt(m.substring(5, 7), 10);
+          const isChecked = state.selectedMonths.has(m) ? 'checked' : '';
+          parts.push(`
+            <div class="sec-title month-title-editable" data-month="${m}">
+              <div style="cursor: pointer; display: flex; align-items: center; gap: 6px;" title="${year}년 ${month}월 상세 내역 수정">
+              <span>${year}년 ${month}월 발주</span><i data-feather="edit-2" style="width:14px; height:14px;"></i>
+              </div>
+              
+              <div class="payment-status-wrapper">
+                <input type="checkbox" class="month-checkbox" id="chk-${m}" data-month="${m}" ${isChecked} title="요약에 포함/제외">
+                <label for="chk-${m}">결제완료</label>
+              </div>
+
+            </div>
+            <div class="table-wrap"><table class="tbl-summary">
+            <thead><tr><th>품목</th><th>발주량</th><th>입고량</th><th>미입고</th></tr></thead>
+            <tbody>${rowsM}</tbody>
+            </table></div>`);
+        }
+      });
+      container.innerHTML = parts.join('');
     }
-  });
-  container.innerHTML = parts.join('');
-}
 
     async function renderReceiptsUI(container){
       const data = state.snapshot||{};
@@ -945,8 +952,6 @@ function renderOrderSummary(container){
         ITEMS.forEach(item => {
           const itemData = state.snapshot[item.key] || {};
 
-          // ✅✅✅✅✅  수정된 부분 시작 ✅✅✅✅✅
-          // orders와 receipts를 가져올 때, 현재 item의 상/하의(tb) 정보와 일치하는 데이터만 필터링합니다.
           const orders = Object.entries((itemData.orders || {})[month] || {})
             .filter(([id, data]) => item.tb ? data.topBottom === item.tb : true)
             .map(([id, data]) => ({ id, type: 'orders', itemKey: item.key, itemLabel: item.label, ...data }));
@@ -954,7 +959,6 @@ function renderOrderSummary(container){
           const receipts = Object.entries((itemData.receipts || {})[month] || {})
             .filter(([id, data]) => item.tb ? data.topBottom === item.tb : true)
             .map(([id, data]) => ({ id, type: 'receipts', itemKey: item.key, itemLabel: item.label, ...data }));
-          // ✅✅✅✅✅  수정된 부분 종료 ✅✅✅✅✅
 
           allTransactions.push(...orders, ...receipts);
         });
@@ -1180,5 +1184,5 @@ function renderOrderSummary(container){
     }
     /* ▷▷▷ 엑셀 내보내기 종료 ▷▷▷ */
   </script>
-  </body>
+</body>
 </html>
