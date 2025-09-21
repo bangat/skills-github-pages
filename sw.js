@@ -1,72 +1,60 @@
-// sw.js (최종 수정본)
+// sw.js
+/* ===== 1) FCM (변경 없음) ===== */
+importScripts('https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.6.11/firebase-messaging-compat.js');
 
-// ===== 1) FCM 라이브러리 로드 방식 및 버전 변경 (v10 모듈 방식) =====
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getMessaging, onBackgroundMessage } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
-
-// ===== 2) Firebase 초기화 방식 변경 (v10 모듈 방식) =====
-const firebaseConfig = {
+firebase.initializeApp({
   apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
   authDomain: "hallymlinen.firebaseapp.com",
   projectId: "hallymlinen",
   messagingSenderId: "867775830688",
   appId: "1:867775830688:web:cef3ed4e70ae9818f347c5"
-};
+});
 
-const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
+const messaging = firebase.messaging();
 
-// ===== 3) 스코프-상대 BASE 경로 계산 (기존과 동일) =====
+/* ===== 2) 스코프-상대 BASE 경로 계산 (핵심) ===== */
 const SCOPE_URL = new URL(self.registration.scope);
 const BASE_PATH = SCOPE_URL.pathname.endsWith('/')
   ? SCOPE_URL.pathname
-  : SCOPE_URL.pathname + '/';
+  : SCOPE_URL.pathname + '/';    // ex) '/skills-github-pages/'
 
-// ===== 4) FCM 백그라운드 알림 핸들러 변경 (v10 모듈 방식) =====
-onBackgroundMessage(messaging, (payload) => {
-  // FCM이 webpush.notification으로 자동 표시하므로 여기서는 콘솔 로그만 남깁니다.
-  try { console.log("[SW] Background message received:", payload); } catch {}
+/* ===== 3) FCM 백그라운드 알림: 아이콘/열URL도 BASE 기준으로 ===== */
+messaging.onBackgroundMessage((payload) => {
+ // FCM이 webpush.notification으로 자동 표시하므로 여기서는 표시하지 않음
+  try { console.log("[SW] bg message", payload); } catch {}
 });
 
-// ===== 5) 알림 클릭 핸들러 (기존과 거의 동일) =====
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  
-  // payload.data.url 또는 payload.fcmOptions.link 에서 URL을 가져옵니다.
-  const relativeUrl = event.notification?.data?.url || '';
-  const fullUrl = relativeUrl.startsWith('http') ? relativeUrl : (BASE_PATH + relativeUrl.replace(/^\//,''));
-
+  const rel = event.notification?.data?.url || '';
+  const url = rel.startsWith('http') ? rel : (BASE_PATH + rel.replace(/^\//,''));
   event.waitUntil((async () => {
     const allClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
-    
-    // 이미 열려있는 창이 있으면 포커스
     for (const client of allClients) {
-      const clientUrl = new URL(client.url);
-      const targetUrl = new URL(fullUrl);
-      if (clientUrl.href === targetUrl.href && 'focus' in client) {
+      if (client.url === url && 'focus' in client) {
         return client.focus();
       }
     }
-    // 없으면 새 창으로 열기
-    if (clients.openWindow) return clients.openWindow(fullUrl);
+    if (clients.openWindow) return clients.openWindow(url);
   })());
 });
 
-/* ================================================================== */
-/* ===== 아래의 PWA 오프라인 캐싱 관련 코드는 수정할 필요 없습니다. ===== */
-/* ================================================================== */
 
-const SW_VERSION   = 'v2025-09-09-02';
+/* ===== 4) 캐시 버전 ===== */
+const SW_VERSION   = 'v2025-09-09-02';      // 배포 때만 변경
 const STATIC_CACHE = `static-${SW_VERSION}`;
 
+/* ===== 5) 프리캐시: 전부 BASE 기준 경로로 ===== */
 const PRECACHE = [
-  `${BASE_PATH}`,
+  `${BASE_PATH}`,                   // 앱 루트
   `${BASE_PATH}index.html`,
   `${BASE_PATH}방명록.html`,
   `${BASE_PATH}manifest.json`,
   `${BASE_PATH}icons/apple-touch-icon.png`,
 ];
 
+/* ===== 6) 설치/활성화 ===== */
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
@@ -82,6 +70,7 @@ self.addEventListener('activate', (event) => {
   })());
 });
 
+/* ===== 7) 네비게이션: 네트워크 우선, 폴백도 BASE 기준 ===== */
 async function handleNavigation(request) {
   try {
     const fresh = await fetch(request, { cache: 'no-store' });
@@ -94,13 +83,14 @@ async function handleNavigation(request) {
   }
 }
 
+/* ===== 8) 정적 에셋: S-W-R, 동일 출처만 캐시 ===== */
 function isSameOrigin(req) {
   try { return new URL(req.url).origin === self.location.origin; }
   catch { return false; }
 }
 
 async function handleAsset(request) {
-  if (!isSameOrigin(request)) return fetch(request);
+  if (!isSameOrigin(request)) return fetch(request); // 외부 리소스는 캐시X
   const cache = await caches.open(STATIC_CACHE);
   const cached = await cache.match(request);
   const fetchPromise = fetch(request).then(res => {
@@ -113,6 +103,7 @@ async function handleAsset(request) {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
+  // 확장 스킴/범위 밖 요청은 패스
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
@@ -122,3 +113,10 @@ self.addEventListener('fetch', (event) => {
   }
   event.respondWith(handleAsset(req));
 });
+
+
+
+
+
+
+
