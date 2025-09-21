@@ -1262,12 +1262,11 @@ window.addEventListener("unhandledrejection", e=>{
 
 </script>
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  // 이 코드로 교체하세요
-import { getDatabase, ref, set, get, push, query, orderByChild, startAt, endAt, onValue, off } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-
+  import { getDatabase, ref, set, get, push, query, orderByChild, startAt, endAt, onValue, off } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  // ✨ 아래 import 항목들을 추가해주세요.
+  import { getMessaging, getToken, isSupported, onMessage as onFcmMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
@@ -1280,15 +1279,16 @@ import { getDatabase, ref, set, get, push, query, orderByChild, startAt, endAt, 
     measurementId: "G-T02ZFK18L3"
   };
 
+  const app = initializeApp(firebaseConfig);
+  const rtdb = getDatabase(app);
+  const auth = getAuth(app);
+  // ✨ messaging 인스턴스를 초기화합니다.
+  const messaging = getMessaging(app);
 
-      const app = initializeApp(firebaseConfig);
-      const rtdb = getDatabase(app);
-      const auth = getAuth(app); // [추가] Auth 서비스 초기화
-
-      signInAnonymously(auth).catch((error) => {
-        console.error("Anonymous sign-in failed:", error);
-        alert("데이터베이스 접근 권한을 얻는 데 실패했습니다. 새로고침 해주세요.");
-      });
+  signInAnonymously(auth).catch((error) => {
+    console.error("Anonymous sign-in failed:", error);
+    alert("데이터베이스 접근 권한을 얻는 데 실패했습니다. 새로고침 해주세요.");
+  });
 
   function dayStart(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
   function dayEndInclusiveMs(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59,999).getTime(); }
@@ -1312,10 +1312,113 @@ import { getDatabase, ref, set, get, push, query, orderByChild, startAt, endAt, 
     onValue(qy, cb);
     _liveRef = qy; _liveCb = cb;
   }
+  
+  // ===============================================================
+  // ✨ 1. [수정] 푸시 알림 토큰 등록 함수 (별도 함수로 분리)
+  // ===============================================================
+  async function registerPushToken() {
+    try {
+      if (!(await isSupported())) {
+        console.log("[push] This browser does not support push notifications.");
+        return;
+      }
+      
+      const swUrl = 'sw.js';
+      const swReg = await navigator.serviceWorker.register(swUrl).then(() => navigator.serviceWorker.ready);
+      if (!swReg) {
+          console.warn('[SW] Service worker not ready.');
+          return;
+      }
+
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        console.log('[push] Notification permission not granted.');
+        return;
+      }
+      
+      const VAPID_KEY = 'BDUJY48GaGacu_zkXXSFXAtPRQGn20A1-MqRUDtjgXqEnSi_XCpJo8x3ykmeOpeD76zzFh_vo-xUpe4c5S-iw';
+      const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
+
+      if (!token) {
+        console.warn('[push] Could not get FCM token.');
+        return;
+      }
+      
+      const uid = localStorage.getItem("linen/pushUid") || crypto.randomUUID();
+      localStorage.setItem("linen/pushUid", uid);
+      
+      // 현재 선택된 병동 정보를 명확하게 가져옵니다.
+      const currentWard = (window.state?.ward || localStorage.getItem("linen/ward") || "").trim();
+      
+      // ✨ 병동 정보가 없는 경우, 사용자에게 알리고 등록을 중단합니다.
+      if (!currentWard) {
+        console.log("[push] Ward not selected. Skipping token registration.");
+        return;
+      }
+
+      const tokenData = {
+          token,
+          ward: currentWard, // 사용자의 현재 병동 정보를 함께 저장
+          ts: Date.now(),
+          ua: navigator.userAgent || ""
+      };
+      
+      await set(ref(rtdb, `pushTokens/_ALL/${uid}`), tokenData);
+      console.log('[push] Token and ward info stored successfully:', { uid, ward: currentWard });
+
+    } catch (e) {
+        console.error('[push] Token collection failed:', e);
+    }
+  }
+
+  // ✨ [추가] 앱이 포그라운드에 있을 때 푸시 메시지 수신 처리
+  onFcmMessage(messaging, (payload) => {
+      console.log('[FCM] Message received in foreground.', payload);
+      const { title, body } = payload.notification;
+      // 간단한 브라우저 알림을 띄워줍니다.
+      if (title && body) {
+        new Notification(title, { body, icon: "icons/icon-192.png" });
+      }
+  });
+
+
+  // ✨ 2. [수정] 기존 heSave.onclick 핸들러 수정
+  // 병동 설정을 저장하는 버튼의 로직에 registerPushToken() 호출 코드를 추가합니다.
+  // window.addEventListener("DOMContentLoaded", ...) 블록 안에 있는 heSave.onclick을 찾아서 교체하세요.
+  const heSaveButton = document.getElementById('heSave');
+  if (heSaveButton) {
+    heSaveButton.onclick = ()=>{
+      const selectedWard = el("#wardSelect").value || "";
+      state.ward = selectedWard.toString().trim();
+      localStorage.setItem(LS.ward, state.ward);
+
+      // 병동 선택 직후에는 세션키, 오늘키 삭제 → 다시 뜨게 보장
+      try {
+        const today = new Date().toISOString().slice(0,10);
+        sessionStorage.removeItem(`seenNotices/${today}/${state.ward}`);
+        localStorage.removeItem(`dontShowToday/${today}/${state.ward}`);
+      } catch(_) {}
+
+      closeModal("#headerEditModal");
+      syncMiniHeader();
+
+      // ✨ 병동 정보가 성공적으로 저장된 후, 푸시 토큰 정보를 다시 등록/갱신합니다.
+      registerPushToken();
+
+      if (typeof window.maybeShowNotices === "function") {
+        setTimeout(maybeShowNotices, 100);
+      }
+    };
+  }
+
+  // ✨ 3. [수정] 페이지가 처음 로드될 때도 푸시 토큰 등록 시도
+  // window.addEventListener("DOMContentLoaded", ...) 블록 맨 아래에 추가합니다.
+  // 페이지가 로드되고 모든 UI가 준비된 후에 실행됩니다.
+  registerPushToken();
+
 
   window.__fb = { saveLogsToRTDB, startStatsLiveWatcher };
-</script>
-<script>
+</script><script>
 /* === 전역 상수 및 설정 === */
 const REPO_SLUG = "bangat/linenward";
 const APK_NAME = "WardLinen.apk";
