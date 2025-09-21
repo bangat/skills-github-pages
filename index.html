@@ -1261,13 +1261,13 @@ window.addEventListener("unhandledrejection", e=>{
 /* ▷▷▷ unhandledrejection-audio-filter 종료 ▷▷▷ */
 
 </script>
-
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getDatabase, ref, set, get, push, query, orderByChild, startAt, endAt, onValue, off } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
   import { getMessaging, getToken, isSupported, onMessage as onFcmMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
+  // ===== 1. hallymlinen 프로젝트의 firebaseConfig (기존과 동일) =====
   const firebaseConfig = {
     apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
     authDomain: "hallymlinen.firebaseapp.com",
@@ -1289,6 +1289,7 @@ window.addEventListener("unhandledrejection", e=>{
     alert("데이터베이스 접근 권한을 얻는 데 실패했습니다. 새로고침 해주세요.");
   });
 
+  // ===== 2. 기존 유틸리티 함수들 (수정 없음) =====
   function dayStart(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
   function dayEndInclusiveMs(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59,999).getTime(); }
 
@@ -1312,35 +1313,34 @@ window.addEventListener("unhandledrejection", e=>{
     _liveRef = qy; _liveCb = cb;
   }
 
-  // ✨ [최종] 푸시 알림 등록 함수 (새 VAPID 키 적용)
- async function registerPushToken() {
-  try {
-    if (!(await isSupported())) {
-      console.log("[push] This browser does not support push notifications.");
-      return;
-    }
-    
-    const swUrl = 'sw.js';
-    const swReg = await navigator.serviceWorker.register(swUrl).then(() => navigator.serviceWorker.ready);
-    if (!swReg) {
-        console.warn('[SW] Service worker not ready.');
+  // ===== 3. hallymlinen 프로젝트의 최종 registerPushToken 함수 =====
+  async function registerPushToken() {
+    try {
+      if (!(await isSupported())) {
+        console.log("[push] This browser does not support push notifications.");
         return;
-    }
-
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      console.log('[push] Notification permission not granted.');
-      return;
-    }
-
-    // ✨ [추가] 병동 정보가 있는지 먼저 확인합니다.
-    const currentWard = (window.state?.ward || localStorage.getItem("linen/ward") || "").trim();
-    if (!currentWard) {
-      console.log("[push] Ward not selected. Skipping token registration for now.");
-      return; // 병동 정보가 없으면 여기서 함수를 중단합니다.
-    }
+      }
       
-      // ✨ 새로 발급받은 VAPID 키로 교체했습니다.
+      const swUrl = 'sw.js';
+      const swReg = await navigator.serviceWorker.register(swUrl).then(() => navigator.serviceWorker.ready);
+      if (!swReg) {
+          console.warn('[SW] Service worker not ready.');
+          return;
+      }
+
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        console.log('[push] Notification permission not granted.');
+        return;
+      }
+
+      const currentWard = (window.state?.ward || localStorage.getItem("linen/ward") || "").trim();
+      if (!currentWard) {
+        console.log("[push] Ward not selected. Skipping token registration for now.");
+        return;
+      }
+      
+      // ✨✨✨ 알려주신 hallymlinen 프로젝트의 VAPID 키로 수정했습니다 ✨✨✨
       const VAPID_KEY = 'BM1IAg1Fk_z1-pe4NZaBE4-V7xAeq8Iyi5fRtL0AuJpKOd-rsg6d1nxJ4_QuVxkaE11XfaSlL6gFoRDla931Lkw';
       
       const token = await getToken(messaging, {
@@ -1348,30 +1348,30 @@ window.addEventListener("unhandledrejection", e=>{
         serviceWorkerRegistration: swReg
       });
 
-       if (!token) {
-      console.warn('[push] Could not get FCM token.');
-      return;
-    }
-    
-    const uid = localStorage.getItem("linen/pushUid") || crypto.randomUUID();
-    localStorage.setItem("linen/pushUid", uid);
-    
-    const tokenData = {
-        token,
-        ward: currentWard, // 이제 이 값은 항상 유효한 병동명입니다.
-        ts: Date.now(),
-        ua: navigator.userAgent || ""
-    };
+      if (!token) {
+        console.warn('[push] Could not get FCM token.');
+        return;
+      }
       
-    await set(ref(rtdb, `pushTokens/_ALL/${uid}`), tokenData);
-    console.log('[push] Token and ward info stored successfully:', { uid, ward: currentWard });
+      const uid = localStorage.getItem("linen/pushUid") || crypto.randomUUID();
+      localStorage.setItem("linen/pushUid", uid);
+      
+      const tokenData = {
+          token,
+          ward: currentWard,
+          ts: Date.now(),
+          ua: navigator.userAgent || ""
+      };
+      
+      await set(ref(rtdb, `pushTokens/_ALL/${uid}`), tokenData);
+      console.log('[push] Token and ward info stored successfully:', { uid, ward: currentWard });
 
-  } catch (e) {
-      console.error('[push] Token collection failed:', e);
+    } catch (e) {
+        console.error('[push] Token collection failed:', e);
+    }
   }
-}
 
-  // 앱이 열려있을 때 FCM 메시지 수신 처리
+  // ===== 4. 기존 이벤트 핸들러들 (수정 없음) =====
   onFcmMessage(messaging, (payload) => {
       console.log('[FCM] Message received in foreground.', payload);
       const { title, body } = payload.notification;
@@ -1380,7 +1380,6 @@ window.addEventListener("unhandledrejection", e=>{
       }
   });
 
-  // '저장' 버튼 클릭 시 토큰 재등록
   const heSaveButton = document.getElementById('heSave');
   if (heSaveButton) {
     heSaveButton.onclick = ()=>{
@@ -1396,7 +1395,7 @@ window.addEventListener("unhandledrejection", e=>{
 
       closeModal("#headerEditModal");
       syncMiniHeader();
-      registerPushToken(); // ✨ 저장 시 호출
+      registerPushToken(); // 저장 시 호출
 
       if (typeof window.maybeShowNotices === "function") {
         setTimeout(maybeShowNotices, 100);
@@ -1404,13 +1403,10 @@ window.addEventListener("unhandledrejection", e=>{
     };
   }
   
-  // 페이지가 처음 로드될 때도 토큰 등록 시도
-  registerPushToken(); // ✨ 페이지 로드 시 호출
+  registerPushToken(); // 페이지 로드 시 호출
 
   window.__fb = { saveLogsToRTDB, startStatsLiveWatcher };
 </script>
-
-// 푸쉬알림 종료 
 
 <script>
 /* === 전역 상수 및 설정 === */
@@ -3002,4 +2998,5 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
 
