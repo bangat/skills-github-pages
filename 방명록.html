@@ -218,7 +218,7 @@ async function getMyFcmToken() {
         if (!(await isSupported())) return null;
         const swReg = await window.__swReadyPromise;
         if (!swReg) return null;
-        const VAPID_KEY = 'BDUJY48GaGacu_zkXXSFXAtPRQGn20A1-MqRUDtjgXqEnSi_XCpJo8x3ykmeOpeD76zzFh_vo-xUpe4c5S-iw';
+        const VAPID_KEY = 'BM1IAg1Fk_z1-pe4NZaBE4-V7xAeq8Iyi5fRtL0AuJpKOd-rsg6d1nxJ4_QuVxkaE11XfaSlL6gFoRDla931Lkw';
         const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
         myFcmToken = token;
         return token;
