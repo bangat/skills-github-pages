@@ -1314,62 +1314,83 @@ window.addEventListener("unhandledrejection", e=>{
   }
   
   // ===============================================================
-  // ✨ 1. [수정] 푸시 알림 토큰 등록 함수 (별도 함수로 분리)
-  // ===============================================================
-  async function registerPushToken() {
-    try {
-      if (!(await isSupported())) {
-        console.log("[push] This browser does not support push notifications.");
-        return;
+    // ✨ [수정] 푸시 알림 토큰 등록 함수 (VAPID 키 변환 로직 추가)
+    // ===============================================================
+    async function registerPushToken() {
+      // [추가] VAPID 키를 변환하는 헬퍼 함수
+      function urlBase64ToUint8Array(base64String) {
+        const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding)
+          .replace(/\-/g, "+")
+          .replace(/_/g, "/");
+        const rawData = atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+          outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
       }
-      
-      const swUrl = 'sw.js';
-      const swReg = await navigator.serviceWorker.register(swUrl).then(() => navigator.serviceWorker.ready);
-      if (!swReg) {
+
+      try {
+        if (!(await isSupported())) {
+          console.log("[push] This browser does not support push notifications.");
+          return;
+        }
+
+        const swUrl = 'sw.js';
+        const swReg = await navigator.serviceWorker.register(swUrl).then(() => navigator.serviceWorker.ready);
+        if (!swReg) {
           console.warn('[SW] Service worker not ready.');
           return;
-      }
+        }
 
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
-        console.log('[push] Notification permission not granted.');
-        return;
-      }
-      
-      const VAPID_KEY = 'BDUJY48GaGacu_zkXXSFXAtPRQGn20A1-MqRUDtjgXqEnSi_XCpJo8x3ykmeOpeD76zzFh_vo-xUpe4c5S-iw';
-      const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          console.log('[push] Notification permission not granted.');
+          return;
+        }
 
-      if (!token) {
-        console.warn('[push] Could not get FCM token.');
-        return;
-      }
-      
-      const uid = localStorage.getItem("linen/pushUid") || crypto.randomUUID();
-      localStorage.setItem("linen/pushUid", uid);
-      
-      // 현재 선택된 병동 정보를 명확하게 가져옵니다.
-      const currentWard = (window.state?.ward || localStorage.getItem("linen/ward") || "").trim();
-      
-      // ✨ 병동 정보가 없는 경우, 사용자에게 알리고 등록을 중단합니다.
-      if (!currentWard) {
-        console.log("[push] Ward not selected. Skipping token registration.");
-        return;
-      }
+        // [수정] 기존 VAPID 키 문자열
+        const VAPID_KEY_STRING = 'BDUJY48GaGacu_zkXXSFXAtPRQGn20A1-MqRUDtjgXqEnSi_XCpJo8x3ykmeOpeD76zzFh_vo-xUpe4c5S-iw';
+        
+        // [수정] VAPID 키를 Uint8Array로 직접 변환합니다.
+        const vapidKeyAsArray = urlBase64ToUint8Array(VAPID_KEY_STRING);
+        
+        // [수정] 변환된 키를 사용하여 토큰을 요청합니다.
+        const token = await getToken(messaging, {
+          vapidKey: vapidKeyAsArray, // 문자열 대신 변환된 배열을 전달
+          serviceWorkerRegistration: swReg
+        });
 
-      const tokenData = {
-          token,
-          ward: currentWard, // 사용자의 현재 병동 정보를 함께 저장
-          ts: Date.now(),
-          ua: navigator.userAgent || ""
-      };
-      
-      await set(ref(rtdb, `pushTokens/_ALL/${uid}`), tokenData);
-      console.log('[push] Token and ward info stored successfully:', { uid, ward: currentWard });
+        if (!token) {
+          console.warn('[push] Could not get FCM token.');
+          return;
+        }
 
-    } catch (e) {
-        console.error('[push] Token collection failed:', e);
+        const uid = localStorage.getItem("linen/pushUid") || crypto.randomUUID();
+        localStorage.setItem("linen/pushUid", uid);
+        
+        const currentWard = (window.state?.ward || localStorage.getItem("linen/ward") || "").trim();
+        
+        if (!currentWard) {
+          console.log("[push] Ward not selected. Skipping token registration.");
+          return;
+        }
+
+        const tokenData = {
+            token,
+            ward: currentWard,
+            ts: Date.now(),
+            ua: navigator.userAgent || ""
+        };
+        
+        await set(ref(rtdb, `pushTokens/_ALL/${uid}`), tokenData);
+        console.log('[push] Token and ward info stored successfully:', { uid, ward: currentWard });
+
+      } catch (e) {
+          console.error('[push] Token collection failed:', e);
+      }
     }
-  }
 
   // ✨ [추가] 앱이 포그라운드에 있을 때 푸시 메시지 수신 처리
   onFcmMessage(messaging, (payload) => {
