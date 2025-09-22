@@ -1315,61 +1315,64 @@ window.addEventListener("unhandledrejection", e=>{
 
   // ===== 3. hallymlinen 프로젝트의 최종 registerPushToken 함수 =====
   async function registerPushToken() {
-    try {
-      if (!(await isSupported())) {
-        console.log("[push] This browser does not support push notifications.");
-        return;
-      }
-      
-      const swUrl = 'sw.js';
-      const swReg = await navigator.serviceWorker.register(swUrl).then(() => navigator.serviceWorker.ready);
-      if (!swReg) {
-          console.warn('[SW] Service worker not ready.');
-          return;
-      }
-
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
-        console.log('[push] Notification permission not granted.');
-        return;
-      }
-
-      const currentWard = (window.state?.ward || localStorage.getItem("linen/ward") || "").trim();
-      if (!currentWard) {
-        console.log("[push] Ward not selected. Skipping token registration for now.");
-        return;
-      }
-      
-      // ✨✨✨ 알려주신 hallymlinen 프로젝트의 VAPID 키로 수정했습니다 ✨✨✨
-      const VAPID_KEY = 'BM1IAg1Fk_z1-pe4NZaBE4-V7xAeq8Iyi5fRtL0AuJpKOd-rsg6d1nxJ4_QuVxkaE11XfaSlL6gFoRDla931Lkw';
-      
-      const token = await getToken(messaging, {
-        vapidKey: VAPID_KEY,
-        serviceWorkerRegistration: swReg
-      });
-
-      if (!token) {
-        console.warn('[push] Could not get FCM token.');
-        return;
-      }
-      
-      const uid = localStorage.getItem("linen/pushUid") || crypto.randomUUID();
-      localStorage.setItem("linen/pushUid", uid);
-      
-      const tokenData = {
-          token,
-          ward: currentWard,
-          ts: Date.now(),
-          ua: navigator.userAgent || ""
-      };
-      
-      await set(ref(rtdb, `pushTokens/_ALL/${uid}`), tokenData);
-      console.log('[push] Token and ward info stored successfully:', { uid, ward: currentWard });
-
-    } catch (e) {
-        console.error('[push] Token collection failed:', e);
+  try {
+    if (!(await isSupported())) {
+      console.log("[push] This browser does not support push notifications.");
+      return;
     }
+    
+    const swUrl = 'sw.js';
+    const swReg = await navigator.serviceWorker.register(swUrl).then(() => navigator.serviceWorker.ready);
+    if (!swReg) {
+        console.warn('[SW] Service worker not ready.');
+        return;
+    }
+
+    // ✨ 1. [순서 변경] 병동 정보가 있는지 "가장 먼저" 확인합니다.
+    const currentWard = (window.state?.ward || localStorage.getItem("linen/ward") || "").trim();
+    if (!currentWard) {
+      // 병동 정보가 없으면, 팝업을 띄우지 않고 조용히 함수를 종료합니다.
+      console.log("[push] Ward not selected. Permission will be requested after selection.");
+      return; 
+    }
+
+    // ✨ 2. [순서 변경] 병동이 확인된 경우에만 알림 허용을 요청합니다.
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      console.log('[push] Notification permission not granted.');
+      return;
+    }
+    
+    // hallymlinen 프로젝트의 최종 VAPID 키
+    const VAPID_KEY = 'BM1IAg1Fk_z1-pe4NZaBE4-V7xAeq8Iyi5fRtL0AuJpKOd-rsg6d1nxJ4_QuVxkaE11XfaSlL6gFoRDla931Lkw';
+    
+    const token = await getToken(messaging, {
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: swReg
+    });
+
+    if (!token) {
+      console.warn('[push] Could not get FCM token.');
+      return;
+    }
+    
+    const uid = localStorage.getItem("linen/pushUid") || crypto.randomUUID();
+    localStorage.setItem("linen/pushUid", uid);
+    
+    const tokenData = {
+        token,
+        ward: currentWard,
+        ts: Date.now(),
+        ua: navigator.userAgent || ""
+    };
+    
+    await set(ref(rtdb, `pushTokens/_ALL/${uid}`), tokenData);
+    console.log('[push] Token and ward info stored successfully:', { uid, ward: currentWard });
+
+  } catch (e) {
+      console.error('[push] Token collection failed:', e);
   }
+}
 
   // ===== 4. 기존 이벤트 핸들러들 (수정 없음) =====
   onFcmMessage(messaging, (payload) => {
@@ -2998,5 +3001,6 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
 
 
