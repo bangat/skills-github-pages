@@ -2219,8 +2219,18 @@ async function renderStats(){
       }
       el("#statsWrap").innerHTML = html;
 
-      const daysCount = Math.max(1, Math.round((new Date(e) - new Date(s)) / (1000 * 60 * 60 * 24)) + 1);
-      let sumHtml = `<table class="summaryTable"><thead><tr><th>품목</th><th>전일 사용량</th><th>일평균 사용량</th><th>기간합계</th></tr></thead><tbody>`;
+// 선택된 기간 내에서 실제 데이터가 있고, 일요일이 아닌 날짜만 계산
+const activeDays = new Set();
+rangeSelect(merged, s, e, wardFilter).forEach(L => {
+    const d = new Date(L.ts);
+    if (d.getDay() !== 0) { // 일요일(0)이 아닌 날만
+        activeDays.add(fmtYYYYMMDD(d)); // YYYY-MM-DD 형식으로 추가하여 중복 제거
+    }
+});
+
+const daysCount = Math.max(1, activeDays.size); // 기존 daysCount를 이 코드로 교체
+let sumHtml = `<table class="summaryTable"><thead><tr><th>품목</th><th>전일 사용량</th><th>일평균 사용량</th><th>기간합계</th></tr></thead><tbody>`;
+// ... 이후 코드 ...
       const prevDate = new Date(e + "T00:00:00");
       prevDate.setDate(prevDate.getDate() - 1);
       const prevYmd = `${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,"0")}-${String(prevDate.getDate()).padStart(2,"0")}`;
@@ -3001,6 +3011,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
 
 
 
