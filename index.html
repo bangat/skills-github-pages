@@ -1013,7 +1013,7 @@ html.dark-mode #curWard {
           <option>93</option><option>83</option><option>73</option><option>71</option>
           <option>63</option><option>62</option><option>61</option>
           <option>52</option><option>51</option><option>42</option><option>41</option>
-          <option>기타</option>
+          <option>기타</option><option>린넨실</option>
         </select>
       </div>
       <div id="statsWrap"></div>
@@ -2193,7 +2193,8 @@ async function renderStats(){
             const rankAttr = rank ? `data-rank="${rank}"` : '';
             html += `<tr ${rankAttr}><td><span class="wardName">${w}</span></td>${items.map(i => { const v = (p[w]?.[i] || 0); return `<td data-num="1"><span class="num"${colorStyle(i, v)}>${v}</span></td>`; }).join("")}</tr>`;
         });
- periodTotals=items.map(i=>wards.reduce((a,w)=>a+(p[w]?.[i]||0),0));
+ const wardsForTotal = wards.filter(w => w !== '린넨실'); // 린넨실 제외
+ periodTotals=items.map(i=>wardsForTotal.reduce((a,w)=>a+(p[w]?.[i]||0),0)); // 수정된 배열로 합계 계산
         html+=`<tr class="total-row"><th><span class="wardName">합계</span></th>${periodTotals.map((v,idx)=>`<th data-num="1"><span class="num"${colorStyle(items[idx],v)}>${v}</span></th>`).join("")}</tr>`;
         html+=`</tbody></table>`;
       } else {
@@ -3011,6 +3012,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
 
 
 
