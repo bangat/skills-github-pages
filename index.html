@@ -2019,8 +2019,21 @@ function colorStyle(item,val){
 }
 function rangeSelect(logs,sStr,eStr,wardFilter){
   const [s,e]=rangeMsByDates(sStr,eStr);
-  return logs.filter(L=>L.ts>=s&&L.ts<e&&(wardFilter==="전체"||(L.ward||"").toString().trim()===wardFilter));
+  return logs.filter(L => {
+    // 1. 날짜 범위가 맞지 않으면 필터링
+    if (L.ts < s || L.ts >= e) return false;
+    
+    const currentWard = (L.ward || "").toString().trim();
+
+    // 2. 병동 조건 확인
+    if (wardFilter === "전체") {
+      return currentWard !== '린넨실'; // '전체'일 경우 린넨실은 제외
+    } else {
+      return currentWard === wardFilter; // 특정 병동을 선택한 경우 해당 병동만 포함
+    }
+  });
 }
+
 function renderPivot(logs,s,e,wardFilter){
   const selected=rangeSelect(logs,s,e,wardFilter);
   const wards=(wardFilter==="전체")?WARDS:WARDS.filter(w=>w===wardFilter);
