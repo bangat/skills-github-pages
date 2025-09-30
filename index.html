@@ -1197,8 +1197,8 @@ html.dark-mode #curWard {
 <audio id="warnSound" preload="auto">
   <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/경고.mp3" type="audio/mpeg" />
 </audio>
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
 <script>
 const TELEGRAM_CHAT_ID = "5432510881";
 const TELEGRAM_TOKEN = "7377526562:AAEhb8p-mld6b2tMH7TAct2Jhqg8dpP6p20";
@@ -1387,7 +1387,7 @@ const app = initializeApp(firebaseConfig);
     }
   }
 
-  // ===== 4. 기존 이벤트 핸들러들 (수정 없음) =====
+  /* ===== 4. 기존 이벤트 핸들러들 (수정 없음) =====
   onFcmMessage(messaging, (payload) => {
       console.log('[FCM] Message received in foreground.', payload);
       const { title, body } = payload.notification;
@@ -1395,6 +1395,7 @@ const app = initializeApp(firebaseConfig);
         new Notification(title, { body, icon: "icons/icon-192.png" });
       }
   });
+  */
 
   const heSaveButton = document.getElementById('heSave');
   if (heSaveButton) {
@@ -3071,6 +3072,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
 </body>
 </html>
+
 
 
 
