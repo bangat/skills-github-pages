@@ -957,41 +957,6 @@ html.dark-mode #curWard {
   color: var(--primary-blue-text);
 }
 
-/* --- 템플릿 관리 모달 스타일 --- */
-.template-list-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  margin-bottom: 10px;
-}
-.template-list-item .name {
-  font-weight: 800;
-  font-size: 16px;
-}
-.template-list-item .actions {
-  display: flex;
-  gap: 8px;
-}
-#template-edit-items .template-item-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 4px;
-}
-#template-edit-items .template-item-row label {
-  font-weight: 700;
-}
-#template-edit-items .template-item-row input {
-  width: 80px;
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  text-align: center;
-}
-
 /* --- ▷▷▷ 테마 전환 버튼 및 다크 모드 스타일 종료 ▷▷▷ --- */  
 </style>
 </head>
@@ -1070,33 +1035,6 @@ html.dark-mode #curWard {
       <div id="statsEmpty" class="empty" style="display:none">해당 기간 데이터가 없습니다.</div>
     </section>
 </main>
-
-  <div id="templateSettingsModal" class="modalOverlay" role="dialog" aria-modal="true" style="display:none;" >
-  <div class="modalCard" role="document">
-    <div class="modalHead">템플릿 관리</div>
-    <div class="modalBody">
-      <div id="template-main-view">
-        </div>
-      <div id="template-edit-view" style="display:none;" >
-        <h3 id="template-edit-title" style="margin-top:0;">템플릿 이름</h3>
-        <input type="text" id="template-edit-name" placeholder="템플릿 이름 입력" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; margin-bottom:12px;" >
-        
-        <div class="tabs" id="template-edit-tabs">
-          <div class="tab active" data-cat="시트">시트</div>
-          <div class="tab" data-cat="환자복">환자복</div>
-          <div class="tab" data-cat="기타">기타</div>
-        </div>
-        <div id="template-edit-items" style="max-height: 25vh; overflow-y: auto; padding: 4px;" >
-          </div>
-      </div>
-    </div>
-    <div class="modalActions">
-      <button type="button" class="btn cancel" id="tsCancel">닫기</button>
-      <button type="button" class="btn primary" id="tsSave" style="display:none;" >설정 완료</button>
-    </div>
-  </div>
-</div>
-  
 <div id="wardPromptModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="wpTitle" style="display:none">
   <div class="modalCard" role="document">
     <div class="modalHead" id="wpTitle">🚨 병동 선택 필요</div>
@@ -1240,15 +1178,13 @@ html.dark-mode #curWard {
 </div>
 <div class="footerBar">
   <div class="footerCol">
-<button class="btn" id="templateSettingsBtn" style="width:100%; display:none;">
-  <i class="icon" data-feather="database"></i>템플릿 설정 및 불러오기
-</button>  
-    <button class="btn acc" id="saveAll" disabled><i class="icon" data-feather="check-circle"></i>제출하기</button>
+<button class="btn acc" id="saveAll" disabled><i class="icon" data-feather="check-circle"></i>제출하기</button>
+    
     <button class="btn" id="appDownloadBtn"><i class="icon" data-feather="download"></i>어플리케이션 다운로드</button>
+    
     <button class="btn" id="exportXLSXBtn"><i class="icon" data-feather="file-text"></i>엑셀로 내려받기</button>
   </div>
 </div>
-  
 <audio id="submitSound" preload="auto">
   <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/제출하기.mp3" type="audio/mpeg" />
 </audio>
@@ -1532,8 +1468,12 @@ function openAdminGate(){
   function backspace(){ pin = pin.slice(0,-1); render(); }
   function clearPin(){ pin = ""; render(); }
   
+  // [보안 수정] 로그인 로직을 서버 측에서 처리하도록 변경
 async function tryLogin() {
+    // 🚨 중요: 이 URL을 실제 배포된 checkAdminPassword 함수 URL로 교체해야 합니다!
     const checkPasswordUrl = 'https://us-central1-hallymlinen.cloudfunctions.net/checkAdminPassword';
+
+    // 로딩 표시
     const okButton = el("#adminOk");
     const originalText = okButton.textContent;
     okButton.disabled = true;
@@ -1542,50 +1482,67 @@ async function tryLogin() {
     try {
         const response = await fetch(checkPasswordUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pin: pin })
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                pin: pin
+            }) // 입력된 PIN을 서버로 전송
         });
+
         const result = await response.json();
+
+        // [수정된 부분] ⬅️ 바로 이 부분입니다!
         if (response.ok && result.success && result.token) {
+            // 1. 받은 토큰을 브라우저의 localStorage에 저장합니다.
             localStorage.setItem('adminToken', result.token);
+
+            // 2. 모달을 닫고 출근부 페이지로 이동합니다.
             closeModal("#adminModal");
             location.href = "출근부.html";
         } else {
             clearPin();
             $in.placeholder = "인증오류.";
-            try { playSnd("#warnSound"); } catch (_) {}
+            try {
+                playSnd("#warnSound");
+            } catch (_) {}
             $ok.focus();
         }
     } catch (error) {
+        // 네트워크 오류 또는 서버 함수 문제 처리
         console.error('비밀번호 확인 중 오류:', error);
         clearPin();
         $in.placeholder = "인증 오류";
-        try { playSnd("#warnSound"); } catch (_) {}
+        try {
+            playSnd("#warnSound");
+        } catch (_) {}
         $ok.focus();
     } finally {
+        // 버튼 상태 복원
         okButton.disabled = false;
         okButton.textContent = originalText;
     }
 }
 
+
   if (pad){
-    pad.onclick = (e)=>{
-      const b = e.target.closest("button");
-      if (!b) return;
-      const n = b.getAttribute("data-n");
-      const del = b.hasAttribute("data-del");
-      if (n !== null){
-        push(n);
-        if (navigator.vibrate) navigator.vibrate(15);
-        return;
-      }
-      if (del){
-        backspace();
-        if (navigator.vibrate) navigator.vibrate(25);
-        return;
-      }
-    };
-  }
+  pad.onclick = (e)=>{
+    const b = e.target.closest("button");
+    if (!b) return;
+    const n = b.getAttribute("data-n");
+    const del = b.hasAttribute("data-del");
+    if (n !== null){
+      push(n);
+      if (navigator.vibrate) navigator.vibrate(15);
+      return;
+    }
+    if (del){
+      backspace();
+      if (navigator.vibrate) navigator.vibrate(25);
+      return;
+    }
+  };
+}
 
   $ok.onclick = tryLogin;
   $can.onclick = ()=>{ closeModal("#adminModal"); clearPin(); };
@@ -1685,6 +1642,7 @@ function qcPreviewSum(){
   if (!__qc.entry) return base;
   return base + ((__qc.lastOp === "-") ? -curN : curN);
 }
+// ▷▷▷ (1) qcApplyOperator 변경코드 시작 ▷▷▷
 function qcApplyOperator(opRaw){
   const op = (opRaw === "-" || opRaw === "−") ? "-" : "+";
   const disp = op === "-" ? "−" : "+";
@@ -1697,8 +1655,11 @@ function qcApplyOperator(opRaw){
   }
   __qc.exprParts.push(disp);
   __qc.lastOp = op;
+  // (변경) 입력창 동작에서는 소리 없음
   qcRender();
 }
+// ▷▷▷ (1) qcApplyOperator 변경코드 종료 ▷▷▷
+
 function qcComputeFinal(){ qcPushEntryIfAny(); return __qc.terms.reduce((a,b)=>a+b, 0); }
 function qcRender(){
   const box = document.getElementById("qcExpr");
@@ -1728,30 +1689,35 @@ function openQtyKeypad({ title="수량", onConfirm } = {}){
       ent.addEventListener(ev, (e)=>{ e.preventDefault(); ent.blur(); }, { passive:false });
     });
     ent.oninput = ()=>{};
-    ent.onkeydown = (e)=>{
-      if (e.key==="Escape"){ e.preventDefault(); closeModal("#qtyCalcModal"); }
-      if (e.key==="Enter" || e.key==="NumpadEnter"){
-        e.preventDefault();
-        const result = qcComputeFinal();
-        const b = document.getElementById("qcExpr");
-        if (b){ const shown = __qc.exprParts.join(" "); b.textContent = shown ? `${shown} = ${result}` : String(result); }
-        setTimeout(()=>{
-          __qc.onConfirm && __qc.onConfirm(result);
-          qcReset("+");
-          if (b) b.textContent = "—";
-          ent.value = "";
-          closeModal("#qtyCalcModal");
-        }, 120);
-      }
-      if (e.key==="+" || e.key==="-"){ e.preventDefault(); qcApplyOperator(e.key==="+" ? "+" : "-"); }
-    };
+  // ▷▷▷ (2) openQtyKeypad/ent.onkeydown 변경코드 시작 ▷▷▷
+ent.onkeydown = (e)=>{
+  if (e.key==="Escape"){ e.preventDefault(); closeModal("#qtyCalcModal"); }
+  if (e.key==="Enter" || e.key==="NumpadEnter"){
+    e.preventDefault();
+    const result = qcComputeFinal();
+    const b = document.getElementById("qcExpr");
+    if (b){ const shown = __qc.exprParts.join(" "); b.textContent = shown ? `${shown} = ${result}` : String(result); }
+    // (변경) 입력창 확인에서는 소리 없음
+    setTimeout(()=>{
+      __qc.onConfirm && __qc.onConfirm(result);
+      qcReset("+");
+      if (b) b.textContent = "—";
+      ent.value = "";
+      closeModal("#qtyCalcModal");
+    }, 120);
+  }
+  if (e.key==="+" || e.key==="-"){ e.preventDefault(); qcApplyOperator(e.key==="+" ? "+" : "-"); }
+};
+// ▷▷▷ (2) openQtyKeypad/ent.onkeydown 변경코드 종료 ▷▷▷
+
   }
   if (!openQtyKeypad._wired){
     const pad = document.querySelector("#qtyCalcModal .qcPad");
     pad.addEventListener("click", (e)=>{
       const b = e.target.closest("button");
       if (!b) return;
-      if (navigator.vibrate) navigator.vibrate(15);
+// ✅ 진동 추가 (15ms)
+ if (navigator.vibrate) navigator.vibrate(15);
       const k = b.getAttribute("data-k"), del = b.getAttribute("data-act")==="del", op = b.getAttribute("data-op");
       if (k !== null){ if (__qc.entry.length < 6){ __qc.entry = (__qc.entry==="0") ? k : (__qc.entry + k); if (ent) ent.value = __qc.entry; qcRender(); } return; }
       if (del){ __qc.entry = __qc.entry.slice(0,-1); if (ent) ent.value = __qc.entry; qcRender(); return; }
@@ -1764,18 +1730,22 @@ function openQtyKeypad({ title="수량", onConfirm } = {}){
       const headEl = document.getElementById("qcTitle"); if (headEl) headEl.textContent = "수량 입력";
       closeModal("#qtyCalcModal");
     };
-    document.getElementById("qcOk").onclick = ()=>{
-      const result = qcComputeFinal();
-      const box = document.getElementById("qcExpr");
-      if (box){ const shown = __qc.exprParts.join(" "); box.textContent = shown ? `${shown} = ${result}` : String(result); }
-      setTimeout(()=>{
-        __qc.onConfirm && __qc.onConfirm(result);
-        qcReset("+");
-        if (box) box.textContent = "—"; if (ent) ent.value = "";
-        const headEl = document.getElementById("qcTitle"); if (headEl) headEl.textContent = "수량 입력";
-        closeModal("#qtyCalcModal");
-      }, 120);
-    };
+    // ▷▷▷ (3) openQtyKeypad/#qcOk.onclick 변경코드 시작 ▷▷▷
+document.getElementById("qcOk").onclick = ()=>{
+  const result = qcComputeFinal();
+  const box = document.getElementById("qcExpr");
+  if (box){ const shown = __qc.exprParts.join(" "); box.textContent = shown ? `${shown} = ${result}` : String(result); }
+  // (변경) 입력창 확인 버튼에서도 소리 없음
+  setTimeout(()=>{
+    __qc.onConfirm && __qc.onConfirm(result);
+    qcReset("+");
+    if (box) box.textContent = "—"; if (ent) ent.value = "";
+    const headEl = document.getElementById("qcTitle"); if (headEl) headEl.textContent = "수량 입력";
+    closeModal("#qtyCalcModal");
+  }, 120);
+};
+// ▷▷▷ (3) openQtyKeypad/#qcOk.onclick 변경코드 종료 ▷▷▷
+
     openQtyKeypad._wired = true;
   }
   qcRender();
@@ -1808,8 +1778,10 @@ function refreshTotalUI(){
   if (save){
     save.disabled = total===0;
     save.style.opacity = total===0 ? .6 : 1;
-    const totalStr = total > 0 ? ` · 총 <span class="mono">${total.toLocaleString()}</span>개` : '';
-    save.innerHTML = `<i class="icon" data-feather="check-circle"></i>제출하기${totalStr}`;
+        const totalStr = total > 0 ? ` · 총 <span class="mono">${total.toLocaleString()}</span>개` : '';
+  save.innerHTML = `<i class="icon" data-feather="check-circle"></i>제출하기${totalStr}`;
+
+    // [중요] 아이콘을 다시 그려주는 명령어를 꼭 추가해야 합니다.
     feather.replace({ width: '1em', height: '1em' });
   }
 }
@@ -1893,33 +1865,40 @@ function buildTable(){
       }
     };
    tr.querySelectorAll("[data-delta]").forEach(btn=>{
-      btn.addEventListener('click', e=>{ addRipple(e); springOnce(btn); });
-      const delta = parseInt(btn.dataset.delta, 10);
-      const apply = () => {
-        const prev = parseInt(inp.dataset.prev || "0") || 0;
-        const v = (parseInt(inp.value || "0") || 0) + delta;
-        inp.value = v;
-        setDraftQty(name, v);
-        maybeBuzz(prev, v);
-        inp.dataset.prev = String(v);
-        refreshTotalUI();
-      };
-      btn.addEventListener('click', () => {
-        apply();
-        try { playSnd("#btnClickSound"); } catch(_) {}
-        if (navigator.vibrate) navigator.vibrate(12);
-      });
-      let _lastBeep = 0;
-      attachHoldRepeat(btn, () => {
-        apply();
-        const now = Date.now();
-        if (now - _lastBeep > 220) {
-          try { playSnd("#btnClickSound"); } catch(_) {}
-          _lastBeep = now;
-        }
-        if (navigator.vibrate) navigator.vibrate(8);
-      });
-    });
+  // 클릭 시 리플/스프링
+  btn.addEventListener('click', e=>{ addRipple(e); springOnce(btn); });
+
+  const delta = parseInt(btn.dataset.delta, 10);
+  const apply = () => {
+    const prev = parseInt(inp.dataset.prev || "0") || 0;
+    const v = (parseInt(inp.value || "0") || 0) + delta;
+    inp.value = v;
+    setDraftQty(name, v);
+    maybeBuzz(prev, v);
+    inp.dataset.prev = String(v);
+    refreshTotalUI();
+  };
+
+  // ▶ 클릭 1회에 소리 + 진동
+  btn.addEventListener('click', () => {
+    apply();
+    try { playSnd("#btnClickSound"); } catch(_) {}
+    if (navigator.vibrate) navigator.vibrate(12);   // ✅ 진동 추가
+  });
+
+  // ▶ 길게 누를 때 반복시에도 소리/진동 (너무 시끄럽지 않게 간격 조절)
+  let _lastBeep = 0;
+  attachHoldRepeat(btn, () => {
+    apply();
+    const now = Date.now();
+    if (now - _lastBeep > 220) {                   // ✅ 0.22초 간격으로만 소리
+      try { playSnd("#btnClickSound"); } catch(_) {}
+      _lastBeep = now;
+    }
+    if (navigator.vibrate) navigator.vibrate(8);   // ✅ 각 스텝마다 짧게 진동
+  });
+});
+
     tb.appendChild(tr);
   });
 
@@ -1936,7 +1915,7 @@ function buildTable(){
 function buildConfirmSummaryHTML() {
   const ward = (state.ward || "").toString().trim() || "미선택";
   const dateStr = document.querySelector("#issueDate").value || new Date().toISOString().slice(0,10);
-  const draft = getDraft();
+  const draft = (function(){ try { return JSON.parse(localStorage.getItem(LS.draft(state.ward))||"{}"); } catch(_) { return {}; } })();
 
   let rows = [];
   Object.keys(draft).forEach(k => { const v = parseInt(draft[k] || "0", 10) || 0; if (v !== 0) rows.push([k, v]); });
@@ -1947,8 +1926,9 @@ function buildConfirmSummaryHTML() {
 
   const MAX = 12;
   const moreHtml = rows.length > MAX ? `<li class="more" style="margin-top:8px;color:#64748b">외 ${rows.length - MAX}개 항목…</li>` : "";
-  const colored = (name)=> COLORED_ITEMS.has(name);
-  const ortho = (name)=> ORTHO_ITEMS.has(name);
+
+  const colored = (name)=> (typeof COLORED_ITEMS!=="undefined" && COLORED_ITEMS.has && COLORED_ITEMS.has(name));
+  const ortho = (name)=> (typeof ORTHO_ITEMS !=="undefined" && ORTHO_ITEMS.has && ORTHO_ITEMS.has(name));
   const lv = (v)=> v>=20 ? "lv3" : (v>=15 ? "lv2" : (v>=10 ? "lv1" : ""));
 
   const list = rows.slice(0, MAX).map(([k,v]) => `
@@ -1969,18 +1949,37 @@ function buildConfirmSummaryHTML() {
 function openConfirmSubmit() {
   const summary = document.getElementById("confirmSummary");
   if (summary) summary.innerHTML = buildConfirmSummaryHTML();
-  openModal("#confirmModal", "#csOk");
+  if (typeof openModal === "function") {
+    openModal("#confirmModal", "#csOk");
+  } else {
+    if (confirm("입력하신 수량을 제출할까요?")) saveAll();
+  }
 }
+
 
 document.addEventListener("click", async (e) => {
   const id = (e.target && e.target.id) || "";
-  if (id === "csCancel") { closeModal("#confirmModal"); return; }
+
+  if (id === "csCancel") {
+    if (typeof closeModal === "function") closeModal("#confirmModal");
+    return;
+  }
+
   if (id === "csOk") {
-    closeModal("#confirmModal");
+    // 확인 모달 닫기
+    if (typeof closeModal === "function") closeModal("#confirmModal");
+
+    // 로딩 오버레이 표시
     const ov = document.getElementById("loadingOverlay");
     if (ov) ov.style.display = "flex";
-    try { await saveAll(); } 
-    finally { if (ov) ov.style.display = "none"; }
+
+    try {
+      // 실제 저장 진행
+      await saveAll();
+    } finally {
+      // 저장 끝나면 로딩 숨김 (성공/실패 모두)
+      if (ov) ov.style.display = "none";
+    }
     return;
   }
 });
@@ -2008,15 +2007,19 @@ async function saveAll(){
 
   const cleared={}; ALL_ITEMS.forEach(i=>cleared[i]=0); setDraft(cleared);
   Array.from(document.querySelectorAll("#inputTable tbody input")).forEach(inp=>{ inp.value="0"; inp.dataset.prev="0"; });
-  refreshTotalUI();
-  if (ok) playSnd("#submitSound");
-  openModal('#submitModal', '#smOk');
-  showToast("저장 완료", "RTDB 동기화 & 로컬 백업");
+ // ▷▷▷ (4) saveAll 제출 사운드 변경코드 시작 ▷▷▷
+refreshTotalUI();
+// (변경) RTDB 저장 성공(ok===true)일 때만 제출 사운드 재생
+if (ok) playSnd("#submitSound");
+openModal('#submitModal', '#smOk');
+showToast("저장 완료", "RTDB 동기화 & 로컬 백업");
 
-  if(document.body.classList.contains("mode-stats")){
-    const d=new Date(ts).toISOString().slice(0,10);
-    el("#dateStart").value=d; el("#dateEnd").value=d; await renderStats();
-  }
+if(document.body.classList.contains("mode-stats")){
+  const d=new Date(ts).toISOString().slice(0,10);
+  el("#dateStart").value=d; el("#dateEnd").value=d; await renderStats();
+}
+// ▷▷▷ (4) saveAll 제출 사운드 변경코드 종료 ▷▷▷
+
 }
 
 /* === 통계 화면 관련 함수 === */
@@ -2031,12 +2034,16 @@ function colorStyle(item,val){
 function rangeSelect(logs,sStr,eStr,wardFilter){
   const [s,e]=rangeMsByDates(sStr,eStr);
   return logs.filter(L => {
+    // 1. 날짜 범위가 맞지 않으면 필터링
     if (L.ts < s || L.ts >= e) return false;
+    
     const currentWard = (L.ward || "").toString().trim();
+
+    // 2. 병동 조건 확인
     if (wardFilter === "전체") {
-      return currentWard !== '린넨실';
+      return currentWard !== '린넨실'; // '전체'일 경우 린넨실은 제외
     } else {
-      return currentWard === wardFilter;
+      return currentWard === wardFilter; // 특정 병동을 선택한 경우 해당 병동만 포함
     }
   });
 }
@@ -2071,7 +2078,10 @@ function dateRangeArray(sStr,eStr){
   const arr=[];
   for(let t=sMs; t<eMs; t+=86400000){
     const d = new Date(t);
-    if (d.getDay() !== 0) arr.push(d);
+    // getDay()가 0인 일요일은 목록에 추가하지 않습니다.
+    if (d.getDay() !== 0) {
+      arr.push(d);
+    }
   }
   return arr;
 }
@@ -2175,29 +2185,43 @@ async function renderStats(){
       const items = ALL_ITEMS;
       let periodTotals;
 
-      if (wardFilter === "전체") {
+            if (wardFilter === "전체") {
+        // 1) 피벗 가져오기
         const { p, wards, items } = renderPivot(merged, s, e, wardFilter);
+
+        // 2) 순위에서 제외할 병동
         const rankExcludes = new Set(["린넨실", "기타"]);
+
+        // 3) '수건' 항목 제외 함수
         const isTowel = (name) => name.replace(/\s+/g, "") === "수건";
+
+        // 4) 병동별 합계를 계산 (수건 제외)
         const wardTotals = wards.map(w => ({
             ward: w,
             total: items.reduce((a, i) => a + (isTowel(i) ? 0 : (p[w]?.[i] || 0)), 0)
         }));
+
+        // 5) 병동별 합계를 구해 순위 매기기
         const rankedWards = wardTotals
-            .filter(item => !rankExcludes.has(item.ward) && item.total > 0)
-            .sort((a, b) => b.total - a.total);
+            .filter(item => !rankExcludes.has(item.ward) && item.total > 0) // 제외 병동 및 합계 0 필터링
+            .sort((a, b) => b.total - a.total); // 내림차순 정렬
+
+        // 6) 상위 3개 병동의 순위를 Map으로 저장 (빠른 조회를 위해)
         const rankMap = new Map();
         rankedWards.slice(0, 3).forEach((item, index) => {
-            rankMap.set(item.ward, index + 1);
+            rankMap.set(item.ward, index + 1); // 1, 2, 3등 저장
         });
+
         html = `<table class="statsTable"><thead><tr><th><span class="wardName">병동</span></th>${items.map(i => `<th class="rot">${i}</th>`).join("")}</tr></thead><tbody>`;
         wards.forEach((w, rowIdx) => {
+            // 7) 현재 병동의 등수를 가져옴
             const rank = rankMap.get(w);
+            // 8) 등수(rank)에 따라 data-rank 속성 추가
             const rankAttr = rank ? `data-rank="${rank}"` : '';
             html += `<tr ${rankAttr}><td><span class="wardName">${w}</span></td>${items.map(i => { const v = (p[w]?.[i] || 0); return `<td data-num="1"><span class="num"${colorStyle(i, v)}>${v}</span></td>`; }).join("")}</tr>`;
         });
-        const wardsForTotal = wards.filter(w => w !== '린넨실');
-        periodTotals=items.map(i=>wardsForTotal.reduce((a,w)=>a+(p[w]?.[i]||0),0));
+ const wardsForTotal = wards.filter(w => w !== '린넨실'); // 린넨실 제외
+ periodTotals=items.map(i=>wardsForTotal.reduce((a,w)=>a+(p[w]?.[i]||0),0)); // 수정된 배열로 합계 계산
         html+=`<tr class="total-row"><th><span class="wardName">합계</span></th>${periodTotals.map((v,idx)=>`<th data-num="1"><span class="num"${colorStyle(items[idx],v)}>${v}</span></th>`).join("")}</tr>`;
         html+=`</tbody></table>`;
       } else {
@@ -2223,21 +2247,25 @@ async function renderStats(){
       }
       el("#statsWrap").innerHTML = html;
 
-      const activeDays = new Set();
-      rangeSelect(merged, s, e, wardFilter).forEach(L => {
-          const d = new Date(L.ts);
-          if (d.getDay() !== 0) {
-              activeDays.add(fmtYYYYMMDD(d));
-          }
-      });
-      const daysCount = Math.max(1, activeDays.size);
-      let sumHtml = `<table class="summaryTable"><thead><tr><th>품목</th><th>전일 사용량</th><th>일평균 사용량</th><th>기간합계</th></tr></thead><tbody>`;
+// 선택된 기간 내에서 실제 데이터가 있고, 일요일이 아닌 날짜만 계산
+const activeDays = new Set();
+rangeSelect(merged, s, e, wardFilter).forEach(L => {
+    const d = new Date(L.ts);
+    if (d.getDay() !== 0) { // 일요일(0)이 아닌 날만
+        activeDays.add(fmtYYYYMMDD(d)); // YYYY-MM-DD 형식으로 추가하여 중복 제거
+    }
+});
+
+const daysCount = Math.max(1, activeDays.size); // 기존 daysCount를 이 코드로 교체
+let sumHtml = `<table class="summaryTable"><thead><tr><th>품목</th><th>전일 사용량</th><th>일평균 사용량</th><th>기간합계</th></tr></thead><tbody>`;
+// ... 이후 코드 ...
       const prevDate = new Date(e + "T00:00:00");
       prevDate.setDate(prevDate.getDate() - 1);
       const prevYmd = `${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,"0")}-${String(prevDate.getDate()).padStart(2,"0")}`;
       const [pS, pE] = rangeMsByDates(prevYmd, prevYmd);
-      const prevByItem = Object.fromEntries(items.map(it => [it, 0]));
+            const prevByItem = Object.fromEntries(items.map(it => [it, 0]));
       for (const L of __mergedCache) {
+        // ▼▼▼ 아래 if 조건문을 통째로 교체해주세요 ▼▼▼
         if (L.ts >= pS && L.ts < pE) {
           const currentWard = String(L.ward || "").trim();
           if ((wardFilter === "전체" && currentWard !== '린넨실') || (currentWard === wardFilter)) {
@@ -2267,10 +2295,17 @@ async function renderStats(){
 }
 
 /* === 데이터 내보내기 (XLSX) === */
+// 기존 exportXLSX 함수 전체를 아래의 코드로 교체해주세요.
+
 function exportXLSX(){
   const table = document.querySelector("#statsWrap table");
-  if (!table) { alert("통계 표가 없습니다."); return; }
+  if (!table) {
+    alert("통계 표가 없습니다.");
+    return;
+  }
   const s = el("#dateStart").value || "", e = el("#dateEnd").value || "", ward = el("#wardFilter").value || "전체";
+
+  // --- 1. 파일명 생성 로직 (변경 없음) ---
   const formatDate = (dStr) => {
     const d = new Date(dStr + "T00:00:00");
     return `${String(d.getFullYear()).slice(2)}년${d.getMonth()+1}월${d.getDate()}일`;
@@ -2290,6 +2325,8 @@ function exportXLSX(){
     fileName = `${formatDate(s)} - ${formatDate(e)} ${ward}병동 출고량.xlsx`;
   }
 
+  // --- 2. 엑셀 데이터 생성 및 공백 행 추가 ---
+  // [수정] 표를 A3셀부터 시작하여 2행에 공백을 만듭니다.
   const ws = XLSX.utils.table_to_sheet(table, { origin: "A3" });
   const title = `${s} ~ ${e} ${ward}병동 출고량`;
   XLSX.utils.sheet_add_aoa(ws, [[title]], { origin: "A1" });
@@ -2308,24 +2345,38 @@ function exportXLSX(){
   ws["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: lastCol } });
   ws["!rows"] = ws["!rows"] || [];
   ws["!rows"][0] = { hpt: 22 };
+
+  // --- 3. 새로운 스타일 정의 및 적용 ---
   const borderStyle = { style: "thin", color: { rgb: "BFBFBF" } };
   const borders = { top: borderStyle, bottom: borderStyle, left: borderStyle, right: borderStyle };
   const baseStyle = { alignment: { horizontal: "center", vertical: "center" }, border: borders };
-  const titleStyle = { ...baseStyle, border: {}, font: { bold: true, sz: 14 } };
+  
+  // [수정] 보고서 형식에 맞는 새로운 색상 스타일 정의
+  const titleStyle = { ...baseStyle, border: {}, font: { bold: true, sz: 14 } }; // 테두리와 배경색 제거
   const headerStyle = { ...baseStyle, fill: { fgColor: { rgb: "333F54" } }, font: { bold: true, color: { rgb: "FFFFFF" } } };
   const firstColStyle = { ...baseStyle, fill: { fgColor: { rgb: "F2F2F2" } }, font: { bold: true } };
   const totalRowStyle = { ...baseStyle, fill: { fgColor: { rgb: "E2E8F0" } }, font: { bold: true } };
 
   for (let R = range.s.r; R <= range.e.r; ++R) {
+    // 2행은 공백이므로 건너뜁니다.
     if (R === 1) continue;
+    
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const cell_ref = XLSX.utils.encode_cell({ c: C, r: R });
       if (!ws[cell_ref]) continue;
-      if (R === 0) { ws[cell_ref].s = titleStyle; } 
-      else if (R === 2) { ws[cell_ref].s = headerStyle; } 
-      else if (R >= lastDataRowIndex + 2) { ws[cell_ref].s = totalRowStyle; } 
-      else if (C === 0) { ws[cell_ref].s = firstColStyle; } 
-      else { ws[cell_ref].s = baseStyle; }
+
+      // [수정] 행 인덱스에 맞춰 스타일 적용
+      if (R === 0) { // 제목 행 (1행)
+        ws[cell_ref].s = titleStyle;
+      } else if (R === 2) { // 헤더 행 (3행)
+        ws[cell_ref].s = headerStyle;
+      } else if (R >= lastDataRowIndex + 2) { // 합계 및 평균 행
+        ws[cell_ref].s = totalRowStyle;
+      } else if (C === 0) { // 첫 번째 열 (A열)
+        ws[cell_ref].s = firstColStyle;
+      } else { // 나머지 데이터 셀
+        ws[cell_ref].s = baseStyle;
+      }
     }
   }
 
@@ -2424,25 +2475,32 @@ function wireMiniHeader(){
   const save = el("#heSave");
   if (save){
    save.onclick = ()=>{
-    const selectedWard = el("#wardSelect").value || "";
-    state.ward = selectedWard.toString().trim();
-    localStorage.setItem(LS.ward, state.ward);
-    try {
-      const today = new Date().toISOString().slice(0,10);
-      sessionStorage.removeItem(`seenNotices/${today}/${state.ward}`);
-      localStorage.removeItem(`dontShowToday/${today}/${state.ward}`);
-    } catch(_) {}
-    closeModal("#headerEditModal");
-    syncMiniHeader();
-    if (typeof window.maybeShowNotices === "function") {
-      setTimeout(maybeShowNotices, 100);
-    }
-  };
+  const selectedWard = el("#wardSelect").value || "";
+  state.ward = selectedWard.toString().trim();
+  localStorage.setItem(LS.ward, state.ward);
+
+  // 병동 선택 직후에는 세션키, 오늘키 삭제 → 다시 뜨게 보장
+  try {
+    const today = new Date().toISOString().slice(0,10);
+    sessionStorage.removeItem(`seenNotices/${today}/${state.ward}`);
+    localStorage.removeItem(`dontShowToday/${today}/${state.ward}`);
+  } catch(_) {}
+
+  closeModal("#headerEditModal");
+  syncMiniHeader();
+
+  if (typeof window.maybeShowNotices === "function") {
+    setTimeout(maybeShowNotices, 100);
   }
+};
+
+
+  }
+
+  // 날짜 변경 시 헤더 업데이트 (이 부분은 그대로 둡니다)
   const dInp = el("#issueDate");
   if (dInp) dInp.addEventListener("change", syncMiniHeader);
 }
-
 /* === 유틸리티 함수 === */
 function debounce(fn,delay=200){ let t; return(...a)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,a),delay); }; }
 
@@ -2450,127 +2508,70 @@ function debounce(fn,delay=200){ let t; return(...a)=>{ clearTimeout(t); t=setTi
 function isWardSelected(){ return (state.ward || "").toString().trim() !== ""; }
 function showWardPromptModal(){ openModal('#wardPromptModal', '#wpOk'); playSnd("#warnSound"); }
 
-/* === 템플릿 기능 관련 코드 === */
-const TEMPLATE_KEY = "linen/ward-templates";
-
-function getTemplates() {
-  let templates = [];
-  try { templates = JSON.parse(localStorage.getItem(TEMPLATE_KEY) || "[]"); } catch {}
-  for (let i = 1; i <= 3; i++) {
-    if (!templates.find(t => t.id === i)) {
-      templates.push({ id: i, name: `템플릿 ${i}`, quantities: {} });
-    }
-  }
-  return templates.sort((a, b) => a.id - b.id).slice(0, 3);
-}
-
-function saveTemplates(templates) { localStorage.setItem(TEMPLATE_KEY, JSON.stringify(templates)); }
-
-function applyTemplate(templateId) {
-  const templateToApply = getTemplates().find(t => t.id === templateId);
-  if (!templateToApply) return;
-  if (!confirm(`'${templateToApply.name}' 템플릿을 불러오시겠습니까? 현재 입력된 값은 덮어씌워집니다.`)) return;
-  const newDraft = {};
-  ALL_ITEMS.forEach(item => { newDraft[item] = 0; });
-  Object.entries(templateToApply.quantities).forEach(([item, qty]) => { newDraft[item] = qty; });
-  setDraft(newDraft);
-  buildTable();
-  refreshTotalUI();
-  closeModal('#templateSettingsModal');
-  showToast('템플릿 적용 완료', `"${templateToApply.name}"을(를) 불러왔습니다.`);
-}
-
-function openTemplateSettingsModal() { renderTemplateMainView(); openModal('#templateSettingsModal'); }
-
-function renderTemplateMainView() {
-  const templates = getTemplates();
-  const mainView = el('#template-main-view');
-  mainView.innerHTML = templates.map(t => `
-    <div class="template-list-item">
-      <span class="name">${t.name}</span>
-      <div class="actions">
-        <button class="btn acc load-template-btn" data-id="${t.id}">불러오기</button>
-        <button class="btn edit-template-btn" data-id="${t.id}">수량 설정</button>
-      </div>
-    </div>`).join('');
-  el('#template-edit-view').style.display = 'none';
-  el('#tsSave').style.display = 'none';
-  el('#tsCancel').textContent = '닫기';
-  mainView.style.display = 'block';
-}
-
-function renderTemplateEditView(templateId) {
-  const template = getTemplates().find(t => t.id === templateId);
-  if (!template) return;
-  el('#template-main-view').style.display = 'none';
-  el('#template-edit-view').style.display = 'block';
-  el('#tsSave').style.display = 'block';
-  el('#tsCancel').textContent = '뒤로';
-  el('#tsSave').dataset.id = templateId;
-  el('#template-edit-title').textContent = `'${template.name}' 수량 설정`;
-  el('#template-edit-name').value = template.name;
-  const itemsContainer = el('#template-edit-items');
-  const tabsContainer = el('#template-edit-tabs');
-  const renderItems = (category) => {
-    itemsContainer.innerHTML = ITEMS[category].map(item => `
-      <div class="template-item-row">
-        <label for="tmpl-edit-${item}">${item}</label>
-        <input type="number" inputmode="numeric" id="tmpl-edit-${item}" value="${template.quantities[item] || 0}">
-      </div>`).join('');
-  };
-  tabsContainer.onclick = (e) => {
-    const tab = e.target.closest('.tab');
-    if (!tab) return;
-    tabsContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    renderItems(tab.dataset.cat);
-  };
-  tabsContainer.querySelector('.tab[data-cat="시트"]').click();
-}
-
 /* === 페이지 초기화 및 이벤트 핸들러 바인딩 === */
 window.addEventListener("DOMContentLoaded",()=>{
   el('#wpOk').onclick = () => { closeModal('#wardPromptModal'); openModal('#headerEditModal', '#wardSelect'); };
 
-  const wardControls = el('#wardFilter').parentElement;
-  if (wardControls) {
-    wardControls.style.display = 'flex';
-    wardControls.style.alignItems = 'center';
-    const spacer = document.createElement('div');
-    spacer.style.flex = '1 1 auto';
-    const btnWrap = document.createElement('div');
-    btnWrap.className = 'preset-buttons';
-    btnWrap.innerHTML = `<button id="presetWeek" class="btn preset-btn">주간</button><button id="presetMonth" class="btn preset-btn">월간</button>`;
-    wardControls.appendChild(spacer);
-    wardControls.appendChild(btnWrap);
-    const formatDate = (d) => {
-      const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
-    };
-    el('#presetWeek').onclick = () => {
-      const startInput = el('#dateStart'), endInput = el('#dateEnd'), today = new Date();
-      const dayOfWeek = today.getDay(), offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
-      const monday = new Date(today);
-      monday.setDate(today.getDate() - offset);
-      startInput.value = formatDate(monday);
-      endInput.value = formatDate(today);
-      renderStats();
-    };
-    el('#presetMonth').onclick = () => {
-      const startInput = el('#dateStart'), endInput = el('#dateEnd');
-      const endDate = new Date(endInput.value + "T12:00:00");
-      const firstDayOfMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
-      startInput.value = formatDate(firstDayOfMonth);
-      renderStats();
-    };
-  }
+// ▼▼▼ [교체] 통계 날짜 프리셋 버튼 로직 (UI 및 기능 수정) ▼▼▼
+const wardControls = el('#wardFilter').parentElement;
+if (wardControls) {
+  wardControls.style.display = 'flex';
+  wardControls.style.alignItems = 'center';
+  const spacer = document.createElement('div');
+  spacer.style.flex = '1 1 auto';
+  const btnWrap = document.createElement('div');
+  btnWrap.className = 'preset-buttons';
+  btnWrap.innerHTML = `
+    <button id="presetWeek" class="btn preset-btn">주간</button>
+    <button id="presetMonth" class="btn preset-btn">월간</button>
+  `;
+  wardControls.appendChild(spacer);
+  wardControls.appendChild(btnWrap);
 
+  // 날짜를 'YYYY-MM-DD' 형식으로 안전하게 변환하는 함수
+  const formatDate = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  el('#presetWeek').onclick = () => {
+    const startInput = el('#dateStart');
+    const endInput = el('#dateEnd');
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - offset);
+    
+    // ▼▼▼ 시간대 오류 방지를 위해 날짜 포맷 방식 변경 ▼▼▼
+    startInput.value = formatDate(monday);
+    endInput.value = formatDate(today);
+    renderStats();
+  };
+
+  el('#presetMonth').onclick = () => {
+    const startInput = el('#dateStart');
+    const endInput = el('#dateEnd');
+    
+    // '오늘'이 아닌, 종료일 입력창의 날짜를 기준으로 월의 1일을 계산합니다.
+    const endDate = new Date(endInput.value + "T12:00:00"); // 시간대 문제 방지를 위해 정오(12시) 기준으로 설정
+    const firstDayOfMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+
+    // ▼▼▼ 시간대 오류 방지를 위해 날짜 포맷 방식 변경 ▼▼▼
+    startInput.value = formatDate(firstDayOfMonth);
+    // 종료일은 그대로 유지합니다.
+    renderStats();
+  };
+}
+// ▲▲▲ [교체] 통계 날짜 프리셋 버튼 로직 (UI 및 기능 수정) ▲▲▲
   ['click', 'mousedown', 'touchstart'].forEach(eventType => {
     document.body.addEventListener(eventType, (e) => {
       if (isWardSelected()) return;
       const restrictedTargets = '#inputTable input, #inputTable button, .tabs .tab, #saveAll';
       if (e.target.closest(restrictedTargets) && !e.target.closest('#editHeaderBtn')) {
-        if (e.cancelable) e.preventDefault();
+        if (eventType === 'touchstart') { if (e.cancelable) e.preventDefault(); } else { e.preventDefault(); }
         e.stopPropagation();
         if (!window.__wardPromptOpen) {
           window.__wardPromptOpen = true;
@@ -2581,24 +2582,13 @@ window.addEventListener("DOMContentLoaded",()=>{
     }, { capture: true, passive: false });
   });
 
-  const urlApp=new URL(location.href).searchParams.get("app"); 
-  if(urlApp==="1"){ localStorage.setItem("appMode","1"); } 
-  if(urlApp==="0"){ localStorage.removeItem("appMode"); }
-  
+  const urlApp=new URL(location.href).searchParams.get("app"); if(urlApp==="1"){localStorage.setItem("appMode","1");} if(urlApp==="0"){localStorage.removeItem("appMode");}
   const ua=(navigator.userAgent||"")+" "+(navigator.vendor||"");
-  if((window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||/\b; wv\b/i.test(ua)||/\bMyLinenApp\b/i.test(ua)||localStorage.getItem('appMode')==='1'){
-    document.body.classList.add("app");
-    const downloadBtn = el("#appDownloadBtn");
-    if(downloadBtn) downloadBtn.style.display="none";
-    const templateBtn = el("#templateSettingsBtn");
-    if(templateBtn) templateBtn.style.display="block";
-  }
-
+  if((window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||/\b; wv\b/i.test(ua)||/\bMyLinenApp\b/i.test(ua)||localStorage.getItem('appMode')==='1'){ document.body.classList.add("app"); const b=el("#appDownloadBtn"); if(b) b.style.display="none"; }
   const urlWard=new URL(location.href).searchParams.get("ward");
   if(urlWard){ state.ward=(urlWard||"").toString().trim(); localStorage.setItem(LS.ward,state.ward); }
   el("#wardSelect").value=state.ward;
   el("#wardSelect").onchange=e=>{ state.ward=(e.target.value||"").toString().trim(); localStorage.setItem(LS.ward,state.ward); buildTable(); fitCardToFooter(); };
-  
   const d=new Date(), yyyy=d.getFullYear(), mm=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0");
   el("#issueDate").value=`${yyyy}-${mm}-${dd}`;
   el("#dateStart").value=`${yyyy}-${mm}-${dd}`;
@@ -2670,43 +2660,13 @@ window.addEventListener("DOMContentLoaded",()=>{
     btn.addEventListener('click', ()=> goSection(btn.dataset.section));
   });
 
-  // --- 템플릿 모달 이벤트 핸들러 (DOMContentloaded 내부에 위치) ---
-  el('#templateSettingsBtn').onclick = openTemplateSettingsModal;
-  el('#tsCancel').onclick = () => {
-    if(el('#template-edit-view').style.display === 'block') {
-      renderTemplateMainView();
-    } else {
-      closeModal('#templateSettingsModal');
-    }
-  };
-  el('#templateSettingsModal .modalBody').addEventListener('click', (e) => {
-    const loadBtn = e.target.closest('.load-template-btn');
-    const editBtn = e.target.closest('.edit-template-btn');
-    if (loadBtn) { applyTemplate(parseInt(loadBtn.dataset.id)); } 
-    else if (editBtn) { renderTemplateEditView(parseInt(editBtn.dataset.id)); }
-  });
-  el('#tsSave').onclick = () => {
-    const templateId = parseInt(el('#tsSave').dataset.id);
-    const template = getTemplates().find(t => t.id === templateId);
-    if (template) {
-      template.name = el('#template-edit-name').value.trim() || `템플릿 ${templateId}`;
-      template.quantities = {};
-      Object.values(ITEMS).flat().forEach(item => {
-        const input = el(`#tmpl-edit-${item}`);
-        let qty = template.quantities[item] || 0;
-        if(input) { qty = parseInt(input.value) || 0; }
-        if (qty > 0) { template.quantities[item] = qty; } 
-        else { delete template.quantities[item]; }
-      });
-      saveTemplates(getTemplates());
-      showToast('템플릿 저장 완료', `'${template.name}'이(가) 저장되었습니다.`);
-      renderTemplateMainView();
-    }
-  };
+
 
   const urlTab = new URL(location.href).searchParams.get("tab");
   goSection(urlTab === "stats" ? "stats" : "input");
-  setTimeout(maybeShowNotices, 100);
+    setTimeout(maybeShowNotices, 100);
+
+
 });
 </script>
 <script>
@@ -2897,6 +2857,7 @@ document.addEventListener("click", (e) => {
   <div>잠시만 기다려주세요…</div>
 </div>
 
+<!-- ▷▷▷ 인덱스 공지 모달 UI 시작 ▷▷▷ -->
 <div id="indexNoticeModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="inTitle" style="display:none">
   <div class="modalCard" role="document">
     <div class="modalHead" id="inTitle">공지사항</div>
@@ -2912,6 +2873,9 @@ document.addEventListener("click", (e) => {
 </div>
   </div>
 </div>
+<!-- ▷▷▷ 인덱스 공지 모달 UI 종료 ▷▷▷ -->
+
+<!-- ▷▷▷ 인덱스 공지 로딩/표시 로직 시작 ▷▷▷ -->
 <script>
 (function(){
   // YYYY-MM-DD
@@ -3103,17 +3067,11 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
   <audio id="noticeCloseSound" preload="auto">
-  <source src="https://blog.kakaocdn.net/dna/sfvZ5/dJMb9XK3GEN/AAAAAAAAAAAAAAAAAAAAAFianpy8yEUjgXFtofNEXhNNEfyHXzCb1g7qM_QURnmw/%EC%95%88%EB%85%95%ED%9E%88%EA%B3%84%EC%84%B8%EC%9A%94%EC%97%AC%EB%9F%AC%EB%B6%84.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1759244399&allow_ip=&allow_referer=&signature=gJVaM%B4yTa9rEUctV3VrtrD8cew%3D&attach=1&knm=tfile.mp3" type="audio/mpeg">
+  <source src="https://blog.kakaocdn.net/dna/sfvZ5/dJMb9XK3GEN/AAAAAAAAAAAAAAAAAAAAAFianpy8yEUjgXFtofNEXhNNEfyHXzCb1g7qM_QURnmw/%EC%95%88%EB%85%95%ED%9E%88%EA%B3%84%EC%84%B8%EC%9A%94%EC%97%AC%EB%9F%AC%EB%B6%84.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1759244399&allow_ip=&allow_referer=&signature=gJVaM%2B4yTa9rEUctV3VrtrD8cew%3D&attach=1&knm=tfile.mp3" type="audio/mpeg">
 </audio>
   
 </body>
 </html>
-
-
-
-
-
-
 
 
 
