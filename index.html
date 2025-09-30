@@ -2236,10 +2236,17 @@ let sumHtml = `<table class="summaryTable"><thead><tr><th>품목</th><th>전일 
       prevDate.setDate(prevDate.getDate() - 1);
       const prevYmd = `${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,"0")}-${String(prevDate.getDate()).padStart(2,"0")}`;
       const [pS, pE] = rangeMsByDates(prevYmd, prevYmd);
-      const prevByItem = Object.fromEntries(items.map(it => [it, 0]));
+            const prevByItem = Object.fromEntries(items.map(it => [it, 0]));
       for (const L of __mergedCache) {
-        if (L.ts >= pS && L.ts < pE && (wardFilter === "전체" || String(L.ward||"").trim() === wardFilter)) { prevByItem[L.item] = (prevByItem[L.item] || 0) + (Number(L.qty) || 0); }
+        // ▼▼▼ 아래 if 조건문을 통째로 교체해주세요 ▼▼▼
+        if (L.ts >= pS && L.ts < pE) {
+          const currentWard = String(L.ward || "").trim();
+          if ((wardFilter === "전체" && currentWard !== '린넨실') || (currentWard === wardFilter)) {
+            prevByItem[L.item] = (prevByItem[L.item] || 0) + (Number(L.qty) || 0);
+          }
+        }
       }
+
       items.forEach((it, idx) => {
         const psum = periodTotals[idx] || 0;
         const avg = Math.round(psum / daysCount);
