@@ -2956,7 +2956,7 @@ const filtered = actives
     }catch(_){}
   }
 
-  // 닫기 버튼 처리 (병동별로 오늘 안보기/세션키 저장)
+ /*
   const closeBtn = document.getElementById('inClose');
   if (closeBtn){
     closeBtn.onclick = ()=>{
@@ -2970,6 +2970,27 @@ const filtered = actives
       closeModal('#indexNoticeModal');
     };
   }
+*/
+  // 닫기 버튼 처리 (병동별로 오늘 안보기/세션키 저장) 굿바이
+  const closeBtn = document.getElementById('inClose');
+  if (closeBtn){
+    closeBtn.onclick = ()=>{
+      // ▼▼▼ 효과음 재생 코드 추가 ▼▼▼
+      if (typeof playSnd === 'function') {
+        playSnd("#noticeCloseSound");
+      }
+
+      try{
+        const curWard = (window.state && window.state.ward) ? String(window.state.ward).trim() : '';
+        if (document.getElementById('inDontToday')?.checked){
+          localStorage.setItem(dontTodayKey(curWard || 'ALL'), '1');
+        }
+        sessionStorage.setItem(seenKey(curWard || 'ALL'), '1');
+      }catch(_){}
+      closeModal('#indexNoticeModal');
+    };
+  }
+  
 
   // 외부에서 호출할 수 있게 export
   window.maybeShowNotices = maybeShowNotices;
@@ -3030,8 +3051,14 @@ document.addEventListener('DOMContentLoaded', () => {
   applyTheme(getCurrentTheme());
 });
 </script>
+
+  <audio id="noticeCloseSound" preload="auto">
+  <source src="https://blog.kakaocdn.net/dna/sfvZ5/dJMb9XK3GEN/AAAAAAAAAAAAAAAAAAAAAFianpy8yEUjgXFtofNEXhNNEfyHXzCb1g7qM_QURnmw/%EC%95%88%EB%85%95%ED%9E%88%EA%B3%84%EC%84%B8%EC%9A%94%EC%97%AC%EB%9F%AC%EB%B6%84.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1759244399&allow_ip=&allow_referer=&signature=gJVaM%2B4yTa9rEUctV3VrtrD8cew%3D&attach=1&knm=tfile.mp3" type="audio/mpeg">
+</audio>
+  
 </body>
 </html>
+
 
 
 
