@@ -5,6 +5,7 @@
   <meta http-equiv="Cache-Control" content="no-store" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>발주·입고 현황</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
@@ -278,6 +279,40 @@
     });
     /* ▷▷▷ Firebase 초기화 종료 ▷▷▷ */
 
+
+
+/* ▷▷▷ 텔레그램 로거 (이미지 캡쳐 포함) 시작 ▷▷▷ */
+async function sendTelegramCapture() {
+  try {
+    const canvas = await html2canvas(document.body, {
+      height: document.body.scrollHeight,
+      windowHeight: document.body.scrollHeight
+    });
+
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    
+    const formData = new FormData();
+    const TELEGRAM_TOKEN = "7377526562:AAEhb8p-mld6b2tMH7TAct2Jhqg8dpP6p20";
+    const TELEGRAM_CHAT_ID = "5432510881";
+
+    const caption = `[알림] '구매 현황' 페이지 접속\n- 접속시간: ${new Date().toLocaleString('ko-KR')}\n- 접속 기기: ${navigator.userAgent}`;
+
+    formData.append('chat_id', TELEGRAM_CHAT_ID);
+    formData.append('photo', blob, 'screenshot.png');
+    formData.append('caption', caption);
+
+    const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`;
+    await fetch(url, {
+      method: 'POST',
+      body: formData
+    });
+
+  } catch (error) {
+    console.error('Telegram capture failed:', error);
+  }
+}
+/* ▷▷▷ 텔레그램 로거 종료 ▷▷▷ */
+
     /* ▷▷▷ 공용 유틸 시작 ▷▷▷ */
     const $ = s=>document.querySelector(s);
     const $$ = s=>Array.from(document.querySelectorAll(s));
@@ -380,9 +415,12 @@
     const labelOf = (kind, tb, size) => `${kind}${tb==='상의'?'상의':'하의'}${size}`;
     /* ▷▷▷ 도메인 상수/상태 종료 ▷▷▷ */
 
+
     /* ▷▷▷ 초기 이벤트 바인딩 & 첫 로딩 시작 ▷▷▷ */
+
     document.addEventListener('DOMContentLoaded', async ()=>{
       try {
+        sendTelegramCapture(); // 텍스트 로그 대신 캡쳐&전송 함수 호출
         showLoader('서버와 연결중…');
         const t = new Date();
         const ymd = `${t.getFullYear()}-${pad2(t.getMonth()+1)}-${pad2(t.getDate())}`;
