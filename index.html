@@ -1646,7 +1646,7 @@ async function getUnsubmittedHistory() {
     }
 }
 window.__fb = { saveLogsToRTDB, startStatsLiveWatcher, checkGitaExists, getSubmittedWardsForDate, saveUnsubmittedLog, getUnsubmittedHistory };
-runAutoUnsubmittedCheck();
+
 </script>
 
 <script>
@@ -2717,6 +2717,7 @@ function wireMiniHeader(){
 
   if (typeof window.maybeShowNotices === "function") {
     setTimeout(maybeShowNotices, 100);
+ runAutoUnsubmittedCheck();
   }
 };
 
