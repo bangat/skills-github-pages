@@ -114,29 +114,26 @@
   text-align: right;
   padding-right: 10px;
 }
-.checkbox-wrapper {
+/* ▼▼▼ 이 부분이 추가/수정되었습니다 ▼▼▼ */
+.toggle-wrapper {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between; /* 텍스트와 토글을 양 끝으로 정렬 */
+  width: 100%;
 }
-.checkbox-wrapper input[type="checkbox"] {
-  width: auto;
-  height: auto;
-}
-.checkbox-row > label:first-of-type {
-  display: none; /* 모바일 화면에서 불필요한 라벨 숨김 */
+.toggle-wrapper span {
+  font-weight: 700;
 }
 @media (max-width: 480px){
   .row-inline {
       grid-template-columns: 1fr;
-      gap: 6px;
+      gap: 10px; /* 간격 조정 */
   }
   .row-inline > label:first-of-type {
       text-align: left;
       padding-right: 0;
-  }
-  .row-inline.checkbox-row > label:first-of-type {
-      display: none;
+      font-size: 14px;
+      color: var(--muted);
   }
 }
   .row-inline .wfit{width:140px}
@@ -507,23 +504,29 @@
             <option value="family">조가</option>
           </select>
         </div>
-        <div class="row-inline checkbox-row">
-          <label></label> <div class="checkbox-wrapper">
-            <input id="dayOffCheck" type="checkbox" />
-            <label for="dayOffCheck">휴무로 표시</label>
-          </div>
-        </div>
-         <div class="row-inline checkbox-row">
-          <label></label>
-          <div class="checkbox-wrapper">
-            <input id="holidayCheck" type="checkbox" />
-            <label for="holidayCheck">공휴일(빨간날)로 지정</label>
+        <div class="row-inline">
+          <label>옵션</label>
+          <div style="display:grid; gap:12px;">
+            <div class="toggle-wrapper">
+              <span>휴무로 지정</span>
+              <label class="switch">
+                  <input type="checkbox" id="dayOffCheck">
+                  <span class="slider"></span>
+              </label>
+            </div>
+            <div class="toggle-wrapper">
+              <span>공휴일(빨간날)로 지정</span>
+              <label class="switch">
+                  <input type="checkbox" id="holidayCheck">
+                  <span class="slider"></span>
+              </label>
+            </div>
           </div>
         </div>
       </div>
 
       <div class="edit-section">
-        <div class="edit-section-title">시간 및 비고</div>
+   
         <div class="row-inline">
           <label>시간 조정</label>
           <div class="row" style="gap:10px">
