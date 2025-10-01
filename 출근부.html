@@ -321,6 +321,7 @@
   /* ▷▷ 토스트 비주얼 업그레이드 종료 ▷▷ */
 
   /* ▷▷ 공지 저장 오버레이 종료 ▷▷ */
+@keyframes spin { from { transform:rotate(0deg);} to { transform:rotate(360deg);} }
   </style>
 
 
@@ -351,15 +352,19 @@
     const ymKey = (y,m)=>`${y}-${pad2(m)}`;
     const nameKey = s => (String(s||'').trim().replace(/[.#$\[\]/]/g,'_') || 'NONAME');
 
-    async function saveDayToFirebase({y,m,day,name,inT,outT,note,leave,ot}){
-      const token = localStorage.getItem('adminToken');
-      if (!token) return alert("인증 토큰이 없습니다. 다시 로그인해주세요.");
-      const url = 'https://saveattendancedata-t7cbh6uw5a-uc.a.run.app';
-      const path = `/attendance/${ymKey(y,m)}/${nameKey(name)}/${pad2(day)}`;
-      const payload = { y, m, day, name: String(name||'').trim(), in: String(inT||''), out: String(outT||''), note: String(note||''), leave: String(leave||''), ot: String(ot||'') };
-      const res = await fetch(url,{ method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`}, body:JSON.stringify({path,payload}) });
-      if(!res.ok) throw new Error(`Server error: ${res.status}`);
-    }
+    async function saveDayToFirebase({y,m,day,name,inT,outT,note,leave,ot,isHoliday}){ 
+  const token = localStorage.getItem('adminToken');
+  if (!token) {
+    alert("인증 토큰이 없습니다. 다시 로그인해주세요.");
+    return;
+  }
+  const url = 'https://saveattendancedata-t7cbh6uw5a-uc.a.run.app';
+  const path = `/attendance/${ymKey(y,m)}/${nameKey(name)}/${pad2(day)}`;
+  // payload에 isHoliday 추가
+  const payload = { y, m, day, name: String(name||'').trim(), in: String(inT||''), out: String(outT||''), note: String(note||''), leave: String(leave||''), ot: String(ot||''), isHoliday };
+  const res = await fetch(url,{ method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`}, body:JSON.stringify({path,payload}) });
+  if(!res.ok) throw new Error(`Server error: ${res.status}`);
+}
 
    async function loadMonthFromFirebase(y, m, name) {
     const token = localStorage.getItem('adminToken');
@@ -388,19 +393,25 @@
 }
 
     function applyMonthDataToTable(y,m,data){
-      const rows = Array.from(document.querySelectorAll('#tbody tr'));
-      rows.forEach((tr, i)=>{
-        const day = i+1;
-        const rec = data[pad2(day)];
-        if(!rec) return;
-        const [ , , inCell, outCell, , noteCell] = tr.children;
-        if (rec.in)  inCell.textContent  = rec.in;
-        if (rec.out) outCell.textContent = rec.out;
-        const hlabel = (typeof window.dynamicHolidayLabel === 'function') ? window.dynamicHolidayLabel(y,m,day) : '';
-        const merged = (typeof window.addLabelOnce === 'function') ? window.addLabelOnce(String(rec.note||''), hlabel) : (String(rec.note||'') + (hlabel ? ` / ${hlabel}` : ''));
-        noteCell.textContent = merged;
-      });
+  const rows = Array.from(document.querySelectorAll('#tbody tr'));
+  rows.forEach((tr, i)=>{
+    const day = i+1;
+    const rec = data[pad2(day)];
+    if(!rec) return;
+    const [ dateCell, , inCell, outCell, , noteCell] = tr.children;
+    if (rec.in)  inCell.textContent  = rec.in;
+    if (rec.out) outCell.textContent = rec.out;
+
+    // isHoliday 값에 따라 빨간날 표시
+    if (rec.isHoliday === true && !dateCell.classList.contains('sun')) {
+        dateCell.classList.add('sun');
     }
+
+    const hlabel = dynamicHolidayLabel(y,m,day);
+    const merged = addLabelOnce(String(rec.note||''), hlabel);
+    noteCell.textContent = merged;
+  });
+}
 
     window.saveDayToFirebase = saveDayToFirebase;
     window.loadMonthFromFirebase = loadMonthFromFirebase;
@@ -562,18 +573,18 @@
 
   <!-- 스피너/토스트 -->
   <div id="bootSpinner" class="modal-backdrop" style="z-index:190; background:rgba(255,255,255,0.7); display:none">
-    <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
-      <div class="spinner" style="width:44px;height:44px;border:5px solid #ccc;border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite"></div>
-      <div style="font-weight:600;color:#2563eb">서버와 연결중...</div>
-    </div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+    <div class="spinner" style="width:44px;height:44px;border:5px solid #ccc;border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite"></div>
+    <div id="bootSpinnerText" style="font-weight:600;color:#2563eb">서버와 연결중...</div>
   </div>
+</div>
+
   <div id="loadingSpinner" class="modal-backdrop" style="z-index:200; background:rgba(255,255,255,0.7)">
     <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
       <div class="spinner" style="width:48px;height:48px;border:5px solid #ccc;border-top-color:#2563eb;border-radius:50%;animation:spin 1s linear infinite"></div>
       <div style="font-weight:600;color:#2563eb">메일 전송중...</div>
     </div>
   </div>
-  <style>@keyframes spin { from { transform:rotate(360deg);} to { transform:rotate(0deg);} }</style>
   <div id="toast" role="status" aria-live="polite"></div>
 
   <script>
@@ -733,25 +744,26 @@ const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzjULstxZJYCqDDf
 function showToast(msg, options = {}) {
     const { duration = 2000, type = 'success' } = options;
     const t = qs('#toast');
-    const spinner = qs('#bootSpinner');
-    const spinnerText = spinner ? spinner.querySelector('div:last-child') : null;
+    const spinnerEl = qs('#bootSpinner');
+    const spinnerTextEl = qs('#bootSpinnerText');
 
-    if (!t || !spinner || !spinnerText) return;
+    if (!t || !spinnerEl || !spinnerTextEl) return;
     
     // 로딩 타입일 경우, 중앙 스피너를 사용
     if (type === 'loading') {
-        spinnerText.textContent = msg;
-        spinner.style.display = 'flex';
+        spinnerTextEl.textContent = msg;
+        spinnerEl.style.display = 'flex';
+        // 로딩 중에는 하단 토스트 메시지가 떠있으면 숨김
         t.classList.remove('show');
         return;
     }
 
     // 로딩이 아닐 경우, 중앙 스피너를 숨김
-    spinner.style.display = 'none';
+    spinnerEl.style.display = 'none';
     
     // 하단 토스트 메시지 처리
     t.textContent = msg;
-    t.className = 'show';
+    t.className = 'show'; // 기본 클래스 설정 후 타입별 클래스 추가
     if (type === 'error') {
         t.classList.add('error');
     } else if (type === 'info') {
@@ -793,15 +805,15 @@ function showToast(msg, options = {}) {
   const [dateCell, , inCell, outCell, , noteCell] = currentRow.children;
   const {y, m, day, isSun} = currentMeta;
   
-  // '공휴일 지정' 체크박스 상태 반영
   const holidayCheck = qs('#holidayCheck');
-  if (holidayCheck && holidayCheck.checked) {
+  const isManuallySetHoliday = holidayCheck ? holidayCheck.checked : false;
+
+  if (isManuallySetHoliday) {
     dateCell.classList.add('sun');
-  } else if (!isSun) { // 일요일이 아닌 경우에만 빨간색 제거
+  } else if (!isSun) {
     dateCell.classList.remove('sun');
   }
 
-  // 휴가 및 휴무 처리
   if(leaveSel.value==='annual'){ inCell.textContent='연'; outCell.textContent='차'; }
   else if(leaveSel.value==='half'){ inCell.textContent='반'; outCell.textContent='차'; }
   else if(leaveSel.value==='family'){ inCell.textContent='조'; outCell.textContent='가'; }
@@ -812,7 +824,7 @@ function showToast(msg, options = {}) {
       const tOut = normalizeHHMM(timeOut?.value||'');
       if(tIn || tOut){ inCell.textContent = tIn.replace(':',' : '); outCell.textContent = tOut.replace(':',' : '); }
       else { 
-        if( (holidayCheck && holidayCheck.checked) || isSun){ inCell.textContent=''; outCell.textContent=''; } 
+        if(isManuallySetHoliday || isSun){ inCell.textContent=''; outCell.textContent=''; } 
         else { inCell.textContent=DEFAULT_IN; outCell.textContent=DEFAULT_OUT; } 
       }
     }
@@ -824,7 +836,8 @@ function showToast(msg, options = {}) {
   showToast('서버에 요청중...', { type: 'loading' });
   try {
     const nm = (nameInput.value||'').trim();
-    await saveDayToFirebase({ y, m, day, name:nm, inT:(inCell.textContent||'').trim(), outT:(outCell.textContent||'').trim(), note:(noteCell.textContent||'').trim(), leave:(leaveSel.value||'') });
+    // saveDayToFirebase 함수에 isHoliday 상태 전달
+    await saveDayToFirebase({ y, m, day, name:nm, inT:(inCell.textContent||'').trim(), outT:(outCell.textContent||'').trim(), note:(noteCell.textContent||'').trim(), leave:(leaveSel.value||''), isHoliday: isManuallySetHoliday });
     showToast('저장 완료');
     closeEditModal();
   } catch(e) {
