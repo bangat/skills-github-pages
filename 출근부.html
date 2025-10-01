@@ -573,7 +573,7 @@
       <div style="font-weight:600;color:#2563eb">메일 전송중...</div>
     </div>
   </div>
-  <style>@keyframes spin { from { transform:rotate(0deg);} to { transform:rotate(360deg);} }</style>
+  <style>@keyframes spin { from { transform:rotate(360deg);} to { transform:rotate(0deg);} }</style>
   <div id="toast" role="status" aria-live="polite"></div>
 
   <script>
@@ -734,14 +734,14 @@ function showToast(msg, options = {}) {
     const { duration = 2000, type = 'success' } = options;
     const t = qs('#toast');
     const spinner = qs('#bootSpinner');
+    const spinnerText = spinner ? spinner.querySelector('div:last-child') : null;
 
-    if (!t || !spinner) return;
+    if (!t || !spinner || !spinnerText) return;
     
     // 로딩 타입일 경우, 중앙 스피너를 사용
     if (type === 'loading') {
-        spinner.querySelector('div:last-child').textContent = msg;
+        spinnerText.textContent = msg;
         spinner.style.display = 'flex';
-        // 로딩 중에는 토스트 메시지가 떠있으면 숨김
         t.classList.remove('show');
         return;
     }
@@ -751,7 +751,7 @@ function showToast(msg, options = {}) {
     
     // 하단 토스트 메시지 처리
     t.textContent = msg;
-    t.className = 'show'; // 기본 클래스 설정
+    t.className = 'show';
     if (type === 'error') {
         t.classList.add('error');
     } else if (type === 'info') {
@@ -833,7 +833,84 @@ function showToast(msg, options = {}) {
   }
 });
 
-    async function makeWorkbook(){ const ym = monthInput.value; if(!ym){ alert('월을 선택하세요.'); throw new Error('no-month'); } const [y,m] = ym.split('-').map(Number); const nm = (nameInput.value||'').trim(); const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet('출근표', { pageSetup:{ paperSize:9, orientation:'portrait', margins:{left:0,right:0,top:0,bottom:0.1,header:0,footer:0}, horizontalCentered:true, verticalCentered:true, fitToPage:true, fitToWidth:1, fitToHeight:0 } }); const baseFont = {name:'맑은 고딕', size:12}; ws.getColumn(1).width = 6.25; ws.getColumn(2).width = 9.75; ws.getColumn(3).width = 12.88; ws.getColumn(4).width = 12.88; ws.getColumn(5).width = 12.88; ws.getColumn(6).width = 9.75; ws.getColumn(7).width = 5.35; ws.getColumn(8).width = 11; ws.getRow(1).height = 14.25; ws.getRow(2).height = 36.75; ws.getRow(3).height = 29.25; ws.getRow(4).height = 25; ws.mergeCells('G1:G2'); const g1 = ws.getCell('G1'); const g2 = ws.getCell('G2'); g1.value = '결\n재\n란'; g1.font  = {name:'맑은 고딕', size:11, bold:true}; g1.alignment = { vertical:'middle', horizontal:'center', wrapText:true }; g2.alignment = g1.alignment; ['G1','G2'].forEach(a=>{ ws.getCell(a).border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; }); const h1 = ws.getCell('H1'); h1.value='팀장'; h1.font={name:'맑은 고딕',size:11}; h1.alignment={vertical:'middle',horizontal:'center'}; const h2 = ws.getCell('H2'); h2.value=''; ['H1','H2'].forEach(a=>{ ws.getCell(a).border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; }); ws.mergeCells('A3:H3'); const t = ws.getCell('A3'); t.value = `${y}년 ${m}월 린넨실(직원) 출근표`; t.font  = {name:'맑은 고딕', size:18, bold:true}; t.alignment = {vertical:'middle', horizontal:'center'}; ws.getCell('A4').value='날짜'; ws.getCell('B4').value='이름'; ws.getCell('C4').value='출근시각'; ws.getCell('D4').value='퇴근시각'; ws.getCell('E4').value='본인서명'; ws.getCell('F4').value='비고'; ws.mergeCells('F4:G4'); ws.getCell('H4').value='담당자확인'; ['A4','B4','C4','D4','E4','F4','H4'].forEach(a=>{ const c=ws.getCell(a); c.font={...baseFont, bold:true}; c.alignment={vertical:'middle',horizontal:'center'}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF1F5F9'}}; c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; }); const lastDay = new Date(y, m, 0).getDate(); const startRow = 5; for(let d=1; d<=lastDay; d++){ const rIdx = startRow + d - 1; const r = ws.getRow(rIdx); r.height = 22; const dateObj = new Date(y, m-1, d); const dow = dateObj.getDay(); const isSun=dow===0, isSat=dow===6; const tr = qsa('#tbody tr')[d-1]; let [ , , inT, outT, , noteText] = tr ? Array.from(tr.children).map(td=> (td.textContent||'').trim()) : [null,null,'','','','']; if(isSun){ inT='휴'; outT='무'; } else{ if(!inT)  inT=DEFAULT_IN; if(!outT) outT=DEFAULT_OUT; } const hlabel = dynamicHolidayLabel(y,m,d); noteText = addLabelOnce(noteText, hlabel); ws.getCell(rIdx,1).value=d; ws.getCell(rIdx,2).value=(nameInput.value||'').trim(); ws.getCell(rIdx,3).value=inT; ws.getCell(rIdx,4).value=outT; ws.getCell(rIdx,5).value=''; ws.getCell(rIdx,6).value=noteText||''; ws.mergeCells(`F${rIdx}:G${rIdx}`); ws.getCell(rIdx,8).value=''; for(let c=1;c<=8;c++){ if(c===7) continue; const cell=ws.getCell(rIdx,c); cell.font=baseFont; cell.alignment={vertical:'middle',horizontal:(c===6?'left':'center')}; cell.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; } ws.getCell(rIdx,6).alignment = { vertical:'middle', horizontal:'left', wrapText:false }; if(isSat){ ws.getCell(rIdx,1).font={...baseFont,color:{argb:'FF2563EB'}}; } if(isSun || hlabel){ ws.getCell(rIdx,1).font={...baseFont,color:{argb:'FFEF4444'}}; } } ws.eachRow(row=> row.eachCell(cell=>{ cell.font = cell.font || baseFont; })); const fileName = `${y}-${pad2(m)}-출근부.xlsx`; return {wb, fileName}; }
+    async function makeWorkbook(){ 
+    const ym = monthInput.value; 
+    if(!ym){ alert('월을 선택하세요.'); throw new Error('no-month'); } 
+    const [y,m] = ym.split('-').map(Number); 
+    const nm = (nameInput.value||'').trim(); 
+    const wb = new ExcelJS.Workbook(); 
+    const ws = wb.addWorksheet('출근표', { pageSetup:{ paperSize:9, orientation:'portrait', margins:{left:0,right:0,top:0,bottom:0.1,header:0,footer:0}, horizontalCentered:true, verticalCentered:true, fitToPage:true, fitToWidth:1, fitToHeight:0 } }); 
+    const baseFont = {name:'맑은 고딕', size:12}; 
+    ws.getColumn(1).width = 6.25; ws.getColumn(2).width = 9.75; ws.getColumn(3).width = 12.88; ws.getColumn(4).width = 12.88; ws.getColumn(5).width = 12.88; ws.getColumn(6).width = 9.75; ws.getColumn(7).width = 5.35; ws.getColumn(8).width = 11; 
+    ws.getRow(1).height = 14.25; ws.getRow(2).height = 36.75; ws.getRow(3).height = 29.25; ws.getRow(4).height = 25; 
+    ws.mergeCells('G1:G2'); 
+    const g1 = ws.getCell('G1'); const g2 = ws.getCell('G2'); g1.value = '결\n재\n란'; g1.font  = {name:'맑은 고딕', size:11, bold:true}; g1.alignment = { vertical:'middle', horizontal:'center', wrapText:true }; g2.alignment = g1.alignment; 
+    ['G1','G2'].forEach(a=>{ ws.getCell(a).border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; }); 
+    const h1 = ws.getCell('H1'); h1.value='팀장'; h1.font={name:'맑은 고딕',size:11}; h1.alignment={vertical:'middle',horizontal:'center'}; 
+    const h2 = ws.getCell('H2'); h2.value=''; 
+    ['H1','H2'].forEach(a=>{ ws.getCell(a).border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; }); 
+    ws.mergeCells('A3:H3'); 
+    const t = ws.getCell('A3'); t.value = `${y}년 ${m}월 린넨실(직원) 출근표`; t.font  = {name:'맑은 고딕', size:18, bold:true}; t.alignment = {vertical:'middle', horizontal:'center'}; 
+    ws.getCell('A4').value='날짜'; ws.getCell('B4').value='이름'; ws.getCell('C4').value='출근시각'; ws.getCell('D4').value='퇴근시각'; ws.getCell('E4').value='본인서명'; ws.getCell('F4').value='비고'; ws.mergeCells('F4:G4'); ws.getCell('H4').value='담당자확인'; 
+    ['A4','B4','C4','D4','E4','F4','H4'].forEach(a=>{ const c=ws.getCell(a); c.font={...baseFont, bold:true}; c.alignment={vertical:'middle',horizontal:'center'}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF1F5F9'}}; c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; }); 
+    
+    const lastDay = new Date(y, m, 0).getDate(); 
+    const startRow = 5; 
+    for(let d=1; d<=lastDay; d++){ 
+        const rIdx = startRow + d - 1; 
+        const r = ws.getRow(rIdx); 
+        r.height = 22; 
+        const dateObj = new Date(y, m-1, d); 
+        const dow = dateObj.getDay(); 
+        const isSun = dow===0, isSat=dow===6; 
+        
+        const tr = qsa('#tbody tr')[d-1]; 
+        // --- ▼▼▼ 이 부분이 수정되었습니다 ▼▼▼ ---
+        const dateCellInTable = tr ? tr.children[0] : null;
+        const isManuallySetAsHoliday = dateCellInTable ? dateCellInTable.classList.contains('sun') : false;
+        // --- ▲▲▲ 여기까지 수정 ▲▲▲ ---
+
+        let [ , , inT, outT, , noteText] = tr ? Array.from(tr.children).map(td=> (td.textContent||'').trim()) : [null,null,'','','','']; 
+        
+        if(isSun){ inT='휴'; outT='무'; } 
+        else { 
+            if(!inT)  inT=DEFAULT_IN; 
+            if(!outT) outT=DEFAULT_OUT; 
+        } 
+        
+        const hlabel = dynamicHolidayLabel(y,m,d); 
+        noteText = addLabelOnce(noteText, hlabel); 
+        
+        ws.getCell(rIdx,1).value=d; 
+        ws.getCell(rIdx,2).value=(nameInput.value||'').trim(); 
+        ws.getCell(rIdx,3).value=inT; 
+        ws.getCell(rIdx,4).value=outT; 
+        ws.getCell(rIdx,5).value=''; 
+        ws.getCell(rIdx,6).value=noteText||''; 
+        ws.mergeCells(`F${rIdx}:G${rIdx}`); 
+        ws.getCell(rIdx,8).value=''; 
+        
+        for(let c=1;c<=8;c++){ 
+            if(c===7) continue; 
+            const cell=ws.getCell(rIdx,c); 
+            cell.font=baseFont; 
+            cell.alignment={vertical:'middle',horizontal:(c===6?'left':'center')}; 
+            cell.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; 
+        } 
+        ws.getCell(rIdx,6).alignment = { vertical:'middle', horizontal:'left', wrapText:false }; 
+        
+        if(isSat){ ws.getCell(rIdx,1).font={...baseFont,color:{argb:'FF2563EB'}}; } 
+
+        // --- ▼▼▼ 이 부분이 수정되었습니다 ▼▼▼ ---
+        if(isSun || hlabel || isManuallySetAsHoliday){ 
+            ws.getCell(rIdx,1).font={...baseFont,color:{argb:'FFEF4444'}}; 
+        }
+        // --- ▲▲▲ 여기까지 수정 ▲▲▲ ---
+    } 
+    ws.eachRow(row=> row.eachCell(cell=>{ cell.font = cell.font || baseFont; })); 
+    const fileName = `${y}-${pad2(m)}-출근부.xlsx`; 
+    return {wb, fileName}; 
+}
 
     xlsxBtn.addEventListener('click', async ()=>{ try{ const {wb,fileName} = await makeWorkbook(); const buf = await wb.xlsx.writeBuffer(); saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), fileName); }catch(e){ if(e.message!=='no-month') console.error(e); } });
 
