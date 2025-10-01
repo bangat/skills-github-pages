@@ -707,7 +707,7 @@ tr[data-rank="3"] td:first-child .wardName::before { content: "🥉"; }
 /* --- 아이콘 컬러 지정 --- */
 .navTab[data-section="input"] .icon { color: #3b82f6; } /* 입력: 파란색 */
 .navTab[data-section="stats"] .icon { color: #10b981; } /* 통계: 녹색 */
-.navTab[data-section="guest"] .icon { color: #f59e0b; } /* 소통: 주황색 */
+.navTab[data-section="status"] .icon { color: #f97316; } /* 현황: 주황색 <-- 이 줄 추가 */
 .navTab[data-section="admin"] .icon { color: #6366f1; } /* 관리자: 보라색 */
 
 /* --- 활성화된 탭 아이콘 스타일 --- */
@@ -958,6 +958,101 @@ html.dark-mode #curWard {
 }
 
 /* --- ▷▷▷ 테마 전환 버튼 및 다크 모드 스타일 종료 ▷▷▷ --- */  
+
+
+/* --- 제출 현황 모달 스타일 --- */
+.status-summary {
+  padding: 12px;
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  margin-bottom: 16px;
+  text-align: center;
+  font-weight: 800;
+  font-size: 16px;
+}
+.status-summary .highlight {
+  color: var(--accent);
+  font-size: 18px;
+}
+.status-section {
+  margin-bottom: 12px;
+}
+.status-header {
+  font-weight: 900;
+  font-size: 16px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--border);
+}
+.status-header .count {
+  font-size: 14px;
+  color: #fff;
+  background-color: var(--muted);
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-left: 6px;
+}
+.status-header.submitted .count { background-color: #10b981; }
+.status-header.unsubmitted .count { background-color: #ef4444; }
+
+.status-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.status-item {
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--text);
+  background-color: #fff;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-1);
+}
+.status-item.unsubmitted {
+  color: #b91c1c;
+  background-color: #fee2e2;
+  border-color: #fecaca;
+}
+
+/* --- 미제출 누적 현황 스타일 --- */
+.cumulative-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.cumulative-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-radius: var(--r-md);
+  margin-bottom: 8px;
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+}
+.cumulative-item .ward {
+  font-weight: 800;
+  font-size: 16px;
+}
+.cumulative-item .count-badge {
+  font-weight: 900;
+  color: #fff;
+  background-color: #ef4444;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 14px;
+}
+
+.modal-subtitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
 </style>
 </head>
 <body>
@@ -966,7 +1061,7 @@ html.dark-mode #curWard {
   <div class="nav">
     <button class="navTab active" data-section="input"><i class="icon" data-feather="edit-3"></i>입력</button>
     <button class="navTab" data-section="stats"><i class="icon" data-feather="bar-chart-2"></i>통계</button>
-    <button class="navTab" data-section="guest"><i class="icon" data-feather="message-square"></i>소통</button>
+<button class="navTab" data-section="status"><i class="icon" data-feather="check-circle"></i>현황</button>
     <button class="navTab" data-section="admin"><i class="icon" data-feather="user-check"></i>관리자</button>
     <div class="nav-slider" id="navSlider" aria-hidden="true"></div>
   </div>
@@ -1035,6 +1130,26 @@ html.dark-mode #curWard {
       <div id="statsEmpty" class="empty" style="display:none">해당 기간 데이터가 없습니다.</div>
     </section>
 </main>
+
+<div id="statusModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="stTitle" style="display:none">
+  <div class="modalCard" role="document">
+    <div class="modalHead" id="stTitle">
+      오늘의 제출 현황
+      <div class="modal-subtitle">제출 마감은 오후 3시이며, 이후 미제출된 병동은 자동으로 기록됩니다.</div>
+    </div>
+    <div class="modalBody">
+      <div id="statusBodyContent">
+        <div class="spinner-container" style="display: flex; justify-content: center; padding: 20px;">
+          <div class="spinner"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modalActions">
+      <button type="button" class="btn primary" id="stClose" style="flex-grow: 1;">닫기</button>
+    </div>
+  </div>
+</div>
+
 <div id="wardPromptModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="wpTitle" style="display:none">
   <div class="modalCard" role="document">
     <div class="modalHead" id="wpTitle">🚨 병동 선택 필요</div>
@@ -1449,7 +1564,56 @@ registerPushToken(); // 페이지 로드 시 호출
     }
   }
 
-  window.__fb = { saveLogsToRTDB, startStatsLiveWatcher, checkGitaExists };
+// 1. 함수 추가: 특정 날짜에 제출된 모든 병동 목록 가져오기
+async function getSubmittedWardsForDate(dateStr) {
+    try {
+        const dateObj = new Date(dateStr + 'T12:00:00');
+        const startOfDay = dayStart(dateObj);
+        const endOfDay = dayEndInclusiveMs(dateObj);
+        const logsRef = ref(rtdb, 'logs');
+        const q = query(logsRef, orderByChild('ts'), startAt(startOfDay), endAt(endOfDay));
+        const snapshot = await get(q);
+        const submittedWards = new Set();
+        if (snapshot.exists()) {
+            const logsForDay = snapshot.val();
+            for (const key in logsForDay) {
+                if (logsForDay[key].ward) {
+                    submittedWards.add(logsForDay[key].ward);
+                }
+            }
+        }
+        return Array.from(submittedWards);
+    } catch (error) {
+        console.error("제출된 병동 목록 조회 중 오류:", error);
+        return [];
+    }
+}
+
+// 2. 함수 추가: 미제출 현황을 DB에 기록하기
+async function saveUnsubmittedLog({ date, count, wards }) {
+    const logEntry = {
+        ts: Date.now(),
+        date: date,
+        unsubmittedCount: count,
+        unsubmittedWards: wards
+    };
+    await push(ref(rtdb, "unsubmittedLogs"), logEntry);
+}
+
+
+async function getUnsubmittedHistory() {
+    try {
+        const snapshot = await get(ref(rtdb, 'unsubmittedLogs'));
+        if (snapshot.exists()) {
+            return Object.values(snapshot.val());
+        }
+        return [];
+    } catch (error) {
+        console.error("미제출 기록 조회 중 오류:", error);
+        return [];
+    }
+}
+window.__fb = { saveLogsToRTDB, startStatsLiveWatcher, checkGitaExists, getSubmittedWardsForDate, saveUnsubmittedLog, getUnsubmittedHistory };
 </script>
 
 <script>
@@ -2448,20 +2612,22 @@ function showToast(msg, sub){
 
 /* === 상단 탭 네비게이션 제어 === */
 function moveTopSlider(section){
-  const idx = ["input","stats","guest","admin"].indexOf(section);
-  const slider = document.getElementById('navSlider');
+  const slider = document.getElementById('navSlider'); // 이 부분이 수정되었습니다.
+  const idx = ["input", "stats", "status", "admin"].indexOf(section);
   if (slider && idx >= 0) slider.style.transform = `translateX(${idx*100}%)`;
 }
+
 function setTopActive(section){
   document.querySelectorAll('.navTab').forEach(b=>{ b.classList.toggle('active', b.dataset.section===section); });
   moveTopSlider(section);
 }
+
 function goSection(section){
-  if (section === 'guest'){
-    const url = `방명록.html${state.ward ? ('?ward=' + encodeURIComponent(state.ward)) : ''}`;
-    location.href = url;
+  if (section === 'status'){
+    openStatusModal();
     return;
   }
+
   if (section === 'admin'){ openAdminGate(); return; }
   state.section = section;
   setTopActive(section);
@@ -2590,6 +2756,127 @@ async function autoSetGitaQuantities() { // async 키워드 추가
     }
   }, 500);
 }
+
+/* === 제출 현황 모달 기능 === */
+async function openStatusModal() {
+  const modalBody = el('#statusBodyContent');
+
+  // 로딩 화면 표시
+  modalBody.innerHTML = `<div class="spinner-container" style="display: flex; justify-content: center; padding: 20px;"><div class="spinner"></div></div>`;
+  openModal('#statusModal');
+
+  const issueDate = el("#issueDate").value;
+
+  // 두 가지 데이터를 동시에 가져옵니다: 오늘의 제출 현황, 전체 미제출 기록
+  const [submittedWards, unsubmittedHistory] = await Promise.all([
+    window.__fb.getSubmittedWardsForDate(issueDate),
+    window.__fb.getUnsubmittedHistory()
+  ]);
+
+  const targetWards = WARDS.filter(w => w !== '린넨실' && w !== '기타');
+  const unsubmittedWards = targetWards.filter(w => !submittedWards.includes(w));
+  const totalCount = targetWards.length;
+  const submittedCount = totalCount - unsubmittedWards.length;
+
+  // 미제출 누적 횟수 계산
+  const cumulativeCounts = {};
+  targetWards.forEach(w => { cumulativeCounts[w] = 0; });
+  unsubmittedHistory.forEach(log => {
+    if (log.unsubmittedWards && Array.isArray(log.unsubmittedWards)) {
+      log.unsubmittedWards.forEach(ward => {
+        if (ward in cumulativeCounts) {
+          cumulativeCounts[ward]++;
+        }
+      });
+    }
+  });
+  
+  const sortedCumulative = Object.entries(cumulativeCounts)
+    .filter(([, count]) => count > 0)
+    .sort(([, a], [, b]) => b - a);
+
+  // 모달 내용 생성
+  let newHtml = `
+    <div class="status-summary">
+      총 ${totalCount}개 병동 중 <span class="highlight">${unsubmittedWards.length}</span>곳 미제출
+    </div>
+    <div class="status-section">
+      <div class="status-header submitted">오늘 제출 완료 <span class="count">${submittedCount}</span></div>
+      <div class="status-list">
+        ${targetWards.filter(w => submittedWards.includes(w)).map(w => `<span class="status-item">${w}</span>`).join('') || '<span style="color:var(--muted);">없음</span>'}
+      </div>
+    </div>
+    <div class="status-section">
+      <div class="status-header unsubmitted">오늘 미제출 <span class="count">${unsubmittedWards.length}</span></div>
+      <div class="status-list">
+        ${unsubmittedWards.map(w => `<span class="status-item unsubmitted">${w}</span>`).join('') || '<span style="color:var(--muted);">없음</span>'}
+      </div>
+    </div>
+    <div class="status-section">
+      <div class="status-header">누적 미제출 현황 <span class="count">${sortedCumulative.length}</span></div>
+      <ul class="cumulative-list">
+        ${sortedCumulative.length > 0 ? sortedCumulative.map(([ward, count]) => `
+          <li class="cumulative-item">
+            <span class="ward">${ward} 병동</span>
+            <span class="count-badge">${count}회</span>
+          </li>
+        `).join('') : '<li style="color:var(--muted); text-align:center; padding:10px;">기록 없음</li>'}
+      </ul>
+    </div>
+  `;
+  modalBody.innerHTML = newHtml;
+
+  el('#stClose').onclick = () => closeModal('#statusModal');
+}
+/* === 미제출 현황 자동 기록 기능 === */
+async function runAutoUnsubmittedCheck() {
+  const now = new Date();
+  const currentHour = now.getHours();
+
+  // 오후 6시(18시) 이전이면 실행하지 않음
+  if (currentHour < 15) {
+    console.log("자동 기록 시간(15시) 이전이므로 체크를 건너뜁니다.");
+    return;
+  }
+
+  // 오늘 날짜를 'YYYY-MM-DD' 형식으로 생성
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+
+  try {
+    // DB를 확인하여 오늘 날짜로 이미 기록이 있는지 체크
+    const alreadyLogged = await window.__fb.hasUnsubmittedLogForDate(todayStr);
+    if (alreadyLogged) {
+      console.log(`'${todayStr}' 미제출 현황은 이미 기록되었습니다.`);
+      return;
+    }
+
+    console.log(`'${todayStr}' 미제출 현황 자동 기록을 시작합니다.`);
+    showToast('미제출 현황 자동 기록 중...');
+
+    // 미제출 병동 계산
+    const submittedWards = await window.__fb.getSubmittedWardsForDate(todayStr);
+    const targetWards = WARDS.filter(w => w !== '린넨실' && w !== '기타');
+    const unsubmittedWards = targetWards.filter(w => !submittedWards.includes(w));
+
+    // 미제출 병동이 있을 경우에만 기록
+    if (unsubmittedWards.length > 0) {
+      await window.__fb.saveUnsubmittedLog({
+        date: todayStr,
+        count: unsubmittedWards.length,
+        wards: unsubmittedWards
+      });
+      showToast(`${todayStr} 미제출 현황 기록 완료`);
+    } else {
+      console.log("모든 병동이 제출하여 자동 기록할 내역이 없습니다.");
+    }
+  } catch (e) {
+    console.error("미제출 자동 기록 중 오류 발생:", e);
+  }
+}
+
 /* === 페이지 초기화 및 이벤트 핸들러 바인딩 === */
 window.addEventListener("DOMContentLoaded",()=>{
   el('#wpOk').onclick = () => { closeModal('#wardPromptModal'); openModal('#headerEditModal', '#wardSelect'); };
@@ -2753,6 +3040,7 @@ el("#wardSelect").onchange = e => {
   const urlTab = new URL(location.href).searchParams.get("tab");
   goSection(urlTab === "stats" ? "stats" : "input");
     setTimeout(maybeShowNotices, 100);
+  runAutoUnsubmittedCheck(); 
 
 
 });
