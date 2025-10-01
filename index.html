@@ -1646,6 +1646,7 @@ async function getUnsubmittedHistory() {
     }
 }
 window.__fb = { saveLogsToRTDB, startStatsLiveWatcher, checkGitaExists, getSubmittedWardsForDate, saveUnsubmittedLog, getUnsubmittedHistory };
+runAutoUnsubmittedCheck();
 </script>
 
 <script>
@@ -3109,8 +3110,6 @@ el("#wardSelect").onchange = e => {
   const urlTab = new URL(location.href).searchParams.get("tab");
   goSection(urlTab === "stats" ? "stats" : "input");
     setTimeout(maybeShowNotices, 100);
-  runAutoUnsubmittedCheck(); 
-
 
 });
 </script>
@@ -3510,5 +3509,18 @@ document.addEventListener('DOMContentLoaded', () => {
   applyTheme(getCurrentTheme());
 });
 </script>
+
+  <audio id="noticeCloseSound" preload="auto">
+  <source src="https://blog.kakaocdn.net/dna/sfvZ5/dJMb9XK3GEN/AAAAAAAAAAAAAAAAAAAAAFianpy8yEUjgXFtofNEXhNNEfyHXzCb1g7qM_QURnmw/%EC%95%88%EB%85%95%ED%9E%88%EA%B3%84%EC%84%B8%EC%9A%94%EC%97%AC%EB%9F%AC%EB%B6%84.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1759244399&allow_ip=&allow_referer=&signature=gJVaM%2B4yTa9rEUctV3VrtrD8cew%3D&attach=1&knm=tfile.mp3" type="audio/mpeg">
+</audio>
+  
 </body>
 </html>
+
+
+
+
+
+
+
+
