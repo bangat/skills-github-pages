@@ -402,9 +402,12 @@
     if (rec.in)  inCell.textContent  = rec.in;
     if (rec.out) outCell.textContent = rec.out;
 
-    // isHoliday 값에 따라 빨간날 표시
-    if (rec.isHoliday === true && !dateCell.classList.contains('sun')) {
-        dateCell.classList.add('sun');
+    // isHoliday 값에 따라 빨간날 표시 및 data 속성 저장
+    if (rec.isHoliday === true) {
+        if(!dateCell.classList.contains('sun')) dateCell.classList.add('sun');
+        tr.dataset.isHoliday = "true"; // 행 자체에 저장 상태 기록
+    } else {
+        tr.dataset.isHoliday = "false";
     }
 
     const hlabel = dynamicHolidayLabel(y,m,day);
@@ -413,35 +416,16 @@
   });
 }
 
-    window.saveDayToFirebase = saveDayToFirebase;
+window.saveDayToFirebase = saveDayToFirebase;
     window.loadMonthFromFirebase = loadMonthFromFirebase;
     window.applyMonthDataToTable = applyMonthDataToTable;
-  </script>
 
-  <!-- 공지: RTDB 클라이언트 -->
-  <script type="module">
-    import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getDatabase, ref, push, update, get, query, orderByChild, limitToLast, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
-      authDomain: "hallymlinen.firebaseapp.com",
-      databaseURL: "https://hallymlinen-default-rtdb.firebaseio.com",
-      projectId: "hallymlinen",
-      storageBucket: "hallymlinen.appspot.com",
-      messagingSenderId: "867775830688",
-      appId: "1:867775830688:web:cef3ed4e70ae9818f347c5",
-      measurementId: "G-T02ZFK18L3"
-    };
-    const app  = getApps().length ? getApp() : initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    if (!auth.currentUser) signInAnonymously(auth).catch(e=>console.error('notice auth fail:', e));
-
+    const { getDatabase, ref, push, update, get, query, orderByChild, limitToLast, remove } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js");
     const rtdb = getDatabase(app);
     window.__noticeRTDB = { rtdb, ref, push, update, get, query, orderByChild, limitToLast, remove };
   </script>
-</head>
+
+  </head>
 
 <body>
   <div class="wrap">
@@ -794,10 +778,15 @@ function showToast(msg, options = {}) {
   if (dayOffCheck){ dayOffCheck.checked = isCellHolidayMark(inVal, outVal); const disabled = dayOffCheck.checked; if (timeIn)  timeIn.disabled  = disabled; if (timeOut) timeOut.disabled = disabled; }
   
   const holidayCheck = qs('#holidayCheck');
-  if (holidayCheck) { holidayCheck.checked = dateCell.classList.contains('sun') && !meta.isSun; }
+  // 서버에 저장된 isHoliday 값을 읽어 토글 상태에 반영
+  if (holidayCheck) { 
+    const isSavedAsHoliday = tr.dataset.isHoliday === "true";
+    holidayCheck.checked = isSavedAsHoliday || (dateCell.classList.contains('sun') && !meta.isSun);
+  }
 
   editBackdrop.style.display='flex';
 }
+
     function closeEditModal(){ editBackdrop.style.display='none'; }
     qs('#editCancel').addEventListener('click', closeEditModal);
    qs('#editApply').addEventListener('click', async ()=>{
