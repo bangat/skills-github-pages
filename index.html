@@ -1053,6 +1053,25 @@ html.dark-mode #curWard {
   margin-top: 4px;
 }
 
+/* --- 미제출 상세 기록 모달 스타일 --- */
+.detail-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.detail-item {
+  font-weight: 700;
+  font-size: 16px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  color: #c2410c;
+  background-color: #fff7ed;
+}
+.detail-item:last-child {
+  border-bottom: none;
+}
+
 </style>
 </head>
 <body>
@@ -1146,6 +1165,19 @@ html.dark-mode #curWard {
     </div>
     <div class="modalActions">
       <button type="button" class="btn primary" id="stClose" style="flex-grow: 1;">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div id="historyDetailModal" class="modalOverlay" role="dialog" aria-modal="true" style="display:none">
+  <div class="modalCard" role="document">
+    <div class="modalHead" id="detailModalTitle">상세 기록</div>
+    <div class="modalBody">
+      <ul class="detail-list" id="detailDateList">
+        </ul>
+    </div>
+    <div class="modalActions">
+      <button type="button" class="btn primary" id="detailCloseBtn" style="flex-grow: 1;">닫기</button>
     </div>
   </div>
 </div>
@@ -2758,16 +2790,42 @@ async function autoSetGitaQuantities() { // async 키워드 추가
 }
 
 /* === 제출 현황 모달 기능 === */
+
+function showHistoryDetailModal(ward, history) {
+  const modalTitle = el('#detailModalTitle');
+  const dateList = el('#detailDateList');
+
+  // 요일 변환을 위한 배열
+  const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+
+  const wardHistory = history
+    .filter(log => log.unsubmittedWards && log.unsubmittedWards.includes(ward))
+    .map(log => log.date)
+    .sort((a, b) => b.localeCompare(a));
+
+  modalTitle.textContent = `${ward} 병동 미제출 상세 기록`;
+  if (wardHistory.length > 0) {
+    // 날짜와 요일을 함께 표시하도록 수정
+    dateList.innerHTML = wardHistory.map(dateStr => {
+      const dateObj = new Date(dateStr + 'T12:00:00');
+      const dayName = days[dateObj.getDay()];
+      return `<li class="detail-item">${dateStr} ${dayName}</li>`;
+    }).join('');
+  } else {
+    dateList.innerHTML = `<li class="detail-item">기록 없음</li>`;
+  }
+
+  openModal('#historyDetailModal');
+  el('#detailCloseBtn').onclick = () => closeModal('#historyDetailModal');
+}
+
 async function openStatusModal() {
   const modalBody = el('#statusBodyContent');
 
-  // 로딩 화면 표시
   modalBody.innerHTML = `<div class="spinner-container" style="display: flex; justify-content: center; padding: 20px;"><div class="spinner"></div></div>`;
   openModal('#statusModal');
 
   const issueDate = el("#issueDate").value;
-
-  // 두 가지 데이터를 동시에 가져옵니다: 오늘의 제출 현황, 전체 미제출 기록
   const [submittedWards, unsubmittedHistory] = await Promise.all([
     window.__fb.getSubmittedWardsForDate(issueDate),
     window.__fb.getUnsubmittedHistory()
@@ -2778,7 +2836,6 @@ async function openStatusModal() {
   const totalCount = targetWards.length;
   const submittedCount = totalCount - unsubmittedWards.length;
 
-  // 미제출 누적 횟수 계산
   const cumulativeCounts = {};
   targetWards.forEach(w => { cumulativeCounts[w] = 0; });
   unsubmittedHistory.forEach(log => {
@@ -2795,7 +2852,6 @@ async function openStatusModal() {
     .filter(([, count]) => count > 0)
     .sort(([, a], [, b]) => b - a);
 
-  // 모달 내용 생성
   let newHtml = `
     <div class="status-summary">
       총 ${totalCount}개 병동 중 <span class="highlight">${unsubmittedWards.length}</span>곳 미제출
@@ -2814,9 +2870,9 @@ async function openStatusModal() {
     </div>
     <div class="status-section">
       <div class="status-header">누적 미제출 현황 <span class="count">${sortedCumulative.length}</span></div>
-      <ul class="cumulative-list">
+      <ul class="cumulative-list" id="cumulativeList">
         ${sortedCumulative.length > 0 ? sortedCumulative.map(([ward, count]) => `
-          <li class="cumulative-item">
+          <li class="cumulative-item" data-ward="${ward}" style="cursor: pointer;">
             <span class="ward">${ward} 병동</span>
             <span class="count-badge">${count}회</span>
           </li>
@@ -2827,7 +2883,20 @@ async function openStatusModal() {
   modalBody.innerHTML = newHtml;
 
   el('#stClose').onclick = () => closeModal('#statusModal');
+
+  // --- ▼▼▼ 여기에 클릭 이벤트 리스너 추가 ▼▼▼ ---
+  const cumulativeList = el('#cumulativeList');
+  if (cumulativeList) {
+    cumulativeList.addEventListener('click', (e) => {
+      const targetItem = e.target.closest('.cumulative-item');
+      if (targetItem && targetItem.dataset.ward) {
+        const ward = targetItem.dataset.ward;
+        showHistoryDetailModal(ward, unsubmittedHistory);
+      }
+    });
+  }
 }
+
 /* === 미제출 현황 자동 기록 기능 === */
 async function runAutoUnsubmittedCheck() {
   const now = new Date();
@@ -3441,18 +3510,5 @@ document.addEventListener('DOMContentLoaded', () => {
   applyTheme(getCurrentTheme());
 });
 </script>
-
-  <audio id="noticeCloseSound" preload="auto">
-  <source src="https://blog.kakaocdn.net/dna/sfvZ5/dJMb9XK3GEN/AAAAAAAAAAAAAAAAAAAAAFianpy8yEUjgXFtofNEXhNNEfyHXzCb1g7qM_QURnmw/%EC%95%88%EB%85%95%ED%9E%88%EA%B3%84%EC%84%B8%EC%9A%94%EC%97%AC%EB%9F%AC%EB%B6%84.mp3?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1759244399&allow_ip=&allow_referer=&signature=gJVaM%2B4yTa9rEUctV3VrtrD8cew%3D&attach=1&knm=tfile.mp3" type="audio/mpeg">
-</audio>
-  
 </body>
 </html>
-
-
-
-
-
-
-
-
