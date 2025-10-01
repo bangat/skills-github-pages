@@ -320,15 +320,31 @@
       if(!res.ok) throw new Error(`Server error: ${res.status}`);
     }
 
-    async function loadMonthFromFirebase(y,m,name){
-      const token = localStorage.getItem('adminToken');
-      if (!token) { alert("인증 토큰이 없습니다. 다시 로그인해주세요."); window.location.href='./index.html'; return {}; }
-      const url = "https://getattendancedata-t7cbh6uw5a-uc.a.run.app";
-      url.searchParams.append('year', y); url.searchParams.append('month', m); url.searchParams.append('name', name);
-      const res = await fetch(url,{ headers:{'Authorization':`Bearer ${token}`}});
-      if(!res.ok){ if(res.status===403){ localStorage.removeItem('adminToken'); window.location.href='./index.html'; } throw new Error(`Server error: ${res.status}`); }
-      return await res.json();
+   async function loadMonthFromFirebase(y, m, name) {
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+        alert("인증 토큰이 없습니다. 다시 로그인해주세요.");
+        window.location.href = './index.html';
+        return {};
     }
+    
+    // URL 객체를 먼저 생성하고, 파라미터를 추가하는 방식으로 수정
+    const url = new URL("https://getattendancedata-t7cbh6uw5a-uc.a.run.app");
+    url.searchParams.append('year', y);
+    url.searchParams.append('month', m);
+    url.searchParams.append('name', name);
+
+    const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+
+    if (!res.ok) {
+        if (res.status === 403) {
+            localStorage.removeItem('adminToken');
+            window.location.href = './index.html';
+        }
+        throw new Error(`Server error: ${res.status}`);
+    }
+    return await res.json();
+}
 
     function applyMonthDataToTable(y,m,data){
       const rows = Array.from(document.querySelectorAll('#tbody tr'));
@@ -581,7 +597,8 @@
     function setLastEmailCache(v){ try{ localStorage.setItem(LS_KEY_LAST_EMAIL, String(v||'').trim()); }catch(_e){} }
     function getLastEmailCache(){ try{ return localStorage.getItem(LS_KEY_LAST_EMAIL) || ''; }catch(_e){ return ''; } }
 
-    const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxLS7c2bcl50k5LMOqC8Axx7PUZN-h5mN-MuNQddNcjc9P2BhWPxmaSPAWWbzhDRK8/exec';
+// 출근부.html 파일 안
+const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzjULstxZJYCqDDf_gXJ9ud7iJJsGKjA7Zi6b1wrEYsfOs9iYkaJmxxzYJBM2k2wO0/exec';
     function showBootSpinner(){ const el = document.getElementById('bootSpinner'); if (el) el.style.display = 'flex'; }
     function hideBootSpinner(){ const el = document.getElementById('bootSpinner'); if (el) el.style.display = 'none'; }
     fetch(GAS_WEBAPP_URL, { method: 'POST', headers: {'Content-Type':'text/plain;charset=UTF-8'}, body: JSON.stringify({ ping: true }) }).catch(()=>{});
