@@ -88,13 +88,57 @@
   .modal-hd{padding:14px 18px;border-bottom:1px solid var(--border);font-weight:800;font-size:18px}
   .modal-bd{padding:16px 18px;display:grid;gap:12px}
   .modal-ft{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+/* --- 편집 모달 UI 개선 --- */
+.modal-bd .edit-section {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  display: grid;
+  gap: 12px;
+  background-color: #fcfdff;
+}
+.modal-bd .edit-section-title {
+  font-weight: 800;
+  color: var(--muted);
+  font-size: 13px;
+  margin: -4px 0 0 2px;
+}
 .row-inline {
   display: grid;
-  grid-template-columns: 88px minmax(0, 1fr); /* ← 라벨 폭 통일, 입력은 균등 확장 */
+  grid-template-columns: 80px 1fr;
   gap: 10px;
   align-items: center;
 }
-
+.row-inline > label:first-of-type {
+  font-weight: 800;
+  text-align: right;
+  padding-right: 10px;
+}
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.checkbox-wrapper input[type="checkbox"] {
+  width: auto;
+  height: auto;
+}
+.checkbox-row > label:first-of-type {
+  display: none; /* 모바일 화면에서 불필요한 라벨 숨김 */
+}
+@media (max-width: 480px){
+  .row-inline {
+      grid-template-columns: 1fr;
+      gap: 6px;
+  }
+  .row-inline > label:first-of-type {
+      text-align: left;
+      padding-right: 0;
+  }
+  .row-inline.checkbox-row > label:first-of-type {
+      display: none;
+  }
+}
   .row-inline .wfit{width:140px}
   .hidden{display:none!important}
   
@@ -134,7 +178,7 @@
   @media (max-width: 480px){
     .modal{width:96vw;border-radius:16px}
     .modal-bd{gap:10px}
-    .row-inline{grid-template-columns:1fr;gap:6px; text-align:left;}
+.row-inline label{ display:flex; align-items:center; gap:8px; }
     .row-inline label{ font-weight:700; }
     input[type="text"], input[type="month"], input[type="email"], select, input[type="time"]{
       height:48px;font-size:16px
@@ -440,39 +484,67 @@
   </div>
 
   <!-- 편집 모달 -->
-  <div id="editBackdrop" class="modal-backdrop">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
-      <div class="modal-hd" id="editTitle">근무 상태 편집</div>
-      <div class="modal-bd">
-        <div class="row-inline"><label>대상 날짜</label><input id="editDate" type="text" readonly /></div>
+ <div id="editBackdrop" class="modal-backdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <div class="modal-hd" id="editTitle">근무 상태 편집</div>
+    <div class="modal-bd">
+      
+      <div class="edit-section">
+        <div class="row-inline">
+            <label>대상 날짜</label>
+            <input id="editDate" type="text" readonly style="background:#f1f5f9; font-weight:700;"/>
+        </div>
+      </div>
+
+      <div class="edit-section">
+        <div class="edit-section-title">근무 형태</div>
         <div class="row-inline">
           <label>휴가 사용</label>
           <select id="leaveSel">
-            <option value="">선택 안 함</option><option value="annual">연차</option><option value="half">반차</option><option value="family">조가</option>
+            <option value="">선택 안 함</option>
+            <option value="annual">연차</option>
+            <option value="half">반차</option>
+            <option value="family">조가</option>
           </select>
         </div>
+        <div class="row-inline checkbox-row">
+          <label></label> <div class="checkbox-wrapper">
+            <input id="dayOffCheck" type="checkbox" />
+            <label for="dayOffCheck">휴무로 표시</label>
+          </div>
+        </div>
+         <div class="row-inline checkbox-row">
+          <label></label>
+          <div class="checkbox-wrapper">
+            <input id="holidayCheck" type="checkbox" />
+            <label for="holidayCheck">공휴일(빨간날)로 지정</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="edit-section">
+        <div class="edit-section-title">시간 및 비고</div>
         <div class="row-inline">
           <label>시간 조정</label>
           <div class="row" style="gap:10px">
-            <input id="timeIn"  type="text" inputmode="numeric" pattern="\\d{2}:\\d{2}" placeholder="예: 06:00" class="wfit" />
+            <input id="timeIn"  type="text" inputmode="numeric" pattern="\\d{2}:\\d{2}" placeholder="예: 06:00" />
             <span>~</span>
-            <input id="timeOut" type="text" inputmode="numeric" pattern="\\d{2}:\\d{2}" placeholder="예: 15:30" class="wfit" />
+            <input id="timeOut" type="text" inputmode="numeric" pattern="\\d{2}:\\d{2}" placeholder="예: 15:30" />
           </div>
         </div>
         <div class="row-inline">
-          <label>휴무</label>
-          <div class="row" style="gap:10px">
-            <label style="display:flex;align-items:center;gap:8px"><input id="dayOffCheck" type="checkbox" /><span>휴무로 표시</span></label>
-          </div>
+          <label>비고</label>
+          <input id="editNote" type="text" placeholder="엑셀 비고란에 들어갑니다" />
         </div>
-        <div class="row-inline"><label>비고</label><input id="editNote" type="text" placeholder="엑셀 비고란에 들어갑니다" /></div>
       </div>
-      <div class="modal-ft">
-        <button class="btn" id="editCancel"><i class="icon" data-feather="x"></i>닫기</button>
-        <button class="btn primary" id="editApply"><i class="icon" data-feather="check-circle"></i>적용</button>
-      </div>
+
+    </div>
+    <div class="modal-ft">
+      <button class="btn" id="editCancel"><i class="icon" data-feather="x"></i>닫기</button>
+      <button class="btn primary" id="editApply"><i class="icon" data-feather="check-circle"></i>적용</button>
     </div>
   </div>
+</div>
 
   <!-- 메일 모달 -->
   <div id="emailBackdrop" class="modal-backdrop">
@@ -654,24 +726,38 @@ const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzjULstxZJYCqDDf
     function bindTimeAutoFormat(el){ if(!el) return; el.addEventListener('input', ()=>{ const v = el.value.replace(/[^\d]/g,''); if(v.length===0){ el.value=''; return; } if(v.length<=2){ el.value = v; return; } el.value = v.slice(0,2) + ':' + v.slice(2,4); }); el.addEventListener('blur', ()=>{ el.value = normalizeHHMM(el.value); }); }
     bindTimeAutoFormat(timeIn); bindTimeAutoFormat(timeOut);
     
-    let __toastTimer;
-    function showToast(msg, options = {}) {
-        const { duration = 2000, type = 'success' } = options;
-        const t = qs('#toast'); if(!t) return;
-        t.textContent = msg;
-        if (type === 'loading') {
-            t.style.backgroundColor = '#2563eb'; // blue
-        } else if (type === 'error') {
-            t.style.backgroundColor = '#ef4444'; // red
-        } else {
-            t.style.backgroundColor = '#16a34a'; // green (success)
-        }
-        t.style.display = 'block';
-        clearTimeout(__toastTimer);
-        if (type !== 'loading') {
-            __toastTimer = setTimeout(() => t.style.display = 'none', duration);
-        }
+   let __toastTimer;
+function showToast(msg, options = {}) {
+    const { duration = 2000, type = 'success' } = options;
+    const t = qs('#toast');
+    const spinner = qs('#bootSpinner');
+
+    if (!t || !spinner) return;
+    
+    // 로딩 타입일 경우, 중앙 스피너를 사용
+    if (type === 'loading') {
+        spinner.querySelector('div:last-child').textContent = msg;
+        spinner.style.display = 'flex';
+        // 로딩 중에는 토스트 메시지가 떠있으면 숨김
+        t.classList.remove('show');
+        return;
     }
+
+    // 로딩이 아닐 경우, 중앙 스피너를 숨김
+    spinner.style.display = 'none';
+    
+    // 하단 토스트 메시지 처리
+    t.textContent = msg;
+    t.className = 'show'; // 기본 클래스 설정
+    if (type === 'error') {
+        t.classList.add('error');
+    } else if (type === 'info') {
+        t.classList.add('info');
+    }
+    
+    clearTimeout(__toastTimer);
+    __toastTimer = setTimeout(() => t.classList.remove('show'), duration);
+}
 
     const dayOffCheck = qs('#dayOffCheck');
     function isCellHolidayMark(inVal, outVal){ return inVal === '휴' && outVal === '무'; }
@@ -679,52 +765,70 @@ const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzjULstxZJYCqDDf
 
     let currentRow=null, currentMeta=null;
     function openEditModal(meta, tr){
-      currentRow = tr; currentMeta=meta;
-      const [ , , inCell, outCell, , noteCell] = tr.children;
-      editDate.value = `${meta.y}-${pad2(meta.m)}-${pad2(meta.day)}`;
-      editNote.value = noteCell.textContent || '';
-      const inVal  = (inCell.textContent||'').trim();
-      const outVal = (outCell.textContent||'').trim();
-      leaveSel.value = (inVal==='연'&&outVal==='차') ? 'annual' : (inVal==='반'&&outVal==='차') ? 'half' : (inVal==='조'&&outVal==='가') ? 'family' : '';
-      timeIn.value  = (inVal.match(/(\d{1,2})\s*:\s*(\d{2})/)||[])[0]?.replace(/\s/g,'') || '';
-      timeOut.value = (outVal.match(/(\d{1,2})\s*:\s*(\d{2})/)||[])[0]?.replace(/\s/g,'') || '';
-      if (dayOffCheck){ dayOffCheck.checked = isCellHolidayMark(inVal, outVal); const disabled = dayOffCheck.checked; if (timeIn)  timeIn.disabled  = disabled; if (timeOut) timeOut.disabled = disabled; }
-      editBackdrop.style.display='flex';
-    }
+  currentRow = tr; currentMeta=meta;
+  const [ dateCell, , inCell, outCell, , noteCell] = tr.children;
+  editDate.value = `${meta.y}-${pad2(meta.m)}-${pad2(meta.day)}`;
+  editNote.value = (noteCell.textContent || '').replace(` / ${meta.hlabel}`, '').trim();
+  const inVal  = (inCell.textContent||'').trim();
+  const outVal = (outCell.textContent||'').trim();
+  leaveSel.value = (inVal==='연'&&outVal==='차') ? 'annual' : (inVal==='반'&&outVal==='차') ? 'half' : (inVal==='조'&&outVal==='가') ? 'family' : '';
+  timeIn.value  = (inVal.match(/(\d{1,2})\s*:\s*(\d{2})/)||[])[0]?.replace(/\s/g,'') || '';
+  timeOut.value = (outVal.match(/(\d{1,2})\s*:\s*(\d{2})/)||[])[0]?.replace(/\s/g,'') || '';
+  
+  const dayOffCheck = qs('#dayOffCheck');
+  if (dayOffCheck){ dayOffCheck.checked = isCellHolidayMark(inVal, outVal); const disabled = dayOffCheck.checked; if (timeIn)  timeIn.disabled  = disabled; if (timeOut) timeOut.disabled = disabled; }
+  
+  const holidayCheck = qs('#holidayCheck');
+  if (holidayCheck) { holidayCheck.checked = dateCell.classList.contains('sun') && !meta.isSun; }
+
+  editBackdrop.style.display='flex';
+}
     function closeEditModal(){ editBackdrop.style.display='none'; }
     qs('#editCancel').addEventListener('click', closeEditModal);
-    qs('#editApply').addEventListener('click', async ()=>{
-      if(!currentRow) return;
-      const [dateCell, , inCell, outCell, , noteCell] = currentRow.children;
-      const isSunday = /sun/.test(dateCell.className);
-      const [yy,mm2,dd] = editDate.value.split('-').map(Number);
-      const isHoliday = !!dynamicHolidayLabel(yy,mm2,dd);
-      if(leaveSel.value==='annual'){ inCell.textContent='연'; outCell.textContent='차'; }
-      else if(leaveSel.value==='half'){ inCell.textContent='반'; outCell.textContent='차'; }
-      else if(leaveSel.value==='family'){ inCell.textContent='조'; outCell.textContent='가'; }
-      else{
-        if (dayOffCheck && dayOffCheck.checked){ inCell.textContent='휴'; outCell.textContent='무'; }
-        else{
-          const tIn  = (timeIn?.value||'').trim(); const tOut = (timeOut?.value||'').trim();
-          if(tIn || tOut){ inCell.textContent = tIn ? tIn.replace(':',' : ') : ''; outCell.textContent = tOut ? tOut.replace(':',' : ') : ''; }
-          else{ if(isHoliday || isSunday){ inCell.textContent=''; outCell.textContent=''; } else { inCell.textContent=DEFAULT_IN; outCell.textContent=DEFAULT_OUT; } }
-        }
+   qs('#editApply').addEventListener('click', async ()=>{
+  if(!currentRow) return;
+  const [dateCell, , inCell, outCell, , noteCell] = currentRow.children;
+  const {y, m, day, isSun} = currentMeta;
+  
+  // '공휴일 지정' 체크박스 상태 반영
+  const holidayCheck = qs('#holidayCheck');
+  if (holidayCheck && holidayCheck.checked) {
+    dateCell.classList.add('sun');
+  } else if (!isSun) { // 일요일이 아닌 경우에만 빨간색 제거
+    dateCell.classList.remove('sun');
+  }
+
+  // 휴가 및 휴무 처리
+  if(leaveSel.value==='annual'){ inCell.textContent='연'; outCell.textContent='차'; }
+  else if(leaveSel.value==='half'){ inCell.textContent='반'; outCell.textContent='차'; }
+  else if(leaveSel.value==='family'){ inCell.textContent='조'; outCell.textContent='가'; }
+  else {
+    if (qs('#dayOffCheck') && qs('#dayOffCheck').checked){ inCell.textContent='휴'; outCell.textContent='무'; }
+    else {
+      const tIn  = normalizeHHMM(timeIn?.value||'');
+      const tOut = normalizeHHMM(timeOut?.value||'');
+      if(tIn || tOut){ inCell.textContent = tIn.replace(':',' : '); outCell.textContent = tOut.replace(':',' : '); }
+      else { 
+        if( (holidayCheck && holidayCheck.checked) || isSun){ inCell.textContent=''; outCell.textContent=''; } 
+        else { inCell.textContent=DEFAULT_IN; outCell.textContent=DEFAULT_OUT; } 
       }
-      const [y,m,day] = editDate.value.split('-').map(Number);
-      const hlabel = dynamicHolidayLabel(y,m,day);
-      noteCell.textContent = (window.addLabelOnce? window.addLabelOnce((qs('#editNote').value||'').trim(), hlabel) : (qs('#editNote').value||'').trim());
-      
-      showToast('서버에 요청중...', { type: 'loading' });
-      try {
-        const nm = (nameInput.value||'').trim();
-        await window.saveDayToFirebase({ y, m, day, name:nm, inT:(inCell.textContent||'').trim(), outT:(outCell.textContent||'').trim(), note:(noteCell.textContent||'').trim(), leave:(leaveSel.value||'') });
-        showToast('저장 완료');
-        closeEditModal();
-      } catch(e) {
-        showToast('저장 실패', {type: 'error'});
-        console.warn(e);
-      }
-    });
+    }
+  }
+  
+  const hlabel = dynamicHolidayLabel(y,m,day);
+  noteCell.textContent = addLabelOnce((qs('#editNote').value||'').trim(), hlabel);
+  
+  showToast('서버에 요청중...', { type: 'loading' });
+  try {
+    const nm = (nameInput.value||'').trim();
+    await saveDayToFirebase({ y, m, day, name:nm, inT:(inCell.textContent||'').trim(), outT:(outCell.textContent||'').trim(), note:(noteCell.textContent||'').trim(), leave:(leaveSel.value||'') });
+    showToast('저장 완료');
+    closeEditModal();
+  } catch(e) {
+    showToast('저장 실패', {type: 'error'});
+    console.warn(e);
+  }
+});
 
     async function makeWorkbook(){ const ym = monthInput.value; if(!ym){ alert('월을 선택하세요.'); throw new Error('no-month'); } const [y,m] = ym.split('-').map(Number); const nm = (nameInput.value||'').trim(); const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet('출근표', { pageSetup:{ paperSize:9, orientation:'portrait', margins:{left:0,right:0,top:0,bottom:0.1,header:0,footer:0}, horizontalCentered:true, verticalCentered:true, fitToPage:true, fitToWidth:1, fitToHeight:0 } }); const baseFont = {name:'맑은 고딕', size:12}; ws.getColumn(1).width = 6.25; ws.getColumn(2).width = 9.75; ws.getColumn(3).width = 12.88; ws.getColumn(4).width = 12.88; ws.getColumn(5).width = 12.88; ws.getColumn(6).width = 9.75; ws.getColumn(7).width = 5.35; ws.getColumn(8).width = 11; ws.getRow(1).height = 14.25; ws.getRow(2).height = 36.75; ws.getRow(3).height = 29.25; ws.getRow(4).height = 25; ws.mergeCells('G1:G2'); const g1 = ws.getCell('G1'); const g2 = ws.getCell('G2'); g1.value = '결\n재\n란'; g1.font  = {name:'맑은 고딕', size:11, bold:true}; g1.alignment = { vertical:'middle', horizontal:'center', wrapText:true }; g2.alignment = g1.alignment; ['G1','G2'].forEach(a=>{ ws.getCell(a).border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; }); const h1 = ws.getCell('H1'); h1.value='팀장'; h1.font={name:'맑은 고딕',size:11}; h1.alignment={vertical:'middle',horizontal:'center'}; const h2 = ws.getCell('H2'); h2.value=''; ['H1','H2'].forEach(a=>{ ws.getCell(a).border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; }); ws.mergeCells('A3:H3'); const t = ws.getCell('A3'); t.value = `${y}년 ${m}월 린넨실(직원) 출근표`; t.font  = {name:'맑은 고딕', size:18, bold:true}; t.alignment = {vertical:'middle', horizontal:'center'}; ws.getCell('A4').value='날짜'; ws.getCell('B4').value='이름'; ws.getCell('C4').value='출근시각'; ws.getCell('D4').value='퇴근시각'; ws.getCell('E4').value='본인서명'; ws.getCell('F4').value='비고'; ws.mergeCells('F4:G4'); ws.getCell('H4').value='담당자확인'; ['A4','B4','C4','D4','E4','F4','H4'].forEach(a=>{ const c=ws.getCell(a); c.font={...baseFont, bold:true}; c.alignment={vertical:'middle',horizontal:'center'}; c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF1F5F9'}}; c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; }); const lastDay = new Date(y, m, 0).getDate(); const startRow = 5; for(let d=1; d<=lastDay; d++){ const rIdx = startRow + d - 1; const r = ws.getRow(rIdx); r.height = 22; const dateObj = new Date(y, m-1, d); const dow = dateObj.getDay(); const isSun=dow===0, isSat=dow===6; const tr = qsa('#tbody tr')[d-1]; let [ , , inT, outT, , noteText] = tr ? Array.from(tr.children).map(td=> (td.textContent||'').trim()) : [null,null,'','','','']; if(isSun){ inT='휴'; outT='무'; } else{ if(!inT)  inT=DEFAULT_IN; if(!outT) outT=DEFAULT_OUT; } const hlabel = dynamicHolidayLabel(y,m,d); noteText = addLabelOnce(noteText, hlabel); ws.getCell(rIdx,1).value=d; ws.getCell(rIdx,2).value=(nameInput.value||'').trim(); ws.getCell(rIdx,3).value=inT; ws.getCell(rIdx,4).value=outT; ws.getCell(rIdx,5).value=''; ws.getCell(rIdx,6).value=noteText||''; ws.mergeCells(`F${rIdx}:G${rIdx}`); ws.getCell(rIdx,8).value=''; for(let c=1;c<=8;c++){ if(c===7) continue; const cell=ws.getCell(rIdx,c); cell.font=baseFont; cell.alignment={vertical:'middle',horizontal:(c===6?'left':'center')}; cell.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; } ws.getCell(rIdx,6).alignment = { vertical:'middle', horizontal:'left', wrapText:false }; if(isSat){ ws.getCell(rIdx,1).font={...baseFont,color:{argb:'FF2563EB'}}; } if(isSun || hlabel){ ws.getCell(rIdx,1).font={...baseFont,color:{argb:'FFEF4444'}}; } } ws.eachRow(row=> row.eachCell(cell=>{ cell.font = cell.font || baseFont; })); const fileName = `${y}-${pad2(m)}-출근부.xlsx`; return {wb, fileName}; }
 
