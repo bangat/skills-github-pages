@@ -320,6 +320,25 @@
   #toast.info  { background: linear-gradient(180deg,#60a5fa,#2563eb); box-shadow: 0 18px 42px rgba(37,99,235,.35); }
   /* ▷▷ 토스트 비주얼 업그레이드 종료 ▷▷ */
 
+
+#loginStatus {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+    font-size: 15px;
+    color: #16a34a; /* 초록색 */
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin: 0;
+  }
+  #loginStatus .icon {
+    stroke: #16a34a;
+    stroke-width: 2.5;
+  }
+
   /* ▷▷ 공지 저장 오버레이 종료 ▷▷ */
 @keyframes spin { from { transform:rotate(0deg);} to { transform:rotate(360deg);} }
   </style>
@@ -347,6 +366,23 @@
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     signInAnonymously(auth).catch((e)=> console.error("Anonymous sign-in failed:", e));
+
+// ▼▼▼ 이 onAuthStateChanged 리스너 코드를 추가해주세요 ▼▼▼
+onAuthStateChanged(auth, (user) => {
+    const statusEl = document.getElementById('loginStatus'); 
+    if (user && !user.isAnonymous && statusEl) {
+        const userName = user.displayName || '관리자';
+        statusEl.innerHTML = `<i class="icon" data-feather="activity"></i> ${userName}님 접속중`;
+        statusEl.style.display = 'flex'; 
+        feather.replace({width:'1em',height:'1em'});
+    } else {
+        if (statusEl) {
+             statusEl.innerHTML = '';
+             statusEl.style.display = 'none'; 
+        }
+        signInAnonymously(auth).catch((e)=> console.error("Anonymous sign-in failed:", e));
+    }
+});
 
     const pad2 = n => String(n).padStart(2,'0');
     const ymKey = (y,m)=>`${y}-${pad2(m)}`;
@@ -437,9 +473,9 @@ window.saveDayToFirebase = saveDayToFirebase;
 
     </nav>
 
-    <div class="card">
       <div class="card-head">
         <div class="title">출근부</div>
+<p id="loginStatus" style="position: absolute; top: 0; right: 0; font-weight: bold; font-size: 16px;"></p>
         <div class="grid-2">
           <input id="nameInput" type="text" placeholder="이름" />
           <div class="month-picker">
@@ -448,6 +484,7 @@ window.saveDayToFirebase = saveDayToFirebase;
             <i class="icon" data-feather="calendar"></i>
           </div>
         </div>
+
         <div class="grid-btns">
           <button id="genBtn" class="btn primary"><i class="icon" data-feather="download-cloud"></i>출근표 불러오기</button>
           <button id="clearBtn" class="btn"><i class="icon" data-feather="trash-2"></i>초기화</button>
