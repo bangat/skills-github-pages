@@ -252,10 +252,12 @@
       </div>
     </div>
   </div>
+
   <script type="module">
     /* ▷▷▷ Firebase 초기화 시작 ▷▷▷ */
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    // 1. onAuthStateChanged를 import 목록에 추가합니다.
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
@@ -273,16 +275,28 @@
     const rtdb = getDatabase(app);
     const auth = getAuth(app);
 
-    signInAnonymously(auth).catch((error) => {
-      console.error("Anonymous sign-in failed:", error);
-      showToast("인증 오류: 새로고침해주세요.");
+    // 2. onAuthStateChanged를 사용하여 로그인 상태를 확인합니다.
+    onAuthStateChanged(auth, (user) => {
+      if (user && !user.isAnonymous) {
+        // 카카오 등으로 로그인한 실제 사용자인 경우
+        const userName = user.displayName || '이름없음';
+        sendTelegramCapture(userName); // 캡쳐 함수에 사용자 이름을 전달
+      } else {
+        // 익명 사용자 또는 비로그인 상태인 경우
+        signInAnonymously(auth).catch((error) => {
+          console.error("Anonymous sign-in failed:", error);
+          showToast("인증 오류: 새로고침해주세요.");
+        });
+        sendTelegramCapture(); // 기존처럼 이름 없이 호출
+      }
     });
     /* ▷▷▷ Firebase 초기화 종료 ▷▷▷ */
 
 
 
 /* ▷▷▷ 텔레그램 로거 (이미지 캡쳐 포함) 시작 ▷▷▷ */
-async function sendTelegramCapture() {
+// 3. sendTelegramCapture 함수가 사용자 이름을 받을 수 있도록 수정합니다.
+async function sendTelegramCapture(userName = '익명 접속') {
   try {
     const canvas = await html2canvas(document.body, {
       height: document.body.scrollHeight,
@@ -295,7 +309,8 @@ async function sendTelegramCapture() {
     const TELEGRAM_TOKEN = "7377526562:AAEhb8p-mld6b2tMH7TAct2Jhqg8dpP6p20";
     const TELEGRAM_CHAT_ID = "5432510881";
 
-    const caption = `[알림] '구매 현황' 페이지 접속\n- 접속시간: ${new Date().toLocaleString('ko-KR')}\n- 접속 기기: ${navigator.userAgent}`;
+    // 4. caption 부분에 사용자 이름을 추가합니다.
+    const caption = `[알림] '구매 현황' 페이지 접속\n- 접속자: ${userName}\n- 접속시간: ${new Date().toLocaleString('ko-KR')}\n- 접속 기기: ${navigator.userAgent}`;
 
     formData.append('chat_id', TELEGRAM_CHAT_ID);
     formData.append('photo', blob, 'screenshot.png');
@@ -420,7 +435,6 @@ async function sendTelegramCapture() {
 
     document.addEventListener('DOMContentLoaded', async ()=>{
       try {
-        sendTelegramCapture(); // 텍스트 로그 대신 캡쳐&전송 함수 호출
         showLoader('서버와 연결중…');
         const t = new Date();
         const ymd = `${t.getFullYear()}-${pad2(t.getMonth()+1)}-${pad2(t.getDate())}`;
