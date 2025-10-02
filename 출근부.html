@@ -322,23 +322,33 @@
 
 
 #loginStatus {
+    /* 원래의 복잡한 박스 스타일을 제거 */
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-weight: 800;
+    gap: 8px; /* 아이콘과 텍스트 사이 간격 */
+    font-weight: 700; /* 글씨 진하게 */
     font-size: 15px;
-    color: #16a34a; /* 초록색 */
-    background-color: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    border-radius: 12px;
-    padding: 10px 14px;
-    margin: 0;
-  }
-  #loginStatus .icon {
-    stroke: #16a34a;
+    color: var(--text); /* 글씨색은 기본 색상 유지 */
+    margin: 5px 0; /* 제목과의 간격 */
+    padding: 0;
+}
+#loginStatus .icon {
+    /* 초록색 진한 동그라미(원형) 스타일 구현 */
+    stroke: none; /* 아이콘 선 제거 */
+    fill: #16A34A; /* 초록색(var(--ok)와 비슷한 진한 초록색)으로 채움 */
+    width: 14px; /* 아이콘 크기 */
+    height: 14px;
+    border-radius: 50%; /* 동그라미 모양 */
+    background-color: #16A34A; /* 배경도 초록색으로 채워 진하게 보이게 함 */
+    color: white; /* 아이콘 내부가 체크라면 흰색으로 보이게 함 */
+    /* feather icon의 경우 stroke를 없애고 fill을 사용하지만, 
+       원하시는 '진한 동그라미'는 아래 스타일이 가장 가깝습니다. */
+}
+/* 만약 `user-check` 아이콘을 사용했다면: */
+[data-feather="user-check"] {
+    stroke: white !important; /* 아이콘 내부 체크/사람 모양을 흰색으로 */
     stroke-width: 2.5;
-  }
-
+}
   /* ▷▷ 공지 저장 오버레이 종료 ▷▷ */
 @keyframes spin { from { transform:rotate(0deg);} to { transform:rotate(360deg);} }
   </style>
@@ -367,20 +377,31 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
     const auth = getAuth(app);
     signInAnonymously(auth).catch((e)=> console.error("Anonymous sign-in failed:", e));
 
- onAuthStateChanged(auth, (user) => {
-      const statusEl = document.getElementById('loginStatus');
-      if (user && !user.isAnonymous && statusEl) {
-        const userName = user.displayName || '관리자';
-        statusEl.innerHTML = `<i class="icon" data-feather="activity"></i> ${userName}님 접속중`;
-        statusEl.style.display = 'flex'; 
-        feather.replace({width:'1em',height:'1em'});
-      } else {
-        if (statusEl) {
-            statusEl.style.display = 'none'; 
-        }
+function updateLoginStatus(user) {
+  const statusEl = document.getElementById('loginStatus');
+  if (user && !user.isAnonymous && statusEl) {
+    const userName = user.displayName || '관리자';
+    // ⚠️ 접속 상태를 표시
+    statusEl.innerHTML = `<i class="icon" data-feather="user-check"></i> ${userName}님 접속중`;
+    statusEl.style.display = 'flex'; 
+    feather.replace({width:'1em',height:'1em'});
+    return true; // 로그인 사용자임을 반환
+  } else {
+    if (statusEl) statusEl.style.display = 'none'; 
+    return false;
+  }
+}
+
+// onAuthStateChanged는 이제 상태만 업데이트하고, 실제 표시 여부는 메인 스크립트에 맡깁니다.
+onAuthStateChanged(auth, (user) => {
+    updateLoginStatus(user);
+    // ⚠️ 익명 로그인 코드는 그대로 유지 (관리자 페이지라서)
+    if (!user) {
         signInAnonymously(auth).catch((e)=> console.error("Anonymous sign-in failed:", e));
-      }
-    });
+    }
+});
+
+window.updateLoginStatus = updateLoginStatus
     // ▲▲▲ 여기까지 추가 ▲▲▲
 
     const pad2 = n => String(n).padStart(2,'0');
@@ -400,6 +421,8 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
   const res = await fetch(url,{ method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`}, body:JSON.stringify({path,payload}) });
   if(!res.ok) throw new Error(`Server error: ${res.status}`);
 }
+
+
 
    async function loadMonthFromFirebase(y, m, name) {
     const token = localStorage.getItem('adminToken');
@@ -678,6 +701,15 @@ window.saveDayToFirebase = saveDayToFirebase;
 
   <!-- 출근부 로직 (원본 유지) -->
   <script>
+
+    function ensureLoginStatusIsVisible() {
+        const statusEl = document.getElementById('loginStatus');
+        if (statusEl && statusEl.innerHTML.trim() !== '') {
+            // 내용이 있는 경우(즉, 카카오 인증된 사용자), display:flex를 강제합니다.
+            statusEl.style.display = 'flex';
+        }
+    }
+
     const pad2 = n => String(n).padStart(2,'0');
     const DEFAULT_IN  = '06 : 00';
     const DEFAULT_OUT = '15 : 30';
@@ -966,9 +998,43 @@ function showToast(msg, options = {}) {
     genBtn.addEventListener('click', async ()=>{ showBootSpinner(); try{ const [y,mm] = (monthInput.value || '').split('-').map(Number); if (y) await loadHolidays(y); const cached = getLastNameCache(); if (cached && !String(nameInput.value||'').trim()){ nameInput.value = cached; } buildTable(monthInput.value, nameInput.value.trim()); const nm = (nameInput.value||'').trim(); if (y && mm && nm){ const data = await window.loadMonthFromFirebase(y, mm, nm); window.applyMonthDataToTable(y, mm, data); } } finally { hideBootSpinner(); } });
     clearBtn.addEventListener('click', ()=> tbody.innerHTML='');
 
-    (async ()=>{ showBootSpinner(); try{ const cached0 = getLastNameCache(); if (cached0) nameInput.value = cached0; buildTable(monthInput.value, nameInput.value.trim()); const [y,mm] = (monthInput.value || '').split('-').map(Number); if (y) { await loadHolidays(y); qsa('#tbody tr').forEach((tr, idx)=>{ const day = idx+1; const [dateCell, , , , , noteCell] = tr.children; const hlabel = dynamicHolidayLabel(y,mm,day); if(hlabel){ noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel); dateCell.classList.add('sun'); } }); } const nm0 = (nameInput.value||'').trim(); if (y && mm && nm0){ const data0 = await window.loadMonthFromFirebase(y, mm, nm0); window.applyMonthDataToTable(y, mm, data0); } } finally { hideBootSpinner(); } })();
-  </script>
+// 기존 즉시 실행 함수를 이 코드로 교체합니다.
 
+    (async ()=>{ 
+        showBootSpinner(); 
+        try{ 
+            const cached0 = getLastNameCache(); 
+            if (cached0) nameInput.value = cached0; 
+            
+            buildTable(monthInput.value, nameInput.value.trim()); 
+            
+            const [y,mm] = (monthInput.value || '').split('-').map(Number); 
+            
+            if (y) { 
+                await loadHolidays(y); 
+                qsa('#tbody tr').forEach((tr, idx)=>{ 
+                    const day = idx+1; 
+                    const [dateCell, , , , , noteCell] = tr.children; 
+                    const hlabel = dynamicHolidayLabel(y,mm,day); 
+                    if(hlabel){ 
+                        noteCell.textContent = addLabelOnce(noteCell.textContent, hlabel); 
+                        dateCell.classList.add('sun'); 
+                    } 
+                }); 
+            } 
+            
+            const nm0 = (nameInput.value||'').trim(); 
+            if (y && mm && nm0){ 
+                const data0 = await window.loadMonthFromFirebase(y, mm, nm0); 
+                window.applyMonthDataToTable(y, mm, data0); 
+            } 
+        } finally { 
+            hideBootSpinner(); 
+            // 🟢 로딩 완료 후, 접속 상태 메시지가 확실하게 보이도록 호출합니다.
+            ensureLoginStatusIsVisible();
+        } 
+    })();
+</script>
  <!-- 공지 관리 로직 -->
 <script>
   const $ = (s)=>document.querySelector(s);
