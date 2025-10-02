@@ -1257,26 +1257,37 @@ html.dark-mode #curWard {
     </div>
   </div>
 </div>
+
 <div id="adminModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="amTitle" style="display:none">
   <div class="modalCard adminPin" role="document">
     <div class="modalHead" id="amTitle">관리자 로그인</div>
     <div class="modalBody">
-      <label class="pinLabel">관리자 비밀번호</label>
-      <input id="adminPass" class="pinInput" type="password" placeholder="" inputmode="none" readonly />
-      <div class="pinPad" id="pinPad">
-        <button data-n="1">1</button><button data-n="2">2</button><button data-n="3">3</button>
-        <button data-n="4">4</button><button data-n="5">5</button><button data-n="6">6</button>
-        <button data-n="7">7</button><button data-n="8">8</button><button data-n="9">9</button>
-        <button data-n="0" class="wide">0</button>
-        <button data-del="1" aria-label="지움">←</button>
+      <div id="kakaoLoginView">
+        <button id="kakaoLoginBtn" class="btn primary" style="width:100%; height: 50px; background-color: #FEE500; color: #191919;">
+          <svg viewBox="0 0 32 32" width="20" height="20" style="margin-right:8px;"><path fill="currentColor" d="M16 4.64c-6.96 0-12.64 4.48-12.64 10.08 0 3.52 2.32 6.64 5.76 8.48l-1.68 5.92 6.24-3.28c.72.08 1.52.16 2.24.16 6.96 0 12.64-4.48 12.64-10.08S22.96 4.64 16 4.64z"></path></svg>
+          카카오로 로그인
+        </button>
+      </div>
+
+      <div id="pinView" style="display:none;">
+        <label class="pinLabel">관리자 비밀번호</label>
+        <input id="adminPass" class="pinInput" type="password" placeholder="" inputmode="none" readonly />
+        <div class="pinPad" id="pinPad">
+          <button data-n="1">1</button><button data-n="2">2</button><button data-n="3">3</button>
+          <button data-n="4">4</button><button data-n="5">5</button><button data-n="6">6</button>
+          <button data-n="7">7</button><button data-n="8">8</button><button data-n="9">9</button>
+          <button data-n="0" class="wide">0</button>
+          <button data-del="1" aria-label="지움">←</button>
+        </div>
       </div>
     </div>
     <div class="modalActions">
       <button type="button" class="btn cancel" id="adminCancel">취소</button>
-      <button type="button" class="btn primary" id="adminOk">확인</button>
+      <button type="button" class="btn primary" id="adminOk" style="display:none;">확인</button>
     </div>
   </div>
 </div>
+
 <div id="qtyCalcModal" class="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="qcTitle" style="display:none">
   <div class="modalCard" role="document">
     <div class="modalHead" id="qcTitle">수량 입력</div>
@@ -1345,6 +1356,7 @@ html.dark-mode #curWard {
 <audio id="warnSound" preload="auto">
   <source src="https://cdn.jsdelivr.net/gh/bangat/linenward@main/경고.mp3" type="audio/mpeg" />
 </audio>
+
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
 <script>
@@ -1410,10 +1422,11 @@ window.addEventListener("unhandledrejection", e=>{
 
 </script>
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged, OAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getDatabase, ref, set, get, push, query, orderByChild, startAt, endAt, onValue, off } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
   import { getMessaging, getToken, isSupported, onMessage as onFcmMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+
 
   // ===== 1. hallymlinen 프로젝트의 firebaseConfig (기존과 동일) =====
   const firebaseConfig = {
@@ -1431,6 +1444,11 @@ const app = initializeApp(firebaseConfig);
   const rtdb = getDatabase(app);
   const auth = getAuth(app);
   let messaging = null; // <-- let으로 변경하고, 우선 null로 선언
+
+  window.fbAuth = {
+    auth, OAuthProvider, signInWithPopup, onAuthStateChanged
+  };
+
 
   signInAnonymously(auth).catch((error) => {
     console.error("Anonymous sign-in failed:", error);
@@ -1671,114 +1689,97 @@ const LS={ ward:"linen/ward", logs:"linen/logs", draft:(ward)=>`linen/draft/${wa
 let state={ ward:(localStorage.getItem(LS.ward)||"").toString().trim(), section:"input", cat:"시트" };
 const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorAll(s));
 
-/* === 관리자 인증 게이트 함수 === */
-function openAdminGate(){
-  openModal("#adminModal", "#adminOk");
+    // --- 관리자 인증 게이트 함수 (카카오 연동) ---
+    function openAdminGate() {
+        const { auth, OAuthProvider, signInWithPopup, onAuthStateChanged } = window.fbAuth;
+        const kakaoProvider = new OAuthProvider('oidc.kakao');
+        const kakaoLoginBtn = el('#kakaoLoginBtn');
+        const kakaoLoginView = el('#kakaoLoginView');
+        const pinView = el('#pinView');
+        const adminOkBtn = el('#adminOk');
 
-  const $in  = el("#adminPass");
-  const $ok  = el("#adminOk");
-  const $can = el("#adminCancel");
-  const pad  = el("#pinPad");
-  let pin = "";
+        kakaoLoginBtn.onclick = async () => {
+            try {
+                await signInWithPopup(auth, kakaoProvider);
+            } catch (error) {
+                console.error("카카오 로그인 실패:", error);
+                alert("카카오 로그인에 실패했습니다. 팝업 차단을 해제하고 다시 시도해주세요.");
+            }
+        };
 
-  $in.placeholder = "";
-  $in.setAttribute("readonly","readonly");
-  $in.setAttribute("inputmode","none");
-  ["focus","pointerdown","touchstart","click"].forEach(ev=>{
-    $in.addEventListener(ev, (e)=>{ e.preventDefault(); $ok.focus(); }, { passive:false });
-  });
+        openModal("#adminModal");
 
-  function render(){ $in.value = pin; }
-  function push(n){ if (pin.length >= 6) return; pin += String(n); render(); }
-  function backspace(){ pin = pin.slice(0,-1); render(); }
-  function clearPin(){ pin = ""; render(); }
-  
-  // [보안 수정] 로그인 로직을 서버 측에서 처리하도록 변경
-async function tryLogin() {
-    // 🚨 중요: 이 URL을 실제 배포된 checkAdminPassword 함수 URL로 교체해야 합니다!
-    const checkPasswordUrl = 'https://us-central1-hallymlinen.cloudfunctions.net/checkAdminPassword';
-
-    // 로딩 표시
-    const okButton = el("#adminOk");
-    const originalText = okButton.textContent;
-    okButton.disabled = true;
-    okButton.textContent = '확인 중...';
-
-    try {
-        const response = await fetch(checkPasswordUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                pin: pin
-            }) // 입력된 PIN을 서버로 전송
+        onAuthStateChanged(auth, (user) => {
+       if (user && !user.isAnonymous) {
+                const userName = user.displayName || '이름없음';
+                tgSendNow(`[알림] 관리자 페이지: ${userName}님 카카오 인증 완료`);
+                kakaoLoginView.style.display = 'none';
+                pinView.style.display = 'block';
+                adminOkBtn.style.display = 'block';
+            } else {
+                kakaoLoginView.style.display = 'block';
+                pinView.style.display = 'none';
+                adminOkBtn.style.display = 'none';
+            }
         });
 
-        const result = await response.json();
+        const $in = el("#adminPass");
+        const pad = el("#pinPad");
+        let pin = "";
+        function render() { $in.value = pin; }
+        function push(n) { if (pin.length < 6) { pin += String(n); render(); } }
+        function backspace() { pin = pin.slice(0, -1); render(); }
+        function clearPin() { pin = ""; render(); }
 
-        // [수정된 부분] ⬅️ 바로 이 부분입니다!
-        if (response.ok && result.success && result.token) {
-            // 1. 받은 토큰을 브라우저의 localStorage에 저장합니다.
-            localStorage.setItem('adminToken', result.token);
-
-            // 2. 모달을 닫고 출근부 페이지로 이동합니다.
-            closeModal("#adminModal");
-            location.href = "출근부.html";
-        } else {
-            clearPin();
-            $in.placeholder = "인증오류.";
-            try {
-                playSnd("#warnSound");
-            } catch (_) {}
-            $ok.focus();
+        if (pad) {
+            pad.onclick = (e) => {
+                const b = e.target.closest("button");
+                if (!b) return;
+                if (b.dataset.n) push(b.dataset.n);
+                if (b.dataset.del) backspace();
+            };
         }
-    } catch (error) {
-        // 네트워크 오류 또는 서버 함수 문제 처리
-        console.error('비밀번호 확인 중 오류:', error);
-        clearPin();
-        $in.placeholder = "인증 오류";
+        adminOkBtn.onclick = () => tryLogin(pin, clearPin);
+        el('#adminCancel').onclick = () => { closeModal("#adminModal"); clearPin(); };
+        document.addEventListener("keydown", function onKey(e){
+            if (el("#adminModal").style.display !== "block") { document.removeEventListener("keydown", onKey); return; }
+            if (e.key === "Enter") { e.preventDefault(); tryLogin(pin, clearPin); }
+        });
+    }
+
+    async function tryLogin(pin, clearPinCallback) {
+        const checkPasswordUrl = 'https://checkadminpassword-t7cbh6uw5a-uc.a.run.app';
+        const okButton = el("#adminOk");
+        okButton.disabled = true;
+        okButton.textContent = '확인 중...';
+
         try {
+            const response = await fetch(checkPasswordUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pin: pin })
+            });
+            const result = await response.json();
+            if (response.ok && result.success && result.token) {
+                localStorage.setItem('adminToken', result.token);
+                closeModal("#adminModal");
+                location.href = "출근부.html";
+            } else {
+                clearPinCallback();
+                el("#adminPass").placeholder = "인증오류.";
+                playSnd("#warnSound");
+            }
+        } catch (error) {
+            console.error('비밀번호 확인 중 오류:', error);
+            clearPinCallback();
+            el("#adminPass").placeholder = "인증 오류";
             playSnd("#warnSound");
-        } catch (_) {}
-        $ok.focus();
-    } finally {
-        // 버튼 상태 복원
-        okButton.disabled = false;
-        okButton.textContent = originalText;
+        } finally {
+            okButton.disabled = false;
+            okButton.textContent = '확인';
+        }
     }
-}
-
-
-  if (pad){
-  pad.onclick = (e)=>{
-    const b = e.target.closest("button");
-    if (!b) return;
-    const n = b.getAttribute("data-n");
-    const del = b.hasAttribute("data-del");
-    if (n !== null){
-      push(n);
-      if (navigator.vibrate) navigator.vibrate(15);
-      return;
-    }
-    if (del){
-      backspace();
-      if (navigator.vibrate) navigator.vibrate(25);
-      return;
-    }
-  };
-}
-
-  $ok.onclick = tryLogin;
-  $can.onclick = ()=>{ closeModal("#adminModal"); clearPin(); };
-  document.addEventListener("keydown", function onKey(e){
-    if (el("#adminModal").style.display !== "block") { document.removeEventListener("keydown", onKey); return; }
-    if (e.key === "Enter") { e.preventDefault(); tryLogin(); }
-  });
-
-  render();
-}
-
+  
 /* === 오디오 제어 및 유틸리티 === */
 let __ac=null, __audioUnlocked=false;
 function getAC(){ if(!__ac){ __ac=new (window.AudioContext||window.webkitAudioContext)(); } return __ac; }
