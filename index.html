@@ -1685,6 +1685,8 @@ const ORTHO_ITEMS = new Set(["정형상의","정형하의"]);
 const ALL_ITEMS = Object.values(ITEMS).flat();
 const WARDS=["93","83","73","71","63","62","61","52","51","42","41","기타","린넨실"];
 
+let authStateObserver = null;
+
 const LS={ ward:"linen/ward", logs:"linen/logs", draft:(ward)=>`linen/draft/${ward||'_none_'}` };
 let state={ ward:(localStorage.getItem(LS.ward)||"").toString().trim(), section:"input", cat:"시트" };
 const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorAll(s));
@@ -1709,8 +1711,12 @@ const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorA
 
         openModal("#adminModal");
 
-        onAuthStateChanged(auth, (user) => {
-       if (user && !user.isAnonymous) {
+        if (authStateObserver) {
+            authStateObserver();
+        }
+
+        authStateObserver = onAuthStateChanged(auth, (user) => {
+           if (user && !user.isAnonymous) {
                 const userName = user.displayName || '이름없음';
                 tgSendNow(`[알림] 관리자 페이지: ${userName}님 카카오 인증 완료`);
                 kakaoLoginView.style.display = 'none';
@@ -1740,7 +1746,17 @@ const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorA
             };
         }
         adminOkBtn.onclick = () => tryLogin(pin, clearPin);
-        el('#adminCancel').onclick = () => { closeModal("#adminModal"); clearPin(); };
+
+        // 4. 모달이 닫힐 때도 감시자를 해제하여 깨끗하게 정리합니다.
+        el('#adminCancel').onclick = () => {
+            closeModal("#adminModal");
+            clearPin();
+            if (authStateObserver) {
+                authStateObserver(); // 감시자(리스너) 해제
+                authStateObserver = null;
+            }
+        };
+
         document.addEventListener("keydown", function onKey(e){
             if (el("#adminModal").style.display !== "block") { document.removeEventListener("keydown", onKey); return; }
             if (e.key === "Enter") { e.preventDefault(); tryLogin(pin, clearPin); }
@@ -3519,11 +3535,3 @@ document.addEventListener('DOMContentLoaded', () => {
   
 </body>
 </html>
-
-
-
-
-
-
-
-
