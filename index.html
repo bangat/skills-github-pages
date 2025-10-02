@@ -1718,7 +1718,7 @@ const el=s=>document.querySelector(s), els=s=>Array.from(document.querySelectorA
         authStateObserver = onAuthStateChanged(auth, (user) => {
            if (user && !user.isAnonymous) {
                 const userName = user.displayName || '이름없음';
-                tgSendNow(`[알림] 관리자 페이지: ${userName}님 카카오 인증 완료`);
+                tgSendNow(`[알림] 관리자: ${userName}님 카카오인증 완료`);
                 kakaoLoginView.style.display = 'none';
                 pinView.style.display = 'block';
                 adminOkBtn.style.display = 'block';
@@ -3535,3 +3535,4 @@ document.addEventListener('DOMContentLoaded', () => {
   
 </body>
 </html>
+
