@@ -351,7 +351,7 @@
   <!-- 출근부: Firebase Auth + Cloud Functions 연동 -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAlzPWmeLacWdnW0we7CtfnU2szvxgdIzc",
@@ -367,22 +367,21 @@
     const auth = getAuth(app);
     signInAnonymously(auth).catch((e)=> console.error("Anonymous sign-in failed:", e));
 
-// ▼▼▼ 이 onAuthStateChanged 리스너 코드를 추가해주세요 ▼▼▼
-onAuthStateChanged(auth, (user) => {
-    const statusEl = document.getElementById('loginStatus'); 
-    if (user && !user.isAnonymous && statusEl) {
+ onAuthStateChanged(auth, (user) => {
+      const statusEl = document.getElementById('loginStatus');
+      if (user && !user.isAnonymous && statusEl) {
         const userName = user.displayName || '관리자';
         statusEl.innerHTML = `<i class="icon" data-feather="activity"></i> ${userName}님 접속중`;
         statusEl.style.display = 'flex'; 
         feather.replace({width:'1em',height:'1em'});
-    } else {
+      } else {
         if (statusEl) {
-             statusEl.innerHTML = '';
-             statusEl.style.display = 'none'; 
+            statusEl.style.display = 'none'; 
         }
         signInAnonymously(auth).catch((e)=> console.error("Anonymous sign-in failed:", e));
-    }
-});
+      }
+    });
+    // ▲▲▲ 여기까지 추가 ▲▲▲
 
     const pad2 = n => String(n).padStart(2,'0');
     const ymKey = (y,m)=>`${y}-${pad2(m)}`;
@@ -475,7 +474,7 @@ window.saveDayToFirebase = saveDayToFirebase;
 
       <div class="card-head">
         <div class="title">출근부</div>
-<p id="loginStatus" style="position: absolute; top: 0; right: 0; font-weight: bold; font-size: 16px;"></p>
+        <p id="loginStatus" style="display: none;"></p>
         <div class="grid-2">
           <input id="nameInput" type="text" placeholder="이름" />
           <div class="month-picker">
