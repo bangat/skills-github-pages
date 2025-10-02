@@ -274,18 +274,14 @@
     const rtdb = getDatabase(app);
     const auth = getAuth(app);
 
-    onAuthStateChanged(auth, (user) => {
-      if (user && !user.isAnonymous) {
-        const userName = user.displayName || '이름없음';
-        sendTelegramCapture(userName);
-      } else {
-        signInAnonymously(auth).catch((error) => {
-          console.error("Anonymous sign-in failed:", error);
-          showToast("인증 오류: 새로고침해주세요.");
-        });
-        sendTelegramCapture();
-      }
-    });
+onAuthStateChanged(auth, (user) => {
+  if (user && !user.isAnonymous) {
+    const userName = user.displayName || '이름없음';
+    sendTelegramCapture(userName); 
+  } else if (!user) {
+    sendTelegramCapture('익명 또는 미인증'); 
+  }
+});
     /* ▷▷▷ Firebase 초기화 종료 ▷▷▷ */
 
 
