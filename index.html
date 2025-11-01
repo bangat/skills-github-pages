@@ -382,8 +382,8 @@ border-top:5px solid #2563eb; /* 진한 파랑 */
   body.mode-stats #saveAll, body.mode-stats #appDownloadBtn{display:none}
   body.mode-stats #exportXLSXBtn{display:block;width:100%;font-size:16px;padding:12px 16px;border-radius:12px}
   #sec-stats .row-wrap{display:flex;align-items:center;gap:8px}
-  #sec-stats .row-wrap.dates input[type=date]{flex:1 1 0;min-width:0;font-size:15px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:#var(--text)}
-  #sec-stats .row-wrap select{padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:#var(--text)}
+  #sec-stats .row-wrap.dates input[type=date]{flex:1 1 0;min-width:0;font-size:15px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--text)}
+  #sec-stats .row-wrap select{padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--text)}
 
   /* --- 통계 테이블 --- */
   #statsWrap{overflow-x:auto}
@@ -2763,58 +2763,7 @@ function showWardPromptModal(){ openModal('#wardPromptModal', '#wpOk'); playSnd(
 
 /* === '기타' 병동 요일별 자동 수량 설정 (DB 중복 체크 및 자동 제출) === */
 async function autoSetGitaQuantities() { // async 키워드 추가
-  // 1. 현재 병동이 '기타'가 아니면 아무것도 하지 않고 종료합니다.
-  if (state.ward !== '기타') {
-    return;
-  }
-
-  // 2. 화면의 '출고일' 값을 가져옵니다.
-  const issueDateValue = el("#issueDate").value;
-  if (!issueDateValue) return;
-
-  // 3. [변경] 중앙 데이터베이스를 확인하여 해당 날짜에 '기타' 데이터가 이미 있는지 검사합니다.
-  if (window.__fb && await window.__fb.checkGitaExists(issueDateValue)) {
-    console.log(`'${issueDateValue}'의 '기타' 병동 데이터가 DB에 이미 존재하여 자동 제출을 건너뜁니다.`);
-    return; // 데이터가 이미 있으면 함수를 즉시 종료
-  }
-
-  // --- 이하 로직은 기존과 거의 동일 ---
-  const selectedDate = new Date(issueDateValue + 'T12:00:00');
-  const dayOfWeek = selectedDate.getDay();
-
-  let quantitiesToSet = {};
-  if (dayOfWeek >= 1 && dayOfWeek <= 4) { // 월요일 ~ 목요일
-    quantitiesToSet = { "대시트": 90, "반시트": 140, "수　건": 150, "억제대": 10, "얼음포": 10, "베갯잇": 70 };
-  } else if (dayOfWeek === 5) { // 금요일
-    quantitiesToSet = { "대시트": 100, "반시트": 160, "수　건": 150, "억제대": 15, "얼음포": 10, "베갯잇": 70 };
-  } else if (dayOfWeek === 6) { // 토요일
-    quantitiesToSet = { "대시트": 160, "반시트": 200, "수　건": 200, "베갯잇": 70 };
-  } else {
-    return;
-  }
-  
-  const currentDraft = getDraft();
-  // DB에 데이터가 없는 것이 확인되었으므로, 바로 자동 입력을 진행합니다.
-  for (const item in quantitiesToSet) {
-    if (!currentDraft[item] || currentDraft[item] === 0) {
-      currentDraft[item] = quantitiesToSet[item];
-    }
-  }
-  setDraft(currentDraft);
-
-  buildTable();
-  refreshTotalUI();
-  showToast("'기타' 병동 자동 입력 및 제출 중...");
-
-  setTimeout(async () => {
-    try {
-      await saveAll();
-      // DB에 저장되므로 더 이상 로컬에 기록할 필요가 없습니다.
-    } catch (e) {
-      console.error("자동 제출 중 오류 발생:", e);
-      alert("자동 제출에 실패했습니다.");
-    }
-  }, 500);
+  // '기타' 병동 자동 제출 기능 제거됨
 }
 
 /* === 제출 현황 모달 기능 === */
@@ -3059,7 +3008,7 @@ el("#wardSelect").onchange = e => {
     localStorage.setItem(LS.ward, state.ward); 
     buildTable(); 
     fitCardToFooter(); 
-    autoSetGitaQuantities(); // '기타' 병동 자동 수량 설정 함수 호출
+    // autoSetGitaQuantities(); // '기타' 병동 자동 수량 설정 함수 호출 (제거됨)
 };  const d=new Date(), yyyy=d.getFullYear(), mm=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0");
   el("#issueDate").value=`${yyyy}-${mm}-${dd}`;
   el("#dateStart").value=`${yyyy}-${mm}-${dd}`;
@@ -3070,7 +3019,7 @@ el("#wardSelect").onchange = e => {
   buildTable();
   refreshTotalUI();
   fitCardToFooter();
-  autoSetGitaQuantities(); 
+  // autoSetGitaQuantities(); // (제거됨)
 
   window.addEventListener('resize', fitCardToFooter);
   window.addEventListener('orientationchange', fitCardToFooter);
